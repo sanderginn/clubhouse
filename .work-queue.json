@@ -57,96 +57,96 @@
     {
       "issue_number": 8,
       "title": "Implement user login endpoint",
-      "status": "in_progress",
-      "assigned_to": "agent-2",
+      "status": "available",
+      "assigned_to": null,
       "pr_number": null,
       "branch": "feat/auth-login"
     },
     {
       "issue_number": 9,
       "title": "Implement user logout endpoint",
-      "status": "in_progress",
-      "assigned_to": "agent-3",
+      "status": "available",
+      "assigned_to": null,
       "pr_number": null,
       "branch": "feat/auth-logout"
     },
     {
       "issue_number": 10,
       "title": "Implement auth middleware",
-      "status": "in_progress",
-      "assigned_to": "agent-4",
+      "status": "available",
+      "assigned_to": null,
       "pr_number": null,
       "branch": "feat/auth-middleware"
     },
     {
       "issue_number": 11,
       "title": "Implement admin user approval flow",
-      "status": "in_progress",
-      "assigned_to": "agent-5",
+      "status": "available",
+      "assigned_to": null,
       "pr_number": null,
       "branch": "feat/admin-approval"
     },
     {
       "issue_number": 12,
       "title": "Implement create post endpoint",
-      "status": "in_progress",
-      "assigned_to": "agent-6",
+      "status": "available",
+      "assigned_to": null,
       "pr_number": null,
       "branch": "feat/posts-create"
     },
     {
       "issue_number": 13,
       "title": "Implement get post endpoint",
-      "status": "in_progress",
-      "assigned_to": "agent-7",
+      "status": "available",
+      "assigned_to": null,
       "pr_number": null,
       "branch": "feat/posts-get"
     },
     {
       "issue_number": 14,
       "title": "Implement get feed endpoint",
-      "status": "in_progress",
-      "assigned_to": "agent-8",
+      "status": "available",
+      "assigned_to": null,
       "pr_number": null,
       "branch": "feat/feed"
     },
     {
       "issue_number": 15,
       "title": "Implement soft delete post endpoint",
-      "status": "in_progress",
-      "assigned_to": "agent-9",
+      "status": "available",
+      "assigned_to": null,
       "pr_number": null,
       "branch": "feat/posts-delete"
     },
     {
       "issue_number": 16,
       "title": "Implement restore post endpoint",
-      "status": "in_progress",
-      "assigned_to": "agent-10",
+      "status": "available",
+      "assigned_to": null,
       "pr_number": null,
       "branch": "feat/posts-restore"
     },
     {
       "issue_number": 17,
       "title": "Implement create comment endpoint",
-      "status": "in_progress",
-      "assigned_to": "agent-11",
+      "status": "available",
+      "assigned_to": null,
       "pr_number": null,
       "branch": "feat/comments-create"
     },
     {
       "issue_number": 18,
       "title": "Implement get thread endpoint",
-      "status": "in_progress",
-      "assigned_to": "agent-12",
+      "status": "available",
+      "assigned_to": null,
       "pr_number": null,
       "branch": "feat/comments-thread"
     },
     {
       "issue_number": 51,
       "title": "Implement auth pages (register, login, logout)",
-      "status": "in_progress",
-      "assigned_to": "agent-13",
+      "status": "available",
+      "assigned_to": null,
       "pr_number": null,
       "branch": "feat/frontend-auth"
     }
