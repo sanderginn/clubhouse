@@ -1,4 +1,5 @@
 import { writable, derived } from 'svelte/store';
+import { api } from '../services/api';
 
 export interface User {
   id: string;
@@ -14,6 +15,15 @@ interface AuthState {
   isLoading: boolean;
 }
 
+interface MeResponse {
+  id: string;
+  username: string;
+  email: string;
+  profile_picture_url?: string;
+  bio?: string;
+  is_admin: boolean;
+}
+
 function createAuthStore() {
   const { subscribe, set, update } = writable<AuthState>({
     user: null,
@@ -26,7 +36,33 @@ function createAuthStore() {
       update((state) => ({ ...state, user, isLoading: false })),
     setLoading: (isLoading: boolean) =>
       update((state) => ({ ...state, isLoading })),
-    logout: () => set({ user: null, isLoading: false }),
+    logout: async () => {
+      try {
+        await api.post('/auth/logout');
+      } catch {
+        // Ignore errors - we're logging out anyway
+      }
+      set({ user: null, isLoading: false });
+    },
+    checkSession: async () => {
+      update((state) => ({ ...state, isLoading: true }));
+      try {
+        const response = await api.get<MeResponse>('/auth/me');
+        const user: User = {
+          id: response.id,
+          username: response.username,
+          email: response.email,
+          profilePictureUrl: response.profile_picture_url,
+          bio: response.bio,
+          isAdmin: response.is_admin,
+        };
+        set({ user, isLoading: false });
+        return true;
+      } catch {
+        set({ user: null, isLoading: false });
+        return false;
+      }
+    },
   };
 }
 

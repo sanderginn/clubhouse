@@ -83,3 +83,13 @@ type RejectUserResponse struct {
 	ID      uuid.UUID `json:"id"`
 	Message string    `json:"message"`
 }
+
+// MeResponse represents the response from /auth/me endpoint
+type MeResponse struct {
+	ID                uuid.UUID `json:"id"`
+	Username          string    `json:"username"`
+	Email             string    `json:"email"`
+	ProfilePictureUrl *string   `json:"profile_picture_url,omitempty"`
+	Bio               *string   `json:"bio,omitempty"`
+	IsAdmin           bool      `json:"is_admin"`
+}
