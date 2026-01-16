@@ -61,6 +61,11 @@ type FeedResponse struct {
 	NextCursor *string `json:"next_cursor,omitempty"`
 }
 
+// RestorePostResponse represents the response for restoring a post
+type RestorePostResponse struct {
+	Post Post `json:"post"`
+}
+
 // JSONMap is a custom type for storing JSON metadata
 type JSONMap map[string]interface{}
 
