@@ -11,13 +11,13 @@ import (
 
 // Post represents a post in the system
 type Post struct {
-	ID              uuid.UUID `json:"id"`
-	UserID          uuid.UUID `json:"user_id"`
-	SectionID       uuid.UUID `json:"section_id"`
-	Content         string    `json:"content"`
-	Links           []Link    `json:"links,omitempty"`
-	CommentCount    int       `json:"comment_count"`
-	CreatedAt       time.Time `json:"created_at"`
+	ID              uuid.UUID  `json:"id"`
+	UserID          uuid.UUID  `json:"user_id"`
+	SectionID       uuid.UUID  `json:"section_id"`
+	Content         string     `json:"content"`
+	Links           []Link     `json:"links,omitempty"`
+	CommentCount    int        `json:"comment_count"`
+	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       *time.Time `json:"updated_at,omitempty"`
 	DeletedAt       *time.Time `json:"deleted_at,omitempty"`
 	DeletedByUserID *uuid.UUID `json:"deleted_by_user_id,omitempty"`
@@ -59,6 +59,12 @@ type FeedResponse struct {
 	Posts      []*Post `json:"posts"`
 	HasMore    bool    `json:"has_more"`
 	NextCursor *string `json:"next_cursor,omitempty"`
+}
+
+// DeletePostResponse represents the response for deleting a post
+type DeletePostResponse struct {
+	Post    *Post  `json:"post"`
+	Message string `json:"message"`
 }
 
 // RestorePostResponse represents the response for restoring a post

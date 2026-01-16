@@ -282,6 +282,47 @@ func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *
 	}, nil
 }
 
+// DeletePost soft-deletes a post (only post owner or admin can delete)
+func (s *PostService) DeletePost(ctx context.Context, postID uuid.UUID, userID uuid.UUID, isAdmin bool) (*models.Post, error) {
+	// Fetch the post to verify ownership
+	post, err := s.GetPostByID(ctx, postID)
+	if err != nil {
+		if err.Error() == "post not found" {
+			return nil, errors.New("post not found")
+		}
+		return nil, err
+	}
+
+	// Check authorization: owner or admin can delete
+	if post.UserID != userID && !isAdmin {
+		return nil, errors.New("unauthorized to delete this post")
+	}
+
+	// Soft delete the post
+	query := `
+		UPDATE posts
+		SET deleted_at = now(), deleted_by_user_id = $1
+		WHERE id = $2
+		RETURNING id, user_id, section_id, content, created_at, updated_at, deleted_at, deleted_by_user_id
+	`
+
+	var updatedPost models.Post
+	err = s.db.QueryRowContext(ctx, query, userID, postID).Scan(
+		&updatedPost.ID, &updatedPost.UserID, &updatedPost.SectionID, &updatedPost.Content,
+		&updatedPost.CreatedAt, &updatedPost.UpdatedAt, &updatedPost.DeletedAt, &updatedPost.DeletedByUserID,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete post: %w", err)
+	}
+
+	// Copy over the user and links from the original post
+	updatedPost.User = post.User
+	updatedPost.Links = post.Links
+
+	return &updatedPost, nil
+}
+
 // RestorePost restores a soft-deleted post
 // Only the post owner (within 7 days) or an admin can restore
 func (s *PostService) RestorePost(ctx context.Context, postID uuid.UUID, userID uuid.UUID, isAdmin bool) (*models.Post, error) {
