@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strings"
 
+	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/services"
@@ -22,7 +24,7 @@ func NewPostHandler(db *sql.DB) *PostHandler {
 	}
 }
 
-// CreatePost handles POST /posts
+// CreatePost handles POST /api/v1/posts
 func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
@@ -74,5 +76,47 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
+}
+
+// GetPost handles GET /api/v1/posts/{id}
+func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		return
+	}
+
+	// Extract post ID from URL path
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 5 {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Post ID is required")
+		return
+	}
+
+	postIDStr := pathParts[4]
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
+		return
+	}
+
+	// Get post from service
+	post, err := h.postService.GetPostByID(r.Context(), postID)
+	if err != nil {
+		if err.Error() == "post not found" {
+			writeError(w, http.StatusNotFound, "POST_NOT_FOUND", "Post not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "GET_POST_FAILED", "Failed to get post")
+		return
+	}
+
+	// Return post response
+	response := models.GetPostResponse{
+		Post: post,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 }
