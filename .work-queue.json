@@ -144,8 +144,8 @@
     {
       "issue_number": 50,
       "title": "Phase 2: Implement auth pages (register, login, logout)",
-      "status": "available",
-      "assigned_to": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1",
       "pr_number": null,
       "branch": "feat/frontend-auth"
     },
@@ -160,16 +160,16 @@
     {
       "issue_number": 52,
       "title": "Phase 2: Implement feed view",
-      "status": "available",
-      "assigned_to": null,
+      "status": "in_progress",
+      "assigned_to": "agent-2",
       "pr_number": null,
       "branch": "feat/frontend-feed"
     },
     {
       "issue_number": 53,
       "title": "Phase 2: Implement create post form",
-      "status": "available",
-      "assigned_to": null,
+      "status": "in_progress",
+      "assigned_to": "agent-3",
       "pr_number": null,
       "branch": "feat/frontend-post-form"
     }
