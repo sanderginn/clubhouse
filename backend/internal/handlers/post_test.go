@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/models"
+	"github.com/sanderginn/clubhouse/internal/services"
 )
 
 // TestGetPostSuccess tests successfully retrieving a post
@@ -350,6 +352,297 @@ func TestGetFeedInvalidSectionID(t *testing.T) {
 
 	if response.Code != "INVALID_SECTION_ID" {
 		t.Errorf("expected code INVALID_SECTION_ID, got %s", response.Code)
+	}
+}
+
+// TestRestorePostSuccess tests successfully restoring a deleted post by owner
+func TestRestorePostSuccess(t *testing.T) {
+	db, mock, err := setupMockDB(t)
+	if err != nil {
+		t.Fatalf("failed to setup mock db: %v", err)
+	}
+	defer db.Close()
+
+	handler := NewPostHandler(db)
+	postID := uuid.New()
+	userID := uuid.New()
+	sectionID := uuid.New()
+	now := time.Now()
+	deletedAt := now.Add(-24 * time.Hour)
+
+	// Mock the fetch deleted post query
+	rows := mock.NewRows([]string{
+		"id", "user_id", "section_id", "content",
+		"created_at", "updated_at", "deleted_at", "deleted_by_user_id",
+		"id", "username", "email", "profile_picture_url", "bio", "is_admin", "created_at",
+		"comment_count",
+	}).AddRow(
+		postID, userID, sectionID, "Test post content",
+		now, nil, &deletedAt, nil,
+		userID, "testuser", "test@example.com", nil, nil, false, now,
+		0,
+	)
+
+	mock.ExpectQuery("SELECT").WithArgs(postID).WillReturnRows(rows)
+
+	// Mock the restore update query
+	updateRows := mock.NewRows([]string{
+		"id", "user_id", "section_id", "content",
+		"created_at", "updated_at", "deleted_at", "deleted_by_user_id",
+	}).AddRow(
+		postID, userID, sectionID, "Test post content",
+		now, nil, nil, nil,
+	)
+
+	mock.ExpectQuery("UPDATE posts").WithArgs(postID).WillReturnRows(updateRows)
+
+	// Mock the links query
+	linksRows := mock.NewRows([]string{"id", "url", "metadata", "created_at"})
+	mock.ExpectQuery("SELECT id, url, metadata, created_at").WithArgs(postID).WillReturnRows(linksRows)
+
+	req, err := http.NewRequest("POST", "/api/v1/posts/"+postID.String()+"/restore", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	// Add user context
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, "user", &services.Session{
+		ID:       uuid.New().String(),
+		UserID:   userID,
+		Username: "testuser",
+		IsAdmin:  false,
+	})
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler.RestorePost(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	var response models.RestorePostResponse
+	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if response.Post.ID != postID {
+		t.Errorf("expected post id %s, got %s", postID, response.Post.ID)
+	}
+
+	if response.Post.DeletedAt != nil {
+		t.Error("expected deleted_at to be nil after restore")
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled expectations: %v", err)
+	}
+}
+
+// TestRestorePostByAdmin tests admin restoring a deleted post
+func TestRestorePostByAdmin(t *testing.T) {
+	db, mock, err := setupMockDB(t)
+	if err != nil {
+		t.Fatalf("failed to setup mock db: %v", err)
+	}
+	defer db.Close()
+
+	handler := NewPostHandler(db)
+	postID := uuid.New()
+	ownerID := uuid.New()
+	adminID := uuid.New()
+	sectionID := uuid.New()
+	now := time.Now()
+	deletedAt := now.Add(-8 * 24 * time.Hour) // 8 days ago (beyond 7-day window)
+
+	// Mock the fetch deleted post query
+	rows := mock.NewRows([]string{
+		"id", "user_id", "section_id", "content",
+		"created_at", "updated_at", "deleted_at", "deleted_by_user_id",
+		"id", "username", "email", "profile_picture_url", "bio", "is_admin", "created_at",
+		"comment_count",
+	}).AddRow(
+		postID, ownerID, sectionID, "Test post content",
+		now, nil, &deletedAt, nil,
+		ownerID, "testuser", "test@example.com", nil, nil, false, now,
+		0,
+	)
+
+	mock.ExpectQuery("SELECT").WithArgs(postID).WillReturnRows(rows)
+
+	// Mock the restore update query
+	updateRows := mock.NewRows([]string{
+		"id", "user_id", "section_id", "content",
+		"created_at", "updated_at", "deleted_at", "deleted_by_user_id",
+	}).AddRow(
+		postID, ownerID, sectionID, "Test post content",
+		now, nil, nil, nil,
+	)
+
+	mock.ExpectQuery("UPDATE posts").WithArgs(postID).WillReturnRows(updateRows)
+
+	// Mock the links query
+	linksRows := mock.NewRows([]string{"id", "url", "metadata", "created_at"})
+	mock.ExpectQuery("SELECT id, url, metadata, created_at").WithArgs(postID).WillReturnRows(linksRows)
+
+	req, err := http.NewRequest("POST", "/api/v1/posts/"+postID.String()+"/restore", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	// Add admin user context
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, "user", &services.Session{
+		ID:       uuid.New().String(),
+		UserID:   adminID,
+		Username: "admin",
+		IsAdmin:  true,
+	})
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler.RestorePost(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled expectations: %v", err)
+	}
+}
+
+// TestRestorePostUnauthorized tests non-owner cannot restore
+func TestRestorePostUnauthorized(t *testing.T) {
+	db, mock, err := setupMockDB(t)
+	if err != nil {
+		t.Fatalf("failed to setup mock db: %v", err)
+	}
+	defer db.Close()
+
+	handler := NewPostHandler(db)
+	postID := uuid.New()
+	ownerID := uuid.New()
+	otherUserID := uuid.New()
+	sectionID := uuid.New()
+	now := time.Now()
+	deletedAt := now.Add(-24 * time.Hour)
+
+	// Mock the fetch deleted post query
+	rows := mock.NewRows([]string{
+		"id", "user_id", "section_id", "content",
+		"created_at", "updated_at", "deleted_at", "deleted_by_user_id",
+		"id", "username", "email", "profile_picture_url", "bio", "is_admin", "created_at",
+		"comment_count",
+	}).AddRow(
+		postID, ownerID, sectionID, "Test post content",
+		now, nil, &deletedAt, nil,
+		ownerID, "testuser", "test@example.com", nil, nil, false, now,
+		0,
+	)
+
+	mock.ExpectQuery("SELECT").WithArgs(postID).WillReturnRows(rows)
+
+	req, err := http.NewRequest("POST", "/api/v1/posts/"+postID.String()+"/restore", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	// Add different user context
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, "user", &services.Session{
+		ID:       uuid.New().String(),
+		UserID:   otherUserID,
+		Username: "otheruser",
+		IsAdmin:  false,
+	})
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler.RestorePost(rr, req)
+
+	if status := rr.Code; status != http.StatusForbidden {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusForbidden)
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if response.Code != "FORBIDDEN" {
+		t.Errorf("expected code FORBIDDEN, got %s", response.Code)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled expectations: %v", err)
+	}
+}
+
+// TestRestorePostPermanentlyDeleted tests cannot restore post older than 7 days
+func TestRestorePostPermanentlyDeleted(t *testing.T) {
+	db, mock, err := setupMockDB(t)
+	if err != nil {
+		t.Fatalf("failed to setup mock db: %v", err)
+	}
+	defer db.Close()
+
+	handler := NewPostHandler(db)
+	postID := uuid.New()
+	userID := uuid.New()
+	sectionID := uuid.New()
+	now := time.Now()
+	deletedAt := now.Add(-8 * 24 * time.Hour) // 8 days ago
+
+	// Mock the fetch deleted post query
+	rows := mock.NewRows([]string{
+		"id", "user_id", "section_id", "content",
+		"created_at", "updated_at", "deleted_at", "deleted_by_user_id",
+		"id", "username", "email", "profile_picture_url", "bio", "is_admin", "created_at",
+		"comment_count",
+	}).AddRow(
+		postID, userID, sectionID, "Test post content",
+		now, nil, &deletedAt, nil,
+		userID, "testuser", "test@example.com", nil, nil, false, now,
+		0,
+	)
+
+	mock.ExpectQuery("SELECT").WithArgs(postID).WillReturnRows(rows)
+
+	req, err := http.NewRequest("POST", "/api/v1/posts/"+postID.String()+"/restore", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	// Add user context
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, "user", &services.Session{
+		ID:       uuid.New().String(),
+		UserID:   userID,
+		Username: "testuser",
+		IsAdmin:  false,
+	})
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler.RestorePost(rr, req)
+
+	if status := rr.Code; status != http.StatusGone {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusGone)
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if response.Code != "POST_PERMANENTLY_DELETED" {
+		t.Errorf("expected code POST_PERMANENTLY_DELETED, got %s", response.Code)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled expectations: %v", err)
 	}
 }
 
