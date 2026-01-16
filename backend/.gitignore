@@ -6,6 +6,7 @@
 *.so.*
 *.dylib
 clubhouse-server
+server
 
 # Test binary
 *.test
