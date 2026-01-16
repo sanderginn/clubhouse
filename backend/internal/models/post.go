@@ -67,6 +67,11 @@ type DeletePostResponse struct {
 	Message string `json:"message"`
 }
 
+// RestorePostResponse represents the response for restoring a post
+type RestorePostResponse struct {
+	Post Post `json:"post"`
+}
+
 // JSONMap is a custom type for storing JSON metadata
 type JSONMap map[string]interface{}
 

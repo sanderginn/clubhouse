@@ -128,10 +128,11 @@
     {
       "issue_number": 16,
       "title": "Implement restore post endpoint",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-9",
-      "pr_number": null,
-      "branch": "feat/posts-restore"
+      "pr_number": 73,
+      "branch": "feat/posts-restore",
+      "merged_at": "2026-01-16T17:19:41Z"
     },
     {
       "issue_number": 17,
