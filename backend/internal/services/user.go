@@ -116,6 +116,49 @@ func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*models
 	return &user, nil
 }
 
+// LoginUser authenticates a user with email and password
+func (s *UserService) LoginUser(ctx context.Context, req *models.LoginRequest) (*models.User, error) {
+	// Validate input
+	if err := validateLoginInput(req); err != nil {
+		return nil, err
+	}
+
+	// Get user by email
+	user, err := s.GetUserByEmail(ctx, req.Email)
+	if err != nil {
+		return nil, fmt.Errorf("invalid email or password")
+	}
+
+	// Check if user is approved
+	if user.ApprovedAt == nil {
+		return nil, fmt.Errorf("user not approved")
+	}
+
+	// Verify password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
+		return nil, fmt.Errorf("invalid email or password")
+	}
+
+	return user, nil
+}
+
+// validateLoginInput validates login input
+func validateLoginInput(req *models.LoginRequest) error {
+	if strings.TrimSpace(req.Email) == "" {
+		return fmt.Errorf("email is required")
+	}
+
+	if !isValidEmail(req.Email) {
+		return fmt.Errorf("invalid email format")
+	}
+
+	if strings.TrimSpace(req.Password) == "" {
+		return fmt.Errorf("password is required")
+	}
+
+	return nil
+}
+
 // validateRegisterInput validates registration input
 func validateRegisterInput(req *models.RegisterRequest) error {
 	if strings.TrimSpace(req.Username) == "" {

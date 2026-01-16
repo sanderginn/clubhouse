@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sanderginn/clubhouse/internal/cache"
 	"github.com/sanderginn/clubhouse/internal/db"
 	"github.com/sanderginn/clubhouse/internal/handlers"
 	"github.com/sanderginn/clubhouse/internal/middleware"
@@ -41,6 +42,14 @@ func main() {
 	}
 	defer dbConn.Close()
 
+	// Initialize Redis
+	redisConn, err := cache.Init(ctx)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to initialize Redis: %v\n", err)
+		os.Exit(1)
+	}
+	defer redisConn.Close()
+
 	// Initialize HTTP server
 	mux := http.NewServeMux()
 
@@ -52,10 +61,11 @@ func main() {
 	})
 
 	// Initialize handlers
-	authHandler := handlers.NewAuthHandler(dbConn)
+	authHandler := handlers.NewAuthHandler(dbConn, redisConn)
 
 	// API routes
 	mux.HandleFunc("/api/v1/auth/register", authHandler.Register)
+	mux.HandleFunc("/api/v1/auth/login", authHandler.Login)
 
 	// Apply middleware
 	handler := middleware.ChainMiddleware(mux,
