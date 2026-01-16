@@ -1,0 +1,149 @@
+{
+  "metadata": {
+    "created_at": "2026-01-16T16:30:00Z",
+    "version": "1.0",
+    "description": "Work queue for parallel issue assignment"
+  },
+  "issues": [
+    {
+      "issue_number": 3,
+      "title": "Setup pre-commit hooks",
+      "status": "completed",
+      "assigned_to": "orchestrator",
+      "pr_number": 62
+    },
+    {
+      "issue_number": 4,
+      "title": "Create database migrations (users, sections, posts)",
+      "status": "completed",
+      "assigned_to": "orchestrator",
+      "pr_number": 63
+    },
+    {
+      "issue_number": 5,
+      "title": "Create database migrations (comments, reactions, links)",
+      "status": "completed",
+      "assigned_to": "orchestrator",
+      "pr_number": 63
+    },
+    {
+      "issue_number": 6,
+      "title": "Create database migrations (mentions, notifications, audit logs)",
+      "status": "completed",
+      "assigned_to": "orchestrator",
+      "pr_number": 63
+    },
+    {
+      "issue_number": 50,
+      "title": "Initialize Svelte project",
+      "status": "completed",
+      "assigned_to": "orchestrator",
+      "pr_number": 64
+    },
+    {
+      "issue_number": 7,
+      "title": "Implement user registration endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "pr_number": null,
+      "branch": "feat/auth-register"
+    },
+    {
+      "issue_number": 8,
+      "title": "Implement user login endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "pr_number": null,
+      "branch": "feat/auth-login"
+    },
+    {
+      "issue_number": 9,
+      "title": "Implement user logout endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "pr_number": null,
+      "branch": "feat/auth-logout"
+    },
+    {
+      "issue_number": 10,
+      "title": "Implement auth middleware",
+      "status": "available",
+      "assigned_to": null,
+      "pr_number": null,
+      "branch": "feat/auth-middleware"
+    },
+    {
+      "issue_number": 11,
+      "title": "Implement admin user approval flow",
+      "status": "available",
+      "assigned_to": null,
+      "pr_number": null,
+      "branch": "feat/admin-approval"
+    },
+    {
+      "issue_number": 12,
+      "title": "Implement create post endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "pr_number": null,
+      "branch": "feat/posts-create"
+    },
+    {
+      "issue_number": 13,
+      "title": "Implement get post endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "pr_number": null,
+      "branch": "feat/posts-get"
+    },
+    {
+      "issue_number": 14,
+      "title": "Implement get feed endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "pr_number": null,
+      "branch": "feat/feed"
+    },
+    {
+      "issue_number": 15,
+      "title": "Implement soft delete post endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "pr_number": null,
+      "branch": "feat/posts-delete"
+    },
+    {
+      "issue_number": 16,
+      "title": "Implement restore post endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "pr_number": null,
+      "branch": "feat/posts-restore"
+    },
+    {
+      "issue_number": 17,
+      "title": "Implement create comment endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "pr_number": null,
+      "branch": "feat/comments-create"
+    },
+    {
+      "issue_number": 18,
+      "title": "Implement get thread endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "pr_number": null,
+      "branch": "feat/comments-thread"
+    },
+    {
+      "issue_number": 51,
+      "title": "Implement auth pages (register, login, logout)",
+      "status": "available",
+      "assigned_to": null,
+      "pr_number": null,
+      "branch": "feat/frontend-auth"
+    }
+  ],
+  "notes": "Auth endpoints (7-11) are sequential. Posts endpoints (12-16) depend on auth. Comments (17-18) depend on posts. Frontend auth (51) can work in parallel."
+}
