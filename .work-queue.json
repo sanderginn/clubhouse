@@ -147,10 +147,11 @@
     {
       "issue_number": 18,
       "title": "Implement get thread endpoint",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-11",
-      "pr_number": null,
-      "branch": "feat/comments-thread"
+      "pr_number": 75,
+      "branch": "feat/comments-thread",
+      "merged_at": "2026-01-16T17:25:39Z"
     },
     {
       "issue_number": 51,
