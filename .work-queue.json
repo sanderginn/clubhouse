@@ -15,7 +15,7 @@
     },
     {
       "issue_number": 4,
-      "title": "Create database migrations (users, sections, posts)",
+      "title": "Phase 1: Create database migrations (users, sections, posts)",
       "status": "completed",
       "assigned_to": "orchestrator",
       "pr_number": 63,
@@ -23,7 +23,7 @@
     },
     {
       "issue_number": 5,
-      "title": "Create database migrations (comments, reactions, links)",
+      "title": "Phase 1: Create database migrations (comments, reactions, links)",
       "status": "completed",
       "assigned_to": "orchestrator",
       "pr_number": 63,
@@ -31,7 +31,7 @@
     },
     {
       "issue_number": 6,
-      "title": "Create database migrations (mentions, notifications, audit logs)",
+      "title": "Phase 1: Create database migrations (mentions, notifications, audit logs)",
       "status": "completed",
       "assigned_to": "orchestrator",
       "pr_number": 63,
@@ -46,129 +46,116 @@
       "merged_at": "2026-01-16T16:45:00Z"
     },
     {
-      "issue_number": 50,
-      "title": "Phase 2: Implement auth pages (register, login, logout)",
-      "status": "completed",
-      "assigned_to": "agent-1",
-      "pr_number": null,
-      "merged_at": "2026-01-16T18:00:00Z"
-    },
-    {
       "issue_number": 7,
-      "title": "Implement user registration endpoint",
+      "title": "Phase 2: Implement user registration endpoint",
       "status": "completed",
       "assigned_to": "agent-1",
-      "pr_number": null,
-      "branch": "feat/auth-register",
+      "pr_number": 65,
       "merged_at": "2026-01-16T17:00:00Z"
     },
     {
       "issue_number": 8,
-      "title": "Implement user login endpoint",
+      "title": "Phase 2: Implement user login endpoint",
       "status": "completed",
-      "assigned_to": "agent-1",
+      "assigned_to": "agent-2",
       "pr_number": 66,
-      "branch": "feat/auth-login",
-      "merged_at": "2026-01-16T16:28:02Z"
+      "merged_at": "2026-01-16T17:05:00Z"
     },
     {
       "issue_number": 9,
-      "title": "Implement user logout endpoint",
+      "title": "Phase 2: Implement user logout endpoint",
       "status": "completed",
-      "assigned_to": "agent-2",
+      "assigned_to": "agent-3",
       "pr_number": 68,
-      "branch": "feat/auth-logout",
-      "merged_at": "2026-01-16T16:41:28Z"
+      "merged_at": "2026-01-16T17:10:00Z"
     },
     {
       "issue_number": 10,
-      "title": "Implement auth middleware",
+      "title": "Phase 2: Implement auth middleware",
       "status": "completed",
-      "assigned_to": "agent-3",
+      "assigned_to": "agent-4",
       "pr_number": 67,
-      "branch": "feat/auth-middleware",
-      "merged_at": "2026-01-16T16:29:03Z"
+      "merged_at": "2026-01-16T17:15:00Z"
     },
     {
       "issue_number": 11,
-      "title": "Implement admin user approval flow",
+      "title": "Phase 2: Implement admin user approval flow",
       "status": "completed",
-      "assigned_to": "agent-4",
+      "assigned_to": "agent-5",
       "pr_number": 71,
-      "branch": "feat/admin-approval",
-      "merged_at": "2026-01-16T16:46:58Z"
+      "merged_at": "2026-01-16T17:20:00Z"
     },
     {
       "issue_number": 12,
-      "title": "Implement create post endpoint",
+      "title": "Phase 2: Implement create post endpoint",
       "status": "completed",
-      "assigned_to": "agent-5",
+      "assigned_to": "agent-6",
       "pr_number": 69,
-      "branch": "feat/posts-create",
-      "merged_at": "2026-01-16T16:44:41Z"
+      "merged_at": "2026-01-16T17:25:00Z"
     },
     {
       "issue_number": 13,
-      "title": "Implement get post endpoint",
+      "title": "Phase 2: Implement get post endpoint",
       "status": "completed",
-      "assigned_to": "agent-6",
+      "assigned_to": "agent-7",
       "pr_number": 70,
-      "branch": "feat/posts-get",
-      "merged_at": "2026-01-16T16:55:08Z"
+      "merged_at": "2026-01-16T17:30:00Z"
     },
     {
       "issue_number": 14,
-      "title": "Implement get feed endpoint",
+      "title": "Phase 2: Implement get feed endpoint",
       "status": "completed",
-      "assigned_to": "agent-7",
+      "assigned_to": "agent-8",
       "pr_number": 72,
-      "branch": "feat/feed",
-      "merged_at": "2026-01-16T17:07:25Z"
+      "merged_at": "2026-01-16T17:35:00Z"
     },
     {
       "issue_number": 15,
-      "title": "Implement soft delete post endpoint",
+      "title": "Phase 2: Implement soft delete post endpoint",
       "status": "completed",
-      "assigned_to": "agent-8",
+      "assigned_to": "agent-9",
       "pr_number": 76,
-      "branch": "feat/posts-delete",
-      "merged_at": "2026-01-16T17:23:11Z"
+      "merged_at": "2026-01-16T17:40:00Z"
     },
     {
       "issue_number": 16,
-      "title": "Implement restore post endpoint",
+      "title": "Phase 2: Implement restore post endpoint",
       "status": "completed",
-      "assigned_to": "agent-9",
+      "assigned_to": "agent-10",
       "pr_number": 73,
-      "branch": "feat/posts-restore",
-      "merged_at": "2026-01-16T17:19:41Z"
+      "merged_at": "2026-01-16T17:45:00Z"
     },
     {
       "issue_number": 17,
-      "title": "Implement create comment endpoint",
+      "title": "Phase 2: Implement create comment endpoint",
       "status": "completed",
-      "assigned_to": "agent-10",
+      "assigned_to": "agent-11",
       "pr_number": 74,
-      "branch": "feat/comments-create",
-      "merged_at": "2026-01-16T17:07:25Z"
+      "merged_at": "2026-01-16T17:50:00Z"
     },
     {
       "issue_number": 18,
-      "title": "Implement get thread endpoint",
+      "title": "Phase 2: Implement get thread endpoint",
       "status": "completed",
-      "assigned_to": "agent-11",
+      "assigned_to": "agent-12",
       "pr_number": 75,
-      "branch": "feat/comments-thread",
-      "merged_at": "2026-01-16T17:25:39Z"
+      "merged_at": "2026-01-16T17:55:00Z"
+    },
+    {
+      "issue_number": 50,
+      "title": "Phase 2: Implement auth pages (register, login, logout)",
+      "status": "available",
+      "assigned_to": null,
+      "pr_number": null,
+      "branch": "feat/frontend-auth"
     },
     {
       "issue_number": 51,
       "title": "Phase 2: Implement main layout and navigation",
       "status": "completed",
-      "assigned_to": "agent-12",
+      "assigned_to": "agent-13",
       "pr_number": 77,
-      "branch": "feat/frontend-auth",
-      "merged_at": "2026-01-16T18:07:00Z"
+      "merged_at": "2026-01-16T18:00:00Z"
     },
     {
       "issue_number": 52,
@@ -177,7 +164,15 @@
       "assigned_to": null,
       "pr_number": null,
       "branch": "feat/frontend-feed"
+    },
+    {
+      "issue_number": 53,
+      "title": "Phase 2: Implement create post form",
+      "status": "available",
+      "assigned_to": null,
+      "pr_number": null,
+      "branch": "feat/frontend-post-form"
     }
   ],
-  "notes": "Phase 2 (Backend + Frontend) Complete: Issues #7-18, #49-51 done. Phase 3+ available."
+  "notes": "Phase 1 (Setup + DB) Complete. Phase 2 Backend Complete. Phase 2 Frontend: #50 available, #51 done, #52-53 available."
 }
