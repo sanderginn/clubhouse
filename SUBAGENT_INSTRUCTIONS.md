@@ -6,26 +6,19 @@ This document explains how new Amp sessions should pick up work.
 
 When you start a new Amp session for this project:
 
-1. **Read the work queue:**
+1. **Use the claim script** (atomic, race-condition safe):
    ```bash
-   cat .work-queue.json
+   ./scripts/claim-issue.sh your-agent-name
    ```
+   
+   This script will:
+   - Find the first available issue
+   - Mark it as `in_progress` with your agent name
+   - Commit and push the claim to main
+   - Display the issue details and next steps
+   - Handle race conditions if multiple agents claim simultaneously
 
-2. **Find the next available issue** — look for the first entry with `"status": "available"`
-
-3. **Claim it** — you can do this by:
-   - Creating a comment in this thread saying which issue you're claiming
-   - Or by opening a new thread to work on that specific issue
-
-4. **Update the queue** (if you have write access):
-   ```json
-   {
-     "issue_number": X,
-     "status": "in_progress",
-     "assigned_to": "agent_name",
-     "pr_number": null
-   }
-   ```
+**Important:** Always use this script first. It's atomic and prevents multiple agents from claiming the same issue.
 
 ## Workflow for Each Issue
 
@@ -47,12 +40,10 @@ When you start a new Amp session for this project:
    gh pr create --title "..." --body "..."
    ```
 
-5. **Update work queue when PR is created:**
-   - Set `"status": "pr_created"`
-   - Add `"pr_number": X`
-
-6. **When PR is merged** (by orchestrator):
-   - Update `"status": "completed"`
+5. **After opening PR:**
+   - The orchestrator will review and merge
+   - Once merged, orchestrator updates work queue status to `"completed"`
+   - Next agent can then claim the next issue
 
 ## Dependency Chain
 
@@ -66,9 +57,8 @@ Some issues depend on others. **Do not start** an issue if its dependencies aren
 ## Current Status
 
 Check `.work-queue.json` for real-time issue status:
-- `available` — Ready to claim
-- `in_progress` — Another agent is working on it
-- `pr_created` — PR submitted, awaiting review/merge
+- `available` — Ready to claim (use `./scripts/claim-issue.sh` to claim)
+- `in_progress` — Another agent is actively working on it
 - `completed` — Merged into main
 
 ## Orchestrator (Main Session)
@@ -81,24 +71,48 @@ The orchestrator session will:
 
 ---
 
-**Example: Claiming Issue #7**
+**Example Workflow**
 
-```
-Reading .work-queue.json...
-Found first available: Issue #7 (user registration)
-Creating branch: feat/auth-register
-Implementing registration endpoint...
-Pushing to origin...
-Creating PR #65...
-Updating .work-queue.json to mark as "pr_created"
+**Agent 1 starts:**
+```bash
+./scripts/claim-issue.sh agent-1
+# Output:
+# ✓ Successfully claimed issue #7
+# Issue: Implement user registration endpoint
+# Branch: feat/auth-register
 ```
 
-**Then orchestrator:**
+**Agent 1 implements:**
+```bash
+git checkout -b feat/auth-register
+# ... write code ...
+git commit -m "feat: implement user registration"
+git push -u origin feat/auth-register
+gh pr create --title "feat: implement user registration" --body "Closes #7"
 ```
-Reviews PR #65
-Merges into main
-Updates .work-queue.json to mark as "completed"
-New agents can now claim Issue #8 (login)
+
+**Agent 2 starts (while Agent 1 is working):**
+```bash
+./scripts/claim-issue.sh agent-2
+# Finds issue #51 (frontend auth, can run in parallel)
+# Starts work on that
+```
+
+**Orchestrator:**
+```bash
+# Reviews & merges PR from Agent 1
+gh pr merge 65 --merge
+# Updates work queue
+git add .work-queue.json
+git commit -m "chore: mark issue #7 completed, PR #65"
+git push
+```
+
+**Agent 3 starts (after Agent 1 completes):**
+```bash
+./scripts/claim-issue.sh agent-3
+# Finds issue #8 (user login, depends on #7)
+# Starts work on that
 ```
 
 ---
