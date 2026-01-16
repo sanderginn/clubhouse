@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/sanderginn/clubhouse/internal/db"
+	"github.com/sanderginn/clubhouse/internal/handlers"
 	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/observability"
 )
@@ -50,8 +51,11 @@ func main() {
 		w.Write([]byte(`{"status":"ok"}`))
 	})
 
-	// API routes will be added here
-	// mux.HandleFunc("/api/v1/...", handlers.HandleEndpoint)
+	// Initialize handlers
+	authHandler := handlers.NewAuthHandler(dbConn)
+
+	// API routes
+	mux.HandleFunc("/api/v1/auth/register", authHandler.Register)
 
 	// Apply middleware
 	handler := middleware.ChainMiddleware(mux,
