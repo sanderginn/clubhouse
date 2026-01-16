@@ -142,6 +142,51 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+// Logout handles user logout
+func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		return
+	}
+
+	// Get session_id from cookie
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		if err == http.ErrNoCookie {
+			writeError(w, http.StatusUnauthorized, "NO_SESSION", "No active session found")
+			return
+		}
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Failed to read session cookie")
+		return
+	}
+
+	// Delete session from Redis
+	if err := h.sessionService.DeleteSession(r.Context(), cookie.Value); err != nil {
+		writeError(w, http.StatusInternalServerError, "LOGOUT_FAILED", "Failed to logout")
+		return
+	}
+
+	// Clear session cookie by setting MaxAge to -1
+	cookie = &http.Cookie{
+		Name:     "session_id",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	}
+	http.SetCookie(w, cookie)
+
+	response := models.LogoutResponse{
+		Message: "Logout successful",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
 // writeError is a helper to write error responses
 func writeError(w http.ResponseWriter, statusCode int, code string, message string) {
 	w.Header().Set("Content-Type", "application/json")

@@ -66,6 +66,7 @@ func main() {
 	// API routes
 	mux.HandleFunc("/api/v1/auth/register", authHandler.Register)
 	mux.HandleFunc("/api/v1/auth/login", authHandler.Login)
+	mux.HandleFunc("/api/v1/auth/logout", authHandler.Logout)
 
 	// Apply middleware
 	handler := middleware.ChainMiddleware(mux,

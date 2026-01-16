@@ -205,3 +205,74 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 - The session_id cookie is httpOnly and Secure to prevent XSS attacks
 - A user must be approved (`approved_at != NULL`) to successfully log in
 - Invalid credentials (wrong password or user not found) return the same error message for security
+
+---
+
+## User Logout
+
+### Endpoint
+```
+POST /api/v1/auth/logout
+```
+
+### Description
+Logs out a user by invalidating their session and clearing the session cookie. The user must have an active session to successfully logout.
+
+### Request Body
+No request body is required. The session is identified via the `session_id` cookie.
+
+### Success Response (200 OK)
+```json
+{
+  "message": "Logout successful"
+}
+```
+
+**Cookies Cleared:**
+- `session_id`: Session cookie is cleared (MaxAge set to -1)
+
+### Error Responses
+
+#### 401 Unauthorized
+```json
+{
+  "error": "No active session found",
+  "code": "NO_SESSION"
+}
+```
+
+The user does not have an active session (no session_id cookie present).
+
+#### 405 Method Not Allowed
+```json
+{
+  "error": "Only POST requests are allowed",
+  "code": "METHOD_NOT_ALLOWED"
+}
+```
+
+Request was made with an HTTP method other than POST.
+
+#### 500 Internal Server Error
+```json
+{
+  "error": "Failed to logout",
+  "code": "LOGOUT_FAILED"
+}
+```
+
+An unexpected error occurred while deleting the session.
+
+### Example Usage
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/logout \
+  -H "Cookie: session_id=<session_id_value>"
+```
+
+### Notes
+- The logout endpoint requires an active session cookie to succeed
+- The session is deleted from Redis immediately upon logout
+- The session_id cookie is cleared on the client side (MaxAge: -1)
+- After logout, the user will be unauthenticated and must log in again
+- No request body is needed; authentication is cookie-based
