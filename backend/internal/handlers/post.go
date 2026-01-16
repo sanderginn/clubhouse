@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -119,4 +120,63 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
+}
+
+// GetFeed handles GET /api/v1/sections/{sectionId}/feed
+func (h *PostHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		return
+	}
+
+	// Extract section ID from URL path
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 5 {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Section ID is required")
+		return
+	}
+
+	sectionIDStr := pathParts[4]
+	sectionID, err := uuid.Parse(sectionIDStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_SECTION_ID", "Invalid section ID format")
+		return
+	}
+
+	// Parse query parameters
+	cursor := r.URL.Query().Get("cursor")
+	limitStr := r.URL.Query().Get("limit")
+
+	limit := 20
+	if limitStr != "" {
+		if parsedLimit, err := parseIntParam(limitStr); err == nil && parsedLimit > 0 {
+			limit = parsedLimit
+		}
+	}
+
+	// Clamp limit to reasonable range
+	if limit > 100 {
+		limit = 100
+	}
+
+	// Get feed from service
+	var cursorPtr *string
+	if cursor != "" {
+		cursorPtr = &cursor
+	}
+
+	feed, err := h.postService.GetFeed(r.Context(), sectionID, cursorPtr, limit)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "GET_FEED_FAILED", "Failed to get feed")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(feed)
+}
+
+// parseIntParam parses a string parameter as an integer
+func parseIntParam(s string) (int, error) {
+	return strconv.Atoi(s)
 }

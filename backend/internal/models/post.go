@@ -54,6 +54,13 @@ type GetPostResponse struct {
 	Post *Post `json:"post"`
 }
 
+// FeedResponse represents the paginated feed response
+type FeedResponse struct {
+	Posts      []*Post `json:"posts"`
+	HasMore    bool    `json:"has_more"`
+	NextCursor *string `json:"next_cursor,omitempty"`
+}
+
 // JSONMap is a custom type for storing JSON metadata
 type JSONMap map[string]interface{}
 
