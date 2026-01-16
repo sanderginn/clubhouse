@@ -190,6 +190,97 @@ func (s *PostService) getPostLinks(ctx context.Context, postID uuid.UUID) ([]mod
 	return links, nil
 }
 
+// GetFeed retrieves a paginated feed of posts for a section using cursor-based pagination
+func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *string, limit int) (*models.FeedResponse, error) {
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+
+	// Build base query
+	query := `
+		SELECT 
+			p.id, p.user_id, p.section_id, p.content, 
+			p.created_at, p.updated_at, p.deleted_at, p.deleted_by_user_id,
+			u.id, u.username, u.email, u.profile_picture_url, u.bio, u.is_admin, u.created_at,
+			COALESCE(COUNT(DISTINCT c.id), 0) as comment_count
+		FROM posts p
+		JOIN users u ON p.user_id = u.id
+		LEFT JOIN comments c ON p.id = c.post_id AND c.deleted_at IS NULL
+		WHERE p.section_id = $1 AND p.deleted_at IS NULL
+	`
+
+	args := []interface{}{sectionID}
+	argIndex := 2
+
+	// Apply cursor if provided (cursor is the created_at timestamp from the last post)
+	if cursor != nil && *cursor != "" {
+		query += fmt.Sprintf(" AND p.created_at < $%d", argIndex)
+		args = append(args, *cursor)
+		argIndex++
+	}
+
+	query += fmt.Sprintf(" GROUP BY p.id, u.id ORDER BY p.created_at DESC LIMIT $%d", argIndex)
+	args = append(args, limit+1) // Fetch one extra to determine if hasMore
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []*models.Post
+	for rows.Next() {
+		var post models.Post
+		var user models.User
+
+		err := rows.Scan(
+			&post.ID, &post.UserID, &post.SectionID, &post.Content,
+			&post.CreatedAt, &post.UpdatedAt, &post.DeletedAt, &post.DeletedByUserID,
+			&user.ID, &user.Username, &user.Email, &user.ProfilePictureURL, &user.Bio, &user.IsAdmin, &user.CreatedAt,
+			&post.CommentCount,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		post.User = &user
+
+		// Fetch links for this post
+		links, err := s.getPostLinks(ctx, post.ID)
+		if err != nil {
+			return nil, err
+		}
+		post.Links = links
+
+		posts = append(posts, &post)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Determine if there are more posts
+	hasMore := len(posts) > limit
+	if hasMore {
+		posts = posts[:limit] // Trim to the requested limit
+	}
+
+	// Determine next cursor
+	var nextCursor *string
+	if hasMore && len(posts) > 0 {
+		// Next cursor is the created_at of the last post in the result
+		lastPost := posts[len(posts)-1]
+		cursorStr := lastPost.CreatedAt.Format("2006-01-02T15:04:05.000Z07:00")
+		nextCursor = &cursorStr
+	}
+
+	return &models.FeedResponse{
+		Posts:      posts,
+		HasMore:    hasMore,
+		NextCursor: nextCursor,
+	}, nil
+}
+
 // validateCreatePostInput validates post creation input
 func validateCreatePostInput(req *models.CreatePostRequest) error {
 	if strings.TrimSpace(req.SectionID) == "" {
