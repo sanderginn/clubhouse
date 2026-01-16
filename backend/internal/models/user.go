@@ -61,3 +61,25 @@ type ErrorResponse struct {
 	Error string `json:"error"`
 	Code  string `json:"code"`
 }
+
+// PendingUser represents a user pending admin approval
+type PendingUser struct {
+	ID        uuid.UUID `json:"id"`
+	Username  string    `json:"username"`
+	Email     string    `json:"email"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// ApproveUserResponse represents the response from approving a user
+type ApproveUserResponse struct {
+	ID       uuid.UUID `json:"id"`
+	Username string    `json:"username"`
+	Email    string    `json:"email"`
+	Message  string    `json:"message"`
+}
+
+// RejectUserResponse represents the response from rejecting a user
+type RejectUserResponse struct {
+	ID      uuid.UUID `json:"id"`
+	Message string    `json:"message"`
+}

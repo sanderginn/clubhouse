@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -63,6 +64,7 @@ func main() {
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(dbConn, redisConn)
 	postHandler := handlers.NewPostHandler(dbConn)
+	adminHandler := handlers.NewAdminHandler(dbConn)
 
 	// API routes
 	mux.HandleFunc("/api/v1/auth/register", authHandler.Register)
@@ -74,6 +76,16 @@ func main() {
 		http.HandlerFunc(postHandler.CreatePost),
 	)
 	mux.Handle("/api/v1/posts", postCreateHandler)
+
+	// Admin routes (protected by RequireAdmin middleware)
+	mux.Handle("/api/v1/admin/users", middleware.RequireAdmin(redisConn)(http.HandlerFunc(adminHandler.ListPendingUsers)))
+	mux.Handle("/api/v1/admin/users/", middleware.RequireAdmin(redisConn)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/approve") {
+			adminHandler.ApproveUser(w, r)
+		} else {
+			adminHandler.RejectUser(w, r)
+		}
+	})))
 
 	// Apply middleware
 	handler := middleware.ChainMiddleware(mux,

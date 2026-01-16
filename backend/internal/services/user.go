@@ -234,3 +234,139 @@ func isStrongPassword(password string) bool {
 
 	return hasUpper && hasLower && hasDigit
 }
+
+// GetPendingUsers retrieves all users pending admin approval
+func (s *UserService) GetPendingUsers(ctx context.Context) ([]*models.PendingUser, error) {
+	query := `
+		SELECT id, username, email, created_at
+		FROM users
+		WHERE approved_at IS NULL AND deleted_at IS NULL
+		ORDER BY created_at ASC
+	`
+
+	rows, err := s.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get pending users: %w", err)
+	}
+	defer rows.Close()
+
+	var pendingUsers []*models.PendingUser
+	for rows.Next() {
+		var user models.PendingUser
+		if err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.CreatedAt); err != nil {
+			return nil, fmt.Errorf("failed to scan pending user: %w", err)
+		}
+		pendingUsers = append(pendingUsers, &user)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating pending users: %w", err)
+	}
+
+	return pendingUsers, nil
+}
+
+// ApproveUser marks a user as approved by setting approved_at timestamp
+func (s *UserService) ApproveUser(ctx context.Context, userID uuid.UUID) (*models.ApproveUserResponse, error) {
+	// Get the user first to verify they exist and are pending
+	query := `
+		SELECT id, username, email, approved_at, deleted_at
+		FROM users
+		WHERE id = $1
+	`
+
+	var user models.User
+	err := s.db.QueryRowContext(ctx, query, userID).
+		Scan(&user.ID, &user.Username, &user.Email, &user.ApprovedAt, &user.DeletedAt)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	// Check if user is already approved
+	if user.ApprovedAt != nil {
+		return nil, fmt.Errorf("user already approved")
+	}
+
+	// Check if user is deleted
+	if user.DeletedAt != nil {
+		return nil, fmt.Errorf("user has been deleted")
+	}
+
+	// Update approved_at timestamp
+	updateQuery := `
+		UPDATE users
+		SET approved_at = now(), updated_at = now()
+		WHERE id = $1
+		RETURNING id, username, email
+	`
+
+	var approvedUser models.User
+	err = s.db.QueryRowContext(ctx, updateQuery, userID).
+		Scan(&approvedUser.ID, &approvedUser.Username, &approvedUser.Email)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to approve user: %w", err)
+	}
+
+	return &models.ApproveUserResponse{
+		ID:       approvedUser.ID,
+		Username: approvedUser.Username,
+		Email:    approvedUser.Email,
+		Message:  "User approved successfully",
+	}, nil
+}
+
+// RejectUser hard-deletes a pending user (must not be approved yet)
+func (s *UserService) RejectUser(ctx context.Context, userID uuid.UUID) (*models.RejectUserResponse, error) {
+	// Get the user first to verify they exist and are pending
+	query := `
+		SELECT id, approved_at, deleted_at
+		FROM users
+		WHERE id = $1
+	`
+
+	var user models.User
+	err := s.db.QueryRowContext(ctx, query, userID).
+		Scan(&user.ID, &user.ApprovedAt, &user.DeletedAt)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	// Check if user is already approved
+	if user.ApprovedAt != nil {
+		return nil, fmt.Errorf("cannot reject approved user")
+	}
+
+	// Hard delete the user
+	deleteQuery := `
+		DELETE FROM users
+		WHERE id = $1
+	`
+
+	result, err := s.db.ExecContext(ctx, deleteQuery, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to reject user: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get affected rows: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return nil, fmt.Errorf("user not found")
+	}
+
+	return &models.RejectUserResponse{
+		ID:      userID,
+		Message: "User rejected and deleted successfully",
+	}, nil
+}
