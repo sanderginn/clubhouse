@@ -48,10 +48,11 @@
     {
       "issue_number": 7,
       "title": "Implement user registration endpoint",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1",
       "pr_number": null,
-      "branch": "feat/auth-register"
+      "branch": "feat/auth-register",
+      "merged_at": "2026-01-16T17:00:00Z"
     },
     {
       "issue_number": 8,
