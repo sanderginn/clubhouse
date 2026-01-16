@@ -102,37 +102,52 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 	return &post, nil
 }
 
-// GetPostByID retrieves a post by ID
+// GetPostByID retrieves a post by ID with all related data
 func (s *PostService) GetPostByID(ctx context.Context, postID uuid.UUID) (*models.Post, error) {
 	query := `
-		SELECT id, user_id, section_id, content, created_at, updated_at, deleted_at
-		FROM posts
-		WHERE id = $1 AND deleted_at IS NULL
+		SELECT 
+			p.id, p.user_id, p.section_id, p.content, 
+			p.created_at, p.updated_at, p.deleted_at, p.deleted_by_user_id,
+			u.id, u.username, u.email, u.profile_picture_url, u.bio, u.is_admin, u.created_at,
+			COALESCE(COUNT(DISTINCT c.id), 0) as comment_count
+		FROM posts p
+		JOIN users u ON p.user_id = u.id
+		LEFT JOIN comments c ON p.id = c.post_id AND c.deleted_at IS NULL
+		WHERE p.id = $1 AND p.deleted_at IS NULL
+		GROUP BY p.id, u.id
 	`
 
 	var post models.Post
-	err := s.db.QueryRowContext(ctx, query, postID).
-		Scan(&post.ID, &post.UserID, &post.SectionID, &post.Content, &post.CreatedAt, &post.UpdatedAt, &post.DeletedAt)
+	var user models.User
+
+	err := s.db.QueryRowContext(ctx, query, postID).Scan(
+		&post.ID, &post.UserID, &post.SectionID, &post.Content,
+		&post.CreatedAt, &post.UpdatedAt, &post.DeletedAt, &post.DeletedByUserID,
+		&user.ID, &user.Username, &user.Email, &user.ProfilePictureURL, &user.Bio, &user.IsAdmin, &user.CreatedAt,
+		&post.CommentCount,
+	)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("post not found")
+			return nil, errors.New("post not found")
 		}
-		return nil, fmt.Errorf("failed to get post: %w", err)
+		return nil, err
 	}
 
+	post.User = &user
+
 	// Fetch links for this post
-	links, err := s.getLinksForPost(ctx, postID)
+	links, err := s.getPostLinks(ctx, postID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get links: %w", err)
+		return nil, err
 	}
 	post.Links = links
 
 	return &post, nil
 }
 
-// getLinksForPost retrieves all links for a post
-func (s *PostService) getLinksForPost(ctx context.Context, postID uuid.UUID) ([]models.Link, error) {
+// getPostLinks retrieves all links for a post
+func (s *PostService) getPostLinks(ctx context.Context, postID uuid.UUID) ([]models.Link, error) {
 	query := `
 		SELECT id, url, metadata, created_at
 		FROM links
@@ -149,16 +164,17 @@ func (s *PostService) getLinksForPost(ctx context.Context, postID uuid.UUID) ([]
 	var links []models.Link
 	for rows.Next() {
 		var link models.Link
-		var metadata sql.NullString
+		var metadataJSON sql.NullString
 
-		err := rows.Scan(&link.ID, &link.URL, &metadata, &link.CreatedAt)
+		err := rows.Scan(&link.ID, &link.URL, &metadataJSON, &link.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
 
-		if metadata.Valid && metadata.String != "" {
-			link.Metadata = make(map[string]interface{})
-			if err := json.Unmarshal([]byte(metadata.String), &link.Metadata); err != nil {
+		// Parse metadata if present
+		if metadataJSON.Valid {
+			err := json.Unmarshal([]byte(metadataJSON.String), &link.Metadata)
+			if err != nil {
 				// If metadata is invalid JSON, just skip it
 				link.Metadata = nil
 			}
@@ -167,7 +183,7 @@ func (s *PostService) getLinksForPost(ctx context.Context, postID uuid.UUID) ([]
 		links = append(links, link)
 	}
 
-	if err := rows.Err(); err != nil {
+	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 

@@ -68,6 +68,7 @@ func main() {
 	mux.HandleFunc("/api/v1/auth/register", authHandler.Register)
 	mux.HandleFunc("/api/v1/auth/login", authHandler.Login)
 	mux.HandleFunc("/api/v1/auth/logout", authHandler.Logout)
+	mux.HandleFunc("/api/v1/posts/", postHandler.GetPost)
 
 	// Protected post routes
 	postCreateHandler := middleware.RequireAuth(redisConn)(
