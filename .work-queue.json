@@ -66,10 +66,11 @@
     {
       "issue_number": 9,
       "title": "Implement user logout endpoint",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-2",
-      "pr_number": null,
-      "branch": "feat/auth-logout"
+      "pr_number": 68,
+      "branch": "feat/auth-logout",
+      "merged_at": "2026-01-16T16:41:28Z"
     },
     {
       "issue_number": 10,
