@@ -74,10 +74,11 @@
     {
       "issue_number": 10,
       "title": "Implement auth middleware",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-3",
-      "pr_number": null,
-      "branch": "feat/auth-middleware"
+      "pr_number": 67,
+      "branch": "feat/auth-middleware",
+      "merged_at": "2026-01-16T16:29:03Z"
     },
     {
       "issue_number": 11,
