@@ -1,0 +1,29 @@
+server:
+  http_listen_port: 3200
+  log_level: info
+
+distributor:
+  rate_limit_enabled: true
+  rate_limit: 10000
+
+ingester:
+  max_block_duration: 5m
+
+compactor:
+  compaction:
+    compacted_block_retention: 10m
+
+storage:
+  trace:
+    backend: local
+    wal:
+      path: /var/tempo/wal
+    local:
+      path: /var/tempo/blocks
+
+querier:
+  max_concurrent_queries: 20
+
+metrics_generator:
+  storage:
+    path: /var/tempo/generator/metrics
