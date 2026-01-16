@@ -62,11 +62,18 @@ func main() {
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(dbConn, redisConn)
+	postHandler := handlers.NewPostHandler(dbConn)
 
 	// API routes
 	mux.HandleFunc("/api/v1/auth/register", authHandler.Register)
 	mux.HandleFunc("/api/v1/auth/login", authHandler.Login)
 	mux.HandleFunc("/api/v1/auth/logout", authHandler.Logout)
+
+	// Protected post routes
+	postCreateHandler := middleware.RequireAuth(redisConn)(
+		http.HandlerFunc(postHandler.CreatePost),
+	)
+	mux.Handle("/api/v1/posts", postCreateHandler)
 
 	// Apply middleware
 	handler := middleware.ChainMiddleware(mux,
