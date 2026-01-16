@@ -1,0 +1,101 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/sanderginn/clubhouse/internal/db"
+	"github.com/sanderginn/clubhouse/internal/middleware"
+	"github.com/sanderginn/clubhouse/internal/observability"
+)
+
+func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Initialize observability
+	otelShutdown, err := observability.Init(ctx)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to initialize observability: %v\n", err)
+		os.Exit(1)
+	}
+	defer func() {
+		ctxShutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := otelShutdown(ctxShutdown); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to shutdown observability: %v\n", err)
+		}
+	}()
+
+	// Initialize database
+	dbConn, err := db.Init(ctx)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to initialize database: %v\n", err)
+		os.Exit(1)
+	}
+	defer dbConn.Close()
+
+	// Initialize HTTP server
+	mux := http.NewServeMux()
+
+	// Health check endpoint
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"ok"}`))
+	})
+
+	// API routes will be added here
+	// mux.HandleFunc("/api/v1/...", handlers.HandleEndpoint)
+
+	// Apply middleware
+	handler := middleware.ChainMiddleware(mux,
+		middleware.RequestID,
+		middleware.Observability,
+	)
+
+	// HTTP server config
+	port := os.Getenv("HTTP_PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	server := &http.Server{
+		Addr:         ":" + port,
+		Handler:      handler,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	// Start server in goroutine
+	go func() {
+		fmt.Printf("Starting HTTP server on %s\n", server.Addr)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			fmt.Fprintf(os.Stderr, "server error: %v\n", err)
+			os.Exit(1)
+		}
+	}()
+
+	// Wait for interrupt signal
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	<-sigChan
+
+	// Graceful shutdown
+	fmt.Println("Shutting down server...")
+	ctxShutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctxShutdown); err != nil {
+		fmt.Fprintf(os.Stderr, "server shutdown error: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("Server stopped")
+}

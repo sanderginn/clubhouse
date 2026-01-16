@@ -1,0 +1,28 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.so.*
+*.dylib
+clubhouse-server
+
+# Test binary
+*.test
+
+# Output of coverage
+*.out
+
+# Go workspace
+go.work
+
+# Environment variables
+.env
+.env.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
