@@ -13,10 +13,8 @@ function createUIStore() {
 
   return {
     subscribe,
-    toggleSidebar: () =>
-      update((state) => ({ ...state, sidebarOpen: !state.sidebarOpen })),
-    setSidebarOpen: (open: boolean) =>
-      update((state) => ({ ...state, sidebarOpen: open })),
+    toggleSidebar: () => update((state) => ({ ...state, sidebarOpen: !state.sidebarOpen })),
+    setSidebarOpen: (open: boolean) => update((state) => ({ ...state, sidebarOpen: open })),
     setIsMobile: (isMobile: boolean) =>
       update((state) => ({
         ...state,

@@ -7,14 +7,7 @@ export interface Section {
   icon: string;
 }
 
-export type SectionType =
-  | 'music'
-  | 'photo'
-  | 'event'
-  | 'recipe'
-  | 'book'
-  | 'movie'
-  | 'general';
+export type SectionType = 'music' | 'photo' | 'event' | 'recipe' | 'book' | 'movie' | 'general';
 
 const sectionIcons: Record<SectionType, string> = {
   music: '🎵',
@@ -62,19 +55,12 @@ function createSectionStore() {
       })),
     setActiveSection: (section: Section | null) =>
       update((state) => ({ ...state, activeSection: section })),
-    setLoading: (isLoading: boolean) =>
-      update((state) => ({ ...state, isLoading })),
+    setLoading: (isLoading: boolean) => update((state) => ({ ...state, isLoading })),
   };
 }
 
 export const sectionStore = createSectionStore();
 
-export const sections = derived(
-  sectionStore,
-  ($sectionStore) => $sectionStore.sections
-);
+export const sections = derived(sectionStore, ($sectionStore) => $sectionStore.sections);
 
-export const activeSection = derived(
-  sectionStore,
-  ($sectionStore) => $sectionStore.activeSection
-);
+export const activeSection = derived(sectionStore, ($sectionStore) => $sectionStore.activeSection);
