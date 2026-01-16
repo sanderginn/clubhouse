@@ -84,10 +84,11 @@
     {
       "issue_number": 11,
       "title": "Implement admin user approval flow",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-4",
-      "pr_number": null,
-      "branch": "feat/admin-approval"
+      "pr_number": 71,
+      "branch": "feat/admin-approval",
+      "merged_at": "2026-01-16T16:46:58Z"
     },
     {
       "issue_number": 12,
