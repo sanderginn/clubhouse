@@ -10,35 +10,40 @@
       "title": "Setup pre-commit hooks",
       "status": "completed",
       "assigned_to": "orchestrator",
-      "pr_number": 62
+      "pr_number": 62,
+      "merged_at": "2026-01-16T16:45:00Z"
     },
     {
       "issue_number": 4,
       "title": "Create database migrations (users, sections, posts)",
       "status": "completed",
       "assigned_to": "orchestrator",
-      "pr_number": 63
+      "pr_number": 63,
+      "merged_at": "2026-01-16T16:45:00Z"
     },
     {
       "issue_number": 5,
       "title": "Create database migrations (comments, reactions, links)",
       "status": "completed",
       "assigned_to": "orchestrator",
-      "pr_number": 63
+      "pr_number": 63,
+      "merged_at": "2026-01-16T16:45:00Z"
     },
     {
       "issue_number": 6,
       "title": "Create database migrations (mentions, notifications, audit logs)",
       "status": "completed",
       "assigned_to": "orchestrator",
-      "pr_number": 63
+      "pr_number": 63,
+      "merged_at": "2026-01-16T16:45:00Z"
     },
     {
       "issue_number": 50,
       "title": "Initialize Svelte project",
       "status": "completed",
       "assigned_to": "orchestrator",
-      "pr_number": 64
+      "pr_number": 64,
+      "merged_at": "2026-01-16T16:45:00Z"
     },
     {
       "issue_number": 7,
