@@ -156,10 +156,11 @@
     {
       "issue_number": 51,
       "title": "Implement auth pages (register, login, logout)",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-12",
-      "pr_number": null,
-      "branch": "feat/frontend-auth"
+      "pr_number": 77,
+      "branch": "feat/frontend-auth",
+      "merged_at": "2026-01-16T17:36:08Z"
     }
   ],
   "notes": "Auth endpoints (7-11) are sequential. Posts endpoints (12-16) depend on auth. Comments (17-18) depend on posts. Frontend auth (51) can work in parallel."
