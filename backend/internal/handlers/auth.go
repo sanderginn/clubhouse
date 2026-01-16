@@ -142,6 +142,52 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+// GetMe returns the current authenticated user
+func (h *AuthHandler) GetMe(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		return
+	}
+
+	// Get session_id from cookie
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		if err == http.ErrNoCookie {
+			writeError(w, http.StatusUnauthorized, "NO_SESSION", "No active session found")
+			return
+		}
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Failed to read session cookie")
+		return
+	}
+
+	// Get session from Redis
+	session, err := h.sessionService.GetSession(r.Context(), cookie.Value)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "INVALID_SESSION", "Session not found or expired")
+		return
+	}
+
+	// Get user from database
+	user, err := h.userService.GetUserByID(r.Context(), session.UserID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "USER_NOT_FOUND", "Failed to retrieve user")
+		return
+	}
+
+	response := models.MeResponse{
+		ID:                user.ID,
+		Username:          user.Username,
+		Email:             user.Email,
+		ProfilePictureUrl: user.ProfilePictureURL,
+		Bio:               user.Bio,
+		IsAdmin:           user.IsAdmin,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
 // Logout handles user logout
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {

@@ -71,6 +71,7 @@ func main() {
 	mux.HandleFunc("/api/v1/auth/register", authHandler.Register)
 	mux.HandleFunc("/api/v1/auth/login", authHandler.Login)
 	mux.HandleFunc("/api/v1/auth/logout", authHandler.Logout)
+	mux.HandleFunc("/api/v1/auth/me", authHandler.GetMe)
 	mux.HandleFunc("/api/v1/sections/", postHandler.GetFeed)
 	mux.HandleFunc("/api/v1/comments/", commentHandler.GetComment)
 

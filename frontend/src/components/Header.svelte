@@ -1,8 +1,12 @@
 <script lang="ts">
-  import { uiStore, currentUser, isAuthenticated } from '../stores';
+  import { uiStore, currentUser, isAuthenticated, authStore } from '../stores';
 
   function toggleSidebar() {
     uiStore.toggleSidebar();
+  }
+
+  async function handleLogout() {
+    await authStore.logout();
   }
 </script>
 
@@ -49,15 +53,21 @@
               {$currentUser.username.charAt(0).toUpperCase()}
             </div>
           {/if}
+          <button
+            on:click={handleLogout}
+            class="text-sm font-medium text-gray-600 hover:text-gray-900 ml-2"
+            title="Logout"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              />
+            </svg>
+          </button>
         </div>
-      {:else}
-        <a href="/login" class="text-sm font-medium text-gray-700 hover:text-primary"> Log in </a>
-        <a
-          href="/register"
-          class="text-sm font-medium text-white bg-primary hover:bg-secondary px-4 py-2 rounded-lg transition-colors"
-        >
-          Register
-        </a>
       {/if}
     </div>
   </div>
