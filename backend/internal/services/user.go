@@ -70,6 +70,29 @@ func (s *UserService) RegisterUser(ctx context.Context, req *models.RegisterRequ
 	return &user, nil
 }
 
+// GetUserByID retrieves a user by ID
+func (s *UserService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
+	query := `
+		SELECT id, username, email, password_hash, profile_picture_url, bio, is_admin, approved_at, created_at, updated_at, deleted_at
+		FROM users
+		WHERE id = $1 AND deleted_at IS NULL
+	`
+
+	var user models.User
+	err := s.db.QueryRowContext(ctx, query, id).
+		Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.ProfilePictureURL,
+			&user.Bio, &user.IsAdmin, &user.ApprovedAt, &user.CreatedAt, &user.UpdatedAt, &user.DeletedAt)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	return &user, nil
+}
+
 // GetUserByUsername retrieves a user by username
 func (s *UserService) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
 	query := `
