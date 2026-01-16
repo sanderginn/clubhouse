@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/models"
@@ -279,6 +280,124 @@ func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *
 		HasMore:    hasMore,
 		NextCursor: nextCursor,
 	}, nil
+}
+
+// DeletePost soft-deletes a post (only post owner or admin can delete)
+func (s *PostService) DeletePost(ctx context.Context, postID uuid.UUID, userID uuid.UUID, isAdmin bool) (*models.Post, error) {
+	// Fetch the post to verify ownership
+	post, err := s.GetPostByID(ctx, postID)
+	if err != nil {
+		if err.Error() == "post not found" {
+			return nil, errors.New("post not found")
+		}
+		return nil, err
+	}
+
+	// Check authorization: owner or admin can delete
+	if post.UserID != userID && !isAdmin {
+		return nil, errors.New("unauthorized to delete this post")
+	}
+
+	// Soft delete the post
+	query := `
+		UPDATE posts
+		SET deleted_at = now(), deleted_by_user_id = $1
+		WHERE id = $2
+		RETURNING id, user_id, section_id, content, created_at, updated_at, deleted_at, deleted_by_user_id
+	`
+
+	var updatedPost models.Post
+	err = s.db.QueryRowContext(ctx, query, userID, postID).Scan(
+		&updatedPost.ID, &updatedPost.UserID, &updatedPost.SectionID, &updatedPost.Content,
+		&updatedPost.CreatedAt, &updatedPost.UpdatedAt, &updatedPost.DeletedAt, &updatedPost.DeletedByUserID,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete post: %w", err)
+	}
+
+	// Copy over the user and links from the original post
+	updatedPost.User = post.User
+	updatedPost.Links = post.Links
+
+	return &updatedPost, nil
+}
+
+// RestorePost restores a soft-deleted post
+// Only the post owner (within 7 days) or an admin can restore
+func (s *PostService) RestorePost(ctx context.Context, postID uuid.UUID, userID uuid.UUID, isAdmin bool) (*models.Post, error) {
+	// First, fetch the deleted post
+	query := `
+		SELECT 
+			p.id, p.user_id, p.section_id, p.content, 
+			p.created_at, p.updated_at, p.deleted_at, p.deleted_by_user_id,
+			u.id, u.username, u.email, u.profile_picture_url, u.bio, u.is_admin, u.created_at,
+			COALESCE(COUNT(DISTINCT c.id), 0) as comment_count
+		FROM posts p
+		JOIN users u ON p.user_id = u.id
+		LEFT JOIN comments c ON p.id = c.post_id AND c.deleted_at IS NULL
+		WHERE p.id = $1 AND p.deleted_at IS NOT NULL
+		GROUP BY p.id, u.id
+	`
+
+	var post models.Post
+	var user models.User
+
+	err := s.db.QueryRowContext(ctx, query, postID).Scan(
+		&post.ID, &post.UserID, &post.SectionID, &post.Content,
+		&post.CreatedAt, &post.UpdatedAt, &post.DeletedAt, &post.DeletedByUserID,
+		&user.ID, &user.Username, &user.Email, &user.ProfilePictureURL, &user.Bio, &user.IsAdmin, &user.CreatedAt,
+		&post.CommentCount,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("post not found")
+		}
+		return nil, err
+	}
+
+	// Check permissions
+	// Only owner (within 7 days) or admin can restore
+	if !isAdmin && post.UserID != userID {
+		return nil, errors.New("unauthorized")
+	}
+
+	if !isAdmin && post.DeletedAt != nil {
+		// Check if within 7 days
+		sevenDaysAgo := time.Now().AddDate(0, 0, -7)
+		if post.DeletedAt.Before(sevenDaysAgo) {
+			return nil, errors.New("post permanently deleted")
+		}
+	}
+
+	// Restore the post (clear deleted_at and deleted_by_user_id)
+	updateQuery := `
+		UPDATE posts
+		SET deleted_at = NULL, deleted_by_user_id = NULL
+		WHERE id = $1
+		RETURNING id, user_id, section_id, content, created_at, updated_at, deleted_at, deleted_by_user_id
+	`
+
+	err = s.db.QueryRowContext(ctx, updateQuery, postID).Scan(
+		&post.ID, &post.UserID, &post.SectionID, &post.Content,
+		&post.CreatedAt, &post.UpdatedAt, &post.DeletedAt, &post.DeletedByUserID,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to restore post: %w", err)
+	}
+
+	post.User = &user
+
+	// Fetch links for this post
+	links, err := s.getPostLinks(ctx, postID)
+	if err != nil {
+		return nil, err
+	}
+	post.Links = links
+
+	return &post, nil
 }
 
 // validateCreatePostInput validates post creation input

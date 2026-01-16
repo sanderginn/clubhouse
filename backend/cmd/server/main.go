@@ -72,16 +72,25 @@ func main() {
 	mux.HandleFunc("/api/v1/auth/login", authHandler.Login)
 	mux.HandleFunc("/api/v1/auth/logout", authHandler.Logout)
 	mux.HandleFunc("/api/v1/sections/", postHandler.GetFeed)
-	mux.HandleFunc("/api/v1/posts/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/v1/comments/", commentHandler.GetComment)
+
+	// Post routes - route to appropriate handler
+	postRouteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Check if this is a thread comments request (GET /api/v1/posts/{id}/comments)
 		if r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/comments") {
 			commentHandler.GetThread(w, r)
-		} else {
+		} else if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/restore") {
+			// Check if this is a restore request (POST /api/v1/posts/{id}/restore)
+			// Apply auth middleware and call RestorePost
+			authHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(postHandler.RestorePost))
+			authHandler.ServeHTTP(w, r)
+		} else if r.Method == http.MethodGet {
 			postHandler.GetPost(w, r)
 		}
 	})
-	mux.HandleFunc("/api/v1/comments/", commentHandler.GetComment)
+	mux.Handle("/api/v1/posts/", postRouteHandler)
 
-	// Protected post routes
+	// Protected post create route
 	postCreateHandler := middleware.RequireAuth(redisConn)(
 		http.HandlerFunc(postHandler.CreatePost),
 	)

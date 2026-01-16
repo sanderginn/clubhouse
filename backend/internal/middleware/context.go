@@ -55,3 +55,12 @@ func GetUsernameFromContext(ctx context.Context) (string, error) {
 	}
 	return session.Username, nil
 }
+
+// GetIsAdminFromContext extracts the admin flag from the request context
+func GetIsAdminFromContext(ctx context.Context) (bool, error) {
+	session, err := GetUserFromContext(ctx)
+	if err != nil {
+		return false, err
+	}
+	return session.IsAdmin, nil
+}

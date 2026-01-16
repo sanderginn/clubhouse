@@ -176,7 +176,128 @@ func (h *PostHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(feed)
 }
 
+// DeletePost handles DELETE /api/v1/posts/{id}
+func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only DELETE requests are allowed")
+		return
+	}
+
+	// Get user from context (set by auth middleware)
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
+		return
+	}
+
+	// Get isAdmin flag from context
+	isAdmin, err := middleware.GetIsAdminFromContext(r.Context())
+	if err != nil {
+		// If admin flag is not set, default to false
+		isAdmin = false
+	}
+
+	// Extract post ID from URL path
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 5 {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Post ID is required")
+		return
+	}
+
+	postIDStr := pathParts[4]
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
+		return
+	}
+
+	// Delete post
+	post, err := h.postService.DeletePost(r.Context(), postID, userID, isAdmin)
+	if err != nil {
+		// Determine appropriate error code and status
+		switch err.Error() {
+		case "post not found":
+			writeError(w, http.StatusNotFound, "POST_NOT_FOUND", "Post not found")
+		case "unauthorized to delete this post":
+			writeError(w, http.StatusForbidden, "UNAUTHORIZED", "You can only delete your own posts")
+		default:
+			writeError(w, http.StatusInternalServerError, "POST_DELETION_FAILED", "Failed to delete post")
+		}
+		return
+	}
+
+	response := models.DeletePostResponse{
+		Post:    post,
+		Message: "Post deleted successfully",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
 // parseIntParam parses a string parameter as an integer
 func parseIntParam(s string) (int, error) {
 	return strconv.Atoi(s)
+}
+
+// RestorePost handles POST /api/v1/posts/{id}/restore
+func (h *PostHandler) RestorePost(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		return
+	}
+
+	// Get user from context (set by auth middleware)
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
+		return
+	}
+
+	// Get user session to check if admin
+	session, err := middleware.GetUserFromContext(r.Context())
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user session")
+		return
+	}
+
+	// Extract post ID from URL path
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 5 {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Post ID is required")
+		return
+	}
+
+	postIDStr := pathParts[4]
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
+		return
+	}
+
+	// Restore post
+	post, err := h.postService.RestorePost(r.Context(), postID, userID, session.IsAdmin)
+	if err != nil {
+		// Determine appropriate error code and status
+		switch err.Error() {
+		case "post not found":
+			writeError(w, http.StatusNotFound, "POST_NOT_FOUND", "Post not found")
+		case "unauthorized":
+			writeError(w, http.StatusForbidden, "FORBIDDEN", "You do not have permission to restore this post")
+		case "post permanently deleted":
+			writeError(w, http.StatusGone, "POST_PERMANENTLY_DELETED", "Post was permanently deleted more than 7 days ago")
+		default:
+			writeError(w, http.StatusInternalServerError, "RESTORE_FAILED", "Failed to restore post")
+		}
+		return
+	}
+
+	response := models.RestorePostResponse{
+		Post: *post,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 }
