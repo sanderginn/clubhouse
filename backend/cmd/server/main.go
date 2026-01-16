@@ -76,8 +76,11 @@ func main() {
 
 	// Post routes - route to appropriate handler
 	postRouteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Check if this is a restore request (POST /api/v1/posts/{id}/restore)
-		if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/restore") {
+		// Check if this is a thread comments request (GET /api/v1/posts/{id}/comments)
+		if r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/comments") {
+			commentHandler.GetThread(w, r)
+		} else if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/restore") {
+			// Check if this is a restore request (POST /api/v1/posts/{id}/restore)
 			// Apply auth middleware and call RestorePost
 			authHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(postHandler.RestorePost))
 			authHandler.ServeHTTP(w, r)

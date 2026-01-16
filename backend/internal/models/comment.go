@@ -19,6 +19,7 @@ type Comment struct {
 	DeletedAt         *time.Time `json:"deleted_at,omitempty"`
 	DeletedByUserID   *uuid.UUID `json:"deleted_by_user_id,omitempty"`
 	User              *User      `json:"user,omitempty"`
+	Replies           []Comment  `json:"replies,omitempty"`
 }
 
 // CreateCommentRequest represents the request body for creating a comment
@@ -37,4 +38,16 @@ type CreateCommentResponse struct {
 // GetCommentResponse represents the response for getting a single comment
 type GetCommentResponse struct {
 	Comment *Comment `json:"comment"`
+}
+
+// PageMeta represents pagination metadata
+type PageMeta struct {
+	Cursor  *string `json:"cursor,omitempty"`
+	HasMore bool    `json:"has_more"`
+}
+
+// GetThreadResponse represents the response for getting comments on a post
+type GetThreadResponse struct {
+	Comments []Comment `json:"comments"`
+	Meta     PageMeta  `json:"meta"`
 }
