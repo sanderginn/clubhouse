@@ -92,10 +92,11 @@
     {
       "issue_number": 12,
       "title": "Implement create post endpoint",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-5",
-      "pr_number": null,
-      "branch": "feat/posts-create"
+      "pr_number": 69,
+      "branch": "feat/posts-create",
+      "merged_at": "2026-01-16T16:44:41Z"
     },
     {
       "issue_number": 13,
