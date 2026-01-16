@@ -38,12 +38,20 @@
       "merged_at": "2026-01-16T16:45:00Z"
     },
     {
-      "issue_number": 50,
-      "title": "Initialize Svelte project",
+      "issue_number": 49,
+      "title": "Phase 1: Initialize Svelte project",
       "status": "completed",
       "assigned_to": "orchestrator",
       "pr_number": 64,
       "merged_at": "2026-01-16T16:45:00Z"
+    },
+    {
+      "issue_number": 50,
+      "title": "Phase 2: Implement auth pages (register, login, logout)",
+      "status": "completed",
+      "assigned_to": "agent-1",
+      "pr_number": null,
+      "merged_at": "2026-01-16T18:00:00Z"
     },
     {
       "issue_number": 7,
@@ -155,13 +163,21 @@
     },
     {
       "issue_number": 51,
-      "title": "Implement auth pages (register, login, logout)",
+      "title": "Phase 2: Implement main layout and navigation",
       "status": "completed",
       "assigned_to": "agent-12",
       "pr_number": 77,
       "branch": "feat/frontend-auth",
-      "merged_at": "2026-01-16T17:36:08Z"
+      "merged_at": "2026-01-16T18:07:00Z"
+    },
+    {
+      "issue_number": 52,
+      "title": "Phase 2: Implement feed view",
+      "status": "available",
+      "assigned_to": null,
+      "pr_number": null,
+      "branch": "feat/frontend-feed"
     }
   ],
-  "notes": "Auth endpoints (7-11) are sequential. Posts endpoints (12-16) depend on auth. Comments (17-18) depend on posts. Frontend auth (51) can work in parallel."
+  "notes": "Phase 2 (Backend + Frontend) Complete: Issues #7-18, #49-51 done. Phase 3+ available."
 }
