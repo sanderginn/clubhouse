@@ -8,17 +8,17 @@ import (
 
 // User represents a user in the system
 type User struct {
-	ID                 uuid.UUID  `json:"id"`
-	Username           string     `json:"username"`
-	Email              string     `json:"email"`
-	PasswordHash       string     `json:"-"` // Never expose
-	ProfilePictureURL  *string    `json:"profile_picture_url,omitempty"`
-	Bio                *string    `json:"bio,omitempty"`
-	IsAdmin            bool       `json:"is_admin"`
-	ApprovedAt         *time.Time `json:"approved_at,omitempty"`
-	CreatedAt          time.Time  `json:"created_at"`
-	UpdatedAt          *time.Time `json:"updated_at,omitempty"`
-	DeletedAt          *time.Time `json:"deleted_at,omitempty"`
+	ID                uuid.UUID  `json:"id"`
+	Username          string     `json:"username"`
+	Email             string     `json:"email"`
+	PasswordHash      string     `json:"-"` // Never expose
+	ProfilePictureURL *string    `json:"profile_picture_url,omitempty"`
+	Bio               *string    `json:"bio,omitempty"`
+	IsAdmin           bool       `json:"is_admin"`
+	ApprovedAt        *time.Time `json:"approved_at,omitempty"`
+	CreatedAt         time.Time  `json:"created_at"`
+	UpdatedAt         *time.Time `json:"updated_at,omitempty"`
+	DeletedAt         *time.Time `json:"deleted_at,omitempty"`
 }
 
 // RegisterRequest represents the registration request body
@@ -49,6 +49,11 @@ type LoginResponse struct {
 	Email    string    `json:"email"`
 	IsAdmin  bool      `json:"is_admin"`
 	Message  string    `json:"message"`
+}
+
+// LogoutResponse represents the logout response
+type LogoutResponse struct {
+	Message string `json:"message"`
 }
 
 // ErrorResponse represents a standard error response
