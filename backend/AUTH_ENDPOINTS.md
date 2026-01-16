@@ -101,3 +101,107 @@ curl -X POST http://localhost:8080/api/v1/auth/register \
 - Users are created with `approved_at = NULL` and cannot log in until approved by an admin
 - Usernames and emails are case-sensitive
 - All fields are required
+
+---
+
+## User Login
+
+### Endpoint
+```
+POST /api/v1/auth/login
+```
+
+### Description
+Authenticates a user with email and password. On successful authentication, creates a Redis session and sets an httpOnly secure cookie.
+
+### Request Body
+```json
+{
+  "email": "string",
+  "password": "string"
+}
+```
+
+### Request Validation Rules
+- **Email:**
+  - Required
+  - Valid email format (includes @ and domain with TLD)
+- **Password:**
+  - Required
+  - Non-empty string
+
+### Success Response (200 OK)
+```json
+{
+  "id": "uuid",
+  "username": "string",
+  "email": "string",
+  "is_admin": boolean,
+  "message": "Login successful"
+}
+```
+
+**Cookies Set:**
+- `session_id`: Session identifier stored in Redis (httpOnly, Secure, SameSite=Lax)
+  - Valid for 30 days
+  - Automatically removed on logout
+
+### Error Responses
+
+#### 400 Bad Request
+```json
+{
+  "error": "email is required",
+  "code": "EMAIL_REQUIRED"
+}
+```
+
+Possible error codes:
+- `EMAIL_REQUIRED` - Email not provided
+- `INVALID_EMAIL` - Email format is invalid
+- `PASSWORD_REQUIRED` - Password not provided
+- `INVALID_REQUEST` - Request body is malformed JSON
+
+#### 401 Unauthorized
+```json
+{
+  "error": "invalid email or password",
+  "code": "INVALID_CREDENTIALS"
+}
+```
+
+#### 403 Forbidden
+```json
+{
+  "error": "user not approved",
+  "code": "USER_NOT_APPROVED"
+}
+```
+
+The user exists but has not been approved by an admin yet.
+
+#### 500 Internal Server Error
+```json
+{
+  "error": "Failed to login",
+  "code": "LOGIN_FAILED"
+}
+```
+
+### Example Usage
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john@example.com",
+    "password": "SecurePass123"
+  }'
+```
+
+### Notes
+- Passwords are verified using bcrypt comparison (never expose hash)
+- Sessions are stored in Redis with a 30-day TTL
+- The session_id cookie is httpOnly and Secure to prevent XSS attacks
+- A user must be approved (`approved_at != NULL`) to successfully log in
+- Invalid credentials (wrong password or user not found) return the same error message for security

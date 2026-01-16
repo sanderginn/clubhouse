@@ -36,6 +36,21 @@ type RegisterResponse struct {
 	Message  string    `json:"message"`
 }
 
+// LoginRequest represents the login request body
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+// LoginResponse represents the login response
+type LoginResponse struct {
+	ID       uuid.UUID `json:"id"`
+	Username string    `json:"username"`
+	Email    string    `json:"email"`
+	IsAdmin  bool      `json:"is_admin"`
+	Message  string    `json:"message"`
+}
+
 // ErrorResponse represents a standard error response
 type ErrorResponse struct {
 	Error string `json:"error"`
