@@ -48,9 +48,9 @@
     {
       "issue_number": 7,
       "title": "Implement user registration endpoint",
-      "status": "available",
-      "assigned_to": null,
-      "pr_number": null,
+      "status": "pr_created",
+      "assigned_to": "agent",
+      "pr_number": 65,
       "branch": "feat/auth-register"
     },
     {
