@@ -57,10 +57,11 @@
     {
       "issue_number": 8,
       "title": "Implement user login endpoint",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1",
-      "pr_number": null,
-      "branch": "feat/auth-login"
+      "pr_number": 66,
+      "branch": "feat/auth-login",
+      "merged_at": "2026-01-16T16:28:02Z"
     },
     {
       "issue_number": 9,
