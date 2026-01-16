@@ -64,6 +64,7 @@ func main() {
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(dbConn, redisConn)
 	postHandler := handlers.NewPostHandler(dbConn)
+	commentHandler := handlers.NewCommentHandler(dbConn)
 	adminHandler := handlers.NewAdminHandler(dbConn)
 
 	// API routes
@@ -71,12 +72,19 @@ func main() {
 	mux.HandleFunc("/api/v1/auth/login", authHandler.Login)
 	mux.HandleFunc("/api/v1/auth/logout", authHandler.Logout)
 	mux.HandleFunc("/api/v1/posts/", postHandler.GetPost)
+	mux.HandleFunc("/api/v1/comments/", commentHandler.GetComment)
 
 	// Protected post routes
 	postCreateHandler := middleware.RequireAuth(redisConn)(
 		http.HandlerFunc(postHandler.CreatePost),
 	)
 	mux.Handle("/api/v1/posts", postCreateHandler)
+
+	// Protected comment routes
+	commentCreateHandler := middleware.RequireAuth(redisConn)(
+		http.HandlerFunc(commentHandler.CreateComment),
+	)
+	mux.Handle("/api/v1/comments", commentCreateHandler)
 
 	// Admin routes (protected by RequireAdmin middleware)
 	mux.Handle("/api/v1/admin/users", middleware.RequireAdmin(redisConn)(http.HandlerFunc(adminHandler.ListPendingUsers)))
