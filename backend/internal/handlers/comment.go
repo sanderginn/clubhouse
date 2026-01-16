@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -118,6 +119,75 @@ func (h *CommentHandler) GetComment(w http.ResponseWriter, r *http.Request) {
 	// Return comment response
 	response := models.GetCommentResponse{
 		Comment: comment,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
+// GetThread handles GET /api/v1/posts/{postId}/comments
+func (h *CommentHandler) GetThread(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		return
+	}
+
+	// Extract post ID from URL path: /api/v1/posts/{postId}/comments
+	pathParts := strings.Split(r.URL.Path, "/")
+	// pathParts: ["", "api", "v1", "posts", "{postId}", "comments"]
+	if len(pathParts) < 6 {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Post ID is required")
+		return
+	}
+
+	postIDStr := pathParts[4]
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
+		return
+	}
+
+	// Parse query parameters
+	limit := 50
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 && l <= 100 {
+			limit = l
+		}
+	}
+
+	cursor := r.URL.Query().Get("cursor")
+	var cursorPtr *string
+	if cursor != "" {
+		cursorPtr = &cursor
+	}
+
+	// Get thread comments
+	comments, nextCursor, hasMore, err := h.commentService.GetThreadComments(r.Context(), postID, limit, cursorPtr)
+	if err != nil {
+		if err.Error() == "post not found" {
+			writeError(w, http.StatusNotFound, "POST_NOT_FOUND", "Post not found")
+			return
+		}
+		if err.Error() == "invalid cursor" {
+			writeError(w, http.StatusBadRequest, "INVALID_CURSOR", "Invalid cursor format")
+			return
+		}
+		if err.Error() == "cursor not found" {
+			writeError(w, http.StatusBadRequest, "CURSOR_NOT_FOUND", "Cursor not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "GET_THREAD_FAILED", "Failed to get thread")
+		return
+	}
+
+	// Return response
+	response := models.GetThreadResponse{
+		Comments: comments,
+		Meta: models.PageMeta{
+			Cursor:  nextCursor,
+			HasMore: hasMore,
+		},
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -72,7 +72,13 @@ func main() {
 	mux.HandleFunc("/api/v1/auth/login", authHandler.Login)
 	mux.HandleFunc("/api/v1/auth/logout", authHandler.Logout)
 	mux.HandleFunc("/api/v1/sections/", postHandler.GetFeed)
-	mux.HandleFunc("/api/v1/posts/", postHandler.GetPost)
+	mux.HandleFunc("/api/v1/posts/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/comments") {
+			commentHandler.GetThread(w, r)
+		} else {
+			postHandler.GetPost(w, r)
+		}
+	})
 	mux.HandleFunc("/api/v1/comments/", commentHandler.GetComment)
 
 	// Protected post routes
