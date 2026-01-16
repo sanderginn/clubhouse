@@ -14,12 +14,7 @@
         class="p-2 rounded-lg text-gray-600 hover:bg-gray-100 lg:hidden"
         aria-label="Toggle sidebar"
       >
-        <svg
-          class="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -56,12 +51,7 @@
           {/if}
         </div>
       {:else}
-        <a
-          href="/login"
-          class="text-sm font-medium text-gray-700 hover:text-primary"
-        >
-          Log in
-        </a>
+        <a href="/login" class="text-sm font-medium text-gray-700 hover:text-primary"> Log in </a>
         <a
           href="/register"
           class="text-sm font-medium text-white bg-primary hover:bg-secondary px-4 py-2 rounded-lg transition-colors"

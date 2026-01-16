@@ -1,3 +1,5 @@
+import type { Post, CreatePostRequest, LinkMetadata } from '../stores/postStore';
+
 const API_BASE = '/api/v1';
 
 interface ApiError {
@@ -5,11 +7,16 @@ interface ApiError {
   code: string;
 }
 
+interface ApiResponse<T> {
+  data: T;
+  meta?: {
+    cursor?: string;
+    hasMore?: boolean;
+  };
+}
+
 class ApiClient {
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${API_BASE}${endpoint}`;
     const response = await fetch(url, {
       ...options,
@@ -55,6 +62,28 @@ class ApiClient {
 
   async delete<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, { method: 'DELETE' });
+  }
+
+  async createPost(data: CreatePostRequest): Promise<{ post: Post }> {
+    return this.post('/posts', data);
+  }
+
+  async getFeed(
+    sectionId: string,
+    limit = 20,
+    cursor?: string
+  ): Promise<ApiResponse<{ posts: Post[] }>> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (cursor) params.set('cursor', cursor);
+    return this.get(`/sections/${sectionId}/feed?${params}`);
+  }
+
+  async deletePost(postId: string): Promise<void> {
+    return this.delete(`/posts/${postId}`);
+  }
+
+  async previewLink(url: string): Promise<{ metadata: LinkMetadata }> {
+    return this.post('/links/preview', { url });
   }
 }
 

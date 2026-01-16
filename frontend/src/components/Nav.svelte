@@ -10,9 +10,7 @@
 <nav class="flex flex-col h-full" aria-label="Main navigation">
   <div class="flex-1 overflow-y-auto py-4">
     <div class="px-3 mb-2">
-      <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-        Sections
-      </h2>
+      <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Sections</h2>
     </div>
     <ul class="space-y-1 px-2">
       {#each $sections as section (section.id)}
