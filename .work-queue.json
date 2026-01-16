@@ -102,10 +102,11 @@
     {
       "issue_number": 13,
       "title": "Implement get post endpoint",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-6",
-      "pr_number": null,
-      "branch": "feat/posts-get"
+      "pr_number": 70,
+      "branch": "feat/posts-get",
+      "merged_at": "2026-01-16T16:55:08Z"
     },
     {
       "issue_number": 14,
