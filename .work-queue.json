@@ -21,6 +21,7 @@
     16,
     17,
     18,
+    21,
     49,
     50,
     51,
@@ -61,7 +62,7 @@
     {
       "issue_number": 21,
       "title": "Phase 2: Implement add reaction endpoint",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768650859-80490",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768650859-80490",
       "dependencies": [],
@@ -71,7 +72,8 @@
         "reactions"
       ],
       "branch": "feat/issue-21-implement-add-reaction-endpoint",
-      "claimed_at": "2026-01-17T11:54:19Z"
+      "claimed_at": "2026-01-17T11:54:19Z",
+      "completed_at": "2026-01-17T11:57:10Z"
     },
     {
       "issue_number": 22,
