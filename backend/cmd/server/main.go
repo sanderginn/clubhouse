@@ -66,6 +66,7 @@ func main() {
 	postHandler := handlers.NewPostHandler(dbConn)
 	commentHandler := handlers.NewCommentHandler(dbConn)
 	adminHandler := handlers.NewAdminHandler(dbConn)
+	reactionHandler := handlers.NewReactionHandler(dbConn)
 
 	// API routes
 	mux.HandleFunc("/api/v1/auth/register", authHandler.Register)
@@ -85,6 +86,11 @@ func main() {
 			// Apply auth middleware and call RestorePost
 			authHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(postHandler.RestorePost))
 			authHandler.ServeHTTP(w, r)
+		} else if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/reactions") {
+			// Check if this is an add reaction request (POST /api/v1/posts/{id}/reactions)
+			// Apply auth middleware and call AddReactionToPost
+			reactionAuthHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(reactionHandler.AddReactionToPost))
+			reactionAuthHandler.ServeHTTP(w, r)
 		} else if r.Method == http.MethodGet {
 			postHandler.GetPost(w, r)
 		}
