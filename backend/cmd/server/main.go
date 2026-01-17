@@ -73,7 +73,21 @@ func main() {
 	mux.HandleFunc("/api/v1/auth/logout", authHandler.Logout)
 	mux.HandleFunc("/api/v1/auth/me", authHandler.GetMe)
 	mux.HandleFunc("/api/v1/sections/", postHandler.GetFeed)
-	mux.HandleFunc("/api/v1/comments/", commentHandler.GetComment)
+
+	// Comment routes - route to appropriate handler based on method
+	commentRouteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			commentHandler.GetComment(w, r)
+		} else if r.Method == http.MethodDelete {
+			authHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(commentHandler.DeleteComment))
+			authHandler.ServeHTTP(w, r)
+		} else {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			w.Write([]byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+		}
+	})
+	mux.Handle("/api/v1/comments/", commentRouteHandler)
 
 	// Post routes - route to appropriate handler
 	postRouteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

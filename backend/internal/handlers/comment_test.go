@@ -2,13 +2,16 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/models"
+	"github.com/sanderginn/clubhouse/internal/services"
 )
 
 func TestCreateCommentHandlerMethodNotAllowed(t *testing.T) {
@@ -139,6 +142,92 @@ func TestGetCommentHandlerInvalidID(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	handler.GetComment(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusBadRequest)
+	}
+
+	var errResp models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&errResp); err != nil {
+		t.Fatal(err)
+	}
+
+	if errResp.Code != "INVALID_COMMENT_ID" {
+		t.Errorf("handler returned wrong error code: got %v want INVALID_COMMENT_ID", errResp.Code)
+	}
+}
+
+func TestDeleteCommentHandlerMethodNotAllowed(t *testing.T) {
+	handler := &CommentHandler{}
+
+	req, err := http.NewRequest("GET", "/api/v1/comments/"+uuid.New().String(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rr := httptest.NewRecorder()
+	handler.DeleteComment(rr, req)
+
+	if status := rr.Code; status != http.StatusMethodNotAllowed {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusMethodNotAllowed)
+	}
+
+	var errResp models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&errResp); err != nil {
+		t.Fatal(err)
+	}
+
+	if errResp.Code != "METHOD_NOT_ALLOWED" {
+		t.Errorf("handler returned wrong error code: got %v want METHOD_NOT_ALLOWED", errResp.Code)
+	}
+}
+
+func TestDeleteCommentHandlerMissingUserID(t *testing.T) {
+	handler := &CommentHandler{}
+
+	req, err := http.NewRequest("DELETE", "/api/v1/comments/"+uuid.New().String(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rr := httptest.NewRecorder()
+	handler.DeleteComment(rr, req)
+
+	if status := rr.Code; status != http.StatusUnauthorized {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusUnauthorized)
+	}
+
+	var errResp models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&errResp); err != nil {
+		t.Fatal(err)
+	}
+
+	if errResp.Code != "UNAUTHORIZED" {
+		t.Errorf("handler returned wrong error code: got %v want UNAUTHORIZED", errResp.Code)
+	}
+}
+
+func TestDeleteCommentHandlerInvalidID(t *testing.T) {
+	handler := &CommentHandler{}
+
+	req, err := http.NewRequest("DELETE", "/api/v1/comments/invalid-uuid", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.WithValue(req.Context(), middleware.UserContextKey, &services.Session{
+		ID:       uuid.New().String(),
+		UserID:   uuid.New(),
+		Username: "testuser",
+		IsAdmin:  false,
+	})
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler.DeleteComment(rr, req)
 
 	if status := rr.Code; status != http.StatusBadRequest {
 		t.Errorf("handler returned wrong status code: got %v want %v",
