@@ -105,6 +105,10 @@ func main() {
 			// Apply auth middleware and call AddReactionToPost
 			reactionAuthHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(reactionHandler.AddReactionToPost))
 			reactionAuthHandler.ServeHTTP(w, r)
+		} else if r.Method == http.MethodDelete && strings.Contains(r.URL.Path, "/reactions/") {
+			// DELETE /api/v1/posts/{id}/reactions/{emoji}
+			reactionAuthHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(reactionHandler.RemoveReaction))
+			reactionAuthHandler.ServeHTTP(w, r)
 		} else if r.Method == http.MethodGet {
 			postHandler.GetPost(w, r)
 		}
