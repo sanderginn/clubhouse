@@ -432,3 +432,70 @@ func (s *CommentService) getCommentReplies(ctx context.Context, parentCommentID 
 
 	return replies, rows.Err()
 }
+
+// DeleteComment soft deletes a comment by setting deleted_at and deleted_by_user_id
+// Only the comment owner or an admin can delete
+// If admin deletes, an audit log entry is created
+func (s *CommentService) DeleteComment(ctx context.Context, commentID uuid.UUID, userID uuid.UUID, isAdmin bool) (*models.Comment, error) {
+	comment, err := s.GetCommentByID(ctx, commentID)
+	if err != nil {
+		return nil, err
+	}
+
+	if comment.UserID != userID && !isAdmin {
+		return nil, errors.New("unauthorized to delete this comment")
+	}
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	query := `
+		UPDATE comments
+		SET deleted_at = now(), deleted_by_user_id = $1
+		WHERE id = $2
+		RETURNING id, user_id, post_id, parent_comment_id, content, created_at, updated_at, deleted_at, deleted_by_user_id
+	`
+
+	var updatedComment models.Comment
+	var parentID sql.NullString
+	var updatedAt sql.NullTime
+
+	err = tx.QueryRowContext(ctx, query, userID, commentID).Scan(
+		&updatedComment.ID, &updatedComment.UserID, &updatedComment.PostID, &parentID, &updatedComment.Content,
+		&updatedComment.CreatedAt, &updatedAt, &updatedComment.DeletedAt, &updatedComment.DeletedByUserID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete comment: %w", err)
+	}
+
+	if parentID.Valid {
+		pid, _ := uuid.Parse(parentID.String)
+		updatedComment.ParentCommentID = &pid
+	}
+	if updatedAt.Valid {
+		updatedComment.UpdatedAt = &updatedAt.Time
+	}
+
+	if isAdmin && comment.UserID != userID {
+		auditQuery := `
+			INSERT INTO audit_logs (admin_user_id, action, related_comment_id, created_at)
+			VALUES ($1, 'delete_comment', $2, now())
+		`
+		_, err = tx.ExecContext(ctx, auditQuery, userID, commentID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create audit log: %w", err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	updatedComment.User = comment.User
+	updatedComment.Links = comment.Links
+
+	return &updatedComment, nil
+}

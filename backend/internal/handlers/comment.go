@@ -194,3 +194,57 @@ func (h *CommentHandler) GetThread(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 }
+
+// DeleteComment handles DELETE /api/v1/comments/{id}
+func (h *CommentHandler) DeleteComment(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only DELETE requests are allowed")
+		return
+	}
+
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
+		return
+	}
+
+	isAdmin, err := middleware.GetIsAdminFromContext(r.Context())
+	if err != nil {
+		isAdmin = false
+	}
+
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 5 {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Comment ID is required")
+		return
+	}
+
+	commentIDStr := pathParts[4]
+	commentID, err := uuid.Parse(commentIDStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_COMMENT_ID", "Invalid comment ID format")
+		return
+	}
+
+	comment, err := h.commentService.DeleteComment(r.Context(), commentID, userID, isAdmin)
+	if err != nil {
+		switch err.Error() {
+		case "comment not found":
+			writeError(w, http.StatusNotFound, "COMMENT_NOT_FOUND", "Comment not found")
+		case "unauthorized to delete this comment":
+			writeError(w, http.StatusForbidden, "FORBIDDEN", "You can only delete your own comments")
+		default:
+			writeError(w, http.StatusInternalServerError, "COMMENT_DELETION_FAILED", "Failed to delete comment")
+		}
+		return
+	}
+
+	response := models.DeleteCommentResponse{
+		Comment: comment,
+		Message: "Comment deleted successfully",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}

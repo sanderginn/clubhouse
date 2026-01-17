@@ -51,3 +51,9 @@ type GetThreadResponse struct {
 	Comments []Comment `json:"comments"`
 	Meta     PageMeta  `json:"meta"`
 }
+
+// DeleteCommentResponse represents the response for deleting a comment
+type DeleteCommentResponse struct {
+	Comment *Comment `json:"comment"`
+	Message string   `json:"message"`
+}
