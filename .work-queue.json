@@ -1,178 +1,627 @@
 {
   "metadata": {
-    "created_at": "2026-01-16T16:30:00Z",
-    "version": "1.0",
-    "description": "Work queue for parallel issue assignment"
+    "created_at": "2026-01-17T10:00:00Z",
+    "version": "2.0",
+    "description": "Work queue for parallel issue assignment with dependency tracking"
   },
+  "completed_issues": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    49,
+    50,
+    51,
+    52,
+    53
+  ],
   "issues": [
     {
-      "issue_number": 3,
-      "title": "Setup pre-commit hooks",
-      "status": "completed",
-      "assigned_to": "orchestrator",
-      "pr_number": 62,
-      "merged_at": "2026-01-16T16:45:00Z"
-    },
-    {
-      "issue_number": 4,
-      "title": "Phase 1: Create database migrations (users, sections, posts)",
-      "status": "completed",
-      "assigned_to": "orchestrator",
-      "pr_number": 63,
-      "merged_at": "2026-01-16T16:45:00Z"
-    },
-    {
-      "issue_number": 5,
-      "title": "Phase 1: Create database migrations (comments, reactions, links)",
-      "status": "completed",
-      "assigned_to": "orchestrator",
-      "pr_number": 63,
-      "merged_at": "2026-01-16T16:45:00Z"
-    },
-    {
-      "issue_number": 6,
-      "title": "Phase 1: Create database migrations (mentions, notifications, audit logs)",
-      "status": "completed",
-      "assigned_to": "orchestrator",
-      "pr_number": 63,
-      "merged_at": "2026-01-16T16:45:00Z"
-    },
-    {
-      "issue_number": 49,
-      "title": "Phase 1: Initialize Svelte project",
-      "status": "completed",
-      "assigned_to": "orchestrator",
-      "pr_number": 64,
-      "merged_at": "2026-01-16T16:45:00Z"
-    },
-    {
-      "issue_number": 7,
-      "title": "Phase 2: Implement user registration endpoint",
-      "status": "completed",
-      "assigned_to": "agent-1",
-      "pr_number": 65,
-      "merged_at": "2026-01-16T17:00:00Z"
-    },
-    {
-      "issue_number": 8,
-      "title": "Phase 2: Implement user login endpoint",
-      "status": "completed",
-      "assigned_to": "agent-2",
-      "pr_number": 66,
-      "merged_at": "2026-01-16T17:05:00Z"
-    },
-    {
-      "issue_number": 9,
-      "title": "Phase 2: Implement user logout endpoint",
-      "status": "completed",
-      "assigned_to": "agent-3",
-      "pr_number": 68,
-      "merged_at": "2026-01-16T17:10:00Z"
-    },
-    {
-      "issue_number": 10,
-      "title": "Phase 2: Implement auth middleware",
-      "status": "completed",
-      "assigned_to": "agent-4",
-      "pr_number": 67,
-      "merged_at": "2026-01-16T17:15:00Z"
-    },
-    {
-      "issue_number": 11,
-      "title": "Phase 2: Implement admin user approval flow",
-      "status": "completed",
-      "assigned_to": "agent-5",
-      "pr_number": 71,
-      "merged_at": "2026-01-16T17:20:00Z"
-    },
-    {
-      "issue_number": 12,
-      "title": "Phase 2: Implement create post endpoint",
-      "status": "completed",
-      "assigned_to": "agent-6",
-      "pr_number": 69,
-      "merged_at": "2026-01-16T17:25:00Z"
-    },
-    {
-      "issue_number": 13,
-      "title": "Phase 2: Implement get post endpoint",
-      "status": "completed",
-      "assigned_to": "agent-7",
-      "pr_number": 70,
-      "merged_at": "2026-01-16T17:30:00Z"
-    },
-    {
-      "issue_number": 14,
-      "title": "Phase 2: Implement get feed endpoint",
-      "status": "completed",
-      "assigned_to": "agent-8",
-      "pr_number": 72,
-      "merged_at": "2026-01-16T17:35:00Z"
-    },
-    {
-      "issue_number": 15,
-      "title": "Phase 2: Implement soft delete post endpoint",
-      "status": "completed",
-      "assigned_to": "agent-9",
-      "pr_number": 76,
-      "merged_at": "2026-01-16T17:40:00Z"
-    },
-    {
-      "issue_number": 16,
-      "title": "Phase 2: Implement restore post endpoint",
-      "status": "completed",
-      "assigned_to": "agent-10",
-      "pr_number": 73,
-      "merged_at": "2026-01-16T17:45:00Z"
-    },
-    {
-      "issue_number": 17,
-      "title": "Phase 2: Implement create comment endpoint",
-      "status": "completed",
-      "assigned_to": "agent-11",
-      "pr_number": 74,
-      "merged_at": "2026-01-16T17:50:00Z"
-    },
-    {
-      "issue_number": 18,
-      "title": "Phase 2: Implement get thread endpoint",
-      "status": "completed",
-      "assigned_to": "agent-12",
-      "pr_number": 75,
-      "merged_at": "2026-01-16T17:55:00Z"
-    },
-    {
-      "issue_number": 50,
-      "title": "Phase 2: Implement auth pages (register, login, logout)",
+      "issue_number": 19,
+      "title": "Phase 2: Implement soft delete comment endpoint",
       "status": "in_progress",
-      "assigned_to": "agent-14",
-      "pr_number": null,
-      "branch": "feat/frontend-auth"
+      "assigned_to": "agent-1768650824-80298",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768650824-80298",
+      "dependencies": [],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "comments"
+      ],
+      "branch": "feat/issue-19-implement-soft-delete-comment-endpoint",
+      "claimed_at": "2026-01-17T11:53:44Z"
     },
     {
-      "issue_number": 51,
-      "title": "Phase 2: Implement main layout and navigation",
-      "status": "completed",
-      "assigned_to": "agent-13",
-      "pr_number": 77,
-      "merged_at": "2026-01-16T18:00:00Z"
+      "issue_number": 20,
+      "title": "Phase 2: Implement restore comment endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        19
+      ],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "comments"
+      ]
     },
     {
-      "issue_number": 52,
-      "title": "Phase 2: Implement feed view",
-      "status": "in_progress",
-      "assigned_to": "agent-15",
-      "pr_number": null,
-      "branch": "feat/frontend-feed"
+      "issue_number": 21,
+      "title": "Phase 2: Implement add reaction endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "reactions"
+      ]
     },
     {
-      "issue_number": 53,
-      "title": "Phase 2: Implement create post form",
-      "status": "in_progress",
-      "assigned_to": "agent-16",
-      "pr_number": null,
-      "branch": "feat/frontend-post-form"
+      "issue_number": 22,
+      "title": "Phase 2: Implement remove reaction endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "reactions"
+      ]
+    },
+    {
+      "issue_number": 23,
+      "title": "Phase 2: Implement reactions on comments",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        21,
+        22
+      ],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "reactions"
+      ]
+    },
+    {
+      "issue_number": 24,
+      "title": "Phase 2: Implement get user profile endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "users"
+      ]
+    },
+    {
+      "issue_number": 25,
+      "title": "Phase 2: Implement update own profile endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        24
+      ],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "users"
+      ]
+    },
+    {
+      "issue_number": 26,
+      "title": "Phase 2: Implement get user posts endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "users",
+        "feed"
+      ]
+    },
+    {
+      "issue_number": 27,
+      "title": "Phase 2: Implement get user comments endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "users",
+        "feed"
+      ]
+    },
+    {
+      "issue_number": 28,
+      "title": "Phase 2: Implement list sections endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "sections"
+      ]
+    },
+    {
+      "issue_number": 29,
+      "title": "Phase 2: Implement get section endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "sections"
+      ]
+    },
+    {
+      "issue_number": 30,
+      "title": "Phase 3: Implement WebSocket server",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ],
+      "phase": 3,
+      "labels": [
+        "backend",
+        "websocket"
+      ]
+    },
+    {
+      "issue_number": 31,
+      "title": "Phase 3: Implement Redis pub/sub integration",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        30
+      ],
+      "phase": 3,
+      "labels": [
+        "backend",
+        "websocket",
+        "redis"
+      ]
+    },
+    {
+      "issue_number": 32,
+      "title": "Phase 3: Implement WebSocket event broadcasting",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        30,
+        31
+      ],
+      "phase": 3,
+      "labels": [
+        "backend",
+        "websocket"
+      ]
+    },
+    {
+      "issue_number": 33,
+      "title": "Phase 3: Implement section subscription via WebSocket",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        32
+      ],
+      "phase": 3,
+      "labels": [
+        "backend",
+        "websocket"
+      ]
+    },
+    {
+      "issue_number": 54,
+      "title": "Phase 3: Implement WebSocket integration (frontend)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        33
+      ],
+      "phase": 3,
+      "labels": [
+        "frontend",
+        "websocket"
+      ]
+    },
+    {
+      "issue_number": 34,
+      "title": "Phase 4: Implement notifications table and insertion",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        30,
+        31,
+        32,
+        33
+      ],
+      "phase": 4,
+      "labels": [
+        "backend",
+        "notifications"
+      ]
+    },
+    {
+      "issue_number": 35,
+      "title": "Phase 4: Implement get notifications endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        34
+      ],
+      "phase": 4,
+      "labels": [
+        "backend",
+        "notifications"
+      ]
+    },
+    {
+      "issue_number": 36,
+      "title": "Phase 4: Implement mark notification read endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        35
+      ],
+      "phase": 4,
+      "labels": [
+        "backend",
+        "notifications"
+      ]
+    },
+    {
+      "issue_number": 37,
+      "title": "Phase 4: Implement full-text search",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        30,
+        31,
+        32,
+        33
+      ],
+      "phase": 4,
+      "labels": [
+        "backend",
+        "search"
+      ]
+    },
+    {
+      "issue_number": 38,
+      "title": "Phase 4: Implement link metadata fetching strategy",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        30,
+        31,
+        32,
+        33
+      ],
+      "phase": 4,
+      "labels": [
+        "backend",
+        "links"
+      ]
+    },
+    {
+      "issue_number": 55,
+      "title": "Phase 4: Implement comments view (frontend)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        54
+      ],
+      "phase": 4,
+      "labels": [
+        "frontend",
+        "comments"
+      ]
+    },
+    {
+      "issue_number": 56,
+      "title": "Phase 4: Implement search (frontend)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        37
+      ],
+      "phase": 4,
+      "labels": [
+        "frontend",
+        "search"
+      ]
+    },
+    {
+      "issue_number": 39,
+      "title": "Phase 5: Implement hard delete endpoints",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        34,
+        35,
+        36,
+        37,
+        38,
+        55,
+        56
+      ],
+      "phase": 5,
+      "labels": [
+        "backend",
+        "admin"
+      ]
+    },
+    {
+      "issue_number": 40,
+      "title": "Phase 5: Implement restore soft-deleted content",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        39
+      ],
+      "phase": 5,
+      "labels": [
+        "backend",
+        "admin"
+      ]
+    },
+    {
+      "issue_number": 41,
+      "title": "Phase 5: Implement audit logging",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        34,
+        35,
+        36,
+        37,
+        38,
+        55,
+        56
+      ],
+      "phase": 5,
+      "labels": [
+        "backend",
+        "admin"
+      ]
+    },
+    {
+      "issue_number": 42,
+      "title": "Phase 5: Implement config endpoint for admin toggles",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        34,
+        35,
+        36,
+        37,
+        38,
+        55,
+        56
+      ],
+      "phase": 5,
+      "labels": [
+        "backend",
+        "admin"
+      ]
+    },
+    {
+      "issue_number": 43,
+      "title": "Phase 5: Implement section subscription opt-out",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        34,
+        35,
+        36,
+        37,
+        38,
+        55,
+        56
+      ],
+      "phase": 5,
+      "labels": [
+        "backend",
+        "notifications"
+      ]
+    },
+    {
+      "issue_number": 57,
+      "title": "Phase 5: Implement admin panel (frontend)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        39,
+        40,
+        41,
+        42
+      ],
+      "phase": 5,
+      "labels": [
+        "frontend",
+        "admin"
+      ]
+    },
+    {
+      "issue_number": 44,
+      "title": "Phase 6: Integrate OpenTelemetry for traces",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        39,
+        40,
+        41,
+        42,
+        43,
+        57
+      ],
+      "phase": 6,
+      "labels": [
+        "backend",
+        "observability"
+      ]
+    },
+    {
+      "issue_number": 45,
+      "title": "Phase 6: Integrate OpenTelemetry for metrics",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        39,
+        40,
+        41,
+        42,
+        43,
+        57
+      ],
+      "phase": 6,
+      "labels": [
+        "backend",
+        "observability"
+      ]
+    },
+    {
+      "issue_number": 46,
+      "title": "Phase 6: Integrate OpenTelemetry for logs",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        39,
+        40,
+        41,
+        42,
+        43,
+        57
+      ],
+      "phase": 6,
+      "labels": [
+        "backend",
+        "observability"
+      ]
+    },
+    {
+      "issue_number": 47,
+      "title": "Phase 6: Setup Grafana dashboards",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        44,
+        45,
+        46
+      ],
+      "phase": 6,
+      "labels": [
+        "backend",
+        "observability"
+      ]
+    },
+    {
+      "issue_number": 48,
+      "title": "Phase 6: Write production deployment guide",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        47
+      ],
+      "phase": 6,
+      "labels": [
+        "devops"
+      ]
+    },
+    {
+      "issue_number": 58,
+      "title": "Phase 6: Implement PWA features (frontend)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        55,
+        57
+      ],
+      "phase": 6,
+      "labels": [
+        "frontend",
+        "pwa"
+      ]
+    },
+    {
+      "issue_number": 59,
+      "title": "Phase 6: Implement Web Push notifications (frontend)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        58
+      ],
+      "phase": 6,
+      "labels": [
+        "frontend",
+        "notifications",
+        "pwa"
+      ]
     }
-  ],
-  "notes": "Phase 1 (Setup + DB) Complete. Phase 2 Backend Complete. Phase 2 Frontend: #50 available, #51 done, #52-53 available."
+  ]
 }
