@@ -21,6 +21,7 @@
     16,
     17,
     18,
+    19,
     21,
     22,
     49,
@@ -33,7 +34,7 @@
     {
       "issue_number": 19,
       "title": "Phase 2: Implement soft delete comment endpoint",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768650824-80298",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768650824-80298",
       "dependencies": [],
@@ -43,7 +44,8 @@
         "comments"
       ],
       "branch": "feat/issue-19-implement-soft-delete-comment-endpoint",
-      "claimed_at": "2026-01-17T11:53:44Z"
+      "claimed_at": "2026-01-17T11:53:44Z",
+      "completed_at": "2026-01-17T11:59:00Z"
     },
     {
       "issue_number": 20,
