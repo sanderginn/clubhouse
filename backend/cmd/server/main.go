@@ -77,7 +77,21 @@ func main() {
 	mux.HandleFunc("/api/v1/sections/", postHandler.GetFeed)
 
 	// User routes (protected - requires auth)
-	userRouteHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(userHandler.GetProfile))
+	userRouteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/posts") {
+			// GET /api/v1/users/{id}/posts
+			postsHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(userHandler.GetUserPosts))
+			postsHandler.ServeHTTP(w, r)
+		} else if r.Method == http.MethodGet {
+			// GET /api/v1/users/{id}
+			profileHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(userHandler.GetProfile))
+			profileHandler.ServeHTTP(w, r)
+		} else {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			w.Write([]byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+		}
+	})
 	mux.Handle("/api/v1/users/", userRouteHandler)
 
 	// Comment routes - route to appropriate handler based on method
