@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/google/uuid"
@@ -72,6 +73,56 @@ func (h *ReactionHandler) AddReactionToPost(w http.ResponseWriter, r *http.Reque
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
+}
+
+// RemoveReaction handles DELETE /api/v1/posts/{postId}/reactions/{emoji}
+func (h *ReactionHandler) RemoveReaction(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only DELETE requests are allowed")
+		return
+	}
+
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
+		return
+	}
+
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 7 {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Post ID and emoji are required")
+		return
+	}
+
+	postIDStr := pathParts[4]
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
+		return
+	}
+
+	emoji, err := url.PathUnescape(pathParts[6])
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_EMOJI", "Invalid emoji format")
+		return
+	}
+
+	if emoji == "" {
+		writeError(w, http.StatusBadRequest, "EMOJI_REQUIRED", "Emoji is required")
+		return
+	}
+
+	err = h.reactionService.RemoveReaction(r.Context(), postID, emoji, userID)
+	if err != nil {
+		if err.Error() == "reaction not found" {
+			writeError(w, http.StatusNotFound, "REACTION_NOT_FOUND", "Reaction not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "REMOVE_REACTION_FAILED", "Failed to remove reaction")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func extractPostIDFromPath(path string) (uuid.UUID, error) {

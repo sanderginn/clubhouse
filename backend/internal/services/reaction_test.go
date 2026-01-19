@@ -8,6 +8,10 @@ func TestAddReactionToPost(t *testing.T) {
 	t.Skip("requires test database setup")
 }
 
+func TestRemoveReaction(t *testing.T) {
+	t.Skip("requires test database setup")
+}
+
 func TestValidateEmoji(t *testing.T) {
 	tests := []struct {
 		name    string

@@ -46,6 +46,31 @@ func (s *ReactionService) AddReactionToPost(ctx context.Context, postID uuid.UUI
 	return s.createPostReaction(ctx, postID, userID, emoji)
 }
 
+// RemoveReaction removes a reaction from a post
+// Users can only remove their own reactions
+func (s *ReactionService) RemoveReaction(ctx context.Context, postID uuid.UUID, emoji string, userID uuid.UUID) error {
+	query := `
+		DELETE FROM reactions
+		WHERE post_id = $1 AND emoji = $2 AND user_id = $3 AND deleted_at IS NULL
+	`
+
+	result, err := s.db.ExecContext(ctx, query, postID, emoji, userID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("reaction not found")
+	}
+
+	return nil
+}
+
 func validateEmoji(emoji string) error {
 	emoji = strings.TrimSpace(emoji)
 	if emoji == "" {
