@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/models"
@@ -498,4 +499,104 @@ func (s *CommentService) DeleteComment(ctx context.Context, commentID uuid.UUID,
 	updatedComment.Links = comment.Links
 
 	return &updatedComment, nil
+}
+
+// RestoreComment restores a soft-deleted comment
+// Only the comment owner (within 7 days) or an admin can restore
+func (s *CommentService) RestoreComment(ctx context.Context, commentID uuid.UUID, userID uuid.UUID, isAdmin bool) (*models.Comment, error) {
+	query := `
+		SELECT 
+			c.id, c.user_id, c.post_id, c.parent_comment_id, c.content,
+			c.created_at, c.updated_at, c.deleted_at, c.deleted_by_user_id,
+			u.id, u.username, u.email, u.profile_picture_url, u.bio, u.is_admin, u.created_at
+		FROM comments c
+		JOIN users u ON c.user_id = u.id
+		WHERE c.id = $1 AND c.deleted_at IS NOT NULL
+	`
+
+	var comment models.Comment
+	var user models.User
+	var parentID sql.NullString
+	var updatedAt sql.NullTime
+	var deletedAt sql.NullTime
+	var deletedByUserID sql.NullString
+
+	err := s.db.QueryRowContext(ctx, query, commentID).Scan(
+		&comment.ID, &comment.UserID, &comment.PostID, &parentID, &comment.Content,
+		&comment.CreatedAt, &updatedAt, &deletedAt, &deletedByUserID,
+		&user.ID, &user.Username, &user.Email, &user.ProfilePictureURL, &user.Bio, &user.IsAdmin, &user.CreatedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("comment not found")
+		}
+		return nil, err
+	}
+
+	if parentID.Valid {
+		pid, _ := uuid.Parse(parentID.String)
+		comment.ParentCommentID = &pid
+	}
+	if deletedAt.Valid {
+		comment.DeletedAt = &deletedAt.Time
+	}
+	if deletedByUserID.Valid {
+		dbuid, _ := uuid.Parse(deletedByUserID.String)
+		comment.DeletedByUserID = &dbuid
+	}
+	if updatedAt.Valid {
+		comment.UpdatedAt = &updatedAt.Time
+	}
+
+	comment.User = &user
+
+	if !isAdmin && comment.UserID != userID {
+		return nil, errors.New("unauthorized")
+	}
+
+	if !isAdmin && comment.DeletedAt != nil {
+		sevenDaysAgo := time.Now().AddDate(0, 0, -7)
+		if comment.DeletedAt.Before(sevenDaysAgo) {
+			return nil, errors.New("comment permanently deleted")
+		}
+	}
+
+	updateQuery := `
+		UPDATE comments
+		SET deleted_at = NULL, deleted_by_user_id = NULL
+		WHERE id = $1
+		RETURNING id, user_id, post_id, parent_comment_id, content, created_at, updated_at, deleted_at, deleted_by_user_id
+	`
+
+	var restoredComment models.Comment
+	var restoredParentID sql.NullString
+	var restoredUpdatedAt sql.NullTime
+
+	err = s.db.QueryRowContext(ctx, updateQuery, commentID).Scan(
+		&restoredComment.ID, &restoredComment.UserID, &restoredComment.PostID, &restoredParentID, &restoredComment.Content,
+		&restoredComment.CreatedAt, &restoredUpdatedAt, &restoredComment.DeletedAt, &restoredComment.DeletedByUserID,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to restore comment: %w", err)
+	}
+
+	if restoredParentID.Valid {
+		pid, _ := uuid.Parse(restoredParentID.String)
+		restoredComment.ParentCommentID = &pid
+	}
+	if restoredUpdatedAt.Valid {
+		restoredComment.UpdatedAt = &restoredUpdatedAt.Time
+	}
+
+	restoredComment.User = &user
+
+	links, err := s.getCommentLinks(ctx, commentID)
+	if err != nil {
+		return nil, err
+	}
+	restoredComment.Links = links
+
+	return &restoredComment, nil
 }
