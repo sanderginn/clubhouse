@@ -393,3 +393,29 @@ func (s *UserService) RejectUser(ctx context.Context, userID uuid.UUID) (*models
 		Message: "User rejected and deleted successfully",
 	}, nil
 }
+
+// GetUserProfile retrieves a user profile with stats by ID
+func (s *UserService) GetUserProfile(ctx context.Context, id uuid.UUID) (*models.UserProfileResponse, error) {
+	query := `
+		SELECT 
+			u.id, u.username, u.bio, u.profile_picture_url, u.created_at,
+			(SELECT COUNT(*) FROM posts WHERE user_id = u.id AND deleted_at IS NULL) as post_count,
+			(SELECT COUNT(*) FROM comments WHERE user_id = u.id AND deleted_at IS NULL) as comment_count
+		FROM users u
+		WHERE u.id = $1 AND u.deleted_at IS NULL AND u.approved_at IS NOT NULL
+	`
+
+	var profile models.UserProfileResponse
+	err := s.db.QueryRowContext(ctx, query, id).
+		Scan(&profile.ID, &profile.Username, &profile.Bio, &profile.ProfilePictureUrl,
+			&profile.CreatedAt, &profile.Stats.PostCount, &profile.Stats.CommentCount)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, fmt.Errorf("failed to get user profile: %w", err)
+	}
+
+	return &profile, nil
+}
