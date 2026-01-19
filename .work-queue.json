@@ -77,7 +77,8 @@
       ],
       "branch": "feat/issue-21-implement-add-reaction-endpoint",
       "claimed_at": "2026-01-17T11:54:19Z",
-      "completed_at": "2026-01-17T11:57:10Z"
+      "completed_at": "2026-01-19T11:02:09Z",
+      "pr_number": 81
     },
     {
       "issue_number": 22,
