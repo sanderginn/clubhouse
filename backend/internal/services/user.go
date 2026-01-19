@@ -397,7 +397,7 @@ func (s *UserService) RejectUser(ctx context.Context, userID uuid.UUID) (*models
 // GetUserProfile retrieves a user profile with stats by ID
 func (s *UserService) GetUserProfile(ctx context.Context, id uuid.UUID) (*models.UserProfileResponse, error) {
 	query := `
-		SELECT 
+		SELECT
 			u.id, u.username, u.bio, u.profile_picture_url, u.created_at,
 			(SELECT COUNT(*) FROM posts WHERE user_id = u.id AND deleted_at IS NULL) as post_count,
 			(SELECT COUNT(*) FROM comments WHERE user_id = u.id AND deleted_at IS NULL) as comment_count
@@ -418,4 +418,97 @@ func (s *UserService) GetUserProfile(ctx context.Context, id uuid.UUID) (*models
 	}
 
 	return &profile, nil
+}
+
+// GetUserComments retrieves a paginated list of comments by a user
+func (s *UserService) GetUserComments(ctx context.Context, userID uuid.UUID, cursor *string, limit int) (*models.GetThreadResponse, error) {
+	// First verify the user exists and is approved
+	var exists bool
+	err := s.db.QueryRowContext(ctx, `
+		SELECT EXISTS(SELECT 1 FROM users WHERE id = $1 AND deleted_at IS NULL AND approved_at IS NOT NULL)
+	`, userID).Scan(&exists)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check user: %w", err)
+	}
+	if !exists {
+		return nil, fmt.Errorf("user not found")
+	}
+
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+
+	// Build query for user's comments
+	query := `
+		SELECT
+			c.id, c.user_id, c.post_id, c.parent_comment_id, c.content,
+			c.created_at, c.updated_at,
+			u.id, u.username, u.profile_picture_url
+		FROM comments c
+		JOIN users u ON c.user_id = u.id
+		WHERE c.user_id = $1 AND c.deleted_at IS NULL
+	`
+
+	args := []interface{}{userID}
+	argIndex := 2
+
+	// Apply cursor if provided (cursor is the created_at timestamp)
+	if cursor != nil && *cursor != "" {
+		query += fmt.Sprintf(" AND c.created_at < $%d", argIndex)
+		args = append(args, *cursor)
+		argIndex++
+	}
+
+	query += fmt.Sprintf(" ORDER BY c.created_at DESC LIMIT $%d", argIndex)
+	args = append(args, limit+1) // Fetch one extra to determine hasMore
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query comments: %w", err)
+	}
+	defer rows.Close()
+
+	var comments []models.Comment
+	for rows.Next() {
+		var comment models.Comment
+		var user models.User
+
+		err := rows.Scan(
+			&comment.ID, &comment.UserID, &comment.PostID, &comment.ParentCommentID, &comment.Content,
+			&comment.CreatedAt, &comment.UpdatedAt,
+			&user.ID, &user.Username, &user.ProfilePictureURL,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan comment: %w", err)
+		}
+
+		comment.User = &user
+		comments = append(comments, comment)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating comments: %w", err)
+	}
+
+	// Determine if there are more comments
+	hasMore := len(comments) > limit
+	if hasMore {
+		comments = comments[:limit]
+	}
+
+	// Determine next cursor
+	var nextCursor *string
+	if hasMore && len(comments) > 0 {
+		lastComment := comments[len(comments)-1]
+		cursorStr := lastComment.CreatedAt.Format("2006-01-02T15:04:05.000Z07:00")
+		nextCursor = &cursorStr
+	}
+
+	return &models.GetThreadResponse{
+		Comments: comments,
+		Meta: models.PageMeta{
+			Cursor:  nextCursor,
+			HasMore: hasMore,
+		},
+	}, nil
 }

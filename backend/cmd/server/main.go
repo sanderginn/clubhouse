@@ -82,6 +82,10 @@ func main() {
 			// GET /api/v1/users/{id}/posts
 			postsHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(userHandler.GetUserPosts))
 			postsHandler.ServeHTTP(w, r)
+		} else if r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/comments") {
+			// GET /api/v1/users/{id}/comments
+			commentsHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(userHandler.GetUserComments))
+			commentsHandler.ServeHTTP(w, r)
 		} else if r.Method == http.MethodGet {
 			// GET /api/v1/users/{id}
 			profileHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(userHandler.GetProfile))

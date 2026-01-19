@@ -113,3 +113,61 @@ func (h *UserHandler) GetUserPosts(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(feed)
 }
+
+// GetUserComments handles GET /api/v1/users/{id}/comments
+func (h *UserHandler) GetUserComments(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		return
+	}
+
+	// Extract user ID from URL path: /api/v1/users/{id}/comments
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 6 || pathParts[5] != "comments" {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "User ID is required")
+		return
+	}
+
+	userIDStr := pathParts[4]
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_USER_ID", "Invalid user ID format")
+		return
+	}
+
+	// Parse query parameters
+	cursor := r.URL.Query().Get("cursor")
+	limitStr := r.URL.Query().Get("limit")
+
+	limit := 20
+	if limitStr != "" {
+		if parsedLimit, err := strconv.Atoi(limitStr); err == nil && parsedLimit > 0 {
+			limit = parsedLimit
+		}
+	}
+
+	// Clamp limit to reasonable range
+	if limit > 100 {
+		limit = 100
+	}
+
+	var cursorPtr *string
+	if cursor != "" {
+		cursorPtr = &cursor
+	}
+
+	// Get user comments from service
+	response, err := h.userService.GetUserComments(r.Context(), userID, cursorPtr, limit)
+	if err != nil {
+		if err.Error() == "user not found" {
+			writeError(w, http.StatusNotFound, "USER_NOT_FOUND", "User not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "GET_USER_COMMENTS_FAILED", "Failed to get user comments")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
