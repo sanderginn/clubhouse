@@ -51,9 +51,9 @@
     {
       "issue_number": 20,
       "title": "Phase 2: Implement restore comment endpoint",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1768820662-88545",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768820662-88545",
       "dependencies": [
         19
       ],
@@ -61,7 +61,9 @@
       "labels": [
         "backend",
         "comments"
-      ]
+      ],
+      "branch": "feat/issue-20-implement-restore-comment-endpoint",
+      "claimed_at": "2026-01-19T11:04:22Z"
     },
     {
       "issue_number": 21,
