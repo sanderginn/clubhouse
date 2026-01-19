@@ -1,120 +1,115 @@
-# Subagent Work Queue Instructions
+# Subagent Instructions
 
-This document explains how new Amp sessions should pick up work.
+This document explains how to work as a subagent on the Clubhouse project.
 
-## How to Claim an Issue
+## Quick Start
 
-When you start a new Amp session for this project:
+From the **main repository root** (not a worktree), run:
 
-1. **Use the claim script** (atomic, race-condition safe):
-   ```bash
-   ./scripts/claim-issue.sh your-agent-name
-   ```
-   
-   This script will:
-   - Find the first available issue
-   - Mark it as `in_progress` with your agent name
-   - Commit and push the claim to main
-   - Display the issue details and next steps
-   - Handle race conditions if multiple agents claim simultaneously
-
-**Important:** Always use this script first. It's atomic and prevents multiple agents from claiming the same issue.
-
-## Workflow for Each Issue
-
-1. **Create a feature branch:**
-   ```bash
-   git checkout -b <branch_name>
-   ```
-
-2. **Implement the feature** following AGENTS.md guidelines
-
-3. **Commit with conventional commits:**
-   ```bash
-   git commit -m "feat: description"
-   ```
-
-4. **Push and create a PR:**
-   ```bash
-   git push -u origin <branch_name>
-   gh pr create --title "..." --body "..."
-   ```
-
-5. **After opening PR:**
-   - The orchestrator will review and merge
-   - Once merged, orchestrator updates work queue status to `"completed"`
-   - Next agent can then claim the next issue
-
-## Dependency Chain
-
-Some issues depend on others. **Do not start** an issue if its dependencies aren't completed:
-
-- **Auth endpoints (7-11):** Sequential (register → login → logout → middleware → approval)
-- **Posts endpoints (12-16):** Depend on auth (7-11)
-- **Comments endpoints (17-18):** Depend on posts (12-16)
-- **Frontend auth (51):** Can work in parallel with backend
-
-## Current Status
-
-Check `.work-queue.json` for real-time issue status:
-- `available` — Ready to claim (use `./scripts/claim-issue.sh` to claim)
-- `in_progress` — Another agent is actively working on it
-- `completed` — Merged into main
-
-## Orchestrator (Main Session)
-
-The orchestrator session will:
-- Monitor progress via `.work-queue.json`
-- Merge approved PRs
-- Update queue status
-- Handle any blockers or conflicts
-
----
-
-**Example Workflow**
-
-**Agent 1 starts:**
 ```bash
-./scripts/claim-issue.sh agent-1
-# Output:
-# ✓ Successfully claimed issue #7
-# Issue: Implement user registration endpoint
-# Branch: feat/auth-register
+./scripts/start-agent.sh
 ```
 
-**Agent 1 implements:**
+This script will:
+1. Find the next available issue (dependencies satisfied)
+2. Atomically claim it in the work queue
+3. Create a dedicated git worktree
+4. Output the worktree path and issue details
+
+## Workflow
+
+### 1. Run the Start Script
+
 ```bash
-git checkout -b feat/auth-register
-# ... write code ...
-git commit -m "feat: implement user registration"
-git push -u origin feat/auth-register
-gh pr create --title "feat: implement user registration" --body "Closes #7"
+./scripts/start-agent.sh
 ```
 
-**Agent 2 starts (while Agent 1 is working):**
+The output will show:
+- Issue number and full description
+- Worktree path (e.g., `.worktrees/agent-1737300000-12345`)
+- Branch name
+
+### 2. Change to Worktree
+
 ```bash
-./scripts/claim-issue.sh agent-2
-# Finds issue #51 (frontend auth, can run in parallel)
-# Starts work on that
+cd <WORKTREE_PATH>  # Path from script output
 ```
 
-**Orchestrator:**
+### 3. Read Guidelines
+
+Before coding:
+- `AGENTS.md` - Code standards and conventions
+- `DESIGN.md` - System architecture
+
+### 4. Implement the Feature
+
+Follow the issue description and acceptance criteria.
+
+### 5. Test Your Changes
+
 ```bash
-# Reviews & merges PR from Agent 1
-gh pr merge 65 --merge
-# Updates work queue
-git add .work-queue.json
-git commit -m "chore: mark issue #7 completed, PR #65"
-git push
+# Backend
+cd backend && go build ./... && go test ./...
+
+# Frontend
+cd frontend && npm run check
 ```
 
-**Agent 3 starts (after Agent 1 completes):**
+### 6. Commit and Push
+
 ```bash
-./scripts/claim-issue.sh agent-3
-# Finds issue #8 (user login, depends on #7)
-# Starts work on that
+git add .
+git commit -m "feat(issue-NN): description"
+git push -u origin <BRANCH_NAME>
+```
+
+### 7. Create Pull Request
+
+```bash
+gh pr create --title "Issue Title" --body "Closes #NN"
+```
+
+### 8. Wait for Review
+
+The orchestrator will review your PR and either:
+- Merge it (done!)
+- Request changes (fix and push again)
+
+## Scripts Reference
+
+| Script | Purpose |
+|--------|---------|
+| `./scripts/start-agent.sh` | Claim next issue, create worktree |
+| `./scripts/show-queue.sh` | View queue status |
+| `./scripts/complete-issue.sh` | (Orchestrator only) Mark issue done |
+
+## Important Notes
+
+1. **Always use `start-agent.sh`** - it handles claiming atomically
+2. **Work in the worktree** - not the main repo
+3. **Check existing code** - follow established patterns
+4. **Don't skip dependencies** - the script handles this automatically
+5. **Rebase if conflicts** - orchestrator will ask you to rebase, not fix it themselves
+
+## Troubleshooting
+
+### Lock timeout
+```bash
+rm .work-queue.lock
+```
+
+### No available issues
+```bash
+./scripts/show-queue.sh --blocked
+```
+
+### Merge conflicts
+```bash
+git fetch origin main
+git rebase origin/main
+git push --force-with-lease
 ```
 
 ---
 
-Questions? Check AGENTS.md and DESIGN.md for architecture details.
+**Questions?** Check `AGENTS.md` and `DESIGN.md`.
