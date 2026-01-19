@@ -399,8 +399,8 @@ func (s *UserService) GetUserProfile(ctx context.Context, id uuid.UUID) (*models
 	query := `
 		SELECT 
 			u.id, u.username, u.bio, u.profile_picture_url, u.created_at,
-			(SELECT COUNT(*) FROM posts WHERE author_id = u.id AND deleted_at IS NULL) as post_count,
-			(SELECT COUNT(*) FROM comments WHERE author_id = u.id AND deleted_at IS NULL) as comment_count
+			(SELECT COUNT(*) FROM posts WHERE user_id = u.id AND deleted_at IS NULL) as post_count,
+			(SELECT COUNT(*) FROM comments WHERE user_id = u.id AND deleted_at IS NULL) as comment_count
 		FROM users u
 		WHERE u.id = $1 AND u.deleted_at IS NULL AND u.approved_at IS NOT NULL
 	`
