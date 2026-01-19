@@ -94,7 +94,8 @@
       ],
       "branch": "feat/issue-22-implement-remove-reaction-endpoint",
       "claimed_at": "2026-01-17T11:54:54Z",
-      "completed_at": "2026-01-17T11:57:27Z"
+      "completed_at": "2026-01-19T11:02:13Z",
+      "pr_number": 82
     },
     {
       "issue_number": 23,
