@@ -80,6 +80,14 @@ func main() {
 		if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/restore") {
 			restoreHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(commentHandler.RestoreComment))
 			restoreHandler.ServeHTTP(w, r)
+		} else if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/reactions") {
+			// POST /api/v1/comments/{id}/reactions
+			reactionAuthHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(reactionHandler.AddReactionToComment))
+			reactionAuthHandler.ServeHTTP(w, r)
+		} else if r.Method == http.MethodDelete && strings.Contains(r.URL.Path, "/reactions/") {
+			// DELETE /api/v1/comments/{id}/reactions/{emoji}
+			reactionAuthHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(reactionHandler.RemoveReactionFromComment))
+			reactionAuthHandler.ServeHTTP(w, r)
 		} else if r.Method == http.MethodGet {
 			commentHandler.GetComment(w, r)
 		} else if r.Method == http.MethodDelete {
@@ -110,7 +118,7 @@ func main() {
 			reactionAuthHandler.ServeHTTP(w, r)
 		} else if r.Method == http.MethodDelete && strings.Contains(r.URL.Path, "/reactions/") {
 			// DELETE /api/v1/posts/{id}/reactions/{emoji}
-			reactionAuthHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(reactionHandler.RemoveReaction))
+			reactionAuthHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(reactionHandler.RemoveReactionFromPost))
 			reactionAuthHandler.ServeHTTP(w, r)
 		} else if r.Method == http.MethodGet {
 			postHandler.GetPost(w, r)
