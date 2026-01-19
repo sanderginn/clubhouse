@@ -93,3 +93,19 @@ type MeResponse struct {
 	Bio               *string   `json:"bio,omitempty"`
 	IsAdmin           bool      `json:"is_admin"`
 }
+
+// UserStats represents user activity statistics
+type UserStats struct {
+	PostCount    int `json:"post_count"`
+	CommentCount int `json:"comment_count"`
+}
+
+// UserProfileResponse represents the response from /users/{id} endpoint
+type UserProfileResponse struct {
+	ID                uuid.UUID `json:"id"`
+	Username          string    `json:"username"`
+	Bio               *string   `json:"bio,omitempty"`
+	ProfilePictureUrl *string   `json:"profile_picture_url,omitempty"`
+	CreatedAt         time.Time `json:"created_at"`
+	Stats             UserStats `json:"stats"`
+}

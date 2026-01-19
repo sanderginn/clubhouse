@@ -67,6 +67,7 @@ func main() {
 	commentHandler := handlers.NewCommentHandler(dbConn)
 	adminHandler := handlers.NewAdminHandler(dbConn)
 	reactionHandler := handlers.NewReactionHandler(dbConn)
+	userHandler := handlers.NewUserHandler(dbConn)
 
 	// API routes
 	mux.HandleFunc("/api/v1/auth/register", authHandler.Register)
@@ -74,6 +75,10 @@ func main() {
 	mux.HandleFunc("/api/v1/auth/logout", authHandler.Logout)
 	mux.HandleFunc("/api/v1/auth/me", authHandler.GetMe)
 	mux.HandleFunc("/api/v1/sections/", postHandler.GetFeed)
+
+	// User routes (protected - requires auth)
+	userRouteHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(userHandler.GetProfile))
+	mux.Handle("/api/v1/users/", userRouteHandler)
 
 	// Comment routes - route to appropriate handler based on method
 	commentRouteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
