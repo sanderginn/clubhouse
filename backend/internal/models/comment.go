@@ -57,3 +57,8 @@ type DeleteCommentResponse struct {
 	Comment *Comment `json:"comment"`
 	Message string   `json:"message"`
 }
+
+// RestoreCommentResponse represents the response for restoring a comment
+type RestoreCommentResponse struct {
+	Comment Comment `json:"comment"`
+}

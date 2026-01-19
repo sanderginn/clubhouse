@@ -248,3 +248,59 @@ func (h *CommentHandler) DeleteComment(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 }
+
+// RestoreComment handles POST /api/v1/comments/{id}/restore
+func (h *CommentHandler) RestoreComment(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		return
+	}
+
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
+		return
+	}
+
+	session, err := middleware.GetUserFromContext(r.Context())
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user session")
+		return
+	}
+
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 5 {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Comment ID is required")
+		return
+	}
+
+	commentIDStr := pathParts[4]
+	commentID, err := uuid.Parse(commentIDStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_COMMENT_ID", "Invalid comment ID format")
+		return
+	}
+
+	comment, err := h.commentService.RestoreComment(r.Context(), commentID, userID, session.IsAdmin)
+	if err != nil {
+		switch err.Error() {
+		case "comment not found":
+			writeError(w, http.StatusNotFound, "COMMENT_NOT_FOUND", "Comment not found")
+		case "unauthorized":
+			writeError(w, http.StatusForbidden, "FORBIDDEN", "You do not have permission to restore this comment")
+		case "comment permanently deleted":
+			writeError(w, http.StatusGone, "COMMENT_PERMANENTLY_DELETED", "Comment was permanently deleted more than 7 days ago")
+		default:
+			writeError(w, http.StatusInternalServerError, "RESTORE_FAILED", "Failed to restore comment")
+		}
+		return
+	}
+
+	response := models.RestoreCommentResponse{
+		Comment: *comment,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}

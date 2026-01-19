@@ -77,11 +77,14 @@ func main() {
 
 	// Comment routes - route to appropriate handler based on method
 	commentRouteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
+		if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/restore") {
+			restoreHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(commentHandler.RestoreComment))
+			restoreHandler.ServeHTTP(w, r)
+		} else if r.Method == http.MethodGet {
 			commentHandler.GetComment(w, r)
 		} else if r.Method == http.MethodDelete {
-			authHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(commentHandler.DeleteComment))
-			authHandler.ServeHTTP(w, r)
+			deleteHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(commentHandler.DeleteComment))
+			deleteHandler.ServeHTTP(w, r)
 		} else {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusMethodNotAllowed)
