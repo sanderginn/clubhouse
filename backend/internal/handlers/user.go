@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/sanderginn/clubhouse/internal/middleware"
+	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/services"
 )
 
@@ -164,6 +166,50 @@ func (h *UserHandler) GetUserComments(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		writeError(w, http.StatusInternalServerError, "GET_USER_COMMENTS_FAILED", "Failed to get user comments")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
+// UpdateMe handles PATCH /api/v1/users/me
+func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPatch {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only PATCH requests are allowed")
+		return
+	}
+
+	// Get user ID from context (set by auth middleware)
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
+		return
+	}
+
+	// Parse request body
+	var req models.UpdateUserRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		return
+	}
+
+	// Update profile
+	response, err := h.userService.UpdateProfile(r.Context(), userID, &req)
+	if err != nil {
+		switch err.Error() {
+		case "user not found":
+			writeError(w, http.StatusNotFound, "USER_NOT_FOUND", err.Error())
+		case "at least one field (bio or profile_picture_url) is required":
+			writeError(w, http.StatusBadRequest, "INVALID_REQUEST", err.Error())
+		case "invalid profile picture URL":
+			writeError(w, http.StatusBadRequest, "INVALID_URL", err.Error())
+		case "profile picture URL must use http or https scheme":
+			writeError(w, http.StatusBadRequest, "INVALID_URL_SCHEME", err.Error())
+		default:
+			writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to update profile")
+		}
 		return
 	}
 

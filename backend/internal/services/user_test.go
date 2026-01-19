@@ -194,3 +194,70 @@ func TestIsStrongPassword(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateProfilePictureURL(t *testing.T) {
+	tests := []struct {
+		name    string
+		url     string
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name:    "valid https URL",
+			url:     "https://example.com/image.png",
+			wantErr: false,
+		},
+		{
+			name:    "valid http URL",
+			url:     "http://example.com/image.jpg",
+			wantErr: false,
+		},
+		{
+			name:    "valid URL with path and query",
+			url:     "https://cdn.example.com/images/avatar.png?size=256",
+			wantErr: false,
+		},
+		{
+			name:    "invalid - no scheme",
+			url:     "example.com/image.png",
+			wantErr: true,
+			errMsg:  "profile picture URL must use http or https scheme",
+		},
+		{
+			name:    "invalid - ftp scheme",
+			url:     "ftp://example.com/image.png",
+			wantErr: true,
+			errMsg:  "profile picture URL must use http or https scheme",
+		},
+		{
+			name:    "invalid - file scheme",
+			url:     "file:///etc/passwd",
+			wantErr: true,
+			errMsg:  "profile picture URL must use http or https scheme",
+		},
+		{
+			name:    "invalid - javascript scheme",
+			url:     "javascript:alert(1)",
+			wantErr: true,
+			errMsg:  "profile picture URL must use http or https scheme",
+		},
+		{
+			name:    "invalid - no host",
+			url:     "https:///path",
+			wantErr: true,
+			errMsg:  "invalid profile picture URL",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateProfilePictureURL(tt.url)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("validateProfilePictureURL() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if err != nil && tt.errMsg != "" && err.Error() != tt.errMsg {
+				t.Errorf("validateProfilePictureURL() error = %v, want %v", err.Error(), tt.errMsg)
+			}
+		})
+	}
+}

@@ -1,14 +1,29 @@
 package handlers
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/models"
+	"github.com/sanderginn/clubhouse/internal/services"
 )
+
+// createTestUserContext creates a context with user session for testing
+func createTestUserContext(ctx context.Context, userID uuid.UUID, username string, isAdmin bool) context.Context {
+	session := &services.Session{
+		UserID:   userID,
+		Username: username,
+		IsAdmin:  isAdmin,
+	}
+	return context.WithValue(ctx, middleware.UserContextKey, session)
+}
 
 // TestGetProfileSuccess tests successfully retrieving a user profile
 func TestGetProfileSuccess(t *testing.T) {
@@ -745,5 +760,305 @@ func TestGetUserCommentsExcludesSoftDeleted(t *testing.T) {
 
 	if response.Comments[0].ID != activeCommentID {
 		t.Errorf("expected active comment ID %s, got %s", activeCommentID, response.Comments[0].ID)
+	}
+}
+
+// TestUpdateMeSuccess tests successfully updating user profile
+func TestUpdateMeSuccess(t *testing.T) {
+	db, err := getTestDB()
+	if err != nil {
+		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+	defer db.Close()
+
+	userID := uuid.New()
+	testUsername := "updatemeuser"
+	testEmail := "updateme@example.com"
+	testHash := "$2a$12$test"
+
+	query := `
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, $2, $3, $4, false, now(), now())
+	`
+	_, err = db.Exec(query, userID, testUsername, testEmail, testHash)
+	if err != nil {
+		t.Fatalf("failed to create test user: %v", err)
+	}
+
+	handler := NewUserHandler(db)
+
+	// Create request with bio and profile picture URL
+	reqBody := `{"bio": "My new bio", "profile_picture_url": "https://example.com/image.png"}`
+	req := httptest.NewRequest("PATCH", "/api/v1/users/me", strings.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+
+	// Add user context (simulating auth middleware)
+	ctx := createTestUserContext(req.Context(), userID, testUsername, false)
+	req = req.WithContext(ctx)
+
+	w := httptest.NewRecorder()
+	handler.UpdateMe(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response models.UpdateUserResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if response.ID != userID {
+		t.Errorf("expected user ID %s, got %s", userID, response.ID)
+	}
+
+	if response.Bio == nil || *response.Bio != "My new bio" {
+		t.Errorf("expected bio 'My new bio', got %v", response.Bio)
+	}
+
+	if response.ProfilePictureUrl == nil || *response.ProfilePictureUrl != "https://example.com/image.png" {
+		t.Errorf("expected profile_picture_url 'https://example.com/image.png', got %v", response.ProfilePictureUrl)
+	}
+
+	// Verify changes in database
+	var bio, profilePictureUrl sql.NullString
+	err = db.QueryRow("SELECT bio, profile_picture_url FROM users WHERE id = $1", userID).Scan(&bio, &profilePictureUrl)
+	if err != nil {
+		t.Fatalf("failed to query user: %v", err)
+	}
+
+	if !bio.Valid || bio.String != "My new bio" {
+		t.Errorf("expected bio 'My new bio' in DB, got %v", bio)
+	}
+
+	if !profilePictureUrl.Valid || profilePictureUrl.String != "https://example.com/image.png" {
+		t.Errorf("expected profile_picture_url 'https://example.com/image.png' in DB, got %v", profilePictureUrl)
+	}
+}
+
+// TestUpdateMeBioOnly tests updating only the bio
+func TestUpdateMeBioOnly(t *testing.T) {
+	db, err := getTestDB()
+	if err != nil {
+		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+	defer db.Close()
+
+	userID := uuid.New()
+	testUsername := "bioonlyuser"
+	testEmail := "bioonly@example.com"
+	testHash := "$2a$12$test"
+
+	query := `
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, $2, $3, $4, false, now(), now())
+	`
+	_, err = db.Exec(query, userID, testUsername, testEmail, testHash)
+	if err != nil {
+		t.Fatalf("failed to create test user: %v", err)
+	}
+
+	handler := NewUserHandler(db)
+
+	reqBody := `{"bio": "Only bio update"}`
+	req := httptest.NewRequest("PATCH", "/api/v1/users/me", strings.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+
+	ctx := createTestUserContext(req.Context(), userID, testUsername, false)
+	req = req.WithContext(ctx)
+
+	w := httptest.NewRecorder()
+	handler.UpdateMe(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response models.UpdateUserResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if response.Bio == nil || *response.Bio != "Only bio update" {
+		t.Errorf("expected bio 'Only bio update', got %v", response.Bio)
+	}
+}
+
+// TestUpdateMeInvalidURL tests updating with invalid profile picture URL
+func TestUpdateMeInvalidURL(t *testing.T) {
+	db, err := getTestDB()
+	if err != nil {
+		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+	defer db.Close()
+
+	userID := uuid.New()
+	testUsername := "invalidurluser"
+	testEmail := "invalidurl@example.com"
+	testHash := "$2a$12$test"
+
+	query := `
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, $2, $3, $4, false, now(), now())
+	`
+	_, err = db.Exec(query, userID, testUsername, testEmail, testHash)
+	if err != nil {
+		t.Fatalf("failed to create test user: %v", err)
+	}
+
+	handler := NewUserHandler(db)
+
+	reqBody := `{"profile_picture_url": "not-a-valid-url"}`
+	req := httptest.NewRequest("PATCH", "/api/v1/users/me", strings.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+
+	ctx := createTestUserContext(req.Context(), userID, testUsername, false)
+	req = req.WithContext(ctx)
+
+	w := httptest.NewRecorder()
+	handler.UpdateMe(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if response.Code != "INVALID_URL_SCHEME" {
+		t.Errorf("expected code INVALID_URL_SCHEME, got %s", response.Code)
+	}
+}
+
+// TestUpdateMeEmptyBody tests updating with empty request body
+func TestUpdateMeEmptyBody(t *testing.T) {
+	db, err := getTestDB()
+	if err != nil {
+		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+	defer db.Close()
+
+	userID := uuid.New()
+	testUsername := "emptybodyuser"
+	testEmail := "emptybody@example.com"
+	testHash := "$2a$12$test"
+
+	query := `
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, $2, $3, $4, false, now(), now())
+	`
+	_, err = db.Exec(query, userID, testUsername, testEmail, testHash)
+	if err != nil {
+		t.Fatalf("failed to create test user: %v", err)
+	}
+
+	handler := NewUserHandler(db)
+
+	reqBody := `{}`
+	req := httptest.NewRequest("PATCH", "/api/v1/users/me", strings.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+
+	ctx := createTestUserContext(req.Context(), userID, testUsername, false)
+	req = req.WithContext(ctx)
+
+	w := httptest.NewRecorder()
+	handler.UpdateMe(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if response.Code != "INVALID_REQUEST" {
+		t.Errorf("expected code INVALID_REQUEST, got %s", response.Code)
+	}
+}
+
+// TestUpdateMeMethodNotAllowed tests with non-PATCH method
+func TestUpdateMeMethodNotAllowed(t *testing.T) {
+	db, err := getTestDB()
+	if err != nil {
+		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+	defer db.Close()
+
+	userID := uuid.New()
+
+	handler := NewUserHandler(db)
+
+	req := httptest.NewRequest("GET", "/api/v1/users/me", nil)
+	ctx := createTestUserContext(req.Context(), userID, "testuser", false)
+	req = req.WithContext(ctx)
+
+	w := httptest.NewRecorder()
+	handler.UpdateMe(w, req)
+
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Errorf("expected status %d, got %d", http.StatusMethodNotAllowed, w.Code)
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if response.Code != "METHOD_NOT_ALLOWED" {
+		t.Errorf("expected code METHOD_NOT_ALLOWED, got %s", response.Code)
+	}
+}
+
+// TestUpdateMeNoAuth tests UpdateMe without authentication
+func TestUpdateMeNoAuth(t *testing.T) {
+	db, err := getTestDB()
+	if err != nil {
+		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+	defer db.Close()
+
+	handler := NewUserHandler(db)
+
+	reqBody := `{"bio": "Test bio"}`
+	req := httptest.NewRequest("PATCH", "/api/v1/users/me", strings.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	// No context with user
+
+	w := httptest.NewRecorder()
+	handler.UpdateMe(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if response.Code != "UNAUTHORIZED" {
+		t.Errorf("expected code UNAUTHORIZED, got %s", response.Code)
 	}
 }

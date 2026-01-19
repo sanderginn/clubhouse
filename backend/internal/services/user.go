@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"unicode"
 
@@ -511,4 +512,79 @@ func (s *UserService) GetUserComments(ctx context.Context, userID uuid.UUID, cur
 			HasMore: hasMore,
 		},
 	}, nil
+}
+
+// UpdateProfile updates the user's own profile (bio and profile picture URL)
+func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *models.UpdateUserRequest) (*models.UpdateUserResponse, error) {
+	// Validate profile picture URL if provided
+	if req.ProfilePictureUrl != nil && *req.ProfilePictureUrl != "" {
+		if err := validateProfilePictureURL(*req.ProfilePictureUrl); err != nil {
+			return nil, err
+		}
+	}
+
+	// Check if at least one field is provided
+	if req.Bio == nil && req.ProfilePictureUrl == nil {
+		return nil, fmt.Errorf("at least one field (bio or profile_picture_url) is required")
+	}
+
+	// Build dynamic UPDATE query based on provided fields
+	setClauses := []string{"updated_at = now()"}
+	args := []interface{}{}
+	argIndex := 1
+
+	if req.Bio != nil {
+		setClauses = append(setClauses, fmt.Sprintf("bio = $%d", argIndex))
+		args = append(args, *req.Bio)
+		argIndex++
+	}
+
+	if req.ProfilePictureUrl != nil {
+		setClauses = append(setClauses, fmt.Sprintf("profile_picture_url = $%d", argIndex))
+		args = append(args, *req.ProfilePictureUrl)
+		argIndex++
+	}
+
+	args = append(args, userID)
+
+	query := fmt.Sprintf(`
+		UPDATE users
+		SET %s
+		WHERE id = $%d AND deleted_at IS NULL
+		RETURNING id, username, email, profile_picture_url, bio, is_admin
+	`, strings.Join(setClauses, ", "), argIndex)
+
+	var response models.UpdateUserResponse
+	err := s.db.QueryRowContext(ctx, query, args...).
+		Scan(&response.ID, &response.Username, &response.Email,
+			&response.ProfilePictureUrl, &response.Bio, &response.IsAdmin)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, fmt.Errorf("failed to update profile: %w", err)
+	}
+
+	return &response, nil
+}
+
+// validateProfilePictureURL validates that the profile picture URL is a valid URL
+func validateProfilePictureURL(urlStr string) error {
+	parsedURL, err := url.Parse(urlStr)
+	if err != nil {
+		return fmt.Errorf("invalid profile picture URL")
+	}
+
+	// Must have a scheme (http or https)
+	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+		return fmt.Errorf("profile picture URL must use http or https scheme")
+	}
+
+	// Must have a host
+	if parsedURL.Host == "" {
+		return fmt.Errorf("invalid profile picture URL")
+	}
+
+	return nil
 }
