@@ -26,6 +26,7 @@
     21,
     22,
     23,
+    24,
     49,
     50,
     51,
@@ -126,7 +127,7 @@
     {
       "issue_number": 24,
       "title": "Phase 2: Implement get user profile endpoint",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768821105-90353",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768821105-90353",
       "dependencies": [],
@@ -136,7 +137,8 @@
         "users"
       ],
       "branch": "feat/issue-24-implement-get-user-profile-endpoint",
-      "claimed_at": "2026-01-19T11:11:45Z"
+      "claimed_at": "2026-01-19T11:11:45Z",
+      "completed_at": "2026-01-19T11:22:05Z"
     },
     {
       "issue_number": 25,
