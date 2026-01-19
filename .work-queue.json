@@ -27,6 +27,7 @@
     22,
     23,
     24,
+    25,
     49,
     50,
     51,
@@ -143,7 +144,7 @@
     {
       "issue_number": 25,
       "title": "Phase 2: Implement update own profile endpoint",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768852727-9704",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768852727-9704",
       "dependencies": [
@@ -155,7 +156,8 @@
         "users"
       ],
       "branch": "feat/issue-25-implement-update-own-profile-endpoint",
-      "claimed_at": "2026-01-19T19:58:47Z"
+      "claimed_at": "2026-01-19T19:58:47Z",
+      "completed_at": "2026-01-19T20:04:17Z"
     },
     {
       "issue_number": 26,
