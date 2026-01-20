@@ -58,6 +58,7 @@
     56,
     57,
     93,
+    99,
     112,
     113,
     114
@@ -1021,7 +1022,7 @@
     {
       "issue_number": 99,
       "title": "Phase 7: Search scope without explicit section_id",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768939486-40944",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768939486-40944",
       "dependencies": [],
@@ -1031,7 +1032,9 @@
         "search"
       ],
       "branch": "feat/issue-99-search-scope-without-explicit-sectionid",
-      "claimed_at": "2026-01-20T20:04:46Z"
+      "claimed_at": "2026-01-20T20:04:46Z",
+      "pr_number": 124,
+      "completed_at": "2026-01-20T20:32:02Z"
     },
     {
       "issue_number": 100,
