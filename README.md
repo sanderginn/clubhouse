@@ -83,6 +83,9 @@ go mod download
 # Build
 go build -o clubhouse-server ./cmd/server
 
+# Run migrations (if database is running)
+migrate -path migrations -database "$DATABASE_URL" up
+
 # Run (ensure .env is configured)
 ./clubhouse-server
 ```
