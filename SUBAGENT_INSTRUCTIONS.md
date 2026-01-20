@@ -66,7 +66,7 @@ git push -u origin <BRANCH_NAME>
 ### 7. Create Pull Request
 
 ```bash
-gh pr create --title "Issue Title" --body "Closes #NN"
+gh pr create --title "Issue Title" --body "Summary:\n- ...\n\nCloses #NN"
 ```
 
 ### 8. Wait for Review
