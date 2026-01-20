@@ -1,9 +1,16 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import './styles/globals.css';
-  import { Layout, PostForm, SectionFeed } from './components';
+  import { Layout, PostForm, SectionFeed, SearchBar, SearchResults } from './components';
   import { Login, Register } from './routes';
-  import { authStore, isAuthenticated, activeSection, websocketStore, sectionStore } from './stores';
+  import {
+    authStore,
+    isAuthenticated,
+    activeSection,
+    searchQuery,
+    websocketStore,
+    sectionStore,
+  } from './stores';
 
   let authPage: 'login' | 'register' = 'login';
 
@@ -57,11 +64,17 @@
           <h1 class="text-2xl font-bold text-gray-900">{$activeSection.name}</h1>
         </div>
 
+        <SearchBar />
+
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <PostForm />
         </div>
 
-        <SectionFeed />
+        {#if $searchQuery.trim().length > 0}
+          <SearchResults />
+        {:else}
+          <SectionFeed />
+        {/if}
       {:else}
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h1 class="text-2xl font-bold text-gray-900 mb-4">Welcome to Clubhouse</h1>
