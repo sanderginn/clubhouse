@@ -485,17 +485,18 @@ func TestGetUserPostsExcludesSoftDeleted(t *testing.T) {
 		t.Errorf("failed to decode response: %v", err)
 	}
 
+	// Only the non-deleted post should be returned
 	if len(response.Posts) != 1 {
-		t.Errorf("expected 1 post (soft-deleted excluded), got %d", len(response.Posts))
+		t.Errorf("expected 1 post (excluding soft-deleted), got %d", len(response.Posts))
 	}
 
-	if len(response.Posts) > 0 && response.Posts[0].ID != normalPostID {
+	if response.Posts[0].ID != normalPostID {
 		t.Errorf("expected normal post ID %s, got %s", normalPostID, response.Posts[0].ID)
 	}
 }
 
-// TestGetUserPostsPagination tests cursor-based pagination
-func TestGetUserPostsPagination(t *testing.T) {
+// TestGetUserCommentsSuccess tests successfully retrieving user comments
+func TestGetUserCommentsSuccess(t *testing.T) {
 	db, err := getTestDB()
 	if err != nil {
 		t.Fatalf("failed to get test DB: %v", err)
@@ -507,8 +508,8 @@ func TestGetUserPostsPagination(t *testing.T) {
 
 	// Create test user
 	userID := uuid.New()
-	testUsername := "paginationuser"
-	testEmail := "pagination@example.com"
+	testUsername := "commentuser"
+	testEmail := "commentuser@example.com"
 	testHash := "$2a$12$test"
 
 	userQuery := `
@@ -520,50 +521,229 @@ func TestGetUserPostsPagination(t *testing.T) {
 		t.Fatalf("failed to create test user: %v", err)
 	}
 
-	// Create test section
+	// Create a section and post for the comments
 	sectionID := uuid.New()
-	sectionQuery := `INSERT INTO sections (id, name, type, created_at) VALUES ($1, 'Test Section', 'general', now())`
-	_, err = db.Exec(sectionQuery, sectionID)
+	_, err = db.Exec(`INSERT INTO sections (id, name, type, created_at) VALUES ($1, 'Test', 'general', now())`, sectionID)
 	if err != nil {
 		t.Fatalf("failed to create test section: %v", err)
 	}
 
-	// Create 3 posts
-	for i := 0; i < 3; i++ {
-		postID := uuid.New()
-		postQuery := `INSERT INTO posts (id, user_id, section_id, content, created_at) VALUES ($1, $2, $3, $4, now())`
-		_, err = db.Exec(postQuery, postID, userID, sectionID, "Test post")
-		if err != nil {
-			t.Fatalf("failed to create test post: %v", err)
-		}
+	postID := uuid.New()
+	_, err = db.Exec(`INSERT INTO posts (id, user_id, section_id, content, created_at) VALUES ($1, $2, $3, 'Test post', now())`, postID, userID, sectionID)
+	if err != nil {
+		t.Fatalf("failed to create test post: %v", err)
+	}
+
+	// Create test comments
+	commentID1 := uuid.New()
+	commentID2 := uuid.New()
+	_, err = db.Exec(`INSERT INTO comments (id, user_id, post_id, content, created_at) VALUES ($1, $2, $3, 'Comment 1', now())`, commentID1, userID, postID)
+	if err != nil {
+		t.Fatalf("failed to create test comment 1: %v", err)
+	}
+	_, err = db.Exec(`INSERT INTO comments (id, user_id, post_id, content, created_at) VALUES ($1, $2, $3, 'Comment 2', now())`, commentID2, userID, postID)
+	if err != nil {
+		t.Fatalf("failed to create test comment 2: %v", err)
 	}
 
 	handler := NewUserHandler(db)
 
-	// Request with limit=2
-	req := httptest.NewRequest("GET", "/api/v1/users/"+userID.String()+"/posts?limit=2", nil)
+	req := httptest.NewRequest("GET", "/api/v1/users/"+userID.String()+"/comments", nil)
 	w := httptest.NewRecorder()
 
-	handler.GetUserPosts(w, req)
+	handler.GetUserComments(w, req)
 
 	if w.Code != http.StatusOK {
 		t.Errorf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
 	}
 
-	var response models.FeedResponse
+	var response models.GetThreadResponse
 	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
 		t.Errorf("failed to decode response: %v", err)
 	}
 
-	if len(response.Posts) != 2 {
-		t.Errorf("expected 2 posts, got %d", len(response.Posts))
+	if len(response.Comments) != 2 {
+		t.Errorf("expected 2 comments, got %d", len(response.Comments))
 	}
 
-	if !response.HasMore {
-		t.Errorf("expected has_more to be true")
+	if response.Meta.HasMore {
+		t.Errorf("expected has_more to be false, got true")
+	}
+}
+
+// TestGetUserCommentsNotFound tests 404 for non-existent user
+func TestGetUserCommentsNotFound(t *testing.T) {
+	db, err := getTestDB()
+	if err != nil {
+		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+	defer db.Close()
+
+	handler := NewUserHandler(db)
+	randomID := uuid.New()
+
+	req := httptest.NewRequest("GET", "/api/v1/users/"+randomID.String()+"/comments", nil)
+	w := httptest.NewRecorder()
+
+	handler.GetUserComments(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected status %d, got %d", http.StatusNotFound, w.Code)
 	}
 
-	if response.NextCursor == nil {
-		t.Errorf("expected next_cursor to be set")
+	var response models.ErrorResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if response.Code != "USER_NOT_FOUND" {
+		t.Errorf("expected code USER_NOT_FOUND, got %s", response.Code)
+	}
+}
+
+// TestGetUserCommentsInvalidID tests with invalid user ID format
+func TestGetUserCommentsInvalidID(t *testing.T) {
+	db, err := getTestDB()
+	if err != nil {
+		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+	defer db.Close()
+
+	handler := NewUserHandler(db)
+
+	req := httptest.NewRequest("GET", "/api/v1/users/not-a-uuid/comments", nil)
+	w := httptest.NewRecorder()
+
+	handler.GetUserComments(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if response.Code != "INVALID_USER_ID" {
+		t.Errorf("expected code INVALID_USER_ID, got %s", response.Code)
+	}
+}
+
+// TestGetUserCommentsMethodNotAllowed tests with non-GET method
+func TestGetUserCommentsMethodNotAllowed(t *testing.T) {
+	db, err := getTestDB()
+	if err != nil {
+		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+	defer db.Close()
+
+	handler := NewUserHandler(db)
+	userID := uuid.New()
+
+	req := httptest.NewRequest("POST", "/api/v1/users/"+userID.String()+"/comments", nil)
+	w := httptest.NewRecorder()
+
+	handler.GetUserComments(w, req)
+
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Errorf("expected status %d, got %d", http.StatusMethodNotAllowed, w.Code)
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if response.Code != "METHOD_NOT_ALLOWED" {
+		t.Errorf("expected code METHOD_NOT_ALLOWED, got %s", response.Code)
+	}
+}
+
+// TestGetUserCommentsExcludesSoftDeleted tests that soft-deleted comments are excluded
+func TestGetUserCommentsExcludesSoftDeleted(t *testing.T) {
+	db, err := getTestDB()
+	if err != nil {
+		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+	defer db.Close()
+
+	// Create test user
+	userID := uuid.New()
+	testUsername := "softdeleteuser"
+	testEmail := "softdeleteuser@example.com"
+	testHash := "$2a$12$test"
+
+	userQuery := `
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, $2, $3, $4, false, now(), now())
+	`
+	_, err = db.Exec(userQuery, userID, testUsername, testEmail, testHash)
+	if err != nil {
+		t.Fatalf("failed to create test user: %v", err)
+	}
+
+	// Create a section and post for the comments
+	sectionID := uuid.New()
+	_, err = db.Exec(`INSERT INTO sections (id, name, type, created_at) VALUES ($1, 'Test', 'general', now())`, sectionID)
+	if err != nil {
+		t.Fatalf("failed to create test section: %v", err)
+	}
+
+	postID := uuid.New()
+	_, err = db.Exec(`INSERT INTO posts (id, user_id, section_id, content, created_at) VALUES ($1, $2, $3, 'Test post', now())`, postID, userID, sectionID)
+	if err != nil {
+		t.Fatalf("failed to create test post: %v", err)
+	}
+
+	// Create active comment
+	activeCommentID := uuid.New()
+	_, err = db.Exec(`INSERT INTO comments (id, user_id, post_id, content, created_at) VALUES ($1, $2, $3, 'Active comment', now())`, activeCommentID, userID, postID)
+	if err != nil {
+		t.Fatalf("failed to create active comment: %v", err)
+	}
+
+	// Create soft-deleted comment
+	deletedCommentID := uuid.New()
+	_, err = db.Exec(`INSERT INTO comments (id, user_id, post_id, content, created_at, deleted_at) VALUES ($1, $2, $3, 'Deleted comment', now(), now())`, deletedCommentID, userID, postID)
+	if err != nil {
+		t.Fatalf("failed to create deleted comment: %v", err)
+	}
+
+	handler := NewUserHandler(db)
+
+	req := httptest.NewRequest("GET", "/api/v1/users/"+userID.String()+"/comments", nil)
+	w := httptest.NewRecorder()
+
+	handler.GetUserComments(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response models.GetThreadResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	// Only the active comment should be returned
+	if len(response.Comments) != 1 {
+		t.Errorf("expected 1 comment (excluding soft-deleted), got %d", len(response.Comments))
+	}
+
+	if response.Comments[0].ID != activeCommentID {
+		t.Errorf("expected active comment ID %s, got %s", activeCommentID, response.Comments[0].ID)
 	}
 }
