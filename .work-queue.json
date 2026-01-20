@@ -668,7 +668,8 @@
       ],
       "branch": "feat/issue-40-implement-restore-softdeleted-content",
       "claimed_at": "2026-01-20T17:48:48Z",
-      "completed_at": "2026-01-20T17:53:08Z"
+      "completed_at": "2026-01-20T17:54:25Z",
+      "pr_number": 120
     },
     {
       "issue_number": 41,
