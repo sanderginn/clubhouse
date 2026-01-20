@@ -55,8 +55,6 @@ func (s *SearchService) Search(ctx context.Context, query string, scope string, 
 	}
 	defer span.End()
 
-	linkText := "COALESCE(l.metadata->>'title','') || ' ' || COALESCE(l.metadata->>'description','') || ' ' || COALESCE(l.metadata->>'author','') || ' ' || COALESCE(l.metadata->>'artist','') || ' ' || COALESCE(l.metadata->>'provider','') || ' ' || COALESCE(l.url,'')"
-
 	postScopeFilter := ""
 	commentScopeFilter := ""
 	linkScopeFilter := ""
@@ -74,23 +72,23 @@ func (s *SearchService) Search(ctx context.Context, query string, scope string, 
 		WITH q AS (SELECT plainto_tsquery('english', $1) AS query),
 		post_matches AS (
 			SELECT p.id,
-				ts_rank_cd(to_tsvector('english', p.content), q.query)
-				+ COALESCE(MAX(ts_rank_cd(to_tsvector('english', %s), q.query)), 0) AS rank
+				ts_rank_cd(p.search_vector, q.query)
+				+ COALESCE(MAX(ts_rank_cd(l.search_vector, q.query)), 0) AS rank
 			FROM posts p
 			LEFT JOIN links l ON l.post_id = p.id
 			CROSS JOIN q
 			WHERE p.deleted_at IS NULL
 				AND (
-					to_tsvector('english', p.content) @@ q.query
-					OR to_tsvector('english', %s) @@ q.query
+					p.search_vector @@ q.query
+					OR l.search_vector @@ q.query
 				)
 				%s
 			GROUP BY p.id
 		),
 		comment_matches AS (
 			SELECT c.id,
-				ts_rank_cd(to_tsvector('english', c.content), q.query)
-				+ COALESCE(MAX(ts_rank_cd(to_tsvector('english', %s), q.query)), 0) AS rank
+				ts_rank_cd(c.search_vector, q.query)
+				+ COALESCE(MAX(ts_rank_cd(l.search_vector, q.query)), 0) AS rank
 			FROM comments c
 			JOIN posts p ON c.post_id = p.id
 			LEFT JOIN links l ON l.comment_id = c.id
@@ -98,21 +96,21 @@ func (s *SearchService) Search(ctx context.Context, query string, scope string, 
 			WHERE c.deleted_at IS NULL
 				AND p.deleted_at IS NULL
 				AND (
-					to_tsvector('english', c.content) @@ q.query
-					OR to_tsvector('english', %s) @@ q.query
+					c.search_vector @@ q.query
+					OR l.search_vector @@ q.query
 				)
 				%s
 			GROUP BY c.id
 		),
 		link_matches AS (
 			SELECT l.id,
-				ts_rank_cd(to_tsvector('english', %s), q.query) AS rank
+				ts_rank_cd(l.search_vector, q.query) AS rank
 			FROM links l
 			LEFT JOIN posts p ON l.post_id = p.id
 			LEFT JOIN comments c ON l.comment_id = c.id
 			LEFT JOIN posts cp ON c.post_id = cp.id
 			CROSS JOIN q
-			WHERE to_tsvector('english', %s) @@ q.query
+			WHERE l.search_vector @@ q.query
 				AND (
 					(l.post_id IS NOT NULL AND p.deleted_at IS NULL)
 					OR (l.comment_id IS NOT NULL AND c.deleted_at IS NULL AND cp.deleted_at IS NULL)
@@ -126,7 +124,7 @@ func (s *SearchService) Search(ctx context.Context, query string, scope string, 
 		SELECT 'link_metadata' AS result_type, id, rank FROM link_matches
 		ORDER BY rank DESC
 		LIMIT %s
-	`, linkText, linkText, postScopeFilter, linkText, linkText, commentScopeFilter, linkText, linkText, linkScopeFilter, limitPlaceholder)
+	`, postScopeFilter, commentScopeFilter, linkScopeFilter, limitPlaceholder)
 
 	args = append(args, limit)
 
