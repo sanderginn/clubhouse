@@ -1,22 +1,32 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onDestroy } from 'svelte';
   import { uiStore } from '../stores';
   import Header from './Header.svelte';
   import Sidebar from './Sidebar.svelte';
 
-  onMount(() => {
-    const mediaQuery = window.matchMedia('(max-width: 1023px)');
+  let mediaQuery: MediaQueryList | null = null;
+  let cleanupListener: (() => void) | null = null;
 
-    function handleResize(e: MediaQueryListEvent | MediaQueryList) {
-      uiStore.setIsMobile(e.matches);
-    }
+  if (typeof window !== 'undefined') {
+    mediaQuery = window.matchMedia('(max-width: 1023px)');
+    uiStore.setIsMobile(mediaQuery.matches);
 
-    handleResize(mediaQuery);
-    mediaQuery.addEventListener('change', handleResize);
-
-    return () => {
-      mediaQuery.removeEventListener('change', handleResize);
+    const handleResize = (event?: MediaQueryListEvent) => {
+      uiStore.setIsMobile(event?.matches ?? mediaQuery.matches);
     };
+
+    handleResize();
+    if ('addEventListener' in mediaQuery) {
+      mediaQuery.addEventListener('change', handleResize);
+      cleanupListener = () => mediaQuery?.removeEventListener('change', handleResize);
+    } else {
+      mediaQuery.addListener(handleResize);
+      cleanupListener = () => mediaQuery?.removeListener(handleResize);
+    }
+  }
+
+  onDestroy(() => {
+    cleanupListener?.();
   });
 </script>
 
