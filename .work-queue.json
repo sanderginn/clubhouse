@@ -49,6 +49,7 @@
     42,
     43,
     44,
+    45,
     49,
     50,
     51,
@@ -778,7 +779,7 @@
     {
       "issue_number": 45,
       "title": "Phase 6: Integrate OpenTelemetry for metrics",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768941905-53538",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768941905-53538",
       "dependencies": [
@@ -795,7 +796,8 @@
         "observability"
       ],
       "branch": "feat/issue-45-integrate-opentelemetry-for-metrics",
-      "claimed_at": "2026-01-20T20:45:05Z"
+      "claimed_at": "2026-01-20T20:45:05Z",
+      "completed_at": "2026-01-20T20:52:02Z"
     },
     {
       "issue_number": 46,
