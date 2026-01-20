@@ -90,6 +90,31 @@ describe('searchStore', () => {
     expect(request).not.toContain('section_id=');
   });
 
+  it('sets error when searching section scope without active section', async () => {
+    searchStore.setQuery('hello');
+    searchStore.setScope('section');
+
+    await searchStore.search();
+
+    expect(apiGet).not.toHaveBeenCalled();
+    const state = get(searchStore);
+    expect(state.error).toBe('Select a section to search within.');
+  });
+
+  it('clear resets state', () => {
+    searchStore.setQuery('hello');
+    searchStore.setScope('global');
+    searchStore.clear();
+
+    const state = get(searchStore);
+    expect(state.query).toBe('');
+    expect(state.scope).toBe('section');
+    expect(state.results).toHaveLength(0);
+    expect(state.isLoading).toBe(false);
+    expect(state.error).toBeNull();
+    expect(state.lastSearched).toBe('');
+  });
+
   it('stores errors when the API fails', async () => {
     searchStore.setQuery('fail');
     searchStore.setScope('global');

@@ -52,4 +52,22 @@ describe('mapApiComment', () => {
     expect(comment.replies).toHaveLength(1);
     expect(comment.replies?.[0].parentCommentId).toBe('comment-1');
   });
+
+  it('maps API comment without metadata', () => {
+    const comment = mapApiComment({
+      id: 'comment-2',
+      user_id: 'user-3',
+      post_id: 'post-2',
+      content: 'No metadata',
+      created_at: '2025-01-02T00:00:00Z',
+      links: [
+        {
+          id: 'link-2',
+          url: 'https://example.com/no-meta',
+        },
+      ],
+    });
+
+    expect(comment.links?.[0].metadata).toBeUndefined();
+  });
 });

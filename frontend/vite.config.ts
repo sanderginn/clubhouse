@@ -5,7 +5,8 @@ import path from 'path';
 export default defineConfig({
   plugins: [svelte()],
   test: {
-    environment: 'node',
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
   },
   resolve: {
     alias: {
