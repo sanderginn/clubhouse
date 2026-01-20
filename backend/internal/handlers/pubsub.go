@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"time"
+	"unicode"
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
@@ -47,8 +47,6 @@ type reactionEventData struct {
 	Emoji     string     `json:"emoji"`
 }
 
-var mentionPattern = regexp.MustCompile(`(^|[^A-Za-z0-9_])@([A-Za-z0-9_]{3,50})`)
-
 func publishEvent(ctx context.Context, redisClient *redis.Client, channel string, eventType string, data any) error {
 	if redisClient == nil {
 		return nil
@@ -86,26 +84,54 @@ func publishContext() (context.Context, context.CancelFunc) {
 }
 
 func extractMentionedUsernames(content string) []string {
-	matches := mentionPattern.FindAllStringSubmatch(content, -1)
-	if len(matches) == 0 {
+	if content == "" {
 		return nil
 	}
 
-	seen := make(map[string]struct{}, len(matches))
+	runes := []rune(content)
+	seen := make(map[string]struct{})
 	var usernames []string
-	for _, match := range matches {
-		if len(match) < 3 {
+
+	for i := 0; i < len(runes); i++ {
+		if runes[i] != '@' {
 			continue
 		}
-		username := match[2]
+
+		if i > 0 && isUsernameRune(runes[i-1]) {
+			continue
+		}
+
+		start := i + 1
+		if start >= len(runes) {
+			continue
+		}
+
+		end := start
+		for end < len(runes) && isUsernameRune(runes[end]) {
+			end++
+		}
+
+		usernameLen := end - start
+		if usernameLen < 3 || usernameLen > 50 {
+			i = end - 1
+			continue
+		}
+
+		username := string(runes[start:end])
 		if _, ok := seen[username]; ok {
+			i = end - 1
 			continue
 		}
 		seen[username] = struct{}{}
 		usernames = append(usernames, username)
+		i = end - 1
 	}
 
 	return usernames
+}
+
+func isUsernameRune(r rune) bool {
+	return unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_'
 }
 
 func publishMentions(ctx context.Context, redisClient *redis.Client, userService *services.UserService, content string, authorID uuid.UUID, postID *uuid.UUID, commentID *uuid.UUID) error {
