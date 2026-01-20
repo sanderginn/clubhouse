@@ -112,6 +112,10 @@ The output will show:
 cd <WORKTREE_PATH>  # Path from script output
 ```
 
+**Mandatory:** Do all work from the designated worktree. Never edit or run commands from the main repo root once the worktree is created.
+
+**Autonomy:** After you read these instructions and enter the worktree, start the task immediately. Do not wait for any further input until the PR is opened.
+
 ### 3. Get Context (Efficiently)
 
 Use the **Key File Locations** and **Schema Quick Reference** sections above first.
@@ -177,7 +181,7 @@ The orchestrator will review your PR and either:
 ## Important Notes
 
 1. **Always use `start-agent.sh`** - it handles claiming atomically
-2. **Work in the worktree** - not the main repo
+2. **Work in the designated worktree only** - never use the main repo for edits/commands once a worktree exists
 3. **Use the file location table above** - don't explore; go directly to the right files
 4. **Copy existing patterns** - check one similar handler/service, not multiple
 5. **Add tests when it makes sense** - include frontend tests; explain in PR if you didn't add tests
@@ -185,6 +189,7 @@ The orchestrator will review your PR and either:
 7. **Don't skip dependencies** - the script handles this automatically
 8. **Rebase if conflicts** - orchestrator will ask you to rebase, not fix it themselves
 9. **Minimize exploration** - see "What NOT to Explore" section
+10. **Start immediately** - once in the worktree, begin work without waiting for more user input; keep going until the PR is opened
 
 ## Troubleshooting
 
