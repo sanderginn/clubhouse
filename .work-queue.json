@@ -5,6 +5,8 @@
     "description": "Work queue for parallel issue assignment with dependency tracking"
   },
   "completed_issues": [
+    1,
+    2,
     3,
     4,
     5,
@@ -40,6 +42,186 @@
     53
   ],
   "issues": [
+    {
+      "issue_number": 1,
+      "title": "Phase 1: Initialize Go project structure",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 2,
+      "title": "Phase 1: Setup Docker Compose for local development",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 3,
+      "title": "Phase 1: Setup pre-commit hooks",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 4,
+      "title": "Phase 1: Create database migrations (users, sections, posts)",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 5,
+      "title": "Phase 1: Create database migrations (comments, reactions, links)",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 6,
+      "title": "Phase 1: Create database migrations (mentions, notifications, audit logs)",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 7,
+      "title": "Phase 1: Implement user registration endpoint",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 8,
+      "title": "Phase 1: Implement user login endpoint",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 9,
+      "title": "Phase 1: Implement user logout endpoint",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 10,
+      "title": "Phase 1: Implement auth middleware",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 11,
+      "title": "Phase 1: Implement admin user approval flow",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 12,
+      "title": "Phase 2: Implement create post endpoint",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": []
+    },
+    {
+      "issue_number": 13,
+      "title": "Phase 2: Implement get post endpoint",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": []
+    },
+    {
+      "issue_number": 14,
+      "title": "Phase 2: Implement get feed endpoint",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": []
+    },
+    {
+      "issue_number": 15,
+      "title": "Phase 2: Implement soft delete post endpoint",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": []
+    },
+    {
+      "issue_number": 16,
+      "title": "Phase 2: Implement restore post endpoint",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": []
+    },
+    {
+      "issue_number": 17,
+      "title": "Phase 2: Implement create comment endpoint",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": []
+    },
+    {
+      "issue_number": 18,
+      "title": "Phase 2: Implement get thread endpoint",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": []
+    },
     {
       "issue_number": 19,
       "title": "Phase 2: Implement soft delete comment endpoint",
@@ -312,21 +494,6 @@
       ]
     },
     {
-      "issue_number": 54,
-      "title": "Phase 3: Implement WebSocket integration (frontend)",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
-      "dependencies": [
-        33
-      ],
-      "phase": 3,
-      "labels": [
-        "frontend",
-        "websocket"
-      ]
-    },
-    {
       "issue_number": 34,
       "title": "Phase 4: Implement notifications table and insertion",
       "status": "available",
@@ -408,36 +575,6 @@
       "labels": [
         "backend",
         "links"
-      ]
-    },
-    {
-      "issue_number": 55,
-      "title": "Phase 4: Implement comments view (frontend)",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
-      "dependencies": [
-        54
-      ],
-      "phase": 4,
-      "labels": [
-        "frontend",
-        "comments"
-      ]
-    },
-    {
-      "issue_number": 56,
-      "title": "Phase 4: Implement search (frontend)",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
-      "dependencies": [
-        37
-      ],
-      "phase": 4,
-      "labels": [
-        "frontend",
-        "search"
       ]
     },
     {
@@ -540,24 +677,6 @@
       ]
     },
     {
-      "issue_number": 57,
-      "title": "Phase 5: Implement admin panel (frontend)",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
-      "dependencies": [
-        39,
-        40,
-        41,
-        42
-      ],
-      "phase": 5,
-      "labels": [
-        "frontend",
-        "admin"
-      ]
-    },
-    {
       "issue_number": 44,
       "title": "Phase 6: Integrate OpenTelemetry for traces",
       "status": "available",
@@ -646,6 +765,119 @@
       "phase": 6,
       "labels": [
         "devops"
+      ]
+    },
+    {
+      "issue_number": 49,
+      "title": "Phase 1: Initialize Svelte project",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 50,
+      "title": "Phase 2: Implement auth pages (register, login, logout)",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": []
+    },
+    {
+      "issue_number": 51,
+      "title": "Phase 2: Implement main layout and navigation",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": []
+    },
+    {
+      "issue_number": 52,
+      "title": "Phase 2: Implement feed view",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": []
+    },
+    {
+      "issue_number": 53,
+      "title": "Phase 2: Implement create post form",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": []
+    },
+    {
+      "issue_number": 54,
+      "title": "Phase 3: Implement WebSocket integration (frontend)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        33
+      ],
+      "phase": 3,
+      "labels": [
+        "frontend",
+        "websocket"
+      ]
+    },
+    {
+      "issue_number": 55,
+      "title": "Phase 4: Implement comments view (frontend)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        54
+      ],
+      "phase": 4,
+      "labels": [
+        "frontend",
+        "comments"
+      ]
+    },
+    {
+      "issue_number": 56,
+      "title": "Phase 4: Implement search (frontend)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        37
+      ],
+      "phase": 4,
+      "labels": [
+        "frontend",
+        "search"
+      ]
+    },
+    {
+      "issue_number": 57,
+      "title": "Phase 5: Implement admin panel (frontend)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        39,
+        40,
+        41,
+        42
+      ],
+      "phase": 5,
+      "labels": [
+        "frontend",
+        "admin"
       ]
     },
     {
