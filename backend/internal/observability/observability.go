@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -24,10 +25,21 @@ import (
 // Init initializes OpenTelemetry for traces and metrics.
 func Init(ctx context.Context) (func(context.Context) error, http.Handler, error) {
 	// Create resource
+	serviceName := firstNonEmpty(
+		os.Getenv("OTEL_SERVICE_NAME"),
+		os.Getenv("SERVICE_NAME"),
+		"clubhouse",
+	)
+	serviceVersion := firstNonEmpty(
+		os.Getenv("OTEL_SERVICE_VERSION"),
+		os.Getenv("SERVICE_VERSION"),
+		"0.1.0",
+	)
+
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
-			semconv.ServiceNameKey.String("clubhouse"),
-			semconv.ServiceVersionKey.String("0.1.0"),
+			semconv.ServiceNameKey.String(serviceName),
+			semconv.ServiceVersionKey.String(serviceVersion),
 		),
 	)
 	if err != nil {
@@ -83,12 +95,35 @@ func newTraceExporter(ctx context.Context) (*otlptrace.Exporter, error) {
 	}
 
 	if endpoint := strings.TrimSpace(os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")); endpoint != "" {
-		opts = append(opts, otlptracegrpc.WithEndpoint(endpoint))
+		opts = append(opts, otlptracegrpc.WithEndpoint(parseOtlpEndpoint(endpoint)))
 	}
-	if strings.EqualFold(os.Getenv("OTEL_EXPORTER_OTLP_INSECURE"), "true") {
+
+	insecure := strings.EqualFold(os.Getenv("OTEL_EXPORTER_OTLP_INSECURE"), "true")
+	if endpoint := strings.TrimSpace(os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")); endpoint == "" {
+		insecure = true
+	}
+	if insecure {
 		opts = append(opts, otlptracegrpc.WithInsecure())
 	}
 
 	client := otlptracegrpc.NewClient(opts...)
 	return otlptrace.New(ctx, client)
+}
+
+func parseOtlpEndpoint(endpoint string) string {
+	if strings.HasPrefix(endpoint, "http://") || strings.HasPrefix(endpoint, "https://") {
+		if parsed, err := url.Parse(endpoint); err == nil && parsed.Host != "" {
+			return parsed.Host
+		}
+	}
+	return strings.TrimPrefix(strings.TrimPrefix(endpoint, "http://"), "https://")
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return value
+		}
+	}
+	return ""
 }
