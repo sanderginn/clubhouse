@@ -24,7 +24,8 @@ const (
 	wsPongWait    = 60 * time.Second
 	wsPingPeriod  = 50 * time.Second
 	wsWriteWait   = 10 * time.Second
-	wsEventType   = "subscribe"
+	wsSubscribe   = "subscribe"
+	wsUnsubscribe = "unsubscribe"
 	userMentions  = "user:%s:mentions"
 	userNotify    = "user:%s:notifications"
 	sectionPrefix = "section:%s"
@@ -150,16 +151,22 @@ func (h *WebSocketHandler) readLoop(ctx context.Context, wsConn *wsConnection) {
 		if err := json.Unmarshal(payload, &msg); err != nil {
 			continue
 		}
-		if msg.Type != wsEventType {
+		switch msg.Type {
+		case wsSubscribe:
+			var data subscribePayload
+			if err := json.Unmarshal(msg.Data, &data); err != nil {
+				continue
+			}
+			h.addSubscriptions(ctx, wsConn, data.SectionIDs)
+		case wsUnsubscribe:
+			var data subscribePayload
+			if err := json.Unmarshal(msg.Data, &data); err != nil {
+				continue
+			}
+			h.removeSubscriptions(ctx, wsConn, data.SectionIDs)
+		default:
 			continue
 		}
-
-		var data subscribePayload
-		if err := json.Unmarshal(msg.Data, &data); err != nil {
-			continue
-		}
-
-		h.syncSubscriptions(ctx, wsConn, data.SectionIDs)
 	}
 }
 
@@ -232,39 +239,49 @@ func (h *WebSocketHandler) subscribeChannels(ctx context.Context, wsConn *wsConn
 	}
 }
 
-func (h *WebSocketHandler) syncSubscriptions(ctx context.Context, wsConn *wsConnection, sectionIDs []string) {
-	desired := make(map[string]struct{}, len(sectionIDs))
-	for _, id := range sectionIDs {
-		desired[formatChannel(sectionPrefix, id)] = struct{}{}
+func (h *WebSocketHandler) addSubscriptions(ctx context.Context, wsConn *wsConnection, sectionIDs []string) {
+	channels := sectionChannels(sectionIDs)
+	if len(channels) == 0 {
+		return
 	}
 
 	var toSubscribe []string
-	var toUnsubscribe []string
-
-	for ch := range desired {
+	for _, ch := range channels {
 		if _, ok := wsConn.subscriptions[ch]; !ok {
 			toSubscribe = append(toSubscribe, ch)
 		}
 	}
-	for ch := range wsConn.subscriptions {
+	if len(toSubscribe) == 0 {
+		return
+	}
+
+	_ = wsConn.pubsub.Subscribe(ctx, toSubscribe...)
+	for _, ch := range toSubscribe {
+		wsConn.subscriptions[ch] = struct{}{}
+	}
+}
+
+func (h *WebSocketHandler) removeSubscriptions(ctx context.Context, wsConn *wsConnection, sectionIDs []string) {
+	channels := sectionChannels(sectionIDs)
+	if len(channels) == 0 {
+		return
+	}
+
+	var toUnsubscribe []string
+	for _, ch := range channels {
 		if strings.HasPrefix(ch, "section:") {
-			if _, ok := desired[ch]; !ok {
+			if _, ok := wsConn.subscriptions[ch]; ok {
 				toUnsubscribe = append(toUnsubscribe, ch)
 			}
 		}
 	}
-
-	if len(toSubscribe) > 0 {
-		_ = wsConn.pubsub.Subscribe(ctx, toSubscribe...)
-		for _, ch := range toSubscribe {
-			wsConn.subscriptions[ch] = struct{}{}
-		}
+	if len(toUnsubscribe) == 0 {
+		return
 	}
-	if len(toUnsubscribe) > 0 {
-		_ = wsConn.pubsub.Unsubscribe(ctx, toUnsubscribe...)
-		for _, ch := range toUnsubscribe {
-			delete(wsConn.subscriptions, ch)
-		}
+
+	_ = wsConn.pubsub.Unsubscribe(ctx, toUnsubscribe...)
+	for _, ch := range toUnsubscribe {
+		delete(wsConn.subscriptions, ch)
 	}
 }
 
@@ -298,4 +315,26 @@ type subscribePayload struct {
 
 func formatChannel(format string, id any) string {
 	return fmt.Sprintf(format, id)
+}
+
+func sectionChannels(sectionIDs []string) []string {
+	if len(sectionIDs) == 0 {
+		return nil
+	}
+
+	seen := make(map[string]struct{}, len(sectionIDs))
+	var channels []string
+	for _, id := range sectionIDs {
+		id = strings.TrimSpace(id)
+		if id == "" {
+			continue
+		}
+		channel := formatChannel(sectionPrefix, id)
+		if _, ok := seen[channel]; ok {
+			continue
+		}
+		seen[channel] = struct{}{}
+		channels = append(channels, channel)
+	}
+	return channels
 }
