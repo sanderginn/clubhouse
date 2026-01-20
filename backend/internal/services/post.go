@@ -518,6 +518,103 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, userID uuid.UUID, cu
 	}, nil
 }
 
+// HardDeletePost permanently deletes a post and all related data (admin only)
+func (s *PostService) HardDeletePost(ctx context.Context, postID uuid.UUID, adminUserID uuid.UUID) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Verify post exists (include soft-deleted posts)
+	var exists bool
+	err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM posts WHERE id = $1)", postID).Scan(&exists)
+	if err != nil {
+		return fmt.Errorf("failed to check post existence: %w", err)
+	}
+	if !exists {
+		return ErrPostNotFound
+	}
+
+	// Create audit log entry BEFORE deleting the post (FK constraint)
+	auditQuery := `
+		INSERT INTO audit_logs (admin_user_id, action, related_post_id, created_at)
+		VALUES ($1, 'hard_delete_post', $2, now())
+	`
+	_, err = tx.ExecContext(ctx, auditQuery, adminUserID, postID)
+	if err != nil {
+		return fmt.Errorf("failed to create audit log: %w", err)
+	}
+
+	// Delete links associated with comments on this post
+	_, err = tx.ExecContext(ctx, "DELETE FROM links WHERE comment_id IN (SELECT id FROM comments WHERE post_id = $1)", postID)
+	if err != nil {
+		return fmt.Errorf("failed to delete comment links: %w", err)
+	}
+
+	// Delete reactions on comments of this post
+	_, err = tx.ExecContext(ctx, "DELETE FROM reactions WHERE comment_id IN (SELECT id FROM comments WHERE post_id = $1)", postID)
+	if err != nil {
+		return fmt.Errorf("failed to delete comment reactions: %w", err)
+	}
+
+	// Delete mentions from comments on this post
+	_, err = tx.ExecContext(ctx, "DELETE FROM mentions WHERE comment_id IN (SELECT id FROM comments WHERE post_id = $1)", postID)
+	if err != nil {
+		return fmt.Errorf("failed to delete comment mentions: %w", err)
+	}
+
+	// Delete notifications related to this post or its comments
+	_, err = tx.ExecContext(ctx, "DELETE FROM notifications WHERE related_post_id = $1 OR related_comment_id IN (SELECT id FROM comments WHERE post_id = $1)", postID)
+	if err != nil {
+		return fmt.Errorf("failed to delete notifications: %w", err)
+	}
+
+	// Delete comments on this post
+	_, err = tx.ExecContext(ctx, "DELETE FROM comments WHERE post_id = $1", postID)
+	if err != nil {
+		return fmt.Errorf("failed to delete comments: %w", err)
+	}
+
+	// Delete reactions on this post
+	_, err = tx.ExecContext(ctx, "DELETE FROM reactions WHERE post_id = $1", postID)
+	if err != nil {
+		return fmt.Errorf("failed to delete post reactions: %w", err)
+	}
+
+	// Delete mentions from this post
+	_, err = tx.ExecContext(ctx, "DELETE FROM mentions WHERE post_id = $1", postID)
+	if err != nil {
+		return fmt.Errorf("failed to delete post mentions: %w", err)
+	}
+
+	// Delete links associated with this post
+	_, err = tx.ExecContext(ctx, "DELETE FROM links WHERE post_id = $1", postID)
+	if err != nil {
+		return fmt.Errorf("failed to delete post links: %w", err)
+	}
+
+	// Delete the post
+	result, err := tx.ExecContext(ctx, "DELETE FROM posts WHERE id = $1", postID)
+	if err != nil {
+		return fmt.Errorf("failed to delete post: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rowsAffected == 0 {
+		return ErrPostNotFound
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
+
 // validateCreatePostInput validates post creation input
 func validateCreatePostInput(req *models.CreatePostRequest) error {
 	if strings.TrimSpace(req.SectionID) == "" {

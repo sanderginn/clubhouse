@@ -72,6 +72,12 @@ type RestorePostResponse struct {
 	Post Post `json:"post"`
 }
 
+// HardDeletePostResponse represents the response for permanently deleting a post
+type HardDeletePostResponse struct {
+	ID      uuid.UUID `json:"id"`
+	Message string    `json:"message"`
+}
+
 // JSONMap is a custom type for storing JSON metadata
 type JSONMap map[string]interface{}
 

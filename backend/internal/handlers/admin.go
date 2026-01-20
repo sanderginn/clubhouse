@@ -3,22 +3,29 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/sanderginn/clubhouse/internal/middleware"
+	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/services"
 )
 
 // AdminHandler handles admin-specific endpoints
 type AdminHandler struct {
-	userService *services.UserService
+	userService    *services.UserService
+	postService    *services.PostService
+	commentService *services.CommentService
 }
 
 // NewAdminHandler creates a new admin handler
 func NewAdminHandler(db *sql.DB) *AdminHandler {
 	return &AdminHandler{
-		userService: services.NewUserService(db),
+		userService:    services.NewUserService(db),
+		postService:    services.NewPostService(db),
+		commentService: services.NewCommentService(db),
 	}
 }
 
@@ -111,4 +118,90 @@ func (h *AdminHandler) RejectUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(rejectResponse)
+}
+
+// HardDeletePost permanently deletes a post (admin only)
+func (h *AdminHandler) HardDeletePost(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only DELETE requests are allowed")
+		return
+	}
+
+	// Extract admin user ID from context
+	adminUserID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
+		return
+	}
+
+	// Extract post ID from URL path: /admin/posts/{id}
+	postIDStr := strings.TrimPrefix(r.URL.Path, "/api/v1/admin/posts/")
+
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
+		return
+	}
+
+	err = h.postService.HardDeletePost(r.Context(), postID, adminUserID)
+	if err != nil {
+		if errors.Is(err, services.ErrPostNotFound) {
+			writeError(w, http.StatusNotFound, "POST_NOT_FOUND", "post not found")
+		} else {
+			writeError(w, http.StatusInternalServerError, "DELETE_FAILED", "Failed to delete post")
+		}
+		return
+	}
+
+	response := models.HardDeletePostResponse{
+		ID:      postID,
+		Message: "Post permanently deleted",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
+// HardDeleteComment permanently deletes a comment (admin only)
+func (h *AdminHandler) HardDeleteComment(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only DELETE requests are allowed")
+		return
+	}
+
+	// Extract admin user ID from context
+	adminUserID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
+		return
+	}
+
+	// Extract comment ID from URL path: /admin/comments/{id}
+	commentIDStr := strings.TrimPrefix(r.URL.Path, "/api/v1/admin/comments/")
+
+	commentID, err := uuid.Parse(commentIDStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_COMMENT_ID", "Invalid comment ID format")
+		return
+	}
+
+	err = h.commentService.HardDeleteComment(r.Context(), commentID, adminUserID)
+	if err != nil {
+		if errors.Is(err, services.ErrCommentNotFound) {
+			writeError(w, http.StatusNotFound, "COMMENT_NOT_FOUND", "comment not found")
+		} else {
+			writeError(w, http.StatusInternalServerError, "DELETE_FAILED", "Failed to delete comment")
+		}
+		return
+	}
+
+	response := models.HardDeleteCommentResponse{
+		ID:      commentID,
+		Message: "Comment permanently deleted",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 }
