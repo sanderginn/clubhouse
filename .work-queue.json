@@ -898,9 +898,9 @@
     {
       "issue_number": 56,
       "title": "Phase 4: Implement search (frontend)",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1768916700-17893",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768916700-17893",
       "dependencies": [
         37
       ],
@@ -908,7 +908,9 @@
       "labels": [
         "frontend",
         "search"
-      ]
+      ],
+      "branch": "feat/issue-56-implement-search-frontend",
+      "claimed_at": "2026-01-20T13:45:00Z"
     },
     {
       "issue_number": 57,
