@@ -663,9 +663,9 @@
     {
       "issue_number": 41,
       "title": "Phase 5: Implement audit logging",
-      "status": "in_progress",
-      "assigned_to": "agent-1768922148-66445",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768922148-66445",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
       "dependencies": [
         34,
         35,
@@ -679,9 +679,7 @@
       "labels": [
         "backend",
         "admin"
-      ],
-      "branch": "feat/issue-41-implement-audit-logging",
-      "claimed_at": "2026-01-20T15:15:48Z"
+      ]
     },
     {
       "issue_number": 42,
@@ -1096,10 +1094,14 @@
         "frontend",
         "tests"
       ],
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         112
-      ]
+      ],
+      "assigned_to": "agent-1768922224948-113",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768922224948-113",
+      "branch": "feat/issue-113-fix-layout-matchmedia-test-ismobile-no",
+      "claimed_at": "2026-01-20T15:17:04Z"
     },
     {
       "issue_number": 114,
