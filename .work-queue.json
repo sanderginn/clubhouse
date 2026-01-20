@@ -53,7 +53,8 @@
     56,
     93,
     112,
-    113
+    113,
+    114
   ],
   "issues": [
     {
@@ -1114,14 +1115,16 @@
         "frontend",
         "tests"
       ],
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         112
       ],
       "assigned_to": "agent-1768923184096-114",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768923184096-114",
       "branch": "feat/issue-114-fix-sectionfeed-intersectionobserver-tes",
-      "claimed_at": "2026-01-20T15:33:04Z"
+      "claimed_at": "2026-01-20T15:33:04Z",
+      "pr_number": 117,
+      "completed_at": "2026-01-20T15:39:14Z"
     }
   ]
 }
