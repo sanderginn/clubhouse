@@ -18,6 +18,7 @@ import (
 // ReactionHandler handles reaction endpoints
 type ReactionHandler struct {
 	reactionService *services.ReactionService
+	notify          *services.NotificationService
 	redis           *redis.Client
 }
 
@@ -25,6 +26,7 @@ type ReactionHandler struct {
 func NewReactionHandler(db *sql.DB, redisClient *redis.Client) *ReactionHandler {
 	return &ReactionHandler{
 		reactionService: services.NewReactionService(db),
+		notify:          services.NewNotificationService(db),
 		redis:           redisClient,
 	}
 }
@@ -74,6 +76,7 @@ func (h *ReactionHandler) AddReactionToPost(w http.ResponseWriter, r *http.Reque
 	}
 
 	publishCtx, cancel := publishContext()
+	_ = h.notify.CreateNotificationForPostReaction(publishCtx, postID, reaction.UserID)
 	_ = publishEvent(publishCtx, h.redis, formatChannel(postPrefix, postID), "reaction_added", reactionEventData{
 		PostID: &postID,
 		UserID: reaction.UserID,
@@ -189,6 +192,7 @@ func (h *ReactionHandler) AddReactionToComment(w http.ResponseWriter, r *http.Re
 	}
 
 	publishCtx, cancel := publishContext()
+	_ = h.notify.CreateNotificationForCommentReaction(publishCtx, commentID, reaction.UserID)
 	_ = publishEvent(publishCtx, h.redis, formatChannel(commentPrefix, commentID), "reaction_added", reactionEventData{
 		CommentID: &commentID,
 		UserID:    reaction.UserID,

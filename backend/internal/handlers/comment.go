@@ -19,6 +19,7 @@ type CommentHandler struct {
 	commentService *services.CommentService
 	userService    *services.UserService
 	postService    *services.PostService
+	notify         *services.NotificationService
 	redis          *redis.Client
 }
 
@@ -28,6 +29,7 @@ func NewCommentHandler(db *sql.DB, redisClient *redis.Client) *CommentHandler {
 		commentService: services.NewCommentService(db),
 		userService:    services.NewUserService(db),
 		postService:    services.NewPostService(db),
+		notify:         services.NewNotificationService(db),
 		redis:          redisClient,
 	}
 }
@@ -87,11 +89,14 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	publishCtx, cancel := publishContext()
+	_ = h.notify.CreateNotificationForPostComment(publishCtx, comment.PostID, comment.ID, userID)
+	mentionedUserIDs, _ := resolveMentionedUserIDs(publishCtx, h.userService, comment.Content, userID)
 	_ = publishEvent(publishCtx, h.redis, formatChannel(postPrefix, comment.PostID), "new_comment", commentEventData{Comment: comment})
 	if sectionID, err := h.postService.GetSectionIDByPostID(publishCtx, comment.PostID); err == nil {
+		_ = h.notify.CreateMentionNotifications(publishCtx, mentionedUserIDs, userID, sectionID, comment.PostID, &comment.ID)
 		_ = publishEvent(publishCtx, h.redis, formatChannel(sectionPrefix, sectionID), "new_comment", commentEventData{Comment: comment})
 	}
-	_ = publishMentions(publishCtx, h.redis, h.userService, comment.Content, userID, &comment.PostID, &comment.ID)
+	_ = publishMentions(publishCtx, h.redis, mentionedUserIDs, userID, &comment.PostID, &comment.ID)
 	cancel()
 
 	w.Header().Set("Content-Type", "application/json")

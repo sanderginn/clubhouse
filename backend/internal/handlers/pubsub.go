@@ -134,31 +134,48 @@ func isUsernameRune(r rune) bool {
 	return unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_'
 }
 
-func publishMentions(ctx context.Context, redisClient *redis.Client, userService *services.UserService, content string, authorID uuid.UUID, postID *uuid.UUID, commentID *uuid.UUID) error {
-	if redisClient == nil || userService == nil {
-		return nil
+func resolveMentionedUserIDs(ctx context.Context, userService *services.UserService, content string, authorID uuid.UUID) ([]uuid.UUID, error) {
+	if userService == nil {
+		return nil, nil
 	}
 
 	usernames := extractMentionedUsernames(content)
+	if len(usernames) == 0 {
+		return nil, nil
+	}
+
+	userIDs := make([]uuid.UUID, 0, len(usernames))
 	for _, username := range usernames {
 		user, err := userService.GetUserByUsername(ctx, username)
 		if err != nil {
 			if err.Error() == "user not found" {
 				continue
 			}
-			return fmt.Errorf("failed to resolve mention %s: %w", username, err)
+			return nil, fmt.Errorf("failed to resolve mention %s: %w", username, err)
 		}
 		if user.ID == authorID {
 			continue
 		}
 
+		userIDs = append(userIDs, user.ID)
+	}
+
+	return userIDs, nil
+}
+
+func publishMentions(ctx context.Context, redisClient *redis.Client, mentionedUserIDs []uuid.UUID, authorID uuid.UUID, postID *uuid.UUID, commentID *uuid.UUID) error {
+	if redisClient == nil {
+		return nil
+	}
+
+	for _, mentionedUserID := range mentionedUserIDs {
 		data := mentionEventData{
-			MentionedUserID:  user.ID,
+			MentionedUserID:  mentionedUserID,
 			MentioningUserID: authorID,
 			PostID:           postID,
 			CommentID:        commentID,
 		}
-		channel := formatChannel(userMentions, user.ID)
+		channel := formatChannel(userMentions, mentionedUserID)
 		if err := publishEvent(ctx, redisClient, channel, "mention", data); err != nil {
 			return err
 		}
