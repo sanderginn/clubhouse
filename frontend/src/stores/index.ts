@@ -3,4 +3,6 @@ export * from './sectionStore';
 export * from './uiStore';
 export * from './postStore';
 export * from './feedStore';
+export * from './commentStore';
+export * from './commentFeedStore';
 export * from './websocketStore';

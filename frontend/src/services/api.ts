@@ -1,4 +1,6 @@
 import type { Post, CreatePostRequest, LinkMetadata } from '../stores/postStore';
+import type { CreateCommentRequest } from '../stores/commentStore';
+import type { ApiComment } from '../stores/commentMapper';
 
 const API_BASE = '/api/v1';
 
@@ -88,6 +90,29 @@ class ApiClient {
 
   async previewLink(url: string): Promise<{ metadata: LinkMetadata }> {
     return this.post('/links/preview', { url });
+  }
+
+  async createComment(data: CreateCommentRequest): Promise<{ comment: ApiComment }> {
+    return this.post('/comments', {
+      post_id: data.postId,
+      parent_comment_id: data.parentCommentId,
+      content: data.content,
+      links: data.links,
+    });
+  }
+
+  async getThreadComments(
+    postId: string,
+    limit = 50,
+    cursor?: string
+  ): Promise<{ comments: ApiComment[]; meta?: { cursor?: string | null; has_more?: boolean } }> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (cursor) params.set('cursor', cursor);
+    return this.get(`/posts/${postId}/comments?${params}`);
+  }
+
+  async getComment(commentId: string): Promise<{ comment: ApiComment }> {
+    return this.get(`/comments/${commentId}`);
   }
 }
 
