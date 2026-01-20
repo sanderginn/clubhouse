@@ -63,6 +63,8 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 	// Create post ID
 	postID := uuid.New()
 
+	linkMetadata := fetchLinkMetadata(ctx, req.Links)
+
 	// Begin transaction
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -89,22 +91,31 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 	if len(req.Links) > 0 {
 		post.Links = make([]models.Link, 0, len(req.Links))
 
-		for _, linkReq := range req.Links {
+		for i, linkReq := range req.Links {
 			linkID := uuid.New()
 
-			// Insert link (metadata will be fetched later)
+			metadataValue := interface{}(nil)
+			if len(linkMetadata) > i && len(linkMetadata[i]) > 0 {
+				metadataValue = linkMetadata[i]
+			}
+
+			// Insert link
 			linkQuery := `
-				INSERT INTO links (id, post_id, url, created_at)
-				VALUES ($1, $2, $3, now())
+				INSERT INTO links (id, post_id, url, metadata, created_at)
+				VALUES ($1, $2, $3, $4, now())
 				RETURNING id, url, created_at
 			`
 
 			var link models.Link
-			err := tx.QueryRowContext(ctx, linkQuery, linkID, postID, linkReq.URL).
+			err := tx.QueryRowContext(ctx, linkQuery, linkID, postID, linkReq.URL, metadataValue).
 				Scan(&link.ID, &link.URL, &link.CreatedAt)
 
 			if err != nil {
 				return nil, fmt.Errorf("failed to create link: %w", err)
+			}
+
+			if meta, ok := metadataValue.(models.JSONMap); ok && len(meta) > 0 {
+				link.Metadata = map[string]interface{}(meta)
 			}
 
 			post.Links = append(post.Links, link)
