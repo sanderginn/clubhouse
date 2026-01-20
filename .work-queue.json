@@ -44,6 +44,7 @@
     37,
     38,
     39,
+    40,
     42,
     49,
     50,
@@ -654,7 +655,7 @@
     {
       "issue_number": 40,
       "title": "Phase 5: Implement restore soft-deleted content",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768931328-94753",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768931328-94753",
       "dependencies": [
@@ -666,7 +667,8 @@
         "admin"
       ],
       "branch": "feat/issue-40-implement-restore-softdeleted-content",
-      "claimed_at": "2026-01-20T17:48:48Z"
+      "claimed_at": "2026-01-20T17:48:48Z",
+      "completed_at": "2026-01-20T17:53:08Z"
     },
     {
       "issue_number": 41,
