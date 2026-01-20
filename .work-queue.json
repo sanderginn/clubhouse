@@ -913,6 +913,20 @@
         "notifications",
         "pwa"
       ]
+    },
+    {
+      "issue_number": 93,
+      "title": "Add frontend/backend services to docker-compose setup",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "frontend",
+        "devops"
+      ]
     }
   ]
 }
