@@ -22,7 +22,7 @@ func main() {
 	defer cancel()
 
 	// Initialize observability
-	otelShutdown, err := observability.Init(ctx)
+	otelShutdown, metricsHandler, err := observability.Init(ctx)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize observability: %v\n", err)
 		os.Exit(1)
@@ -60,6 +60,9 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"status":"ok"}`))
 	})
+	if metricsHandler != nil {
+		mux.Handle("/metrics", metricsHandler)
+	}
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(dbConn, redisConn)
