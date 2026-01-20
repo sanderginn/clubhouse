@@ -654,9 +654,9 @@
     {
       "issue_number": 40,
       "title": "Phase 5: Implement restore soft-deleted content",
-      "status": "in_progress",
-      "assigned_to": "agent-1768930423-85998",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768930423-85998",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
       "dependencies": [
         39
       ],
@@ -664,16 +664,14 @@
       "labels": [
         "backend",
         "admin"
-      ],
-      "branch": "feat/issue-40-implement-restore-softdeleted-content",
-      "claimed_at": "2026-01-20T17:33:43Z"
+      ]
     },
     {
       "issue_number": 41,
       "title": "Phase 5: Implement audit logging",
-      "status": "in_progress",
-      "assigned_to": "agent-1768930436-86242",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768930436-86242",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
       "dependencies": [
         34,
         35,
@@ -687,9 +685,7 @@
       "labels": [
         "backend",
         "admin"
-      ],
-      "branch": "feat/issue-41-implement-audit-logging",
-      "claimed_at": "2026-01-20T17:33:56Z"
+      ]
     },
     {
       "issue_number": 42,
