@@ -36,6 +36,7 @@
     29,
     30,
     31,
+    32,
     49,
     50,
     51,
@@ -471,7 +472,7 @@
     {
       "issue_number": 32,
       "title": "Phase 3: Implement WebSocket event broadcasting",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768904561-56226",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768904561-56226",
       "dependencies": [
@@ -484,7 +485,9 @@
         "websocket"
       ],
       "branch": "feat/issue-32-implement-websocket-event-broadcasting",
-      "claimed_at": "2026-01-20T10:22:41Z"
+      "claimed_at": "2026-01-20T10:22:41Z",
+      "pr_number": 96,
+      "completed_at": "2026-01-20T10:29:28Z"
     },
     {
       "issue_number": 33,
