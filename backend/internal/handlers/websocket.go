@@ -82,8 +82,8 @@ func (h *WebSocketHandler) HandleWS(w http.ResponseWriter, r *http.Request) {
 		cancel:        cancel,
 	}
 
-	h.registerConnection(userID, wsConn)
-	defer h.unregisterConnection(userID, wsConn)
+	h.registerConnection(r.Context(), userID, wsConn)
+	defer h.unregisterConnection(r.Context(), userID, wsConn)
 
 	conn.SetReadLimit(wsReadLimit)
 	_ = conn.SetReadDeadline(time.Now().Add(wsPongWait))
@@ -101,7 +101,7 @@ func (h *WebSocketHandler) HandleWS(w http.ResponseWriter, r *http.Request) {
 	h.readLoop(ctx, wsConn)
 }
 
-func (h *WebSocketHandler) registerConnection(userID uuid.UUID, wsConn *wsConnection) {
+func (h *WebSocketHandler) registerConnection(ctx context.Context, userID uuid.UUID, wsConn *wsConnection) {
 	h.mu.Lock()
 	if existing := h.connections[userID]; existing != nil {
 		// One active connection per user; latest connection wins.
@@ -110,10 +110,10 @@ func (h *WebSocketHandler) registerConnection(userID uuid.UUID, wsConn *wsConnec
 	h.connections[userID] = wsConn
 	h.mu.Unlock()
 
-	h.addEvent(userID, "websocket_connected")
+	h.addEvent(ctx, userID, "websocket_connected")
 }
 
-func (h *WebSocketHandler) unregisterConnection(userID uuid.UUID, wsConn *wsConnection) {
+func (h *WebSocketHandler) unregisterConnection(ctx context.Context, userID uuid.UUID, wsConn *wsConnection) {
 	h.mu.Lock()
 	if existing := h.connections[userID]; existing == wsConn {
 		delete(h.connections, userID)
@@ -121,7 +121,7 @@ func (h *WebSocketHandler) unregisterConnection(userID uuid.UUID, wsConn *wsConn
 	h.mu.Unlock()
 
 	h.closeConnection(wsConn)
-	h.addEvent(userID, "websocket_disconnected")
+	h.addEvent(ctx, userID, "websocket_disconnected")
 }
 
 func (h *WebSocketHandler) closeConnection(wsConn *wsConnection) {
@@ -243,9 +243,9 @@ func (h *WebSocketHandler) syncSubscriptions(ctx context.Context, wsConn *wsConn
 	}
 }
 
-func (h *WebSocketHandler) addEvent(userID uuid.UUID, event string) {
+func (h *WebSocketHandler) addEvent(ctx context.Context, userID uuid.UUID, event string) {
 	tracer := otel.Tracer("clubhouse.websocket")
-	_, span := tracer.Start(context.Background(), event)
+	_, span := tracer.Start(ctx, event)
 	span.SetAttributes(attribute.String("user_id", userID.String()))
 	span.End()
 }
