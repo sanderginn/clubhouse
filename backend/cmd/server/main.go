@@ -85,6 +85,9 @@ func main() {
 	sectionRouteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.URL.Path, "/feed") {
 			postHandler.GetFeed(w, r)
+		} else if r.URL.Path == "/api/v1/sections/" {
+			// Handle trailing slash as list sections
+			sectionHandler.ListSections(w, r)
 		} else {
 			sectionHandler.GetSection(w, r)
 		}
