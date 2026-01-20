@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -59,6 +60,29 @@ func TestSearchMissingQuery(t *testing.T) {
 	}
 }
 
+func TestSearchQueryTooLong(t *testing.T) {
+	handler := &SearchHandler{}
+
+	query := strings.Repeat("a", maxSearchQueryLength+1)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/search?q="+query, nil)
+	rr := httptest.NewRecorder()
+
+	handler.Search(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, status)
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if response.Code != "QUERY_TOO_LONG" {
+		t.Fatalf("expected code QUERY_TOO_LONG, got %s", response.Code)
+	}
+}
+
 func TestSearchInvalidScope(t *testing.T) {
 	handler := &SearchHandler{}
 
@@ -103,6 +127,43 @@ func TestSearchSectionScopeMissingSectionID(t *testing.T) {
 	}
 }
 
+func TestSearchInvalidQuery(t *testing.T) {
+	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherRegexp))
+	if err != nil {
+		t.Fatalf("failed to create sqlmock: %v", err)
+	}
+	defer db.Close()
+
+	handler := NewSearchHandler(db)
+
+	query := "the and or"
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT plainto_tsquery('english', $1)::text")).
+		WithArgs(query).
+		WillReturnRows(sqlmock.NewRows([]string{"plainto_tsquery"}).AddRow(""))
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/search?q=the%20and%20or&scope=global", nil)
+	rr := httptest.NewRecorder()
+
+	handler.Search(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, status)
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if response.Code != "QUERY_INVALID" {
+		t.Fatalf("expected code QUERY_INVALID, got %s", response.Code)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unfulfilled expectations: %v", err)
+	}
+}
+
 func TestSearchSectionScopeUsesContextSectionID(t *testing.T) {
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherRegexp))
 	if err != nil {
@@ -121,6 +182,10 @@ func TestSearchSectionScopeUsesContextSectionID(t *testing.T) {
 	postCreated := time.Now()
 	commentCreated := time.Now()
 	userCreated := time.Now()
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT plainto_tsquery('english', $1)::text")).
+		WithArgs(query).
+		WillReturnRows(sqlmock.NewRows([]string{"plainto_tsquery"}).AddRow("search"))
 
 	searchRows := sqlmock.NewRows([]string{"result_type", "id", "rank"}).
 		AddRow("post", postID, 0.42).
@@ -227,6 +292,10 @@ func TestSearchSuccessGlobal(t *testing.T) {
 	postCreated := time.Now()
 	commentCreated := time.Now()
 	userCreated := time.Now()
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT plainto_tsquery('english', $1)::text")).
+		WithArgs(query).
+		WillReturnRows(sqlmock.NewRows([]string{"plainto_tsquery"}).AddRow("hello & world"))
 
 	searchRows := sqlmock.NewRows([]string{"result_type", "id", "rank"}).
 		AddRow("post", postID, 0.42).
