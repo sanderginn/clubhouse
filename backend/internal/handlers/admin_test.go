@@ -55,7 +55,17 @@ func TestApproveUser(t *testing.T) {
 	}
 	defer db.Close()
 
-	// Create a test user
+	// Create a test admin user
+	adminID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'approveadmin', 'approveadmin@example.com', '$2a$12$test', true, now(), now())
+	`, adminID)
+	if err != nil {
+		t.Fatalf("failed to create admin user: %v", err)
+	}
+
+	// Create a test user to approve
 	userID := uuid.New()
 	testUsername := "testuser"
 	testEmail := "test@example.com"
@@ -74,6 +84,7 @@ func TestApproveUser(t *testing.T) {
 
 	// Test approve request
 	req := httptest.NewRequest("PATCH", "/api/v1/admin/users/"+userID.String()+"/approve", nil)
+	req = req.WithContext(createTestUserContext(req.Context(), adminID, "approveadmin", true))
 	w := httptest.NewRecorder()
 
 	handler.ApproveUser(w, req)
@@ -101,6 +112,17 @@ func TestApproveUser(t *testing.T) {
 	if !approvedAt.Valid {
 		t.Errorf("expected approved_at to be set")
 	}
+
+	// Verify audit log was created
+	var auditCount int
+	err = db.QueryRow("SELECT COUNT(*) FROM audit_logs WHERE action = 'approve_user' AND admin_user_id = $1 AND related_user_id = $2", adminID, userID).Scan(&auditCount)
+	if err != nil {
+		t.Fatalf("failed to query audit log count: %v", err)
+	}
+
+	if auditCount != 1 {
+		t.Errorf("expected 1 audit log entry, but found %d", auditCount)
+	}
 }
 
 // TestRejectUser tests rejecting a pending user
@@ -114,7 +136,17 @@ func TestRejectUser(t *testing.T) {
 	}
 	defer db.Close()
 
-	// Create a test user
+	// Create a test admin user
+	adminID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'rejectadmin', 'rejectadmin@example.com', '$2a$12$test', true, now(), now())
+	`, adminID)
+	if err != nil {
+		t.Fatalf("failed to create admin user: %v", err)
+	}
+
+	// Create a test user to reject
 	userID := uuid.New()
 	testUsername := "rejectuser"
 	testEmail := "reject@example.com"
@@ -133,6 +165,7 @@ func TestRejectUser(t *testing.T) {
 
 	// Test reject request
 	req := httptest.NewRequest("DELETE", "/api/v1/admin/users/"+userID.String(), nil)
+	req = req.WithContext(createTestUserContext(req.Context(), adminID, "rejectadmin", true))
 	w := httptest.NewRecorder()
 
 	handler.RejectUser(w, req)
@@ -160,6 +193,17 @@ func TestRejectUser(t *testing.T) {
 	if count != 0 {
 		t.Errorf("expected user to be deleted, but found %d users", count)
 	}
+
+	// Verify audit log was created (related_user_id will be NULL due to ON DELETE SET NULL)
+	var auditCount int
+	err = db.QueryRow("SELECT COUNT(*) FROM audit_logs WHERE action = 'reject_user' AND admin_user_id = $1", adminID).Scan(&auditCount)
+	if err != nil {
+		t.Fatalf("failed to query audit log count: %v", err)
+	}
+
+	if auditCount != 1 {
+		t.Errorf("expected 1 audit log entry, but found %d", auditCount)
+	}
 }
 
 // TestApproveAlreadyApprovedUser tests error when approving already approved user
@@ -172,6 +216,16 @@ func TestApproveAlreadyApprovedUser(t *testing.T) {
 		t.Skip("test database not configured")
 	}
 	defer db.Close()
+
+	// Create a test admin user
+	adminID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'alreadyapprovedadmin', 'alreadyapprovedadmin@example.com', '$2a$12$test', true, now(), now())
+	`, adminID)
+	if err != nil {
+		t.Fatalf("failed to create admin user: %v", err)
+	}
 
 	// Create and approve a test user
 	userID := uuid.New()
@@ -192,6 +246,7 @@ func TestApproveAlreadyApprovedUser(t *testing.T) {
 
 	// Test approve request on already approved user
 	req := httptest.NewRequest("PATCH", "/api/v1/admin/users/"+userID.String()+"/approve", nil)
+	req = req.WithContext(createTestUserContext(req.Context(), adminID, "alreadyapprovedadmin", true))
 	w := httptest.NewRecorder()
 
 	handler.ApproveUser(w, req)
@@ -849,5 +904,90 @@ func TestUpdateConfigInvalidJSON(t *testing.T) {
 
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+	}
+}
+
+// TestGetAuditLogs tests listing audit logs
+func TestGetAuditLogs(t *testing.T) {
+	db, err := getTestDB()
+	if err != nil {
+		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+	defer db.Close()
+
+	// Create a test admin user
+	adminID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'auditlogsadmin', 'auditlogsadmin@example.com', '$2a$12$test', true, now(), now())
+	`, adminID)
+	if err != nil {
+		t.Fatalf("failed to create admin user: %v", err)
+	}
+
+	// Create some audit log entries
+	_, err = db.Exec(`
+		INSERT INTO audit_logs (id, admin_user_id, action, created_at)
+		VALUES ($1, $2, 'test_action_1', now())
+	`, uuid.New(), adminID)
+	if err != nil {
+		t.Fatalf("failed to create audit log 1: %v", err)
+	}
+
+	_, err = db.Exec(`
+		INSERT INTO audit_logs (id, admin_user_id, action, created_at)
+		VALUES ($1, $2, 'test_action_2', now())
+	`, uuid.New(), adminID)
+	if err != nil {
+		t.Fatalf("failed to create audit log 2: %v", err)
+	}
+
+	handler := NewAdminHandler(db)
+
+	req := httptest.NewRequest("GET", "/api/v1/admin/audit-logs", nil)
+	w := httptest.NewRecorder()
+
+	handler.GetAuditLogs(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response models.AuditLogsResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if response.Logs == nil {
+		t.Errorf("expected non-nil logs list")
+	}
+
+	// Should have at least the 2 logs we created
+	if len(response.Logs) < 2 {
+		t.Errorf("expected at least 2 audit logs, got %d", len(response.Logs))
+	}
+
+	// Verify logs have admin username populated
+	for _, log := range response.Logs {
+		if log.AdminUsername == "" {
+			t.Errorf("expected admin username to be populated")
+		}
+	}
+}
+
+// TestGetAuditLogsMethodNotAllowed tests that POST to GetAuditLogs is rejected
+func TestGetAuditLogsMethodNotAllowed(t *testing.T) {
+	handler := NewAdminHandler(nil)
+
+	req := httptest.NewRequest("POST", "/api/v1/admin/audit-logs", nil)
+	w := httptest.NewRecorder()
+
+	handler.GetAuditLogs(w, req)
+
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Errorf("expected status %d, got %d", http.StatusMethodNotAllowed, w.Code)
 	}
 }
