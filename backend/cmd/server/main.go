@@ -69,6 +69,7 @@ func main() {
 	reactionHandler := handlers.NewReactionHandler(dbConn)
 	userHandler := handlers.NewUserHandler(dbConn)
 	sectionHandler := handlers.NewSectionHandler(dbConn)
+	wsHandler := handlers.NewWebSocketHandler()
 
 	// API routes
 	mux.HandleFunc("/api/v1/auth/register", authHandler.Register)
@@ -191,6 +192,9 @@ func main() {
 			adminHandler.RejectUser(w, r)
 		}
 	})))
+
+	// WebSocket route (protected)
+	mux.Handle("/api/v1/ws", middleware.RequireAuth(redisConn)(http.HandlerFunc(wsHandler.HandleWS)))
 
 	// Apply middleware
 	handler := middleware.ChainMiddleware(mux,
