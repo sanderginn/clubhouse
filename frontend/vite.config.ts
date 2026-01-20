@@ -4,6 +4,9 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [svelte()],
+  test: {
+    environment: 'node',
+  },
   resolve: {
     alias: {
       $lib: path.resolve('./src/lib'),
