@@ -30,3 +30,8 @@ type GetNotificationsResponse struct {
 	Notifications []Notification   `json:"notifications"`
 	Meta          NotificationMeta `json:"meta"`
 }
+
+// UpdateNotificationResponse represents the response for updating a notification.
+type UpdateNotificationResponse struct {
+	Notification Notification `json:"notification"`
+}
