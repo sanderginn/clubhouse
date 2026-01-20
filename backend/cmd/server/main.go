@@ -69,7 +69,7 @@ func main() {
 	reactionHandler := handlers.NewReactionHandler(dbConn)
 	userHandler := handlers.NewUserHandler(dbConn)
 	sectionHandler := handlers.NewSectionHandler(dbConn)
-	wsHandler := handlers.NewWebSocketHandler()
+	wsHandler := handlers.NewWebSocketHandler(redisConn)
 
 	// API routes
 	mux.HandleFunc("/api/v1/auth/register", authHandler.Register)

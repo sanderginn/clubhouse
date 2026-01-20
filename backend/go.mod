@@ -5,12 +5,12 @@ go 1.24.0
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/google/uuid v1.6.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/lib/pq v1.10.9
 	github.com/redis/go-redis/v9 v9.17.2
 	go.opentelemetry.io/otel v1.39.0
 	go.opentelemetry.io/otel/sdk v1.39.0
 	golang.org/x/crypto v0.47.0
-	golang.org/x/net v0.48.0
 )
 
 require (
