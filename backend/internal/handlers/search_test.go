@@ -256,6 +256,20 @@ func TestSearchSectionScopeUsesContextSectionID(t *testing.T) {
 		t.Fatalf("expected 3 results, got %d", len(response.Results))
 	}
 
+	if response.Results[0].Type != "post" || response.Results[0].Post == nil || response.Results[0].Post.ID != postID {
+		t.Fatalf("expected first result to be post %s", postID)
+	}
+	if response.Results[1].Type != "comment" || response.Results[1].Comment == nil || response.Results[1].Comment.ID != commentID {
+		t.Fatalf("expected second result to be comment %s", commentID)
+	}
+	if response.Results[2].Type != "link_metadata" || response.Results[2].LinkMetadata == nil || response.Results[2].LinkMetadata.ID != linkID {
+		t.Fatalf("expected third result to be link metadata %s", linkID)
+	}
+
+	if response.Results[0].Score < response.Results[1].Score || response.Results[1].Score < response.Results[2].Score {
+		t.Fatalf("expected scores to be in descending order")
+	}
+
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unfulfilled expectations: %v", err)
 	}
@@ -373,7 +387,22 @@ func TestSearchSuccessGlobal(t *testing.T) {
 		t.Fatalf("expected 3 results, got %d", len(response.Results))
 	}
 
+	if response.Results[0].Type != "post" || response.Results[0].Post == nil || response.Results[0].Post.ID != postID {
+		t.Fatalf("expected first result to be post %s", postID)
+	}
+	if response.Results[1].Type != "comment" || response.Results[1].Comment == nil || response.Results[1].Comment.ID != commentID {
+		t.Fatalf("expected second result to be comment %s", commentID)
+	}
+	if response.Results[2].Type != "link_metadata" || response.Results[2].LinkMetadata == nil || response.Results[2].LinkMetadata.ID != linkID {
+		t.Fatalf("expected third result to be link metadata %s", linkID)
+	}
+
+	if response.Results[0].Score < response.Results[1].Score || response.Results[1].Score < response.Results[2].Score {
+		t.Fatalf("expected scores to be in descending order")
+	}
+
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unfulfilled expectations: %v", err)
 	}
+
 }
