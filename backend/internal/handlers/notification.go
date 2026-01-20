@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
+	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/services"
@@ -75,6 +77,54 @@ func (h *NotificationHandler) GetNotifications(w http.ResponseWriter, r *http.Re
 			HasMore:     hasMore,
 			UnreadCount: unreadCount,
 		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
+// MarkNotificationRead handles PATCH /api/v1/notifications/{id}.
+func (h *NotificationHandler) MarkNotificationRead(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPatch {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only PATCH requests are allowed")
+		return
+	}
+
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
+		return
+	}
+
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 5 {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Notification ID is required")
+		return
+	}
+
+	notificationIDStr := pathParts[4]
+	notificationID, err := uuid.Parse(notificationIDStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_NOTIFICATION_ID", "Invalid notification ID format")
+		return
+	}
+
+	notification, err := h.notificationService.MarkNotificationRead(r.Context(), userID, notificationID)
+	if err != nil {
+		switch err.Error() {
+		case "notification not found":
+			writeError(w, http.StatusNotFound, "NOTIFICATION_NOT_FOUND", "Notification not found")
+		case "forbidden":
+			writeError(w, http.StatusForbidden, "FORBIDDEN", "You do not have permission to update this notification")
+		default:
+			writeError(w, http.StatusInternalServerError, "MARK_NOTIFICATION_READ_FAILED", "Failed to mark notification as read")
+		}
+		return
+	}
+
+	response := models.UpdateNotificationResponse{
+		Notification: *notification,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

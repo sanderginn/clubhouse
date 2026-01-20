@@ -362,3 +362,66 @@ func (s *NotificationService) resolveNotificationCursor(ctx context.Context, use
 
 	return cursorTime.Time, cursorID, nil
 }
+
+// MarkNotificationRead sets read_at for a notification and returns the updated notification.
+func (s *NotificationService) MarkNotificationRead(ctx context.Context, userID uuid.UUID, notificationID uuid.UUID) (*models.Notification, error) {
+	var ownerID uuid.UUID
+	if err := s.db.QueryRowContext(ctx, "SELECT user_id FROM notifications WHERE id = $1", notificationID).Scan(&ownerID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("notification not found")
+		}
+		return nil, fmt.Errorf("failed to load notification owner: %w", err)
+	}
+
+	if ownerID != userID {
+		return nil, errors.New("forbidden")
+	}
+
+	query := `
+		UPDATE notifications
+		SET read_at = CASE WHEN read_at IS NULL THEN now() ELSE read_at END
+		WHERE id = $1 AND user_id = $2
+		RETURNING id, user_id, type, related_post_id, related_comment_id, related_user_id, read_at, created_at
+	`
+
+	var notification models.Notification
+	var relatedPostID sql.NullString
+	var relatedCommentID sql.NullString
+	var relatedUserID sql.NullString
+	var readAt sql.NullTime
+
+	err := s.db.QueryRowContext(ctx, query, notificationID, userID).Scan(
+		&notification.ID,
+		&notification.UserID,
+		&notification.Type,
+		&relatedPostID,
+		&relatedCommentID,
+		&relatedUserID,
+		&readAt,
+		&notification.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("notification not found")
+		}
+		return nil, fmt.Errorf("failed to mark notification read: %w", err)
+	}
+
+	if relatedPostID.Valid {
+		id, _ := uuid.Parse(relatedPostID.String)
+		notification.RelatedPostID = &id
+	}
+	if relatedCommentID.Valid {
+		id, _ := uuid.Parse(relatedCommentID.String)
+		notification.RelatedCommentID = &id
+	}
+	if relatedUserID.Valid {
+		id, _ := uuid.Parse(relatedUserID.String)
+		notification.RelatedUserID = &id
+	}
+	if readAt.Valid {
+		notification.ReadAt = &readAt.Time
+	}
+
+	return &notification, nil
+}

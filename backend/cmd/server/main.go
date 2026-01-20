@@ -190,6 +190,7 @@ func main() {
 
 	// Notification routes (protected)
 	mux.Handle("/api/v1/notifications", middleware.RequireAuth(redisConn)(http.HandlerFunc(notificationHandler.GetNotifications)))
+	mux.Handle("/api/v1/notifications/", middleware.RequireAuth(redisConn)(http.HandlerFunc(notificationHandler.MarkNotificationRead)))
 
 	// Admin routes (protected by RequireAdmin middleware)
 	mux.Handle("/api/v1/admin/users", middleware.RequireAdmin(redisConn)(http.HandlerFunc(adminHandler.ListPendingUsers)))
