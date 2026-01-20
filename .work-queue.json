@@ -823,37 +823,6 @@
       "claimed_at": "2026-01-20T21:18:18Z"
     },
     {
-      "issue_number": 47,
-      "title": "Phase 6: Setup Grafana dashboards",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
-      "dependencies": [
-        44,
-        45,
-        46
-      ],
-      "phase": 6,
-      "labels": [
-        "backend",
-        "observability"
-      ]
-    },
-    {
-      "issue_number": 48,
-      "title": "Phase 6: Write production deployment guide",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
-      "dependencies": [
-        47
-      ],
-      "phase": 6,
-      "labels": [
-        "devops"
-      ]
-    },
-    {
       "issue_number": 49,
       "title": "Phase 1: Initialize Svelte project",
       "status": "completed",
@@ -981,22 +950,6 @@
       "claimed_at": "2026-01-20T20:04:09Z",
       "completed_at": "2026-01-20T20:44:08Z",
       "pr_number": 123
-    },
-    {
-      "issue_number": 58,
-      "title": "Phase 6: Implement PWA features (frontend)",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
-      "dependencies": [
-        55,
-        57
-      ],
-      "phase": 6,
-      "labels": [
-        "frontend",
-        "pwa"
-      ]
     },
     {
       "issue_number": 59,
@@ -1170,6 +1123,53 @@
       "claimed_at": "2026-01-20T15:33:04Z",
       "pr_number": 117,
       "completed_at": "2026-01-20T15:39:14Z"
+    },
+    {
+      "issue_number": 47,
+      "title": "Phase 6: Setup Grafana dashboards",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        44,
+        45,
+        46
+      ],
+      "phase": 6,
+      "labels": [
+        "backend",
+        "observability"
+      ]
+    },
+    {
+      "issue_number": 48,
+      "title": "Phase 6: Write production deployment guide",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        47
+      ],
+      "phase": 6,
+      "labels": [
+        "devops"
+      ]
+    },
+    {
+      "issue_number": 58,
+      "title": "Phase 6: Implement PWA features (frontend)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        55,
+        57
+      ],
+      "phase": 6,
+      "labels": [
+        "frontend",
+        "pwa"
+      ]
     }
   ]
 }
