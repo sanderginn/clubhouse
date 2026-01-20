@@ -81,6 +81,10 @@ func publishWithRetry(ctx context.Context, redisClient *redis.Client, channel st
 	return err
 }
 
+func publishContext() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), 2*time.Second)
+}
+
 func extractMentionedUsernames(content string) []string {
 	matches := mentionPattern.FindAllStringSubmatch(content, -1)
 	if len(matches) == 0 {

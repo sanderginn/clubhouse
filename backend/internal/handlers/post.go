@@ -80,8 +80,10 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		Post: *post,
 	}
 
-	_ = publishEvent(r.Context(), h.redis, formatChannel(sectionPrefix, post.SectionID), "new_post", postEventData{Post: post})
-	_ = publishMentions(r.Context(), h.redis, h.userService, post.Content, userID, &post.ID, nil)
+	publishCtx, cancel := publishContext()
+	_ = publishEvent(publishCtx, h.redis, formatChannel(sectionPrefix, post.SectionID), "new_post", postEventData{Post: post})
+	_ = publishMentions(publishCtx, h.redis, h.userService, post.Content, userID, &post.ID, nil)
+	cancel()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)

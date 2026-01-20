@@ -73,11 +73,13 @@ func (h *ReactionHandler) AddReactionToPost(w http.ResponseWriter, r *http.Reque
 		Reaction: *reaction,
 	}
 
-	_ = publishEvent(r.Context(), h.redis, formatChannel(postPrefix, postID), "reaction_added", reactionEventData{
+	publishCtx, cancel := publishContext()
+	_ = publishEvent(publishCtx, h.redis, formatChannel(postPrefix, postID), "reaction_added", reactionEventData{
 		PostID: &postID,
 		UserID: reaction.UserID,
 		Emoji:  reaction.Emoji,
 	})
+	cancel()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -131,11 +133,13 @@ func (h *ReactionHandler) RemoveReactionFromPost(w http.ResponseWriter, r *http.
 		return
 	}
 
-	_ = publishEvent(r.Context(), h.redis, formatChannel(postPrefix, postID), "reaction_removed", reactionEventData{
+	publishCtx, cancel := publishContext()
+	_ = publishEvent(publishCtx, h.redis, formatChannel(postPrefix, postID), "reaction_removed", reactionEventData{
 		PostID: &postID,
 		UserID: userID,
 		Emoji:  emoji,
 	})
+	cancel()
 
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -184,11 +188,13 @@ func (h *ReactionHandler) AddReactionToComment(w http.ResponseWriter, r *http.Re
 		Reaction: *reaction,
 	}
 
-	_ = publishEvent(r.Context(), h.redis, formatChannel(commentPrefix, commentID), "reaction_added", reactionEventData{
+	publishCtx, cancel := publishContext()
+	_ = publishEvent(publishCtx, h.redis, formatChannel(commentPrefix, commentID), "reaction_added", reactionEventData{
 		CommentID: &commentID,
 		UserID:    reaction.UserID,
 		Emoji:     reaction.Emoji,
 	})
+	cancel()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -242,11 +248,13 @@ func (h *ReactionHandler) RemoveReactionFromComment(w http.ResponseWriter, r *ht
 		return
 	}
 
-	_ = publishEvent(r.Context(), h.redis, formatChannel(commentPrefix, commentID), "reaction_removed", reactionEventData{
+	publishCtx, cancel := publishContext()
+	_ = publishEvent(publishCtx, h.redis, formatChannel(commentPrefix, commentID), "reaction_removed", reactionEventData{
 		CommentID: &commentID,
 		UserID:    userID,
 		Emoji:     emoji,
 	})
+	cancel()
 
 	w.WriteHeader(http.StatusNoContent)
 }

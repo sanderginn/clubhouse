@@ -84,8 +84,10 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		Comment: *comment,
 	}
 
-	_ = publishEvent(r.Context(), h.redis, formatChannel(postPrefix, comment.PostID), "new_comment", commentEventData{Comment: comment})
-	_ = publishMentions(r.Context(), h.redis, h.userService, comment.Content, userID, &comment.PostID, &comment.ID)
+	publishCtx, cancel := publishContext()
+	_ = publishEvent(publishCtx, h.redis, formatChannel(postPrefix, comment.PostID), "new_comment", commentEventData{Comment: comment})
+	_ = publishMentions(publishCtx, h.redis, h.userService, comment.Content, userID, &comment.PostID, &comment.ID)
+	cancel()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
