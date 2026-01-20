@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/middleware"
@@ -368,6 +369,23 @@ func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 	// Parse query parameters for pagination
 	limit := 50 // Default limit
 	cursor := r.URL.Query().Get("cursor")
+	cursorTimestamp := ""
+	cursorID := ""
+	if cursor != "" {
+		parts := strings.SplitN(cursor, "|", 2)
+		cursorTimestamp = parts[0]
+		if _, err := time.Parse(time.RFC3339Nano, cursorTimestamp); err != nil {
+			writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid cursor format")
+			return
+		}
+		if len(parts) == 2 {
+			cursorID = parts[1]
+			if _, err := uuid.Parse(cursorID); err != nil {
+				writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid cursor format")
+				return
+			}
+		}
+	}
 
 	// Query audit logs with admin username, ordered by created_at DESC
 	query := `
@@ -376,12 +394,16 @@ func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 			a.related_post_id, a.related_comment_id, a.related_user_id, a.created_at
 		FROM audit_logs a
 		JOIN users u ON a.admin_user_id = u.id
-		WHERE ($1 = '' OR a.created_at < $1::timestamp)
-		ORDER BY a.created_at DESC
-		LIMIT $2
+		WHERE (
+			$1 = ''
+			OR ($2 = '' AND a.created_at < $1::timestamp)
+			OR ($2 <> '' AND (a.created_at, a.id) < ($1::timestamp, $2::uuid))
+		)
+		ORDER BY a.created_at DESC, a.id DESC
+		LIMIT $3
 	`
 
-	rows, err := h.db.QueryContext(r.Context(), query, cursor, limit+1)
+	rows, err := h.db.QueryContext(r.Context(), query, cursorTimestamp, cursorID, limit+1)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to fetch audit logs")
 		return
@@ -417,7 +439,7 @@ func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 	var nextCursor *string
 	if hasMore && len(logs) > 0 {
 		lastLog := logs[len(logs)-1]
-		cursorStr := lastLog.CreatedAt.Format("2006-01-02T15:04:05.000Z07:00")
+		cursorStr := lastLog.CreatedAt.Format(time.RFC3339Nano) + "|" + lastLog.ID.String()
 		nextCursor = &cursorStr
 	}
 
