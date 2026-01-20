@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -184,12 +185,14 @@ func (s *SearchService) getLinkMetadataResult(ctx context.Context, linkID uuid.U
 	`
 
 	var result models.LinkMetadataResult
-	var metadata models.JSONMap
-	if err := s.db.QueryRowContext(ctx, query, linkID).Scan(&result.ID, &result.URL, &metadata, &result.PostID, &result.CommentID); err != nil {
+	var metadataBytes []byte
+	if err := s.db.QueryRowContext(ctx, query, linkID).Scan(&result.ID, &result.URL, &metadataBytes, &result.PostID, &result.CommentID); err != nil {
 		return nil, err
 	}
-	if metadata != nil {
-		result.Metadata = map[string]interface{}(metadata)
+	if len(metadataBytes) > 0 {
+		if err := json.Unmarshal(metadataBytes, &result.Metadata); err != nil {
+			return nil, err
+		}
 	}
 
 	return &result, nil
