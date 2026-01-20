@@ -50,6 +50,7 @@ func TestCreateCommentHandlerInvalidRequest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	req = req.WithContext(createTestUserContext(req.Context(), uuid.New(), "testuser", false))
 
 	rr := httptest.NewRecorder()
 	handler.CreateComment(rr, req)

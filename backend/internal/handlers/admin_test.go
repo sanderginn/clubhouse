@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bytes"
 	"database/sql"
 	"encoding/json"
 	"net/http"
@@ -17,6 +16,9 @@ func TestListPendingUsers(t *testing.T) {
 	db, err := getTestDB()
 	if err != nil {
 		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
 	}
 	defer db.Close()
 
@@ -46,6 +48,9 @@ func TestApproveUser(t *testing.T) {
 	db, err := getTestDB()
 	if err != nil {
 		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
 	}
 	defer db.Close()
 
@@ -103,6 +108,9 @@ func TestRejectUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get test DB: %v", err)
 	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
 	defer db.Close()
 
 	// Create a test user
@@ -158,6 +166,9 @@ func TestApproveAlreadyApprovedUser(t *testing.T) {
 	db, err := getTestDB()
 	if err != nil {
 		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
 	}
 	defer db.Close()
 

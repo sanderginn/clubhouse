@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"bytes"
-	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
@@ -10,9 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/models"
-	"github.com/sanderginn/clubhouse/internal/services"
 )
 
 // TestGetPostSuccess tests successfully retrieving a post
@@ -406,14 +405,7 @@ func TestRestorePostSuccess(t *testing.T) {
 	}
 
 	// Add user context
-	ctx := req.Context()
-	ctx = context.WithValue(ctx, "user", &services.Session{
-		ID:       uuid.New().String(),
-		UserID:   userID,
-		Username: "testuser",
-		IsAdmin:  false,
-	})
-	req = req.WithContext(ctx)
+	req = req.WithContext(createTestUserContext(req.Context(), userID, "testuser", false))
 
 	rr := httptest.NewRecorder()
 	handler.RestorePost(rr, req)
@@ -492,14 +484,7 @@ func TestRestorePostByAdmin(t *testing.T) {
 	}
 
 	// Add admin user context
-	ctx := req.Context()
-	ctx = context.WithValue(ctx, "user", &services.Session{
-		ID:       uuid.New().String(),
-		UserID:   adminID,
-		Username: "admin",
-		IsAdmin:  true,
-	})
-	req = req.WithContext(ctx)
+	req = req.WithContext(createTestUserContext(req.Context(), adminID, "admin", true))
 
 	rr := httptest.NewRecorder()
 	handler.RestorePost(rr, req)
@@ -550,14 +535,7 @@ func TestRestorePostUnauthorized(t *testing.T) {
 	}
 
 	// Add different user context
-	ctx := req.Context()
-	ctx = context.WithValue(ctx, "user", &services.Session{
-		ID:       uuid.New().String(),
-		UserID:   otherUserID,
-		Username: "otheruser",
-		IsAdmin:  false,
-	})
-	req = req.WithContext(ctx)
+	req = req.WithContext(createTestUserContext(req.Context(), otherUserID, "otheruser", false))
 
 	rr := httptest.NewRecorder()
 	handler.RestorePost(rr, req)
@@ -616,14 +594,7 @@ func TestRestorePostPermanentlyDeleted(t *testing.T) {
 	}
 
 	// Add user context
-	ctx := req.Context()
-	ctx = context.WithValue(ctx, "user", &services.Session{
-		ID:       uuid.New().String(),
-		UserID:   userID,
-		Username: "testuser",
-		IsAdmin:  false,
-	})
-	req = req.WithContext(ctx)
+	req = req.WithContext(createTestUserContext(req.Context(), userID, "testuser", false))
 
 	rr := httptest.NewRecorder()
 	handler.RestorePost(rr, req)
@@ -647,8 +618,10 @@ func TestRestorePostPermanentlyDeleted(t *testing.T) {
 }
 
 // setupMockDB creates a mock database connection for testing
-func setupMockDB(t *testing.T) (*sql.DB, interface{}, error) {
-	// In a real test setup, we'd use sqlmock or similar
-	// For now, we'll skip the actual mock setup
-	return nil, nil, nil
+func setupMockDB(t *testing.T) (*sql.DB, sqlmock.Sqlmock, error) {
+	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherRegexp))
+	if err != nil {
+		return nil, nil, err
+	}
+	return db, mock, nil
 }
