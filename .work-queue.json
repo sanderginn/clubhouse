@@ -562,9 +562,9 @@
     {
       "issue_number": 37,
       "title": "Phase 4: Implement full-text search",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1768907048-67961",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768907048-67961",
       "dependencies": [
         30,
         31,
@@ -575,7 +575,9 @@
       "labels": [
         "backend",
         "search"
-      ]
+      ],
+      "branch": "feat/issue-37-implement-fulltext-search",
+      "claimed_at": "2026-01-20T11:04:08Z"
     },
     {
       "issue_number": 38,
