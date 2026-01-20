@@ -1,15 +1,12 @@
 package handlers
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/models"
-	"github.com/sanderginn/clubhouse/internal/observability"
 	"github.com/sanderginn/clubhouse/internal/services"
 )
 
@@ -234,25 +231,4 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
-}
-
-// writeError is a helper to write error responses
-func writeError(ctx context.Context, w http.ResponseWriter, statusCode int, code string, message string) {
-	userID := ""
-	if id, err := middleware.GetUserIDFromContext(ctx); err == nil {
-		userID = id.String()
-	}
-	observability.LogError(ctx, observability.ErrorLog{
-		Message:    message,
-		Code:       code,
-		StatusCode: statusCode,
-		UserID:     userID,
-	})
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(models.ErrorResponse{
-		Error: message,
-		Code:  code,
-	})
 }
