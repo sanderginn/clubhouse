@@ -647,7 +647,8 @@
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768924650-74597",
       "branch": "feat/issue-39-implement-hard-delete-endpoints",
       "claimed_at": "2026-01-20T15:57:30Z",
-      "completed_at": "2026-01-20T16:01:14Z"
+      "completed_at": "2026-01-20T16:01:14Z",
+      "pr_number": 118
     },
     {
       "issue_number": 40,
