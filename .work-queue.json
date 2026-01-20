@@ -45,6 +45,7 @@
     38,
     39,
     40,
+    41,
     42,
     43,
     49,
@@ -675,7 +676,7 @@
     {
       "issue_number": 41,
       "title": "Phase 5: Implement audit logging",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768931720-99111",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768931720-99111",
       "dependencies": [
@@ -693,7 +694,9 @@
         "admin"
       ],
       "branch": "feat/issue-41-implement-audit-logging",
-      "claimed_at": "2026-01-20T17:55:20Z"
+      "claimed_at": "2026-01-20T17:55:20Z",
+      "pr_number": 121,
+      "completed_at": "2026-01-20T19:59:34Z"
     },
     {
       "issue_number": 42,
