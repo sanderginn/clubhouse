@@ -2,7 +2,26 @@
   "permissions": {
     "allow": [
       "Bash(git fetch:*)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Bash(gh pr list:*)",
+      "Bash(./scripts/show-queue.sh:*)",
+      "Bash(git worktree:*)",
+      "Bash(./scripts/start-agent.sh:*)",
+      "Bash(go build:*)",
+      "Bash(go test:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create --title \"Phase 2: Implement get user posts endpoint\" --body \"$\\(cat <<''EOF''\n## Summary\n- Add `GET /api/v1/users/{id}/posts` endpoint for retrieving a user''s posts\n- Implement cursor-based pagination with configurable limit \\(default 20, max 100\\)\n- Exclude soft-deleted posts from results\n- Add comprehensive test coverage for the new endpoint\n\n## Test plan\n- [x] Build passes \\(`go build ./...`\\)\n- [x] Unit tests added for GetUserPosts handler\n- [ ] Manual testing with real database\n\nCloses #26\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\nEOF\n\\)\")",
+      "Bash(gh pr create:*)",
+      "Bash(./scripts/complete-issue.sh:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh pr comment:*)",
+      "Bash(git rebase:*)",
+      "Bash(git checkout:*)",
+      "Bash(git stash:*)"
     ]
   }
 }

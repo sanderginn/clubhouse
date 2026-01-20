@@ -257,6 +257,10 @@ main() {
     echo "ISSUE_NUMBER=$ISSUE_NUMBER"
     echo "BRANCH_NAME=$BRANCH_NAME"
     echo "AGENT_ID=$AGENT_ID"
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════════════════"
+    echo "CLAUDE: Run 'cd $WORKTREE_PATH' then read SUBAGENT_INSTRUCTIONS.md"
+    echo "═══════════════════════════════════════════════════════════════════════════"
 }
 
 main "$@"
