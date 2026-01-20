@@ -693,9 +693,9 @@
     {
       "issue_number": 42,
       "title": "Phase 5: Implement config endpoint for admin toggles",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1768930447-86402",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768930447-86402",
       "dependencies": [
         34,
         35,
@@ -709,7 +709,9 @@
       "labels": [
         "backend",
         "admin"
-      ]
+      ],
+      "branch": "feat/issue-42-implement-config-endpoint-for-admin-togg",
+      "claimed_at": "2026-01-20T17:34:07Z"
     },
     {
       "issue_number": 43,
