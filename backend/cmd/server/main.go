@@ -63,10 +63,10 @@ func main() {
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(dbConn, redisConn)
-	postHandler := handlers.NewPostHandler(dbConn)
-	commentHandler := handlers.NewCommentHandler(dbConn)
+	postHandler := handlers.NewPostHandler(dbConn, redisConn)
+	commentHandler := handlers.NewCommentHandler(dbConn, redisConn)
 	adminHandler := handlers.NewAdminHandler(dbConn)
-	reactionHandler := handlers.NewReactionHandler(dbConn)
+	reactionHandler := handlers.NewReactionHandler(dbConn, redisConn)
 	userHandler := handlers.NewUserHandler(dbConn)
 	sectionHandler := handlers.NewSectionHandler(dbConn)
 	wsHandler := handlers.NewWebSocketHandler(redisConn)

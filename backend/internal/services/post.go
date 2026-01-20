@@ -23,6 +23,22 @@ func NewPostService(db *sql.DB) *PostService {
 	return &PostService{db: db}
 }
 
+// GetSectionIDByPostID fetches the section id for a post.
+func (s *PostService) GetSectionIDByPostID(ctx context.Context, postID uuid.UUID) (uuid.UUID, error) {
+	query := `
+		SELECT section_id
+		FROM posts
+		WHERE id = $1 AND deleted_at IS NULL
+	`
+
+	var sectionID uuid.UUID
+	if err := s.db.QueryRowContext(ctx, query, postID).Scan(&sectionID); err != nil {
+		return uuid.UUID{}, err
+	}
+
+	return sectionID, nil
+}
+
 // CreatePost creates a new post with optional links
 func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequest, userID uuid.UUID) (*models.Post, error) {
 	// Validate input

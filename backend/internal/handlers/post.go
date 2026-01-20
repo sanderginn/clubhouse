@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/services"
@@ -16,12 +17,16 @@ import (
 // PostHandler handles post endpoints
 type PostHandler struct {
 	postService *services.PostService
+	userService *services.UserService
+	redis       *redis.Client
 }
 
 // NewPostHandler creates a new post handler
-func NewPostHandler(db *sql.DB) *PostHandler {
+func NewPostHandler(db *sql.DB, redisClient *redis.Client) *PostHandler {
 	return &PostHandler{
 		postService: services.NewPostService(db),
+		userService: services.NewUserService(db),
+		redis:       redisClient,
 	}
 }
 
@@ -74,6 +79,11 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	response := models.CreatePostResponse{
 		Post: *post,
 	}
+
+	publishCtx, cancel := publishContext()
+	_ = publishEvent(publishCtx, h.redis, formatChannel(sectionPrefix, post.SectionID), "new_post", postEventData{Post: post})
+	_ = publishMentions(publishCtx, h.redis, h.userService, post.Content, userID, &post.ID, nil)
+	cancel()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)

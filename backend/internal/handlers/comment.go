@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/services"
@@ -16,12 +17,18 @@ import (
 // CommentHandler handles comment endpoints
 type CommentHandler struct {
 	commentService *services.CommentService
+	userService    *services.UserService
+	postService    *services.PostService
+	redis          *redis.Client
 }
 
 // NewCommentHandler creates a new comment handler
-func NewCommentHandler(db *sql.DB) *CommentHandler {
+func NewCommentHandler(db *sql.DB, redisClient *redis.Client) *CommentHandler {
 	return &CommentHandler{
 		commentService: services.NewCommentService(db),
+		userService:    services.NewUserService(db),
+		postService:    services.NewPostService(db),
+		redis:          redisClient,
 	}
 }
 
@@ -78,6 +85,14 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	response := models.CreateCommentResponse{
 		Comment: *comment,
 	}
+
+	publishCtx, cancel := publishContext()
+	_ = publishEvent(publishCtx, h.redis, formatChannel(postPrefix, comment.PostID), "new_comment", commentEventData{Comment: comment})
+	if sectionID, err := h.postService.GetSectionIDByPostID(publishCtx, comment.PostID); err == nil {
+		_ = publishEvent(publishCtx, h.redis, formatChannel(sectionPrefix, sectionID), "new_comment", commentEventData{Comment: comment})
+	}
+	_ = publishMentions(publishCtx, h.redis, h.userService, comment.Content, userID, &comment.PostID, &comment.ID)
+	cancel()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
