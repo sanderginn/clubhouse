@@ -6,3 +6,4 @@ export * from './posts';
 export * from './comments';
 export { default as PostCard } from './PostCard.svelte';
 export { default as SectionFeed } from './SectionFeed.svelte';
+export * from './search';
