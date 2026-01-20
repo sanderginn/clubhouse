@@ -858,9 +858,9 @@
     {
       "issue_number": 54,
       "title": "Phase 3: Implement WebSocket integration (frontend)",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1768911160-85786",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768911160-85786",
       "dependencies": [
         33
       ],
@@ -868,7 +868,9 @@
       "labels": [
         "frontend",
         "websocket"
-      ]
+      ],
+      "branch": "feat/issue-54-implement-websocket-integration-frontend",
+      "claimed_at": "2026-01-20T12:12:40Z"
     },
     {
       "issue_number": 55,
