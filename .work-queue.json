@@ -598,9 +598,9 @@
     {
       "issue_number": 38,
       "title": "Phase 4: Implement link metadata fetching strategy",
-      "status": "in_progress",
-      "assigned_to": "agent-1768911156-85815",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768911156-85815",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
       "dependencies": [
         30,
         31,
@@ -611,9 +611,7 @@
       "labels": [
         "backend",
         "links"
-      ],
-      "branch": "feat/issue-38-implement-link-metadata-fetching-strateg",
-      "claimed_at": "2026-01-20T12:12:36Z"
+      ]
     },
     {
       "issue_number": 39,
@@ -858,9 +856,9 @@
     {
       "issue_number": 54,
       "title": "Phase 3: Implement WebSocket integration (frontend)",
-      "status": "in_progress",
-      "assigned_to": "agent-1768911160-85786",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768911160-85786",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
       "dependencies": [
         33
       ],
@@ -868,9 +866,7 @@
       "labels": [
         "frontend",
         "websocket"
-      ],
-      "branch": "feat/issue-54-implement-websocket-integration-frontend",
-      "claimed_at": "2026-01-20T12:12:40Z"
+      ]
     },
     {
       "issue_number": 55,
@@ -890,9 +886,9 @@
     {
       "issue_number": 56,
       "title": "Phase 4: Implement search (frontend)",
-      "status": "in_progress",
-      "assigned_to": "agent-1768911164-85844",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768911164-85844",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
       "dependencies": [
         37
       ],
@@ -900,9 +896,7 @@
       "labels": [
         "frontend",
         "search"
-      ],
-      "branch": "feat/issue-56-implement-search-frontend",
-      "claimed_at": "2026-01-20T12:12:44Z"
+      ]
     },
     {
       "issue_number": 57,
