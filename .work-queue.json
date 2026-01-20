@@ -50,6 +50,7 @@
     43,
     44,
     45,
+    46,
     49,
     50,
     51,
@@ -803,7 +804,7 @@
     {
       "issue_number": 46,
       "title": "Phase 6: Integrate OpenTelemetry for logs",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768943898-70901",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768943898-70901",
       "dependencies": [
@@ -820,7 +821,9 @@
         "observability"
       ],
       "branch": "feat/issue-46-integrate-opentelemetry-for-logs",
-      "claimed_at": "2026-01-20T21:18:18Z"
+      "claimed_at": "2026-01-20T21:18:18Z",
+      "pr_number": 127,
+      "completed_at": "2026-01-20T21:36:04Z"
     },
     {
       "issue_number": 49,
