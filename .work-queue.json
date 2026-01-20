@@ -1045,16 +1045,18 @@
     {
       "issue_number": 102,
       "title": "Phase 7: Search ranking order test coverage",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1768945364-81149",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768945364-81149",
       "dependencies": [],
       "phase": 7,
       "labels": [
         "backend",
         "search",
         "tests"
-      ]
+      ],
+      "branch": "feat/issue-102-search-ranking-order-test-coverage",
+      "claimed_at": "2026-01-20T21:42:44Z"
     },
     {
       "issue_number": 103,
