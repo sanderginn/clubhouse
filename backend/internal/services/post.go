@@ -615,6 +615,68 @@ func (s *PostService) HardDeletePost(ctx context.Context, postID uuid.UUID, admi
 	return nil
 }
 
+// AdminRestorePost restores a soft-deleted post (admin only) with audit logging
+func (s *PostService) AdminRestorePost(ctx context.Context, postID uuid.UUID, adminUserID uuid.UUID) (*models.Post, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Check if post exists and is soft-deleted
+	var exists bool
+	var isDeleted bool
+	err = tx.QueryRowContext(ctx, `
+		SELECT EXISTS(SELECT 1 FROM posts WHERE id = $1),
+		       EXISTS(SELECT 1 FROM posts WHERE id = $1 AND deleted_at IS NOT NULL)
+	`, postID).Scan(&exists, &isDeleted)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check post: %w", err)
+	}
+	if !exists {
+		return nil, ErrPostNotFound
+	}
+	if !isDeleted {
+		return nil, errors.New("post is not deleted")
+	}
+
+	// Restore the post
+	var post models.Post
+	err = tx.QueryRowContext(ctx, `
+		UPDATE posts
+		SET deleted_at = NULL, deleted_by_user_id = NULL
+		WHERE id = $1
+		RETURNING id, user_id, section_id, content, created_at, updated_at, deleted_at, deleted_by_user_id
+	`, postID).Scan(
+		&post.ID, &post.UserID, &post.SectionID, &post.Content,
+		&post.CreatedAt, &post.UpdatedAt, &post.DeletedAt, &post.DeletedByUserID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to restore post: %w", err)
+	}
+
+	// Create audit log entry
+	_, err = tx.ExecContext(ctx, `
+		INSERT INTO audit_logs (admin_user_id, action, related_post_id, created_at)
+		VALUES ($1, 'restore_post', $2, now())
+	`, adminUserID, postID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create audit log: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	// Fetch the full post with user info
+	fullPost, err := s.GetPostByID(ctx, postID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch restored post: %w", err)
+	}
+
+	return fullPost, nil
+}
+
 // validateCreatePostInput validates post creation input
 func validateCreatePostInput(req *models.CreatePostRequest) error {
 	if strings.TrimSpace(req.SectionID) == "" {

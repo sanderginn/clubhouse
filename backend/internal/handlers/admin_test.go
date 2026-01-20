@@ -455,6 +455,261 @@ func TestHardDeleteCommentNotFound(t *testing.T) {
 	}
 }
 
+// TestAdminRestorePost tests restoring a soft-deleted post
+func TestAdminRestorePost(t *testing.T) {
+	db, err := getTestDB()
+	if err != nil {
+		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+	defer db.Close()
+
+	// Create a test admin user
+	adminID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'testadmin_restore', 'testadmin_restore@example.com', '$2a$12$test', true, now(), now())
+	`, adminID)
+	if err != nil {
+		t.Fatalf("failed to create admin user: %v", err)
+	}
+
+	// Create a test section
+	sectionID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO sections (id, name, slug, description, created_at)
+		VALUES ($1, 'Test Section Restore', 'test-section-restore', 'A test section', now())
+	`, sectionID)
+	if err != nil {
+		t.Fatalf("failed to create test section: %v", err)
+	}
+
+	// Create a soft-deleted post
+	postID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO posts (id, user_id, section_id, content, created_at, deleted_at, deleted_by_user_id)
+		VALUES ($1, $2, $3, 'Deleted post content', now(), now(), $2)
+	`, postID, adminID, sectionID)
+	if err != nil {
+		t.Fatalf("failed to create test post: %v", err)
+	}
+
+	handler := NewAdminHandler(db)
+
+	// Test restore request
+	req := httptest.NewRequest("POST", "/api/v1/admin/posts/"+postID.String()+"/restore", nil)
+	req = req.WithContext(createTestUserContext(req.Context(), adminID, "testadmin_restore", true))
+	w := httptest.NewRecorder()
+
+	handler.AdminRestorePost(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	// Verify post is restored in DB
+	var deletedAt *string
+	err = db.QueryRow("SELECT deleted_at FROM posts WHERE id = $1", postID).Scan(&deletedAt)
+	if err != nil {
+		t.Fatalf("failed to query post: %v", err)
+	}
+
+	if deletedAt != nil {
+		t.Errorf("expected deleted_at to be NULL after restore")
+	}
+
+	// Verify audit log was created
+	var auditCount int
+	err = db.QueryRow("SELECT COUNT(*) FROM audit_logs WHERE action = 'restore_post' AND admin_user_id = $1", adminID).Scan(&auditCount)
+	if err != nil {
+		t.Fatalf("failed to query audit log count: %v", err)
+	}
+
+	if auditCount != 1 {
+		t.Errorf("expected 1 audit log entry, but found %d", auditCount)
+	}
+}
+
+// TestAdminRestoreComment tests restoring a soft-deleted comment
+func TestAdminRestoreComment(t *testing.T) {
+	db, err := getTestDB()
+	if err != nil {
+		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+	defer db.Close()
+
+	// Create a test admin user
+	adminID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'testadmin_restore2', 'testadmin_restore2@example.com', '$2a$12$test', true, now(), now())
+	`, adminID)
+	if err != nil {
+		t.Fatalf("failed to create admin user: %v", err)
+	}
+
+	// Create a test section
+	sectionID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO sections (id, name, slug, description, created_at)
+		VALUES ($1, 'Test Section Restore 2', 'test-section-restore-2', 'A test section', now())
+	`, sectionID)
+	if err != nil {
+		t.Fatalf("failed to create test section: %v", err)
+	}
+
+	// Create a test post
+	postID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO posts (id, user_id, section_id, content, created_at)
+		VALUES ($1, $2, $3, 'Test post content', now())
+	`, postID, adminID, sectionID)
+	if err != nil {
+		t.Fatalf("failed to create test post: %v", err)
+	}
+
+	// Create a soft-deleted comment
+	commentID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO comments (id, user_id, post_id, content, created_at, deleted_at, deleted_by_user_id)
+		VALUES ($1, $2, $3, 'Deleted comment content', now(), now(), $2)
+	`, commentID, adminID, postID)
+	if err != nil {
+		t.Fatalf("failed to create test comment: %v", err)
+	}
+
+	handler := NewAdminHandler(db)
+
+	// Test restore request
+	req := httptest.NewRequest("POST", "/api/v1/admin/comments/"+commentID.String()+"/restore", nil)
+	req = req.WithContext(createTestUserContext(req.Context(), adminID, "testadmin_restore2", true))
+	w := httptest.NewRecorder()
+
+	handler.AdminRestoreComment(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	// Verify comment is restored in DB
+	var deletedAt *string
+	err = db.QueryRow("SELECT deleted_at FROM comments WHERE id = $1", commentID).Scan(&deletedAt)
+	if err != nil {
+		t.Fatalf("failed to query comment: %v", err)
+	}
+
+	if deletedAt != nil {
+		t.Errorf("expected deleted_at to be NULL after restore")
+	}
+
+	// Verify audit log was created
+	var auditCount int
+	err = db.QueryRow("SELECT COUNT(*) FROM audit_logs WHERE action = 'restore_comment' AND admin_user_id = $1", adminID).Scan(&auditCount)
+	if err != nil {
+		t.Fatalf("failed to query audit log count: %v", err)
+	}
+
+	if auditCount != 1 {
+		t.Errorf("expected 1 audit log entry, but found %d", auditCount)
+	}
+}
+
+// TestAdminRestorePostNotDeleted tests restore fails for non-deleted post
+func TestAdminRestorePostNotDeleted(t *testing.T) {
+	db, err := getTestDB()
+	if err != nil {
+		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+	defer db.Close()
+
+	// Create a test admin user
+	adminID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'testadmin_restore3', 'testadmin_restore3@example.com', '$2a$12$test', true, now(), now())
+	`, adminID)
+	if err != nil {
+		t.Fatalf("failed to create admin user: %v", err)
+	}
+
+	// Create a test section
+	sectionID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO sections (id, name, slug, description, created_at)
+		VALUES ($1, 'Test Section Restore 3', 'test-section-restore-3', 'A test section', now())
+	`, sectionID)
+	if err != nil {
+		t.Fatalf("failed to create test section: %v", err)
+	}
+
+	// Create a non-deleted post
+	postID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO posts (id, user_id, section_id, content, created_at)
+		VALUES ($1, $2, $3, 'Test post content', now())
+	`, postID, adminID, sectionID)
+	if err != nil {
+		t.Fatalf("failed to create test post: %v", err)
+	}
+
+	handler := NewAdminHandler(db)
+
+	// Test restore request on non-deleted post
+	req := httptest.NewRequest("POST", "/api/v1/admin/posts/"+postID.String()+"/restore", nil)
+	req = req.WithContext(createTestUserContext(req.Context(), adminID, "testadmin_restore3", true))
+	w := httptest.NewRecorder()
+
+	handler.AdminRestorePost(w, req)
+
+	if w.Code != http.StatusConflict {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusConflict, w.Code, w.Body.String())
+	}
+}
+
+// TestAdminRestorePostNotFound tests restore fails for non-existent post
+func TestAdminRestorePostNotFound(t *testing.T) {
+	db, err := getTestDB()
+	if err != nil {
+		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+	defer db.Close()
+
+	// Create a test admin user
+	adminID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'testadmin_restore4', 'testadmin_restore4@example.com', '$2a$12$test', true, now(), now())
+	`, adminID)
+	if err != nil {
+		t.Fatalf("failed to create admin user: %v", err)
+	}
+
+	handler := NewAdminHandler(db)
+
+	// Test restore request on non-existent post
+	nonExistentID := uuid.New()
+	req := httptest.NewRequest("POST", "/api/v1/admin/posts/"+nonExistentID.String()+"/restore", nil)
+	req = req.WithContext(createTestUserContext(req.Context(), adminID, "testadmin_restore4", true))
+	w := httptest.NewRecorder()
+
+	handler.AdminRestorePost(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusNotFound, w.Code, w.Body.String())
+	}
+}
+
 // Helper function to get test database connection
 func getTestDB() (*sql.DB, error) {
 	// This would need proper test database setup

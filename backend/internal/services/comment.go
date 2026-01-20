@@ -714,3 +714,89 @@ func (s *CommentService) HardDeleteComment(ctx context.Context, commentID uuid.U
 
 	return nil
 }
+
+// AdminRestoreComment restores a soft-deleted comment (admin only) with audit logging
+func (s *CommentService) AdminRestoreComment(ctx context.Context, commentID uuid.UUID, adminUserID uuid.UUID) (*models.Comment, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Check if comment exists and is soft-deleted
+	var exists bool
+	var isDeleted bool
+	err = tx.QueryRowContext(ctx, `
+		SELECT EXISTS(SELECT 1 FROM comments WHERE id = $1),
+		       EXISTS(SELECT 1 FROM comments WHERE id = $1 AND deleted_at IS NOT NULL)
+	`, commentID).Scan(&exists, &isDeleted)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check comment: %w", err)
+	}
+	if !exists {
+		return nil, ErrCommentNotFound
+	}
+	if !isDeleted {
+		return nil, errors.New("comment is not deleted")
+	}
+
+	// Restore the comment
+	var comment models.Comment
+	var parentID sql.NullString
+	var updatedAt sql.NullTime
+	err = tx.QueryRowContext(ctx, `
+		UPDATE comments
+		SET deleted_at = NULL, deleted_by_user_id = NULL
+		WHERE id = $1
+		RETURNING id, user_id, post_id, parent_comment_id, content, created_at, updated_at, deleted_at, deleted_by_user_id
+	`, commentID).Scan(
+		&comment.ID, &comment.UserID, &comment.PostID, &parentID, &comment.Content,
+		&comment.CreatedAt, &updatedAt, &comment.DeletedAt, &comment.DeletedByUserID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to restore comment: %w", err)
+	}
+
+	if parentID.Valid {
+		pid, _ := uuid.Parse(parentID.String)
+		comment.ParentCommentID = &pid
+	}
+	if updatedAt.Valid {
+		comment.UpdatedAt = &updatedAt.Time
+	}
+
+	// Create audit log entry
+	_, err = tx.ExecContext(ctx, `
+		INSERT INTO audit_logs (admin_user_id, action, related_comment_id, created_at)
+		VALUES ($1, 'restore_comment', $2, now())
+	`, adminUserID, commentID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create audit log: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	// Fetch user info
+	var user models.User
+	err = s.db.QueryRowContext(ctx, `
+		SELECT id, username, email, profile_picture_url, bio, is_admin, created_at
+		FROM users WHERE id = $1
+	`, comment.UserID).Scan(
+		&user.ID, &user.Username, &user.Email, &user.ProfilePictureURL, &user.Bio, &user.IsAdmin, &user.CreatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch user: %w", err)
+	}
+	comment.User = &user
+
+	// Fetch links
+	links, err := s.getCommentLinks(ctx, commentID)
+	if err != nil {
+		return nil, err
+	}
+	comment.Links = links
+
+	return &comment, nil
+}
