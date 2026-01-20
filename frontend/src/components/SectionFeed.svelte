@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onDestroy } from 'svelte';
   import { activeSection, posts, isLoadingPosts, postsError, hasMorePosts, postStore } from '../stores';
   import { loadFeed, loadMorePosts } from '../stores/feedStore';
   import PostCard from './PostCard.svelte';
 
   let observer: IntersectionObserver | null = null;
+  let observedElement: HTMLElement | null = null;
   let sentinel: HTMLElement;
   let isLoadingMore = false;
 
@@ -19,33 +20,29 @@
     isLoadingMore = false;
   }
 
-  function setupIntersectionObserver() {
-    if (observer) {
-      observer.disconnect();
+  function ensureObserver() {
+    if (!observer) {
+      observer = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          if (entry?.isIntersecting && $hasMorePosts && !isLoadingMore && !$isLoadingPosts) {
+            handleLoadMore();
+          }
+        },
+        {
+          root: null,
+          rootMargin: '100px',
+          threshold: 0,
+        }
+      );
     }
 
-    observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (entry.isIntersecting && $hasMorePosts && !isLoadingMore && !$isLoadingPosts) {
-          handleLoadMore();
-        }
-      },
-      {
-        root: null,
-        rootMargin: '100px',
-        threshold: 0,
-      }
-    );
-
-    if (sentinel) {
+    if (observer && sentinel && observedElement !== sentinel) {
+      observer.disconnect();
       observer.observe(sentinel);
+      observedElement = sentinel;
     }
   }
-
-  onMount(() => {
-    setupIntersectionObserver();
-  });
 
   onDestroy(() => {
     if (observer) {
@@ -54,9 +51,12 @@
     postStore.reset();
   });
 
-  $: if (sentinel && observer) {
-    observer.disconnect();
-    observer.observe(sentinel);
+  if (typeof window !== 'undefined') {
+    ensureObserver();
+  }
+
+  $: if (sentinel) {
+    ensureObserver();
   }
 </script>
 
