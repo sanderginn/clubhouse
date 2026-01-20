@@ -3,12 +3,14 @@ package middleware
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/sanderginn/clubhouse/internal/services"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type Middleware func(http.Handler) http.Handler
@@ -45,10 +47,13 @@ func RequestID(next http.Handler) http.Handler {
 
 // Observability middleware for tracing and metrics (placeholder)
 func Observability(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO: Add OpenTelemetry tracing
-		next.ServeHTTP(w, r)
-	})
+	return otelhttp.NewHandler(
+		next,
+		"http.server",
+		otelhttp.WithSpanNameFormatter(func(_ string, r *http.Request) string {
+			return fmt.Sprintf("%s %s", r.Method, r.URL.Path)
+		}),
+	)
 }
 
 // RequireAuth middleware validates session cookie and injects user context

@@ -7,6 +7,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/models"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // SearchService handles search operations.
@@ -30,6 +32,17 @@ func (s *SearchService) Search(ctx context.Context, query string, scope string, 
 	if limit <= 0 || limit > 100 {
 		limit = 20
 	}
+
+	ctx, span := otel.Tracer("clubhouse.search").Start(ctx, "SearchService.Search")
+	span.SetAttributes(
+		attribute.String("scope", scope),
+		attribute.Int("limit", limit),
+		attribute.Int("query_length", len(query)),
+	)
+	if sectionID != nil {
+		span.SetAttributes(attribute.String("section_id", sectionID.String()))
+	}
+	defer span.End()
 
 	linkText := "COALESCE(l.metadata->>'title','') || ' ' || COALESCE(l.metadata->>'description','') || ' ' || COALESCE(l.metadata->>'author','') || ' ' || COALESCE(l.metadata->>'artist','') || ' ' || COALESCE(l.metadata->>'provider','') || ' ' || COALESCE(l.url,'')"
 

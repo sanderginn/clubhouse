@@ -11,6 +11,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/models"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // CommentService handles comment-related operations
@@ -25,6 +27,14 @@ func NewCommentService(db *sql.DB) *CommentService {
 
 // CreateComment creates a new comment with optional links
 func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCommentRequest, userID uuid.UUID) (*models.Comment, error) {
+	ctx, span := otel.Tracer("clubhouse.comments").Start(ctx, "CommentService.CreateComment")
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.Int("content_length", len(strings.TrimSpace(req.Content))),
+		attribute.Bool("has_links", len(req.Links) > 0),
+	)
+	defer span.End()
+
 	// Validate input
 	if err := validateCreateCommentInput(req); err != nil {
 		return nil, err
@@ -35,6 +45,7 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 	if err != nil {
 		return nil, fmt.Errorf("invalid post id")
 	}
+	span.SetAttributes(attribute.String("post_id", postID.String()))
 
 	// Verify post exists and is not deleted
 	var postExists bool
