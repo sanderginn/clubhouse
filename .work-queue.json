@@ -52,7 +52,8 @@
     55,
     56,
     93,
-    112
+    112,
+    113
   ],
   "issues": [
     {
@@ -1094,14 +1095,16 @@
         "frontend",
         "tests"
       ],
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         112
       ],
       "assigned_to": "agent-1768922224948-113",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768922224948-113",
       "branch": "feat/issue-113-fix-layout-matchmedia-test-ismobile-no",
-      "claimed_at": "2026-01-20T15:17:04Z"
+      "claimed_at": "2026-01-20T15:17:04Z",
+      "pr_number": 116,
+      "completed_at": "2026-01-20T15:31:31Z"
     },
     {
       "issue_number": 114,
