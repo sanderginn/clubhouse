@@ -1061,16 +1061,18 @@
     {
       "issue_number": 103,
       "title": "Phase 7: Precomputed tsvector for search performance",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1768945394-81298",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768945394-81298",
       "dependencies": [],
       "phase": 7,
       "labels": [
         "backend",
         "search",
         "db"
-      ]
+      ],
+      "branch": "feat/issue-103-precomputed-tsvector-for-search-performa",
+      "claimed_at": "2026-01-20T21:43:14Z"
     },
     {
       "issue_number": 111,
