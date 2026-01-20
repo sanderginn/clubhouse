@@ -167,12 +167,9 @@ func (h *WebSocketHandler) writeLoop(ctx context.Context, wsConn *wsConnection) 
 	go h.pingLoop(ctx, wsConn)
 
 	for {
-		if ctx.Err() != nil {
-			return
-		}
-
 		msg, err := wsConn.pubsub.ReceiveMessage(ctx)
 		if err != nil {
+			wsConn.cancel()
 			return
 		}
 
