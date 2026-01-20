@@ -56,6 +56,7 @@
     54,
     55,
     56,
+    57,
     93,
     112,
     113,
@@ -949,7 +950,7 @@
     {
       "issue_number": 57,
       "title": "Phase 5: Implement admin panel (frontend)",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768939449-40733",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768939449-40733",
       "dependencies": [
@@ -964,7 +965,8 @@
         "admin"
       ],
       "branch": "feat/issue-57-implement-admin-panel-frontend",
-      "claimed_at": "2026-01-20T20:04:09Z"
+      "claimed_at": "2026-01-20T20:04:09Z",
+      "completed_at": "2026-01-20T20:10:10Z"
     },
     {
       "issue_number": 58,
