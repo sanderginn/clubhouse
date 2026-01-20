@@ -44,32 +44,40 @@ Grafana Stack (local observability)
 └── Tempo (traces)
 ```
 
-## Directory Structure (TBD)
+## Directory Structure
 
 ```
 clubhouse/
 ├── backend/
 │   ├── cmd/server/           # Main application entry point
 │   ├── internal/
-│   │   ├── models/           # Database models
-│   │   ├── handlers/         # HTTP handlers
-│   │   ├── services/         # Business logic
+│   │   ├── models/           # Data models and request/response types
+│   │   ├── handlers/         # HTTP handlers (one per domain)
+│   │   ├── services/         # Business logic (one per domain)
 │   │   ├── middleware/       # Auth, observability, etc.
-│   │   ├── db/               # Database initialization
-│   │   └── websocket/        # WebSocket logic
-│   ├── migrations/           # SQL migration files
+│   │   └── db/               # Database initialization
+│   ├── migrations/           # SQL migration files (11 tables)
 │   └── go.mod
 ├── frontend/
 │   ├── src/
-│   │   ├── routes/           # Page components
-│   │   ├── components/       # Reusable components
-│   │   ├── stores/           # Svelte stores (state)
-│   │   ├── services/         # API client
-│   │   └── styles/           # CSS
+│   │   ├── routes/           # SvelteKit routes
+│   │   ├── lib/
+│   │   │   ├── components/   # Reusable Svelte components
+│   │   │   ├── stores/       # Svelte stores (state)
+│   │   │   └── api/          # API client
+│   │   └── app.css           # Global styles (Tailwind)
 │   └── package.json
+├── scripts/                  # Orchestration scripts
+│   ├── start-agent.sh        # Claim issue and create worktree
+│   ├── complete-issue.sh     # Mark issue done after PR merge
+│   └── show-queue.sh         # Display work queue status
+├── .worktrees/               # Git worktrees for parallel agents
+├── .work-queue.json          # Issue tracking with dependencies
 ├── docker-compose.yml        # Local dev environment
-├── README.md
-└── AGENTS.md                 # This file
+├── AGENTS.md                 # This file (code standards)
+├── DESIGN.md                 # System architecture
+├── ORCHESTRATOR_INSTRUCTIONS.md  # For the orchestrator agent
+└── SUBAGENT_INSTRUCTIONS.md  # For subagents
 ```
 
 ## Core Design Decisions
@@ -240,12 +248,33 @@ go fmt ./...
 # Lint
 golangci-lint run ./...
 
+# Build (check for compile errors)
+cd backend && go build ./...
+
 # Test
-go test -v ./...
+cd backend && go test -v ./...
 
 # Check dependencies
 go mod tidy && git diff go.mod
+
+# Frontend check
+cd frontend && npm run check
 ```
+
+## Database Schema Reference
+
+The database uses `user_id` (not `author_id`) for foreign keys to users:
+
+| Table | User FK Column |
+|-------|---------------|
+| posts | `user_id` |
+| comments | `user_id` |
+| reactions | `user_id` |
+| mentions | `mentioned_user_id` |
+| notifications | `user_id` |
+| audit_logs | `admin_user_id` |
+
+Always check `backend/migrations/` for the actual schema before writing queries.
 
 ## When to Contact the Developer
 
@@ -257,5 +286,5 @@ go mod tidy && git diff go.mod
 
 ---
 
-**Last Updated**: January 16, 2026
-**Version**: 1.0
+**Last Updated**: January 19, 2026
+**Version**: 1.1
