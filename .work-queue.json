@@ -753,9 +753,9 @@
     {
       "issue_number": 44,
       "title": "Phase 6: Integrate OpenTelemetry for traces",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1768941716-51943",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768941716-51943",
       "dependencies": [
         39,
         40,
@@ -768,7 +768,9 @@
       "labels": [
         "backend",
         "observability"
-      ]
+      ],
+      "branch": "feat/issue-44-integrate-opentelemetry-for-traces",
+      "claimed_at": "2026-01-20T20:41:56Z"
     },
     {
       "issue_number": 45,
