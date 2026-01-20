@@ -164,23 +164,51 @@ func (h *WebSocketHandler) readLoop(ctx context.Context, wsConn *wsConnection) {
 }
 
 func (h *WebSocketHandler) writeLoop(ctx context.Context, wsConn *wsConnection) {
+	go h.pingLoop(ctx, wsConn)
+
+	for {
+		if ctx.Err() != nil {
+			return
+		}
+
+		msg, err := wsConn.pubsub.ReceiveMessage(ctx)
+		if err != nil {
+			return
+		}
+
+		payload := []byte(msg.Payload)
+		if !json.Valid(payload) {
+			payload = h.wrapPayload(msg.Payload)
+		}
+		h.sendMessage(wsConn, payload)
+	}
+}
+
+func (h *WebSocketHandler) pingLoop(ctx context.Context, wsConn *wsConnection) {
 	pingTicker := time.NewTicker(wsPingPeriod)
 	defer pingTicker.Stop()
 
-	ch := wsConn.pubsub.Channel()
 	for {
 		select {
-		case msg, ok := <-ch:
-			if !ok {
-				return
-			}
-			h.sendMessage(wsConn, []byte(msg.Payload))
 		case <-pingTicker.C:
 			h.sendPing(wsConn)
 		case <-ctx.Done():
 			return
 		}
 	}
+}
+
+func (h *WebSocketHandler) wrapPayload(payload string) []byte {
+	event := wsEvent{
+		Type:      "message",
+		Data:      map[string]string{"payload": payload},
+		Timestamp: time.Now().UTC(),
+	}
+	bytes, err := json.Marshal(event)
+	if err != nil {
+		return []byte(`{"type":"message","data":{"payload":"invalid"},"timestamp":"0001-01-01T00:00:00Z"}`)
+	}
+	return bytes
 }
 
 func (h *WebSocketHandler) sendMessage(wsConn *wsConnection, payload []byte) {
