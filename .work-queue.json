@@ -664,9 +664,9 @@
     {
       "issue_number": 41,
       "title": "Phase 5: Implement audit logging",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1768923156-69491",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768923156-69491",
       "dependencies": [
         34,
         35,
@@ -680,7 +680,9 @@
       "labels": [
         "backend",
         "admin"
-      ]
+      ],
+      "branch": "feat/issue-41-implement-audit-logging",
+      "claimed_at": "2026-01-20T15:32:36Z"
     },
     {
       "issue_number": 42,
