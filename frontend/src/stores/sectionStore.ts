@@ -1,4 +1,5 @@
 import { writable, derived } from 'svelte/store';
+import { api } from '../services/api';
 
 export interface Section {
   id: string;
@@ -19,15 +20,11 @@ const sectionIcons: Record<SectionType, string> = {
   general: '💬',
 };
 
-const defaultSections: Section[] = [
-  { id: '1', name: 'Music', type: 'music', icon: sectionIcons.music },
-  { id: '2', name: 'Photos', type: 'photo', icon: sectionIcons.photo },
-  { id: '3', name: 'Events', type: 'event', icon: sectionIcons.event },
-  { id: '4', name: 'Recipes', type: 'recipe', icon: sectionIcons.recipe },
-  { id: '5', name: 'Books', type: 'book', icon: sectionIcons.book },
-  { id: '6', name: 'Movies', type: 'movie', icon: sectionIcons.movie },
-  { id: '7', name: 'General', type: 'general', icon: sectionIcons.general },
-];
+interface ApiSection {
+  id: string;
+  name: string;
+  type: SectionType;
+}
 
 interface SectionState {
   sections: Section[];
@@ -37,8 +34,8 @@ interface SectionState {
 
 function createSectionStore() {
   const { subscribe, set, update } = writable<SectionState>({
-    sections: defaultSections,
-    activeSection: defaultSections[0],
+    sections: [],
+    activeSection: null,
     isLoading: false,
   });
 
@@ -51,11 +48,36 @@ function createSectionStore() {
           ...s,
           icon: sectionIcons[s.type] || '📁',
         })),
+        activeSection:
+          state.activeSection && sections.some((section) => section.id === state.activeSection?.id)
+            ? state.activeSection
+            : sections[0] ?? null,
         isLoading: false,
       })),
     setActiveSection: (section: Section | null) =>
       update((state) => ({ ...state, activeSection: section })),
     setLoading: (isLoading: boolean) => update((state) => ({ ...state, isLoading })),
+    loadSections: async () => {
+      update((state) => ({ ...state, isLoading: true }));
+      try {
+        const response = await api.get<{ sections: ApiSection[] }>('/sections');
+        const sections =
+          response.sections?.map((section) => ({
+            id: section.id,
+            name: section.name,
+            type: section.type,
+            icon: sectionIcons[section.type] || '📁',
+          })) ?? [];
+        update((state) => ({
+          ...state,
+          sections,
+          activeSection: sections[0] ?? null,
+          isLoading: false,
+        }));
+      } catch {
+        update((state) => ({ ...state, isLoading: false }));
+      }
+    },
   };
 }
 

@@ -73,6 +73,22 @@ function createPostStore() {
         ...state,
         posts: [post, ...state.posts],
       })),
+    upsertPost: (post: Post) =>
+      update((state) => {
+        const index = state.posts.findIndex((p) => p.id === post.id);
+        if (index === -1) {
+          return {
+            ...state,
+            posts: [post, ...state.posts],
+          };
+        }
+        const updated = [...state.posts];
+        updated[index] = { ...updated[index], ...post };
+        return {
+          ...state,
+          posts: updated,
+        };
+      }),
     appendPosts: (posts: Post[], cursor: string | null, hasMore: boolean) =>
       update((state) => ({
         ...state,
@@ -85,6 +101,38 @@ function createPostStore() {
       update((state) => ({
         ...state,
         posts: state.posts.filter((p) => p.id !== postId),
+      })),
+    incrementCommentCount: (postId: string, delta: number) =>
+      update((state) => ({
+        ...state,
+        posts: state.posts.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                commentCount: Math.max(0, (post.commentCount ?? 0) + delta),
+              }
+            : post
+        ),
+      })),
+    updateReactionCount: (postId: string, emoji: string, delta: number) =>
+      update((state) => ({
+        ...state,
+        posts: state.posts.map((post) => {
+          if (post.id !== postId) {
+            return post;
+          }
+          const counts = { ...(post.reactionCounts ?? {}) };
+          const next = (counts[emoji] ?? 0) + delta;
+          if (next <= 0) {
+            delete counts[emoji];
+          } else {
+            counts[emoji] = next;
+          }
+          return {
+            ...post,
+            reactionCounts: counts,
+          };
+        }),
       })),
     setLoading: (isLoading: boolean) => update((state) => ({ ...state, isLoading })),
     setError: (error: string | null) => update((state) => ({ ...state, error, isLoading: false })),

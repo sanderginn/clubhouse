@@ -65,7 +65,11 @@ class ApiClient {
   }
 
   async createPost(data: CreatePostRequest): Promise<{ post: Post }> {
-    return this.post('/posts', data);
+    return this.post('/posts', {
+      section_id: data.sectionId,
+      content: data.content,
+      links: data.links,
+    });
   }
 
   async getFeed(
