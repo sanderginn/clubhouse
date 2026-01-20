@@ -64,6 +64,7 @@
     99,
     100,
     101,
+    103,
     112,
     113,
     114
@@ -1061,7 +1062,7 @@
     {
       "issue_number": 103,
       "title": "Phase 7: Precomputed tsvector for search performance",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768945394-81298",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768945394-81298",
       "dependencies": [],
@@ -1072,7 +1073,9 @@
         "db"
       ],
       "branch": "feat/issue-103-precomputed-tsvector-for-search-performa",
-      "claimed_at": "2026-01-20T21:43:14Z"
+      "claimed_at": "2026-01-20T21:43:14Z",
+      "pr_number": 130,
+      "completed_at": "2026-01-20T21:47:30Z"
     },
     {
       "issue_number": 111,
