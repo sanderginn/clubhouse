@@ -48,11 +48,13 @@ func (s *SearchService) Search(ctx context.Context, query string, scope string, 
 
 	postScopeFilter := ""
 	commentScopeFilter := ""
+	linkScopeFilter := ""
 	args := []any{query}
 	limitPlaceholder := "$2"
 	if scope == "section" {
 		postScopeFilter = " AND p.section_id = $2"
 		commentScopeFilter = " AND p.section_id = $2"
+		linkScopeFilter = " AND COALESCE(p.section_id, cp.section_id) = $2"
 		args = append(args, *sectionID)
 		limitPlaceholder = "$3"
 	}
@@ -90,13 +92,30 @@ func (s *SearchService) Search(ctx context.Context, query string, scope string, 
 				)
 				%s
 			GROUP BY c.id
+		),
+		link_matches AS (
+			SELECT l.id,
+				ts_rank_cd(to_tsvector('english', %s), q.query) AS rank
+			FROM links l
+			LEFT JOIN posts p ON l.post_id = p.id
+			LEFT JOIN comments c ON l.comment_id = c.id
+			LEFT JOIN posts cp ON c.post_id = cp.id
+			CROSS JOIN q
+			WHERE to_tsvector('english', %s) @@ q.query
+				AND (
+					(l.post_id IS NOT NULL AND p.deleted_at IS NULL)
+					OR (l.comment_id IS NOT NULL AND c.deleted_at IS NULL AND cp.deleted_at IS NULL)
+				)
+				%s
 		)
 		SELECT 'post' AS result_type, id, rank FROM post_matches
 		UNION ALL
 		SELECT 'comment' AS result_type, id, rank FROM comment_matches
+		UNION ALL
+		SELECT 'link_metadata' AS result_type, id, rank FROM link_matches
 		ORDER BY rank DESC
 		LIMIT %s
-	`, linkText, linkText, postScopeFilter, linkText, linkText, commentScopeFilter, limitPlaceholder)
+	`, linkText, linkText, postScopeFilter, linkText, linkText, commentScopeFilter, linkText, linkText, linkScopeFilter, limitPlaceholder)
 
 	args = append(args, limit)
 
@@ -137,6 +156,16 @@ func (s *SearchService) Search(ctx context.Context, query string, scope string, 
 				Score:   rank,
 				Comment: comment,
 			})
+		case "link_metadata":
+			linkResult, err := s.getLinkMetadataResult(ctx, id)
+			if err != nil {
+				continue
+			}
+			results = append(results, models.SearchResult{
+				Type:         "link_metadata",
+				Score:        rank,
+				LinkMetadata: linkResult,
+			})
 		}
 	}
 
@@ -145,4 +174,23 @@ func (s *SearchService) Search(ctx context.Context, query string, scope string, 
 	}
 
 	return results, nil
+}
+
+func (s *SearchService) getLinkMetadataResult(ctx context.Context, linkID uuid.UUID) (*models.LinkMetadataResult, error) {
+	query := `
+		SELECT id, url, metadata, post_id, comment_id
+		FROM links
+		WHERE id = $1
+	`
+
+	var result models.LinkMetadataResult
+	var metadata models.JSONMap
+	if err := s.db.QueryRowContext(ctx, query, linkID).Scan(&result.ID, &result.URL, &metadata, &result.PostID, &result.CommentID); err != nil {
+		return nil, err
+	}
+	if metadata != nil {
+		result.Metadata = map[string]interface{}(metadata)
+	}
+
+	return &result, nil
 }
