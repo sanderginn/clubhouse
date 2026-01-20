@@ -2,18 +2,14 @@
 
 You are the orchestrator for the Clubhouse project. Your role is to manage parallel subagent work, review PRs, merge code, and maintain the work queue.
 
-## Current Project State (as of Jan 19, 2026)
+## Current Project State (as of Jan 20, 2026)
 
 **Repository:** https://github.com/sanderginn/clubhouse
 
 **Progress:**
-- **27 issues completed** (Phases 1-2 mostly done)
-- **5 issues available** for parallel work (#25, #26, #27, #28, #29)
-- **25 issues blocked** (waiting on Phase 2 completion)
-- **1 open PR** (#86) awaiting fixes
-
-**Open PR Status:**
-- PR #86 (Issue #24 - Get user profile): Has a bug - uses `author_id` instead of `user_id` in SQL. Feedback left, awaiting fix.
+- **51 issues completed** (Phases 1-4 done, Phase 5-7 in progress)
+- **10 issues available** for parallel work (Phase 5 and Phase 7 tasks)
+- **0 open PRs**
 
 ## Quick Commands
 
@@ -105,11 +101,12 @@ Issues are organized in phases with explicit dependencies:
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 1 | Setup & DB migrations | ✅ Complete |
-| 2 | Core features (auth, posts, comments, reactions, users, sections) | 🔄 5 remaining |
-| 3 | Real-time (WebSocket, Redis pub/sub) | ⏳ Blocked on Phase 2 |
-| 4 | Notifications & search | ⏳ Blocked on Phase 3 |
-| 5 | Admin & polish | ⏳ Blocked on Phase 4 |
+| 2 | Core features (auth, posts, comments, reactions, users, sections) | ✅ Complete |
+| 3 | Real-time (WebSocket, Redis pub/sub) | ✅ Complete |
+| 4 | Notifications & search | ✅ Complete |
+| 5 | Admin & polish | 🔄 4 remaining |
 | 6 | Observability & deploy | ⏳ Blocked on Phase 5 |
+| 7 | Search enhancements | 🔄 5 remaining |
 
 The `start-agent.sh` script automatically respects dependencies.
 
@@ -117,13 +114,18 @@ The `start-agent.sh` script automatically respects dependencies.
 
 | Issue | Title |
 |-------|-------|
-| #25 | Implement update own profile endpoint |
-| #26 | Implement get user posts endpoint |
-| #27 | Implement get user comments endpoint |
-| #28 | Implement list sections endpoint |
-| #29 | Implement get section endpoint |
+| #40 | Implement restore soft-deleted content |
+| #41 | Implement audit logging |
+| #42 | Implement config endpoint for admin toggles |
+| #43 | Implement section subscription opt-out |
+| #99 | Search scope without explicit section_id |
+| #100 | Link metadata as first-class search result |
+| #101 | Search query length and token guards |
+| #102 | Search ranking order test coverage |
+| #103 | Precomputed tsvector for search performance |
+| #111 | Set up Playwright and add core E2E tests |
 
-Once these 5 + #24 (PR #86) are done, Phase 3 (WebSocket) will unblock.
+Once Phase 5 issues are done, Phase 6 (Observability) will unblock.
 
 ## Key Files
 
@@ -185,4 +187,4 @@ gh pr merge 87 --merge --delete-branch
 
 ---
 
-**Last Updated:** January 19, 2026
+**Last Updated:** January 20, 2026
