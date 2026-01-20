@@ -80,15 +80,8 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		Post: *post,
 	}
 
-	if err := publishEvent(r.Context(), h.redis, formatChannel(sectionPrefix, post.SectionID), "new_post", postEventData{Post: post}); err != nil {
-		writeError(w, http.StatusInternalServerError, "POST_CREATION_FAILED", "Failed to publish post event")
-		return
-	}
-
-	if err := publishMentions(r.Context(), h.redis, h.userService, post.Content, userID, &post.ID, nil); err != nil {
-		writeError(w, http.StatusInternalServerError, "POST_CREATION_FAILED", "Failed to publish mention event")
-		return
-	}
+	_ = publishEvent(r.Context(), h.redis, formatChannel(sectionPrefix, post.SectionID), "new_post", postEventData{Post: post})
+	_ = publishMentions(r.Context(), h.redis, h.userService, post.Content, userID, &post.ID, nil)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)

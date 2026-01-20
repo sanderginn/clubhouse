@@ -73,14 +73,11 @@ func (h *ReactionHandler) AddReactionToPost(w http.ResponseWriter, r *http.Reque
 		Reaction: *reaction,
 	}
 
-	if err := publishEvent(r.Context(), h.redis, formatChannel(postPrefix, postID), "reaction_added", reactionEventData{
+	_ = publishEvent(r.Context(), h.redis, formatChannel(postPrefix, postID), "reaction_added", reactionEventData{
 		PostID: &postID,
 		UserID: reaction.UserID,
 		Emoji:  reaction.Emoji,
-	}); err != nil {
-		writeError(w, http.StatusInternalServerError, "REACTION_CREATION_FAILED", "Failed to publish reaction event")
-		return
-	}
+	})
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -134,14 +131,11 @@ func (h *ReactionHandler) RemoveReactionFromPost(w http.ResponseWriter, r *http.
 		return
 	}
 
-	if err := publishEvent(r.Context(), h.redis, formatChannel(postPrefix, postID), "reaction_removed", reactionEventData{
+	_ = publishEvent(r.Context(), h.redis, formatChannel(postPrefix, postID), "reaction_removed", reactionEventData{
 		PostID: &postID,
 		UserID: userID,
 		Emoji:  emoji,
-	}); err != nil {
-		writeError(w, http.StatusInternalServerError, "REMOVE_REACTION_FAILED", "Failed to publish reaction event")
-		return
-	}
+	})
 
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -190,14 +184,11 @@ func (h *ReactionHandler) AddReactionToComment(w http.ResponseWriter, r *http.Re
 		Reaction: *reaction,
 	}
 
-	if err := publishEvent(r.Context(), h.redis, formatChannel(commentPrefix, commentID), "reaction_added", reactionEventData{
+	_ = publishEvent(r.Context(), h.redis, formatChannel(commentPrefix, commentID), "reaction_added", reactionEventData{
 		CommentID: &commentID,
 		UserID:    reaction.UserID,
 		Emoji:     reaction.Emoji,
-	}); err != nil {
-		writeError(w, http.StatusInternalServerError, "REACTION_CREATION_FAILED", "Failed to publish reaction event")
-		return
-	}
+	})
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -251,14 +242,11 @@ func (h *ReactionHandler) RemoveReactionFromComment(w http.ResponseWriter, r *ht
 		return
 	}
 
-	if err := publishEvent(r.Context(), h.redis, formatChannel(commentPrefix, commentID), "reaction_removed", reactionEventData{
+	_ = publishEvent(r.Context(), h.redis, formatChannel(commentPrefix, commentID), "reaction_removed", reactionEventData{
 		CommentID: &commentID,
 		UserID:    userID,
 		Emoji:     emoji,
-	}); err != nil {
-		writeError(w, http.StatusInternalServerError, "REMOVE_REACTION_FAILED", "Failed to publish reaction event")
-		return
-	}
+	})
 
 	w.WriteHeader(http.StatusNoContent)
 }
