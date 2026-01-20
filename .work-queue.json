@@ -1047,6 +1047,18 @@
         "search",
         "db"
       ]
+    },
+    {
+      "issue_number": 111,
+      "title": "Set up Playwright and add core E2E tests",
+      "phase": "Phase 5",
+      "labels": [
+        "frontend",
+        "tests",
+        "e2e"
+      ],
+      "status": "available",
+      "dependencies": []
     }
   ]
 }
