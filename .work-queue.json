@@ -1207,6 +1207,18 @@
       "claimed_at": "2026-01-20T22:32:58Z",
       "pr_number": 134,
       "completed_at": "2026-01-20T23:03:23Z"
+    },
+    {
+      "issue_number": 135,
+      "title": "Phase 6: Backend Web Push API endpoints",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 6,
+      "labels": [
+        "backend"
+      ]
     }
   ]
 }
