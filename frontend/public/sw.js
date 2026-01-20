@@ -21,8 +21,9 @@ self.addEventListener('install', (event) => {
       return cache.addAll(STATIC_ASSETS);
     })
   );
-  // Activate immediately
-  self.skipWaiting();
+  // Note: We don't call skipWaiting() here so that updates enter the waiting state.
+  // This allows the UI to show an "Update available" banner and let users choose when to update.
+  // The user can trigger skipWaiting() via the SKIP_WAITING message from the pwaStore.
 });
 
 // Activate event - clean up old caches
@@ -173,24 +174,47 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
+// Helper function to convert VAPID key from base64 to Uint8Array
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 // Push subscription change event - handle subscription updates
 self.addEventListener('pushsubscriptionchange', (event) => {
   console.log('[SW] Push subscription changed');
 
   event.waitUntil(
-    self.registration.pushManager.subscribe({
-      userVisibleOnly: true
-    }).then((subscription) => {
-      // Send the new subscription to the server
-      return fetch('/api/v1/push/subscribe', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(subscription),
-        credentials: 'include'
-      });
-    })
+    // First fetch the VAPID public key from the server
+    fetch('/api/v1/push/vapid-key', { credentials: 'include' })
+      .then((response) => response.json())
+      .then(({ publicKey }) => {
+        // Resubscribe with the VAPID key
+        return self.registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey)
+        });
+      })
+      .then((subscription) => {
+        // Send the new subscription to the server
+        return fetch('/api/v1/push/subscribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(subscription),
+          credentials: 'include'
+        });
+      })
+      .catch((error) => {
+        console.error('[SW] Failed to resubscribe after subscription change:', error);
+      })
   );
 });
 
