@@ -5,6 +5,7 @@ import { uiStore } from '../uiStore';
 beforeEach(() => {
   uiStore.setSidebarOpen(true);
   uiStore.setIsMobile(false);
+  uiStore.setActiveView('feed');
 });
 
 describe('uiStore', () => {
@@ -25,5 +26,10 @@ describe('uiStore', () => {
     const state = get(uiStore);
     expect(state.isMobile).toBe(true);
     expect(state.sidebarOpen).toBe(false);
+  });
+
+  it('setActiveView updates active view', () => {
+    uiStore.setActiveView('admin');
+    expect(get(uiStore).activeView).toBe('admin');
   });
 });

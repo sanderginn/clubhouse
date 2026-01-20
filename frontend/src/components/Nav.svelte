@@ -1,9 +1,14 @@
 <script lang="ts">
-  import { sections, activeSection, sectionStore } from '../stores';
+  import { sections, activeSection, sectionStore, uiStore, isAdmin, activeView } from '../stores';
   import type { Section } from '../stores/sectionStore';
 
   function handleSectionClick(section: Section) {
     sectionStore.setActiveSection(section);
+    uiStore.setActiveView('feed');
+  }
+
+  function handleAdminClick() {
+    uiStore.setActiveView('admin');
   }
 </script>
 
@@ -30,4 +35,21 @@
       {/each}
     </ul>
   </div>
+
+  {#if $isAdmin}
+    <div class="border-t border-gray-200 px-3 py-4">
+      <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Admin</h2>
+      <button
+        on:click={handleAdminClick}
+        class="mt-3 w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors
+          {$activeView === 'admin'
+          ? 'bg-amber-500 text-white'
+          : 'text-gray-700 hover:bg-amber-50'}"
+        aria-current={$activeView === 'admin' ? 'page' : undefined}
+      >
+        <span class="text-lg" aria-hidden="true">🛡️</span>
+        <span>Moderation</span>
+      </button>
+    </div>
+  {/if}
 </nav>
