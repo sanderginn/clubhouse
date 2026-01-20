@@ -62,6 +62,7 @@
     57,
     93,
     99,
+    100,
     112,
     113,
     114
@@ -1008,7 +1009,7 @@
     {
       "issue_number": 100,
       "title": "Phase 7: Link metadata as first-class search result",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768944792-75810",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768944792-75810",
       "dependencies": [],
@@ -1019,7 +1020,8 @@
         "links"
       ],
       "branch": "feat/issue-100-link-metadata-as-firstclass-search-resul",
-      "claimed_at": "2026-01-20T21:33:12Z"
+      "claimed_at": "2026-01-20T21:33:12Z",
+      "completed_at": "2026-01-20T21:37:40Z"
     },
     {
       "issue_number": 101,
