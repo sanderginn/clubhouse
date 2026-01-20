@@ -81,6 +81,7 @@ main() {
     # Get issue info
     ISSUE_TITLE=$(jq -r ".issues[] | select(.issue_number == $ISSUE_NUMBER) | .title" "$WORK_QUEUE")
     WORKTREE_PATH=$(jq -r ".issues[] | select(.issue_number == $ISSUE_NUMBER) | .worktree // empty" "$WORK_QUEUE")
+    BRANCH_NAME=$(jq -r ".issues[] | select(.issue_number == $ISSUE_NUMBER) | .branch // empty" "$WORK_QUEUE")
     
     log_info "Marking issue #$ISSUE_NUMBER as completed: $ISSUE_TITLE"
     
@@ -109,6 +110,17 @@ main() {
         log_info "Cleaning up worktree at $WORKTREE_PATH..."
         git worktree remove "$WORKTREE_PATH" --force 2>/dev/null || true
         log_success "Worktree removed"
+    fi
+
+    # Clean up local branch if it exists and is not main/master
+    if [ -n "$BRANCH_NAME" ]; then
+        if git show-ref --verify --quiet "refs/heads/$BRANCH_NAME"; then
+            if [ "$BRANCH_NAME" != "main" ] && [ "$BRANCH_NAME" != "master" ]; then
+                log_info "Deleting local branch $BRANCH_NAME..."
+                git branch -D "$BRANCH_NAME" 2>/dev/null || true
+                log_success "Local branch deleted"
+            fi
+        fi
     fi
     
     # Show newly unblocked issues
