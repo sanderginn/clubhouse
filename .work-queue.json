@@ -40,6 +40,7 @@
     33,
     34,
     35,
+    36,
     37,
     49,
     50,
@@ -556,7 +557,7 @@
     {
       "issue_number": 36,
       "title": "Phase 4: Implement mark notification read endpoint",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768909495-78759",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768909495-78759",
       "dependencies": [
@@ -568,7 +569,9 @@
         "notifications"
       ],
       "branch": "feat/issue-36-implement-mark-notification-read-endpoin",
-      "claimed_at": "2026-01-20T11:44:55Z"
+      "claimed_at": "2026-01-20T11:44:55Z",
+      "pr_number": 106,
+      "completed_at": "2026-01-20T12:03:45Z"
     },
     {
       "issue_number": 37,
