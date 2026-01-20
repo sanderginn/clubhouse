@@ -1,7 +1,10 @@
 <script lang="ts">
   import type { Post } from '../stores/postStore';
+  import CommentThread from './comments/CommentThread.svelte';
 
   export let post: Post;
+
+  let showComments = false;
 
   function formatDate(dateString: string): string {
     const date = new Date(dateString);
@@ -134,11 +137,22 @@
       {/if}
 
       <div class="flex items-center gap-4 mt-3 text-gray-500 text-sm">
-        <button class="flex items-center gap-1 hover:text-gray-700 transition-colors">
+        <button
+          type="button"
+          class="flex items-center gap-1 hover:text-gray-700 transition-colors"
+          aria-expanded={showComments}
+          on:click={() => (showComments = !showComments)}
+        >
           <span>💬</span>
           <span>{post.commentCount || 0}</span>
         </button>
       </div>
+
+      {#if showComments}
+        <div class="mt-4 border-t border-gray-200 pt-4">
+          <CommentThread postId={post.id} />
+        </div>
+      {/if}
     </div>
   </div>
 </article>

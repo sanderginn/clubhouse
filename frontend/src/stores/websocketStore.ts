@@ -2,6 +2,9 @@ import { writable, get } from 'svelte/store';
 import { activeSection } from './sectionStore';
 import { isAuthenticated } from './authStore';
 import { postStore, type Post } from './postStore';
+import { commentStore, type Comment } from './commentStore';
+import { api } from '../services/api';
+import { mapApiComment } from './commentMapper';
 import { mapApiPost, type ApiPost } from './postMapper';
 
 type WebSocketStatus = 'disconnected' | 'connecting' | 'connected';
@@ -37,6 +40,21 @@ interface WsSubscriptionPayload {
 interface WsOutgoingMessage<T = unknown> {
   type: 'subscribe' | 'unsubscribe';
   data: T;
+}
+
+function hasComment(comments: Comment[] | undefined, commentId: string): boolean {
+  if (!comments) {
+    return false;
+  }
+  for (const comment of comments) {
+    if (comment.id === commentId) {
+      return true;
+    }
+    if (hasComment(comment.replies, commentId)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 const status = writable<WebSocketStatus>('disconnected');
@@ -145,8 +163,29 @@ function connect() {
       }
       case 'new_comment': {
         const payload = parsed.data as WsCommentEvent;
-        if (payload?.comment?.post_id) {
-          postStore.incrementCommentCount(payload.comment.post_id, 1);
+        if (payload?.comment?.post_id && payload?.comment?.id) {
+          const postId = payload.comment.post_id;
+          const commentId = payload.comment.id;
+          const thread = get(commentStore)[postId];
+          const exists = thread ? hasComment(thread.comments, commentId) : false;
+
+          if (!exists) {
+            postStore.incrementCommentCount(postId, 1);
+          }
+
+          if (thread && !exists) {
+            api
+              .getComment(commentId)
+              .then((response) => {
+                const comment = mapApiComment(response.comment);
+                if (comment.parentCommentId) {
+                  commentStore.addReply(postId, comment.parentCommentId, comment);
+                } else {
+                  commentStore.addComment(postId, comment);
+                }
+              })
+              .catch(() => {});
+          }
         }
         break;
       }
