@@ -206,6 +206,19 @@ func main() {
 	mux.Handle("/api/v1/admin/posts/", middleware.RequireAdmin(redisConn)(http.HandlerFunc(adminHandler.HardDeletePost)))
 	mux.Handle("/api/v1/admin/comments/", middleware.RequireAdmin(redisConn)(http.HandlerFunc(adminHandler.HardDeleteComment)))
 
+	// Admin config route
+	mux.Handle("/api/v1/admin/config", middleware.RequireAdmin(redisConn)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			adminHandler.GetConfig(w, r)
+		} else if r.Method == http.MethodPatch {
+			adminHandler.UpdateConfig(w, r)
+		} else {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			w.Write([]byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+		}
+	})))
+
 	// WebSocket route (protected)
 	mux.Handle("/api/v1/ws", middleware.RequireAuth(redisConn)(http.HandlerFunc(wsHandler.HandleWS)))
 

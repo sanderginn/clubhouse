@@ -12,6 +12,11 @@ func fetchLinkMetadata(ctx context.Context, links []models.LinkRequest) []models
 		return nil
 	}
 
+	// Check if link metadata fetching is enabled
+	if !GetConfigService().IsLinkMetadataEnabled() {
+		return nil
+	}
+
 	metadata := make([]models.JSONMap, len(links))
 	for i, link := range links {
 		meta, err := linkmeta.FetchMetadata(ctx, link.URL)

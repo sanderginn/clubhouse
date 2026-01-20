@@ -205,3 +205,49 @@ func (h *AdminHandler) HardDeleteComment(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 }
+
+// UpdateConfigRequest represents the request body for updating config
+type UpdateConfigRequest struct {
+	LinkMetadataEnabled *bool `json:"linkMetadataEnabled"`
+}
+
+// ConfigResponse wraps the config in a response object per API spec
+type ConfigResponse struct {
+	Config services.Config `json:"config"`
+}
+
+// GetConfig returns the current admin configuration
+func (h *AdminHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		return
+	}
+
+	configService := services.GetConfigService()
+	config := configService.GetConfig()
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(ConfigResponse{Config: config})
+}
+
+// UpdateConfig updates the admin configuration
+func (h *AdminHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPatch {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only PATCH requests are allowed")
+		return
+	}
+
+	var req UpdateConfigRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		return
+	}
+
+	configService := services.GetConfigService()
+	config := configService.UpdateConfig(req.LinkMetadataEnabled)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(ConfigResponse{Config: config})
+}

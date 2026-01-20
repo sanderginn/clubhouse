@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -459,4 +460,139 @@ func getTestDB() (*sql.DB, error) {
 	// This would need proper test database setup
 	// For now, return error to indicate test setup needed
 	return nil, nil
+}
+
+// TestGetConfig tests getting the current config
+func TestGetConfig(t *testing.T) {
+	handler := NewAdminHandler(nil) // No DB needed for config
+
+	req := httptest.NewRequest("GET", "/api/v1/admin/config", nil)
+	w := httptest.NewRecorder()
+
+	handler.GetConfig(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response struct {
+		Config struct {
+			LinkMetadataEnabled bool `json:"linkMetadataEnabled"`
+		} `json:"config"`
+	}
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	// Default should be enabled
+	if !response.Config.LinkMetadataEnabled {
+		t.Errorf("expected linkMetadataEnabled to be true by default")
+	}
+}
+
+// TestUpdateConfig tests updating the config
+func TestUpdateConfig(t *testing.T) {
+	handler := NewAdminHandler(nil) // No DB needed for config
+
+	// Test disabling link metadata
+	body := `{"linkMetadataEnabled": false}`
+	req := httptest.NewRequest("PATCH", "/api/v1/admin/config", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.UpdateConfig(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response struct {
+		Config struct {
+			LinkMetadataEnabled bool `json:"linkMetadataEnabled"`
+		} `json:"config"`
+	}
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if response.Config.LinkMetadataEnabled {
+		t.Errorf("expected linkMetadataEnabled to be false after update")
+	}
+
+	// Verify the change persists by getting config again
+	req = httptest.NewRequest("GET", "/api/v1/admin/config", nil)
+	w = httptest.NewRecorder()
+	handler.GetConfig(w, req)
+
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if response.Config.LinkMetadataEnabled {
+		t.Errorf("expected linkMetadataEnabled to still be false")
+	}
+
+	// Test re-enabling link metadata
+	body = `{"linkMetadataEnabled": true}`
+	req = httptest.NewRequest("PATCH", "/api/v1/admin/config", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+
+	handler.UpdateConfig(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+	}
+
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if !response.Config.LinkMetadataEnabled {
+		t.Errorf("expected linkMetadataEnabled to be true after re-enabling")
+	}
+}
+
+// TestUpdateConfigMethodNotAllowed tests that GET to UpdateConfig is rejected
+func TestUpdateConfigMethodNotAllowed(t *testing.T) {
+	handler := NewAdminHandler(nil)
+
+	req := httptest.NewRequest("GET", "/api/v1/admin/config", nil)
+	w := httptest.NewRecorder()
+
+	handler.UpdateConfig(w, req)
+
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Errorf("expected status %d, got %d", http.StatusMethodNotAllowed, w.Code)
+	}
+}
+
+// TestGetConfigMethodNotAllowed tests that PATCH to GetConfig is rejected
+func TestGetConfigMethodNotAllowed(t *testing.T) {
+	handler := NewAdminHandler(nil)
+
+	req := httptest.NewRequest("PATCH", "/api/v1/admin/config", nil)
+	w := httptest.NewRecorder()
+
+	handler.GetConfig(w, req)
+
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Errorf("expected status %d, got %d", http.StatusMethodNotAllowed, w.Code)
+	}
+}
+
+// TestUpdateConfigInvalidJSON tests that invalid JSON is rejected
+func TestUpdateConfigInvalidJSON(t *testing.T) {
+	handler := NewAdminHandler(nil)
+
+	body := `{invalid json}`
+	req := httptest.NewRequest("PATCH", "/api/v1/admin/config", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.UpdateConfig(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+	}
 }
