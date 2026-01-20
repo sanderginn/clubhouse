@@ -881,9 +881,9 @@
     {
       "issue_number": 55,
       "title": "Phase 4: Implement comments view (frontend)",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1768916657-17393",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768916657-17393",
       "dependencies": [
         54
       ],
@@ -891,7 +891,9 @@
       "labels": [
         "frontend",
         "comments"
-      ]
+      ],
+      "branch": "feat/issue-55-implement-comments-view-frontend",
+      "claimed_at": "2026-01-20T13:44:17Z"
     },
     {
       "issue_number": 56,
