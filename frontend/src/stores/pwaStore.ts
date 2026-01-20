@@ -82,6 +82,11 @@ function createPWAStore() {
 
           update((state) => ({ ...state, isServiceWorkerReady: true }));
 
+          // Check if there's already a waiting worker (e.g., another tab triggered an update)
+          if (registration.waiting && navigator.serviceWorker.controller) {
+            update((state) => ({ ...state, updateAvailable: true }));
+          }
+
           // Check for updates
           registration.addEventListener('updatefound', () => {
             const newWorker = registration.installing;
