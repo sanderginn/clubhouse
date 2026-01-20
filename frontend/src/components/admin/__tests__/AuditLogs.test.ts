@@ -45,32 +45,39 @@ describe('AuditLogs', () => {
   });
 
   it('loads more logs when requested', async () => {
-    apiGet
-      .mockResolvedValueOnce({
-        logs: [
-          {
-            id: 'log-1',
-            admin_user_id: 'admin-1',
-            admin_username: 'sander',
-            action: 'approve_user',
-            created_at: '2024-01-01T00:00:00Z',
-          },
-        ],
-        has_more: true,
-        next_cursor: 'cursor-1',
-      })
-      .mockResolvedValueOnce({
-        logs: [
-          {
-            id: 'log-2',
-            admin_user_id: 'admin-1',
-            admin_username: 'sander',
-            action: 'reject_user',
-            created_at: '2024-01-02T00:00:00Z',
-          },
-        ],
-        has_more: false,
-      });
+    const initialResponse = {
+      logs: [
+        {
+          id: 'log-1',
+          admin_user_id: 'admin-1',
+          admin_username: 'sander',
+          action: 'approve_user',
+          created_at: '2024-01-01T00:00:00Z',
+        },
+      ],
+      has_more: true,
+      next_cursor: 'cursor-1',
+    };
+
+    const loadMoreResponse = {
+      logs: [
+        {
+          id: 'log-2',
+          admin_user_id: 'admin-1',
+          admin_username: 'sander',
+          action: 'reject_user',
+          created_at: '2024-01-02T00:00:00Z',
+        },
+      ],
+      has_more: false,
+    };
+
+    apiGet.mockImplementation((endpoint: string) => {
+      if (endpoint.includes('cursor=cursor-1')) {
+        return Promise.resolve(loadMoreResponse);
+      }
+      return Promise.resolve(initialResponse);
+    });
 
     render(AuditLogs);
     await fireEvent.click(screen.getByText('Refresh'));
@@ -80,7 +87,7 @@ describe('AuditLogs', () => {
     await fireEvent.click(loadMore);
     await tick();
 
-    expect(apiGet).toHaveBeenNthCalledWith(2, '/admin/audit-logs?cursor=cursor-1');
+    expect(apiGet).toHaveBeenCalledWith('/admin/audit-logs?cursor=cursor-1');
     expect(screen.getByText('Rejected user')).toBeInTheDocument();
   });
 });
