@@ -12,6 +12,7 @@
     error: null,
     cursor: null,
     hasMore: true,
+    loaded: false,
   };
 
   let openReplies = new Set<string>();
