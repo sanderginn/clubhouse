@@ -70,6 +70,7 @@ func main() {
 	userHandler := handlers.NewUserHandler(dbConn)
 	sectionHandler := handlers.NewSectionHandler(dbConn)
 	searchHandler := handlers.NewSearchHandler(dbConn)
+	notificationHandler := handlers.NewNotificationHandler(dbConn)
 	wsHandler := handlers.NewWebSocketHandler(redisConn)
 
 	// API routes
@@ -186,6 +187,9 @@ func main() {
 
 	// Search routes (protected)
 	mux.Handle("/api/v1/search", middleware.RequireAuth(redisConn)(http.HandlerFunc(searchHandler.Search)))
+
+	// Notification routes (protected)
+	mux.Handle("/api/v1/notifications", middleware.RequireAuth(redisConn)(http.HandlerFunc(notificationHandler.GetNotifications)))
 
 	// Admin routes (protected by RequireAdmin middleware)
 	mux.Handle("/api/v1/admin/users", middleware.RequireAdmin(redisConn)(http.HandlerFunc(adminHandler.ListPendingUsers)))

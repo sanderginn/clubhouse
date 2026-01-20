@@ -3,9 +3,14 @@ package services
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/sanderginn/clubhouse/internal/models"
 )
 
 const (
@@ -209,4 +214,151 @@ func (s *NotificationService) isUserSubscribedToSection(ctx context.Context, use
 	}
 
 	return subscribed, nil
+}
+
+// GetNotifications retrieves notifications for a user with cursor-based pagination and unread count.
+func (s *NotificationService) GetNotifications(ctx context.Context, userID uuid.UUID, limit int, cursor *string) ([]models.Notification, *string, bool, int, error) {
+	if limit <= 0 || limit > 100 {
+		limit = 50
+	}
+
+	unreadCount, err := s.getUnreadCount(ctx, userID)
+	if err != nil {
+		return nil, nil, false, 0, err
+	}
+
+	query := `
+		SELECT id, user_id, type, related_post_id, related_comment_id, related_user_id, read_at, created_at
+		FROM notifications
+		WHERE user_id = $1
+	`
+
+	args := []interface{}{userID}
+	argIndex := 2
+
+	if cursor != nil && *cursor != "" {
+		cursorTime, cursorID, err := s.resolveNotificationCursor(ctx, userID, *cursor)
+		if err != nil {
+			return nil, nil, false, unreadCount, err
+		}
+
+		query += fmt.Sprintf(" AND (created_at, id) < ($%d, $%d)", argIndex, argIndex+1)
+		args = append(args, cursorTime, cursorID)
+		argIndex += 2
+	}
+
+	query += fmt.Sprintf(" ORDER BY created_at DESC, id DESC LIMIT $%d", argIndex)
+	args = append(args, limit+1)
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, nil, false, unreadCount, fmt.Errorf("failed to query notifications: %w", err)
+	}
+	defer rows.Close()
+
+	notifications := make([]models.Notification, 0)
+	for rows.Next() {
+		var notification models.Notification
+		var relatedPostID sql.NullString
+		var relatedCommentID sql.NullString
+		var relatedUserID sql.NullString
+		var readAt sql.NullTime
+
+		if err := rows.Scan(
+			&notification.ID,
+			&notification.UserID,
+			&notification.Type,
+			&relatedPostID,
+			&relatedCommentID,
+			&relatedUserID,
+			&readAt,
+			&notification.CreatedAt,
+		); err != nil {
+			return nil, nil, false, unreadCount, fmt.Errorf("failed to scan notification: %w", err)
+		}
+
+		if relatedPostID.Valid {
+			id, _ := uuid.Parse(relatedPostID.String)
+			notification.RelatedPostID = &id
+		}
+		if relatedCommentID.Valid {
+			id, _ := uuid.Parse(relatedCommentID.String)
+			notification.RelatedCommentID = &id
+		}
+		if relatedUserID.Valid {
+			id, _ := uuid.Parse(relatedUserID.String)
+			notification.RelatedUserID = &id
+		}
+		if readAt.Valid {
+			notification.ReadAt = &readAt.Time
+		}
+
+		notifications = append(notifications, notification)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, nil, false, unreadCount, fmt.Errorf("error iterating notifications: %w", err)
+	}
+
+	hasMore := len(notifications) > limit
+	if hasMore {
+		notifications = notifications[:limit]
+	}
+
+	var nextCursor *string
+	if hasMore && len(notifications) > 0 {
+		last := notifications[len(notifications)-1]
+		cursorValue := fmt.Sprintf("%s|%s", last.CreatedAt.UTC().Format(time.RFC3339Nano), last.ID.String())
+		nextCursor = &cursorValue
+	}
+
+	return notifications, nextCursor, hasMore, unreadCount, nil
+}
+
+func (s *NotificationService) getUnreadCount(ctx context.Context, userID uuid.UUID) (int, error) {
+	var count int
+	if err := s.db.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND read_at IS NULL",
+		userID,
+	).Scan(&count); err != nil {
+		return 0, fmt.Errorf("failed to get unread count: %w", err)
+	}
+	return count, nil
+}
+
+func (s *NotificationService) resolveNotificationCursor(ctx context.Context, userID uuid.UUID, cursor string) (time.Time, uuid.UUID, error) {
+	if strings.Contains(cursor, "|") {
+		parts := strings.SplitN(cursor, "|", 2)
+		if len(parts) != 2 {
+			return time.Time{}, uuid.UUID{}, errors.New("invalid cursor")
+		}
+		parsedTime, err := time.Parse(time.RFC3339Nano, parts[0])
+		if err != nil {
+			return time.Time{}, uuid.UUID{}, errors.New("invalid cursor")
+		}
+		parsedID, err := uuid.Parse(parts[1])
+		if err != nil {
+			return time.Time{}, uuid.UUID{}, errors.New("invalid cursor")
+		}
+		return parsedTime, parsedID, nil
+	}
+
+	cursorID, err := uuid.Parse(cursor)
+	if err != nil {
+		return time.Time{}, uuid.UUID{}, errors.New("invalid cursor")
+	}
+
+	var cursorTime sql.NullTime
+	err = s.db.QueryRowContext(ctx,
+		"SELECT created_at FROM notifications WHERE id = $1 AND user_id = $2",
+		cursorID, userID,
+	).Scan(&cursorTime)
+	if errors.Is(err, sql.ErrNoRows) {
+		return time.Time{}, uuid.UUID{}, errors.New("cursor not found")
+	}
+	if err != nil {
+		return time.Time{}, uuid.UUID{}, fmt.Errorf("failed to get cursor time: %w", err)
+	}
+
+	return cursorTime.Time, cursorID, nil
 }
