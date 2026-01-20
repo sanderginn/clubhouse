@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import './styles/globals.css';
-  import { Layout, PostForm, SectionFeed, SearchBar, SearchResults } from './components';
+  import { Layout, PostForm, SectionFeed, SearchBar, SearchResults, InstallPrompt } from './components';
   import { Login, Register, AdminPanel } from './routes';
   import {
     authStore,
@@ -12,6 +12,7 @@
     sectionStore,
     activeView,
     isAdmin,
+    pwaStore,
   } from './stores';
 
   let authPage: 'login' | 'register' = 'login';
@@ -20,6 +21,7 @@
     authStore.checkSession();
     sectionStore.loadSections();
     websocketStore.init();
+    pwaStore.init();
   });
 
   onDestroy(() => {
@@ -88,3 +90,5 @@
     </div>
   </Layout>
 {/if}
+
+<InstallPrompt />
