@@ -46,6 +46,7 @@
     39,
     40,
     42,
+    43,
     49,
     50,
     51,
@@ -722,7 +723,7 @@
     {
       "issue_number": 43,
       "title": "Phase 5: Implement section subscription opt-out",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768938368-33363",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768938368-33363",
       "dependencies": [
@@ -740,7 +741,8 @@
         "notifications"
       ],
       "branch": "feat/issue-43-implement-section-subscription-optout",
-      "claimed_at": "2026-01-20T19:46:08Z"
+      "claimed_at": "2026-01-20T19:46:08Z",
+      "completed_at": "2026-01-20T19:51:18Z"
     },
     {
       "issue_number": 44,
