@@ -64,6 +64,7 @@
     99,
     100,
     101,
+    102,
     103,
     112,
     113,
@@ -1046,7 +1047,7 @@
     {
       "issue_number": 102,
       "title": "Phase 7: Search ranking order test coverage",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768945364-81149",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768945364-81149",
       "dependencies": [],
@@ -1057,7 +1058,9 @@
         "tests"
       ],
       "branch": "feat/issue-102-search-ranking-order-test-coverage",
-      "claimed_at": "2026-01-20T21:42:44Z"
+      "claimed_at": "2026-01-20T21:42:44Z",
+      "pr_number": 131,
+      "completed_at": "2026-01-20T21:55:02Z"
     },
     {
       "issue_number": 103,
