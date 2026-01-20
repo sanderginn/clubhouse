@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -28,6 +29,12 @@ const (
 	// SectionIDContextKey is the key for storing the current section ID in context
 	SectionIDContextKey ContextKey = "section_id"
 )
+
+var uuidPattern = regexp.MustCompile(`[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}`)
+
+func normalizeRoute(path string) string {
+	return uuidPattern.ReplaceAllString(path, "{id}")
+}
 
 // ChainMiddleware applies middleware in order
 func ChainMiddleware(handler http.Handler, middlewares ...Middleware) http.Handler {
@@ -61,7 +68,8 @@ func Observability(next http.Handler) http.Handler {
 		start := time.Now()
 		recorder := &statusRecorder{ResponseWriter: w, statusCode: http.StatusOK}
 		handler.ServeHTTP(recorder, r)
-		observability.RecordHTTPRequest(r.Context(), r.Method, r.URL.Path, recorder.statusCode, time.Since(start))
+		route := normalizeRoute(r.URL.Path)
+		observability.RecordHTTPRequest(r.Context(), r.Method, route, recorder.statusCode, time.Since(start))
 	})
 }
 

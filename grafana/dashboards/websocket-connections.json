@@ -416,7 +416,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "max(deriv(clubhouse_websocket_connections[1m]), 0)",
+          "expr": "rate(clubhouse_websocket_connects_total[1m])",
           "legendFormat": "Connect Rate",
           "range": true,
           "refId": "A"
@@ -427,7 +427,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "abs(min(deriv(clubhouse_websocket_connections[1m]), 0))",
+          "expr": "rate(clubhouse_websocket_disconnects_total[1m])",
           "legendFormat": "Disconnect Rate",
           "range": true,
           "refId": "B"
