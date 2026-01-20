@@ -44,6 +44,7 @@
     37,
     38,
     39,
+    42,
     49,
     50,
     51,
@@ -693,7 +694,7 @@
     {
       "issue_number": 42,
       "title": "Phase 5: Implement config endpoint for admin toggles",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768930447-86402",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768930447-86402",
       "dependencies": [
@@ -711,7 +712,8 @@
         "admin"
       ],
       "branch": "feat/issue-42-implement-config-endpoint-for-admin-togg",
-      "claimed_at": "2026-01-20T17:34:07Z"
+      "claimed_at": "2026-01-20T17:34:07Z",
+      "completed_at": "2026-01-20T17:38:40Z"
     },
     {
       "issue_number": 43,
