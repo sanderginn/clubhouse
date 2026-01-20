@@ -4,11 +4,17 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"strings"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	otelprom "go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/propagation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -28,9 +34,21 @@ func Init(ctx context.Context) (func(context.Context) error, http.Handler, error
 		return nil, nil, fmt.Errorf("failed to create resource: %w", err)
 	}
 
+	traceExporter, err := newTraceExporter(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create trace exporter: %w", err)
+	}
+
 	// Set global trace provider
-	tp := sdktrace.NewTracerProvider(sdktrace.WithResource(res))
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithResource(res),
+		sdktrace.WithBatcher(traceExporter),
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+	)
 	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(
+		propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}),
+	)
 
 	registry := prometheus.NewRegistry()
 	exporter, err := otelprom.New(otelprom.WithRegisterer(registry))
@@ -57,4 +75,20 @@ func Init(ctx context.Context) (func(context.Context) error, http.Handler, error
 		}
 		return tp.Shutdown(ctx)
 	}, handler, nil
+}
+
+func newTraceExporter(ctx context.Context) (*otlptrace.Exporter, error) {
+	opts := []otlptracegrpc.Option{
+		otlptracegrpc.WithTimeout(5 * time.Second),
+	}
+
+	if endpoint := strings.TrimSpace(os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")); endpoint != "" {
+		opts = append(opts, otlptracegrpc.WithEndpoint(endpoint))
+	}
+	if strings.EqualFold(os.Getenv("OTEL_EXPORTER_OTLP_INSECURE"), "true") {
+		opts = append(opts, otlptracegrpc.WithInsecure())
+	}
+
+	client := otlptracegrpc.NewClient(opts...)
+	return otlptrace.New(ctx, client)
 }
