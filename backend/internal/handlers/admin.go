@@ -211,6 +211,11 @@ type UpdateConfigRequest struct {
 	LinkMetadataEnabled *bool `json:"linkMetadataEnabled"`
 }
 
+// ConfigResponse wraps the config in a response object per API spec
+type ConfigResponse struct {
+	Config services.Config `json:"config"`
+}
+
 // GetConfig returns the current admin configuration
 func (h *AdminHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -223,7 +228,7 @@ func (h *AdminHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(config)
+	json.NewEncoder(w).Encode(ConfigResponse{Config: config})
 }
 
 // UpdateConfig updates the admin configuration
@@ -244,5 +249,5 @@ func (h *AdminHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(config)
+	json.NewEncoder(w).Encode(ConfigResponse{Config: config})
 }

@@ -475,15 +475,17 @@ func TestGetConfig(t *testing.T) {
 		t.Errorf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
 	}
 
-	var config struct {
-		LinkMetadataEnabled bool `json:"linkMetadataEnabled"`
+	var response struct {
+		Config struct {
+			LinkMetadataEnabled bool `json:"linkMetadataEnabled"`
+		} `json:"config"`
 	}
-	if err := json.NewDecoder(w.Body).Decode(&config); err != nil {
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
 		t.Errorf("failed to decode response: %v", err)
 	}
 
 	// Default should be enabled
-	if !config.LinkMetadataEnabled {
+	if !response.Config.LinkMetadataEnabled {
 		t.Errorf("expected linkMetadataEnabled to be true by default")
 	}
 }
@@ -504,14 +506,16 @@ func TestUpdateConfig(t *testing.T) {
 		t.Errorf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
 	}
 
-	var config struct {
-		LinkMetadataEnabled bool `json:"linkMetadataEnabled"`
+	var response struct {
+		Config struct {
+			LinkMetadataEnabled bool `json:"linkMetadataEnabled"`
+		} `json:"config"`
 	}
-	if err := json.NewDecoder(w.Body).Decode(&config); err != nil {
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
 		t.Errorf("failed to decode response: %v", err)
 	}
 
-	if config.LinkMetadataEnabled {
+	if response.Config.LinkMetadataEnabled {
 		t.Errorf("expected linkMetadataEnabled to be false after update")
 	}
 
@@ -520,11 +524,11 @@ func TestUpdateConfig(t *testing.T) {
 	w = httptest.NewRecorder()
 	handler.GetConfig(w, req)
 
-	if err := json.NewDecoder(w.Body).Decode(&config); err != nil {
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
 		t.Errorf("failed to decode response: %v", err)
 	}
 
-	if config.LinkMetadataEnabled {
+	if response.Config.LinkMetadataEnabled {
 		t.Errorf("expected linkMetadataEnabled to still be false")
 	}
 
@@ -540,11 +544,11 @@ func TestUpdateConfig(t *testing.T) {
 		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
 	}
 
-	if err := json.NewDecoder(w.Body).Decode(&config); err != nil {
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
 		t.Errorf("failed to decode response: %v", err)
 	}
 
-	if !config.LinkMetadataEnabled {
+	if !response.Config.LinkMetadataEnabled {
 		t.Errorf("expected linkMetadataEnabled to be true after re-enabling")
 	}
 }
