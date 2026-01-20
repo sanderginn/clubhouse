@@ -51,7 +51,8 @@
     54,
     55,
     56,
-    93
+    93,
+    112
   ],
   "issues": [
     {
@@ -1076,12 +1077,14 @@
         "frontend",
         "tests"
       ],
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "assigned_to": "agent-1768918848-33379",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768918848-33379",
       "branch": "feat/issue-112-frontend-unit-test-coverage-audit-missin",
-      "claimed_at": "2026-01-20T14:20:49Z"
+      "claimed_at": "2026-01-20T14:20:49Z",
+      "pr_number": 115,
+      "completed_at": "2026-01-20T15:07:01Z"
     }
   ]
 }
