@@ -62,3 +62,9 @@ type DeleteCommentResponse struct {
 type RestoreCommentResponse struct {
 	Comment Comment `json:"comment"`
 }
+
+// HardDeleteCommentResponse represents the response for permanently deleting a comment
+type HardDeleteCommentResponse struct {
+	ID      uuid.UUID `json:"id"`
+	Message string    `json:"message"`
+}

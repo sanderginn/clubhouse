@@ -202,6 +202,10 @@ func main() {
 		}
 	})))
 
+	// Admin hard delete routes
+	mux.Handle("/api/v1/admin/posts/", middleware.RequireAdmin(redisConn)(http.HandlerFunc(adminHandler.HardDeletePost)))
+	mux.Handle("/api/v1/admin/comments/", middleware.RequireAdmin(redisConn)(http.HandlerFunc(adminHandler.HardDeleteComment)))
+
 	// WebSocket route (protected)
 	mux.Handle("/api/v1/ws", middleware.RequireAuth(redisConn)(http.HandlerFunc(wsHandler.HandleWS)))
 

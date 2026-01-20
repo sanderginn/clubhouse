@@ -611,3 +611,106 @@ func (s *CommentService) RestoreComment(ctx context.Context, commentID uuid.UUID
 
 	return &restoredComment, nil
 }
+
+// HardDeleteComment permanently deletes a comment and all related data (admin only)
+func (s *CommentService) HardDeleteComment(ctx context.Context, commentID uuid.UUID, adminUserID uuid.UUID) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Verify comment exists (include soft-deleted comments)
+	var exists bool
+	err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM comments WHERE id = $1)", commentID).Scan(&exists)
+	if err != nil {
+		return fmt.Errorf("failed to check comment existence: %w", err)
+	}
+	if !exists {
+		return errors.New("comment not found")
+	}
+
+	// Delete links associated with replies to this comment
+	_, err = tx.ExecContext(ctx, "DELETE FROM links WHERE comment_id IN (SELECT id FROM comments WHERE parent_comment_id = $1)", commentID)
+	if err != nil {
+		return fmt.Errorf("failed to delete reply links: %w", err)
+	}
+
+	// Delete reactions on replies to this comment
+	_, err = tx.ExecContext(ctx, "DELETE FROM reactions WHERE comment_id IN (SELECT id FROM comments WHERE parent_comment_id = $1)", commentID)
+	if err != nil {
+		return fmt.Errorf("failed to delete reply reactions: %w", err)
+	}
+
+	// Delete mentions from replies to this comment
+	_, err = tx.ExecContext(ctx, "DELETE FROM mentions WHERE comment_id IN (SELECT id FROM comments WHERE parent_comment_id = $1)", commentID)
+	if err != nil {
+		return fmt.Errorf("failed to delete reply mentions: %w", err)
+	}
+
+	// Delete notifications related to replies
+	_, err = tx.ExecContext(ctx, "DELETE FROM notifications WHERE related_comment_id IN (SELECT id FROM comments WHERE parent_comment_id = $1)", commentID)
+	if err != nil {
+		return fmt.Errorf("failed to delete reply notifications: %w", err)
+	}
+
+	// Delete replies to this comment
+	_, err = tx.ExecContext(ctx, "DELETE FROM comments WHERE parent_comment_id = $1", commentID)
+	if err != nil {
+		return fmt.Errorf("failed to delete replies: %w", err)
+	}
+
+	// Delete links associated with this comment
+	_, err = tx.ExecContext(ctx, "DELETE FROM links WHERE comment_id = $1", commentID)
+	if err != nil {
+		return fmt.Errorf("failed to delete comment links: %w", err)
+	}
+
+	// Delete reactions on this comment
+	_, err = tx.ExecContext(ctx, "DELETE FROM reactions WHERE comment_id = $1", commentID)
+	if err != nil {
+		return fmt.Errorf("failed to delete comment reactions: %w", err)
+	}
+
+	// Delete mentions from this comment
+	_, err = tx.ExecContext(ctx, "DELETE FROM mentions WHERE comment_id = $1", commentID)
+	if err != nil {
+		return fmt.Errorf("failed to delete comment mentions: %w", err)
+	}
+
+	// Delete notifications related to this comment
+	_, err = tx.ExecContext(ctx, "DELETE FROM notifications WHERE related_comment_id = $1", commentID)
+	if err != nil {
+		return fmt.Errorf("failed to delete comment notifications: %w", err)
+	}
+
+	// Delete the comment
+	result, err := tx.ExecContext(ctx, "DELETE FROM comments WHERE id = $1", commentID)
+	if err != nil {
+		return fmt.Errorf("failed to delete comment: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rowsAffected == 0 {
+		return errors.New("comment not found")
+	}
+
+	// Create audit log entry
+	auditQuery := `
+		INSERT INTO audit_logs (admin_user_id, action, related_comment_id, created_at)
+		VALUES ($1, 'hard_delete_comment', $2, now())
+	`
+	_, err = tx.ExecContext(ctx, auditQuery, adminUserID, commentID)
+	if err != nil {
+		return fmt.Errorf("failed to create audit log: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
