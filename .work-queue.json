@@ -713,7 +713,8 @@
       ],
       "branch": "feat/issue-42-implement-config-endpoint-for-admin-togg",
       "claimed_at": "2026-01-20T17:34:07Z",
-      "completed_at": "2026-01-20T17:38:40Z"
+      "completed_at": "2026-01-20T17:45:15Z",
+      "pr_number": 119
     },
     {
       "issue_number": 43,
