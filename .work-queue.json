@@ -624,7 +624,7 @@
     {
       "issue_number": 39,
       "title": "Phase 5: Implement hard delete endpoints",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         34,
         35,
@@ -638,7 +638,11 @@
       "labels": [
         "backend",
         "admin"
-      ]
+      ],
+      "assigned_to": "agent-1768920391-54493",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768920391-54493",
+      "branch": "feat/issue-39-implement-hard-delete-endpoints",
+      "claimed_at": "2026-01-20T14:46:31Z"
     },
     {
       "issue_number": 40,
