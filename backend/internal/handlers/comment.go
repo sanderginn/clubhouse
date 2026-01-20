@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/services"
@@ -16,12 +17,16 @@ import (
 // CommentHandler handles comment endpoints
 type CommentHandler struct {
 	commentService *services.CommentService
+	userService    *services.UserService
+	redis          *redis.Client
 }
 
 // NewCommentHandler creates a new comment handler
-func NewCommentHandler(db *sql.DB) *CommentHandler {
+func NewCommentHandler(db *sql.DB, redisClient *redis.Client) *CommentHandler {
 	return &CommentHandler{
 		commentService: services.NewCommentService(db),
+		userService:    services.NewUserService(db),
+		redis:          redisClient,
 	}
 }
 
@@ -77,6 +82,16 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 
 	response := models.CreateCommentResponse{
 		Comment: *comment,
+	}
+
+	if err := publishEvent(r.Context(), h.redis, formatChannel(postPrefix, comment.PostID), "new_comment", commentEventData{Comment: comment}); err != nil {
+		writeError(w, http.StatusInternalServerError, "COMMENT_CREATION_FAILED", "Failed to publish comment event")
+		return
+	}
+
+	if err := publishMentions(r.Context(), h.redis, h.userService, comment.Content, userID, &comment.PostID, &comment.ID); err != nil {
+		writeError(w, http.StatusInternalServerError, "COMMENT_CREATION_FAILED", "Failed to publish mention event")
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
