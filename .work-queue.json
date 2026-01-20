@@ -969,7 +969,8 @@
       ],
       "branch": "feat/issue-57-implement-admin-panel-frontend",
       "claimed_at": "2026-01-20T20:04:09Z",
-      "completed_at": "2026-01-20T20:10:10Z"
+      "completed_at": "2026-01-20T20:44:08Z",
+      "pr_number": 123
     },
     {
       "issue_number": 58,
