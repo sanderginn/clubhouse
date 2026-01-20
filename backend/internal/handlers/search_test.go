@@ -113,9 +113,10 @@ func TestSearchSectionScopeUsesContextSectionID(t *testing.T) {
 	handler := NewSearchHandler(db)
 
 	query := "section search"
-	limit := 2
+	limit := 3
 	postID := uuid.New()
 	commentID := uuid.New()
+	linkID := uuid.New()
 	userID := uuid.New()
 	sectionID := uuid.New()
 	postCreated := time.Now()
@@ -124,7 +125,8 @@ func TestSearchSectionScopeUsesContextSectionID(t *testing.T) {
 
 	searchRows := sqlmock.NewRows([]string{"result_type", "id", "rank"}).
 		AddRow("post", postID, 0.42).
-		AddRow("comment", commentID, 0.31)
+		AddRow("comment", commentID, 0.36).
+		AddRow("link_metadata", linkID, 0.31)
 
 	mock.ExpectQuery(regexp.QuoteMeta("WITH q AS")).
 		WithArgs(query, sectionID, limit).
@@ -162,7 +164,14 @@ func TestSearchSectionScopeUsesContextSectionID(t *testing.T) {
 		WithArgs(commentID).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "url", "metadata", "created_at"}))
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/search?q=section%20search&scope=section&limit=2", nil)
+	linkRows := sqlmock.NewRows([]string{"id", "url", "metadata", "post_id", "comment_id"}).
+		AddRow(linkID, "https://example.com", []byte(`{"title":"Example"}`), postID, nil)
+
+	mock.ExpectQuery(`FROM links\s+WHERE id = \$1`).
+		WithArgs(linkID).
+		WillReturnRows(linkRows)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/search?q=section%20search&scope=section&limit=3", nil)
 	ctx := context.WithValue(req.Context(), middleware.SectionIDContextKey, sectionID)
 	req = req.WithContext(ctx)
 	rr := httptest.NewRecorder()
@@ -178,8 +187,8 @@ func TestSearchSectionScopeUsesContextSectionID(t *testing.T) {
 		t.Fatalf("failed to decode response: %v", err)
 	}
 
-	if len(response.Results) != 2 {
-		t.Fatalf("expected 2 results, got %d", len(response.Results))
+	if len(response.Results) != 3 {
+		t.Fatalf("expected 3 results, got %d", len(response.Results))
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -219,9 +228,10 @@ func TestSearchSuccessGlobal(t *testing.T) {
 	handler := NewSearchHandler(db)
 
 	query := "hello world"
-	limit := 2
+	limit := 3
 	postID := uuid.New()
 	commentID := uuid.New()
+	linkID := uuid.New()
 	userID := uuid.New()
 	sectionID := uuid.New()
 	postCreated := time.Now()
@@ -230,7 +240,8 @@ func TestSearchSuccessGlobal(t *testing.T) {
 
 	searchRows := sqlmock.NewRows([]string{"result_type", "id", "rank"}).
 		AddRow("post", postID, 0.42).
-		AddRow("comment", commentID, 0.31)
+		AddRow("comment", commentID, 0.36).
+		AddRow("link_metadata", linkID, 0.31)
 
 	mock.ExpectQuery(regexp.QuoteMeta("WITH q AS")).
 		WithArgs(query, limit).
@@ -268,7 +279,14 @@ func TestSearchSuccessGlobal(t *testing.T) {
 		WithArgs(commentID).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "url", "metadata", "created_at"}))
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/search?q=hello%20world&scope=global&limit=2", nil)
+	linkRows := sqlmock.NewRows([]string{"id", "url", "metadata", "post_id", "comment_id"}).
+		AddRow(linkID, "https://example.com", []byte(`{"title":"Example"}`), postID, nil)
+
+	mock.ExpectQuery(`FROM links\s+WHERE id = \$1`).
+		WithArgs(linkID).
+		WillReturnRows(linkRows)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/search?q=hello%20world&scope=global&limit=3", nil)
 	rr := httptest.NewRecorder()
 
 	handler.Search(rr, req)
@@ -282,8 +300,8 @@ func TestSearchSuccessGlobal(t *testing.T) {
 		t.Fatalf("failed to decode response: %v", err)
 	}
 
-	if len(response.Results) != 2 {
-		t.Fatalf("expected 2 results, got %d", len(response.Results))
+	if len(response.Results) != 3 {
+		t.Fatalf("expected 3 results, got %d", len(response.Results))
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
