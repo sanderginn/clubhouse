@@ -63,28 +63,27 @@
       {#if $activeView === 'admin' && $isAdmin}
         <AdminPanel />
       {:else if $activeSection}
-          <div class="flex items-center gap-3">
-            <span class="text-3xl">{$activeSection.icon}</span>
-            <h1 class="text-2xl font-bold text-gray-900">{$activeSection.name}</h1>
-          </div>
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">{$activeSection.icon}</span>
+          <h1 class="text-2xl font-bold text-gray-900">{$activeSection.name}</h1>
+        </div>
 
-          <SearchBar />
+        <SearchBar />
 
-          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <PostForm />
-          </div>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <PostForm />
+        </div>
 
-          {#if $searchQuery.trim().length > 0}
-            <SearchResults />
-          {:else}
-            <SectionFeed />
-          {/if}
+        {#if $searchQuery.trim().length > 0}
+          <SearchResults />
         {:else}
-          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h1 class="text-2xl font-bold text-gray-900 mb-4">Welcome to Clubhouse</h1>
-            <p class="text-gray-600">Select a section from the sidebar to get started.</p>
-          </div>
+          <SectionFeed />
         {/if}
+      {:else}
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h1 class="text-2xl font-bold text-gray-900 mb-4">Welcome to Clubhouse</h1>
+          <p class="text-gray-600">Select a section from the sidebar to get started.</p>
+        </div>
       {/if}
     </div>
   </Layout>

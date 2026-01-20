@@ -12,6 +12,8 @@ async function login(page: Page) {
   await page.getByRole('button', { name: 'Sign in' }).click();
 }
 
+const sectionName = process.env.E2E_SECTION || 'Music';
+
 test('unauthenticated users see login form', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Sign in to Clubhouse' })).toBeVisible();
@@ -27,9 +29,9 @@ test('login flow (happy path)', async ({ page }) => {
 test('sections and feed render after login', async ({ page }) => {
   await login(page);
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
-  const firstSection = nav.getByRole('button', { name: /\S/ }).first();
-  await expect(firstSection).toBeVisible();
-  await firstSection.click();
+  const sectionButton = nav.getByRole('button', { name: sectionName });
+  await expect(sectionButton).toBeVisible();
+  await sectionButton.click();
   await expect(page.getByLabel('Post content')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Post' })).toBeVisible();
 });
@@ -37,9 +39,9 @@ test('sections and feed render after login', async ({ page }) => {
 test('create text-only post', async ({ page }) => {
   await login(page);
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
-  const firstSection = nav.getByRole('button', { name: /\S/ }).first();
-  await expect(firstSection).toBeVisible();
-  await firstSection.click();
+  const sectionButton = nav.getByRole('button', { name: sectionName });
+  await expect(sectionButton).toBeVisible();
+  await sectionButton.click();
 
   const content = `E2E post ${Date.now()}`;
   await page.getByLabel('Post content').fill(content);
