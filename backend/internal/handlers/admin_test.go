@@ -274,9 +274,9 @@ func TestHardDeletePost(t *testing.T) {
 		t.Errorf("expected post to be deleted, but found %d posts", count)
 	}
 
-	// Verify audit log was created
+	// Verify audit log was created (query by admin_user_id since related_post_id becomes NULL after ON DELETE SET NULL)
 	var auditCount int
-	err = db.QueryRow("SELECT COUNT(*) FROM audit_logs WHERE action = 'hard_delete_post' AND related_post_id = $1", postID).Scan(&auditCount)
+	err = db.QueryRow("SELECT COUNT(*) FROM audit_logs WHERE action = 'hard_delete_post' AND admin_user_id = $1", adminID).Scan(&auditCount)
 	if err != nil {
 		t.Fatalf("failed to query audit log count: %v", err)
 	}
@@ -370,9 +370,9 @@ func TestHardDeleteComment(t *testing.T) {
 		t.Errorf("expected comment to be deleted, but found %d comments", count)
 	}
 
-	// Verify audit log was created
+	// Verify audit log was created (query by admin_user_id since related_comment_id becomes NULL after ON DELETE SET NULL)
 	var auditCount int
-	err = db.QueryRow("SELECT COUNT(*) FROM audit_logs WHERE action = 'hard_delete_comment' AND related_comment_id = $1", commentID).Scan(&auditCount)
+	err = db.QueryRow("SELECT COUNT(*) FROM audit_logs WHERE action = 'hard_delete_comment' AND admin_user_id = $1", adminID).Scan(&auditCount)
 	if err != nil {
 		t.Fatalf("failed to query audit log count: %v", err)
 	}
