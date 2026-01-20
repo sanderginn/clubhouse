@@ -71,7 +71,7 @@
     }
   }
 
-  $: if (postId && !thread.isLoading && thread.comments.length === 0 && !thread.error) {
+  $: if (postId && !thread.loaded && !thread.isLoading && !thread.error) {
     loadThreadComments(postId);
   }
 </script>

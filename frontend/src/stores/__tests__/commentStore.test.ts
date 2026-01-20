@@ -30,6 +30,7 @@ describe('commentStore', () => {
     expect(state.comments).toHaveLength(1);
     expect(state.cursor).toBe('cursor-1');
     expect(state.hasMore).toBe(true);
+    expect(state.loaded).toBe(true);
     expect(state.isLoading).toBe(false);
 
     commentStore.appendThread(
@@ -51,6 +52,7 @@ describe('commentStore', () => {
     expect(state.comments).toHaveLength(2);
     expect(state.cursor).toBe(null);
     expect(state.hasMore).toBe(false);
+    expect(state.loaded).toBe(true);
   });
 
   it('adds a reply to a comment', () => {
@@ -84,6 +86,7 @@ describe('commentStore', () => {
     const state = get(commentStore)['post-2'];
     expect(state.comments[0].replies).toHaveLength(1);
     expect(state.comments[0].replies?.[0].id).toBe('reply-1');
+    expect(state.loaded).toBe(true);
   });
 
   it('adds comment to top of thread', () => {
@@ -115,5 +118,6 @@ describe('commentStore', () => {
     const state = get(commentStore)['post-3'];
     expect(state.comments[0].id).toBe('comment-21');
     expect(state.comments[1].id).toBe('comment-20');
+    expect(state.loaded).toBe(true);
   });
 });

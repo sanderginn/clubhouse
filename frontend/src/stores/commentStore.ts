@@ -31,6 +31,7 @@ export interface CommentThreadState {
   error: string | null;
   cursor: string | null;
   hasMore: boolean;
+  loaded: boolean;
 }
 
 export type CommentStoreState = Record<string, CommentThreadState>;
@@ -41,6 +42,7 @@ const defaultThreadState = (): CommentThreadState => ({
   error: null,
   cursor: null,
   hasMore: true,
+  loaded: false,
 });
 
 function createCommentStore() {
@@ -70,6 +72,7 @@ function createCommentStore() {
         hasMore,
         isLoading: false,
         error: null,
+        loaded: true,
       })),
     appendThread: (postId: string, comments: Comment[], cursor: string | null, hasMore: boolean) =>
       updateThread(postId, (thread) => ({
@@ -78,11 +81,13 @@ function createCommentStore() {
         cursor,
         hasMore,
         isLoading: false,
+        loaded: true,
       })),
     addComment: (postId: string, comment: Comment) =>
       updateThread(postId, (thread) => ({
         ...thread,
         comments: [comment, ...thread.comments],
+        loaded: true,
       })),
     addReply: (postId: string, parentCommentId: string, reply: Comment) =>
       updateThread(postId, (thread) => ({
@@ -95,6 +100,7 @@ function createCommentStore() {
               }
             : comment
         ),
+        loaded: true,
       })),
     setLoading: (postId: string, isLoading: boolean) =>
       updateThread(postId, (thread) => ({
