@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -235,29 +237,17 @@ func (s *NotificationService) GetNotifications(ctx context.Context, userID uuid.
 	argIndex := 2
 
 	if cursor != nil && *cursor != "" {
-		cursorID, err := uuid.Parse(*cursor)
+		cursorTime, cursorID, err := s.resolveNotificationCursor(ctx, userID, *cursor)
 		if err != nil {
-			return nil, nil, false, unreadCount, errors.New("invalid cursor")
+			return nil, nil, false, unreadCount, err
 		}
 
-		var cursorTime sql.NullTime
-		err = s.db.QueryRowContext(ctx,
-			"SELECT created_at FROM notifications WHERE id = $1 AND user_id = $2",
-			cursorID, userID,
-		).Scan(&cursorTime)
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, false, unreadCount, errors.New("cursor not found")
-		}
-		if err != nil {
-			return nil, nil, false, unreadCount, fmt.Errorf("failed to get cursor time: %w", err)
-		}
-
-		query += fmt.Sprintf(" AND created_at < $%d", argIndex)
-		args = append(args, cursorTime.Time)
-		argIndex++
+		query += fmt.Sprintf(" AND (created_at, id) < ($%d, $%d)", argIndex, argIndex+1)
+		args = append(args, cursorTime, cursorID)
+		argIndex += 2
 	}
 
-	query += fmt.Sprintf(" ORDER BY created_at DESC LIMIT $%d", argIndex)
+	query += fmt.Sprintf(" ORDER BY created_at DESC, id DESC LIMIT $%d", argIndex)
 	args = append(args, limit+1)
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
@@ -317,8 +307,9 @@ func (s *NotificationService) GetNotifications(ctx context.Context, userID uuid.
 
 	var nextCursor *string
 	if hasMore && len(notifications) > 0 {
-		nextCursorID := notifications[len(notifications)-1].ID.String()
-		nextCursor = &nextCursorID
+		last := notifications[len(notifications)-1]
+		cursorValue := fmt.Sprintf("%s|%s", last.CreatedAt.UTC().Format(time.RFC3339Nano), last.ID.String())
+		nextCursor = &cursorValue
 	}
 
 	return notifications, nextCursor, hasMore, unreadCount, nil
@@ -333,4 +324,41 @@ func (s *NotificationService) getUnreadCount(ctx context.Context, userID uuid.UU
 		return 0, fmt.Errorf("failed to get unread count: %w", err)
 	}
 	return count, nil
+}
+
+func (s *NotificationService) resolveNotificationCursor(ctx context.Context, userID uuid.UUID, cursor string) (time.Time, uuid.UUID, error) {
+	if strings.Contains(cursor, "|") {
+		parts := strings.SplitN(cursor, "|", 2)
+		if len(parts) != 2 {
+			return time.Time{}, uuid.UUID{}, errors.New("invalid cursor")
+		}
+		parsedTime, err := time.Parse(time.RFC3339Nano, parts[0])
+		if err != nil {
+			return time.Time{}, uuid.UUID{}, errors.New("invalid cursor")
+		}
+		parsedID, err := uuid.Parse(parts[1])
+		if err != nil {
+			return time.Time{}, uuid.UUID{}, errors.New("invalid cursor")
+		}
+		return parsedTime, parsedID, nil
+	}
+
+	cursorID, err := uuid.Parse(cursor)
+	if err != nil {
+		return time.Time{}, uuid.UUID{}, errors.New("invalid cursor")
+	}
+
+	var cursorTime sql.NullTime
+	err = s.db.QueryRowContext(ctx,
+		"SELECT created_at FROM notifications WHERE id = $1 AND user_id = $2",
+		cursorID, userID,
+	).Scan(&cursorTime)
+	if errors.Is(err, sql.ErrNoRows) {
+		return time.Time{}, uuid.UUID{}, errors.New("cursor not found")
+	}
+	if err != nil {
+		return time.Time{}, uuid.UUID{}, fmt.Errorf("failed to get cursor time: %w", err)
+	}
+
+	return cursorTime.Time, cursorID, nil
 }
