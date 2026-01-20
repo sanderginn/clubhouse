@@ -90,6 +90,21 @@ func main() {
 
 	// User routes (protected - requires auth)
 	userRouteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/api/v1/users/me/section-subscriptions") {
+			sectionSubHandler := middleware.RequireAuth(redisConn)
+			if r.Method == http.MethodGet && r.URL.Path == "/api/v1/users/me/section-subscriptions" {
+				sectionSubHandler(http.HandlerFunc(userHandler.GetMySectionSubscriptions)).ServeHTTP(w, r)
+				return
+			}
+			if r.Method == http.MethodPatch {
+				sectionSubHandler(http.HandlerFunc(userHandler.UpdateMySectionSubscription)).ServeHTTP(w, r)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			w.Write([]byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+			return
+		}
 		// Check if this is the /api/v1/users/me endpoint
 		if r.URL.Path == "/api/v1/users/me" {
 			if r.Method == http.MethodPatch {

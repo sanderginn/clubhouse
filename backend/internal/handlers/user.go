@@ -217,3 +217,83 @@ func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 }
+
+// GetMySectionSubscriptions handles GET /api/v1/users/me/section-subscriptions
+func (h *UserHandler) GetMySectionSubscriptions(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		return
+	}
+
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
+		return
+	}
+
+	subscriptions, err := h.userService.GetSectionSubscriptions(r.Context(), userID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "GET_SECTION_SUBSCRIPTIONS_FAILED", "Failed to get section subscriptions")
+		return
+	}
+
+	response := models.GetSectionSubscriptionsResponse{
+		SectionSubscriptions: subscriptions,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
+// UpdateMySectionSubscription handles PATCH /api/v1/users/me/section-subscriptions/{sectionId}
+func (h *UserHandler) UpdateMySectionSubscription(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPatch {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only PATCH requests are allowed")
+		return
+	}
+
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
+		return
+	}
+
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 7 || pathParts[5] != "section-subscriptions" {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Section ID is required")
+		return
+	}
+
+	sectionIDStr := pathParts[6]
+	sectionID, err := uuid.Parse(sectionIDStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_SECTION_ID", "Invalid section ID format")
+		return
+	}
+
+	var req models.UpdateSectionSubscriptionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		return
+	}
+	if req.OptedOut == nil {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "opted_out is required")
+		return
+	}
+
+	response, err := h.userService.UpdateSectionSubscription(r.Context(), userID, sectionID, *req.OptedOut)
+	if err != nil {
+		switch err.Error() {
+		case "section not found":
+			writeError(w, http.StatusNotFound, "SECTION_NOT_FOUND", "Section not found")
+		default:
+			writeError(w, http.StatusInternalServerError, "UPDATE_SECTION_SUBSCRIPTION_FAILED", "Failed to update section subscription")
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
