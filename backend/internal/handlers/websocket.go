@@ -17,6 +17,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sanderginn/clubhouse/internal/middleware"
+	"github.com/sanderginn/clubhouse/internal/observability"
 )
 
 const (
@@ -112,6 +113,7 @@ func (h *WebSocketHandler) registerConnection(ctx context.Context, userID uuid.U
 	h.mu.Unlock()
 
 	h.addEvent(ctx, userID, "websocket_connected")
+	observability.RecordWebsocketConnection(ctx, 1)
 }
 
 func (h *WebSocketHandler) unregisterConnection(ctx context.Context, userID uuid.UUID, wsConn *wsConnection) {
@@ -123,6 +125,7 @@ func (h *WebSocketHandler) unregisterConnection(ctx context.Context, userID uuid
 
 	h.closeConnection(wsConn)
 	h.addEvent(ctx, userID, "websocket_disconnected")
+	observability.RecordWebsocketConnection(ctx, -1)
 }
 
 func (h *WebSocketHandler) closeConnection(wsConn *wsConnection) {

@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+	"github.com/sanderginn/clubhouse/internal/observability"
 	"github.com/sanderginn/clubhouse/internal/services"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
@@ -45,15 +47,32 @@ func RequestID(next http.Handler) http.Handler {
 	})
 }
 
-// Observability middleware for tracing and metrics (placeholder)
+// Observability middleware for tracing and metrics.
 func Observability(next http.Handler) http.Handler {
-	return otelhttp.NewHandler(
+	handler := otelhttp.NewHandler(
 		next,
 		"http.server",
 		otelhttp.WithSpanNameFormatter(func(_ string, r *http.Request) string {
 			return fmt.Sprintf("%s %s", r.Method, r.URL.Path)
 		}),
 	)
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		recorder := &statusRecorder{ResponseWriter: w, statusCode: http.StatusOK}
+		handler.ServeHTTP(recorder, r)
+		observability.RecordHTTPRequest(r.Context(), r.Method, r.URL.Path, recorder.statusCode, time.Since(start))
+	})
+}
+
+type statusRecorder struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (r *statusRecorder) WriteHeader(code int) {
+	r.statusCode = code
+	r.ResponseWriter.WriteHeader(code)
 }
 
 // RequireAuth middleware validates session cookie and injects user context

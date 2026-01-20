@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/models"
+	"github.com/sanderginn/clubhouse/internal/observability"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -145,6 +146,7 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
+	observability.RecordCommentCreated(ctx)
 	return &comment, nil
 }
 

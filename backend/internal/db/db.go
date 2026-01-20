@@ -9,7 +9,8 @@ import (
 
 	"github.com/XSAM/otelsql"
 	_ "github.com/lib/pq"
-	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func Init(ctx context.Context) (*sql.DB, error) {
@@ -43,9 +44,16 @@ func Init(ctx context.Context) (*sql.DB, error) {
 		host, port, user, password, dbName,
 	)
 
-	db, err := otelsql.Open("postgres", dsn,
-		otelsql.WithAttributes(semconv.DBSystemPostgreSQL),
+	driverName, err := otelsql.Register("postgres",
+		otelsql.WithAttributes(attribute.String("db.system", "postgresql")),
+		otelsql.WithMeterProvider(otel.GetMeterProvider()),
+		otelsql.WithTracerProvider(otel.GetTracerProvider()),
 	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to register otel driver: %w", err)
+	}
+
+	db, err := sql.Open(driverName, dsn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
@@ -56,6 +64,10 @@ func Init(ctx context.Context) (*sql.DB, error) {
 
 	if err := db.PingContext(ctxTest); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	if _, err := otelsql.RegisterDBStatsMetrics(db, otelsql.WithMeterProvider(otel.GetMeterProvider())); err != nil {
+		return nil, fmt.Errorf("failed to register db stats metrics: %w", err)
 	}
 
 	// Configure connection pool
