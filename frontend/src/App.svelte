@@ -1,14 +1,20 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import './styles/globals.css';
   import { Layout, PostForm, SectionFeed } from './components';
   import { Login, Register } from './routes';
-  import { authStore, isAuthenticated, activeSection } from './stores';
+  import { authStore, isAuthenticated, activeSection, websocketStore, sectionStore } from './stores';
 
   let authPage: 'login' | 'register' = 'login';
 
   onMount(() => {
     authStore.checkSession();
+    sectionStore.loadSections();
+    websocketStore.init();
+  });
+
+  onDestroy(() => {
+    websocketStore.cleanup();
   });
 
   function handleNavigate(page: 'login' | 'register') {
