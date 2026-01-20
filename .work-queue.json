@@ -556,9 +556,9 @@
     {
       "issue_number": 36,
       "title": "Phase 4: Implement mark notification read endpoint",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1768909495-78759",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768909495-78759",
       "dependencies": [
         35
       ],
@@ -566,7 +566,9 @@
       "labels": [
         "backend",
         "notifications"
-      ]
+      ],
+      "branch": "feat/issue-36-implement-mark-notification-read-endpoin",
+      "claimed_at": "2026-01-20T11:44:55Z"
     },
     {
       "issue_number": 37,
