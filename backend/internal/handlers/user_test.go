@@ -1062,3 +1062,267 @@ func TestUpdateMeNoAuth(t *testing.T) {
 		t.Errorf("expected code UNAUTHORIZED, got %s", response.Code)
 	}
 }
+
+func TestGetMySectionSubscriptionsSuccess(t *testing.T) {
+	db, err := getTestDB()
+	if err != nil {
+		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+	defer db.Close()
+
+	userID := uuid.New()
+	sectionID := uuid.New()
+
+	_, err = db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'sectionuser', 'sectionuser@example.com', '$2a$12$test', false, now(), now())
+	`, userID)
+	if err != nil {
+		t.Fatalf("failed to create test user: %v", err)
+	}
+
+	_, err = db.Exec(`
+		INSERT INTO sections (id, name, type, created_at)
+		VALUES ($1, 'Test Section', 'general', now())
+	`, sectionID)
+	if err != nil {
+		t.Fatalf("failed to create test section: %v", err)
+	}
+
+	_, err = db.Exec(`
+		INSERT INTO section_subscriptions (user_id, section_id, opted_out_at)
+		VALUES ($1, $2, now())
+	`, userID, sectionID)
+	if err != nil {
+		t.Fatalf("failed to create section subscription: %v", err)
+	}
+
+	handler := NewUserHandler(db)
+
+	req := httptest.NewRequest("GET", "/api/v1/users/me/section-subscriptions", nil)
+	ctx := createTestUserContext(req.Context(), userID, "sectionuser", false)
+	req = req.WithContext(ctx)
+
+	w := httptest.NewRecorder()
+	handler.GetMySectionSubscriptions(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response models.GetSectionSubscriptionsResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if len(response.SectionSubscriptions) != 1 {
+		t.Fatalf("expected 1 section subscription, got %d", len(response.SectionSubscriptions))
+	}
+
+	if response.SectionSubscriptions[0].SectionID != sectionID {
+		t.Errorf("expected section ID %s, got %s", sectionID, response.SectionSubscriptions[0].SectionID)
+	}
+}
+
+func TestUpdateMySectionSubscriptionOptOut(t *testing.T) {
+	db, err := getTestDB()
+	if err != nil {
+		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+	defer db.Close()
+
+	userID := uuid.New()
+	sectionID := uuid.New()
+
+	_, err = db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'optoutuser', 'optoutuser@example.com', '$2a$12$test', false, now(), now())
+	`, userID)
+	if err != nil {
+		t.Fatalf("failed to create test user: %v", err)
+	}
+
+	_, err = db.Exec(`
+		INSERT INTO sections (id, name, type, created_at)
+		VALUES ($1, 'OptOut Section', 'general', now())
+	`, sectionID)
+	if err != nil {
+		t.Fatalf("failed to create test section: %v", err)
+	}
+
+	handler := NewUserHandler(db)
+
+	reqBody := `{"opted_out": true}`
+	req := httptest.NewRequest("PATCH", "/api/v1/users/me/section-subscriptions/"+sectionID.String(), strings.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	ctx := createTestUserContext(req.Context(), userID, "optoutuser", false)
+	req = req.WithContext(ctx)
+
+	w := httptest.NewRecorder()
+	handler.UpdateMySectionSubscription(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response models.UpdateSectionSubscriptionResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if response.SectionID != sectionID {
+		t.Errorf("expected section ID %s, got %s", sectionID, response.SectionID)
+	}
+	if !response.OptedOut || response.OptedOutAt == nil {
+		t.Errorf("expected opted_out true with timestamp, got opted_out=%v opted_out_at=%v", response.OptedOut, response.OptedOutAt)
+	}
+
+	var exists bool
+	if err := db.QueryRow(`
+		SELECT EXISTS (
+			SELECT 1 FROM section_subscriptions WHERE user_id = $1 AND section_id = $2
+		)
+	`, userID, sectionID).Scan(&exists); err != nil {
+		t.Fatalf("failed to check section subscription: %v", err)
+	}
+	if !exists {
+		t.Fatalf("expected section subscription to exist")
+	}
+}
+
+func TestUpdateMySectionSubscriptionOptIn(t *testing.T) {
+	db, err := getTestDB()
+	if err != nil {
+		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+	defer db.Close()
+
+	userID := uuid.New()
+	sectionID := uuid.New()
+
+	_, err = db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'optinuser', 'optinuser@example.com', '$2a$12$test', false, now(), now())
+	`, userID)
+	if err != nil {
+		t.Fatalf("failed to create test user: %v", err)
+	}
+
+	_, err = db.Exec(`
+		INSERT INTO sections (id, name, type, created_at)
+		VALUES ($1, 'OptIn Section', 'general', now())
+	`, sectionID)
+	if err != nil {
+		t.Fatalf("failed to create test section: %v", err)
+	}
+
+	_, err = db.Exec(`
+		INSERT INTO section_subscriptions (user_id, section_id, opted_out_at)
+		VALUES ($1, $2, now())
+	`, userID, sectionID)
+	if err != nil {
+		t.Fatalf("failed to create section subscription: %v", err)
+	}
+
+	handler := NewUserHandler(db)
+
+	reqBody := `{"opted_out": false}`
+	req := httptest.NewRequest("PATCH", "/api/v1/users/me/section-subscriptions/"+sectionID.String(), strings.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	ctx := createTestUserContext(req.Context(), userID, "optinuser", false)
+	req = req.WithContext(ctx)
+
+	w := httptest.NewRecorder()
+	handler.UpdateMySectionSubscription(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response models.UpdateSectionSubscriptionResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if response.OptedOut {
+		t.Errorf("expected opted_out false, got true")
+	}
+	if response.OptedOutAt != nil {
+		t.Errorf("expected opted_out_at nil, got %v", response.OptedOutAt)
+	}
+
+	var exists bool
+	if err := db.QueryRow(`
+		SELECT EXISTS (
+			SELECT 1 FROM section_subscriptions WHERE user_id = $1 AND section_id = $2
+		)
+	`, userID, sectionID).Scan(&exists); err != nil {
+		t.Fatalf("failed to check section subscription: %v", err)
+	}
+	if exists {
+		t.Fatalf("expected section subscription to be removed")
+	}
+}
+
+func TestUpdateMySectionSubscriptionMissingOptedOut(t *testing.T) {
+	db, err := getTestDB()
+	if err != nil {
+		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+	defer db.Close()
+
+	userID := uuid.New()
+	sectionID := uuid.New()
+
+	_, err = db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'missingoptuser', 'missingoptuser@example.com', '$2a$12$test', false, now(), now())
+	`, userID)
+	if err != nil {
+		t.Fatalf("failed to create test user: %v", err)
+	}
+
+	_, err = db.Exec(`
+		INSERT INTO sections (id, name, type, created_at)
+		VALUES ($1, 'Missing Opt Section', 'general', now())
+	`, sectionID)
+	if err != nil {
+		t.Fatalf("failed to create test section: %v", err)
+	}
+
+	handler := NewUserHandler(db)
+
+	reqBody := `{}`
+	req := httptest.NewRequest("PATCH", "/api/v1/users/me/section-subscriptions/"+sectionID.String(), strings.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	ctx := createTestUserContext(req.Context(), userID, "missingoptuser", false)
+	req = req.WithContext(ctx)
+
+	w := httptest.NewRecorder()
+	handler.UpdateMySectionSubscription(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if response.Code != "INVALID_REQUEST" {
+		t.Errorf("expected code INVALID_REQUEST, got %s", response.Code)
+	}
+}

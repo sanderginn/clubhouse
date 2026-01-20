@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/google/uuid"
@@ -587,4 +588,76 @@ func validateProfilePictureURL(urlStr string) error {
 	}
 
 	return nil
+}
+
+// GetSectionSubscriptions lists section opt-outs for a user.
+func (s *UserService) GetSectionSubscriptions(ctx context.Context, userID uuid.UUID) ([]models.SectionSubscription, error) {
+	query := `
+		SELECT section_id, opted_out_at
+		FROM section_subscriptions
+		WHERE user_id = $1
+		ORDER BY opted_out_at DESC
+	`
+
+	rows, err := s.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list section subscriptions: %w", err)
+	}
+	defer rows.Close()
+
+	var subscriptions []models.SectionSubscription
+	for rows.Next() {
+		var subscription models.SectionSubscription
+		if err := rows.Scan(&subscription.SectionID, &subscription.OptedOutAt); err != nil {
+			return nil, fmt.Errorf("failed to scan section subscription: %w", err)
+		}
+		subscriptions = append(subscriptions, subscription)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating section subscriptions: %w", err)
+	}
+
+	return subscriptions, nil
+}
+
+// UpdateSectionSubscription sets a user's opt-out preference for a section.
+func (s *UserService) UpdateSectionSubscription(ctx context.Context, userID uuid.UUID, sectionID uuid.UUID, optedOut bool) (*models.UpdateSectionSubscriptionResponse, error) {
+	var sectionExists bool
+	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM sections WHERE id = $1)`, sectionID).Scan(&sectionExists); err != nil {
+		return nil, fmt.Errorf("failed to check section: %w", err)
+	}
+	if !sectionExists {
+		return nil, fmt.Errorf("section not found")
+	}
+
+	if optedOut {
+		var optedOutAt time.Time
+		query := `
+			INSERT INTO section_subscriptions (user_id, section_id, opted_out_at)
+			VALUES ($1, $2, now())
+			ON CONFLICT (user_id, section_id)
+			DO UPDATE SET opted_out_at = now()
+			RETURNING opted_out_at
+		`
+		if err := s.db.QueryRowContext(ctx, query, userID, sectionID).Scan(&optedOutAt); err != nil {
+			return nil, fmt.Errorf("failed to opt out of section: %w", err)
+		}
+
+		return &models.UpdateSectionSubscriptionResponse{
+			SectionID:  sectionID,
+			OptedOut:   true,
+			OptedOutAt: &optedOutAt,
+		}, nil
+	}
+
+	_, err := s.db.ExecContext(ctx, `DELETE FROM section_subscriptions WHERE user_id = $1 AND section_id = $2`, userID, sectionID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to opt in to section: %w", err)
+	}
+
+	return &models.UpdateSectionSubscriptionResponse{
+		SectionID: sectionID,
+		OptedOut:  false,
+	}, nil
 }

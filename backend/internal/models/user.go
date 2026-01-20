@@ -125,3 +125,26 @@ type UpdateUserResponse struct {
 	Bio               *string   `json:"bio,omitempty"`
 	IsAdmin           bool      `json:"is_admin"`
 }
+
+// SectionSubscription represents an opt-out entry for a section.
+type SectionSubscription struct {
+	SectionID  uuid.UUID `json:"section_id"`
+	OptedOutAt time.Time `json:"opted_out_at"`
+}
+
+// GetSectionSubscriptionsResponse represents the response from listing section opt-outs.
+type GetSectionSubscriptionsResponse struct {
+	SectionSubscriptions []SectionSubscription `json:"section_subscriptions"`
+}
+
+// UpdateSectionSubscriptionRequest represents a request to opt in/out of section notifications.
+type UpdateSectionSubscriptionRequest struct {
+	OptedOut *bool `json:"opted_out"`
+}
+
+// UpdateSectionSubscriptionResponse represents the response from updating section opt-out status.
+type UpdateSectionSubscriptionResponse struct {
+	SectionID  uuid.UUID  `json:"section_id"`
+	OptedOut   bool       `json:"opted_out"`
+	OptedOutAt *time.Time `json:"opted_out_at,omitempty"`
+}
