@@ -17,6 +17,8 @@ type SearchHandler struct {
 	searchService *services.SearchService
 }
 
+const maxSearchQueryLength = 512
+
 // NewSearchHandler creates a new search handler.
 func NewSearchHandler(db *sql.DB) *SearchHandler {
 	return &SearchHandler{
@@ -34,6 +36,10 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	if q == "" {
 		writeError(r.Context(), w, http.StatusBadRequest, "QUERY_REQUIRED", "Query is required")
+		return
+	}
+	if len(q) > maxSearchQueryLength {
+		writeError(r.Context(), w, http.StatusBadRequest, "QUERY_TOO_LONG", "Query is too long")
 		return
 	}
 
@@ -76,6 +82,16 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		limit = parsedLimit
+	}
+
+	meaningful, err := h.searchService.IsQueryMeaningful(r.Context(), q)
+	if err != nil {
+		writeError(r.Context(), w, http.StatusInternalServerError, "SEARCH_FAILED", "Failed to search")
+		return
+	}
+	if !meaningful {
+		writeError(r.Context(), w, http.StatusBadRequest, "QUERY_INVALID", "Query is invalid")
+		return
 	}
 
 	results, err := h.searchService.Search(r.Context(), q, scope, sectionID, limit)

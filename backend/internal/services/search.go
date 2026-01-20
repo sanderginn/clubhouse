@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/models"
@@ -26,6 +27,15 @@ func NewSearchService(db *sql.DB) *SearchService {
 		postService:    NewPostService(db),
 		commentService: NewCommentService(db),
 	}
+}
+
+// IsQueryMeaningful checks if a query produces a non-empty tsquery.
+func (s *SearchService) IsQueryMeaningful(ctx context.Context, query string) (bool, error) {
+	var tsquery string
+	if err := s.db.QueryRowContext(ctx, "SELECT plainto_tsquery('english', $1)::text", query).Scan(&tsquery); err != nil {
+		return false, err
+	}
+	return strings.TrimSpace(tsquery) != "", nil
 }
 
 // Search searches posts and comments, including link metadata, with optional scope filtering.
