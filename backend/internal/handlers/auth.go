@@ -27,13 +27,13 @@ func NewAuthHandler(db *sql.DB, redis *redis.Client) *AuthHandler {
 // Register handles user registration
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
 		return
 	}
 
 	var req models.RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
 		return
 	}
 
@@ -42,25 +42,25 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		// Determine appropriate error code and status
 		switch err.Error() {
 		case "username is required":
-			writeError(w, http.StatusBadRequest, "USERNAME_REQUIRED", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "USERNAME_REQUIRED", err.Error())
 		case "username must be between 3 and 50 characters":
-			writeError(w, http.StatusBadRequest, "INVALID_USERNAME_LENGTH", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_USERNAME_LENGTH", err.Error())
 		case "username can only contain alphanumeric characters and underscores":
-			writeError(w, http.StatusBadRequest, "INVALID_USERNAME_FORMAT", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_USERNAME_FORMAT", err.Error())
 		case "email is required":
-			writeError(w, http.StatusBadRequest, "EMAIL_REQUIRED", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "EMAIL_REQUIRED", err.Error())
 		case "invalid email format":
-			writeError(w, http.StatusBadRequest, "INVALID_EMAIL", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_EMAIL", err.Error())
 		case "password must be at least 8 characters":
-			writeError(w, http.StatusBadRequest, "INVALID_PASSWORD_LENGTH", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_PASSWORD_LENGTH", err.Error())
 		case "password must contain uppercase, lowercase, and numeric characters":
-			writeError(w, http.StatusBadRequest, "INVALID_PASSWORD_STRENGTH", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_PASSWORD_STRENGTH", err.Error())
 		case "username already exists":
-			writeError(w, http.StatusConflict, "USERNAME_EXISTS", err.Error())
+			writeError(r.Context(), w, http.StatusConflict, "USERNAME_EXISTS", err.Error())
 		case "email already exists":
-			writeError(w, http.StatusConflict, "EMAIL_EXISTS", err.Error())
+			writeError(r.Context(), w, http.StatusConflict, "EMAIL_EXISTS", err.Error())
 		default:
-			writeError(w, http.StatusInternalServerError, "REGISTRATION_FAILED", "Failed to register user")
+			writeError(r.Context(), w, http.StatusInternalServerError, "REGISTRATION_FAILED", "Failed to register user")
 		}
 		return
 	}
@@ -80,13 +80,13 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 // Login handles user login
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
 		return
 	}
 
 	var req models.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
 		return
 	}
 
@@ -95,17 +95,17 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		// Determine appropriate error code and status
 		switch err.Error() {
 		case "email is required":
-			writeError(w, http.StatusBadRequest, "EMAIL_REQUIRED", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "EMAIL_REQUIRED", err.Error())
 		case "invalid email format":
-			writeError(w, http.StatusBadRequest, "INVALID_EMAIL", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_EMAIL", err.Error())
 		case "password is required":
-			writeError(w, http.StatusBadRequest, "PASSWORD_REQUIRED", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "PASSWORD_REQUIRED", err.Error())
 		case "invalid email or password":
-			writeError(w, http.StatusUnauthorized, "INVALID_CREDENTIALS", err.Error())
+			writeError(r.Context(), w, http.StatusUnauthorized, "INVALID_CREDENTIALS", err.Error())
 		case "user not approved":
-			writeError(w, http.StatusForbidden, "USER_NOT_APPROVED", err.Error())
+			writeError(r.Context(), w, http.StatusForbidden, "USER_NOT_APPROVED", err.Error())
 		default:
-			writeError(w, http.StatusInternalServerError, "LOGIN_FAILED", "Failed to login")
+			writeError(r.Context(), w, http.StatusInternalServerError, "LOGIN_FAILED", "Failed to login")
 		}
 		return
 	}
@@ -113,7 +113,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	// Create session
 	session, err := h.sessionService.CreateSession(r.Context(), user.ID, user.Username, user.IsAdmin)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "SESSION_CREATE_FAILED", "Failed to create session")
+		writeError(r.Context(), w, http.StatusInternalServerError, "SESSION_CREATE_FAILED", "Failed to create session")
 		return
 	}
 
@@ -145,7 +145,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 // GetMe returns the current authenticated user
 func (h *AuthHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
 		return
 	}
 
@@ -153,24 +153,24 @@ func (h *AuthHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
 		if err == http.ErrNoCookie {
-			writeError(w, http.StatusUnauthorized, "NO_SESSION", "No active session found")
+			writeError(r.Context(), w, http.StatusUnauthorized, "NO_SESSION", "No active session found")
 			return
 		}
-		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Failed to read session cookie")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Failed to read session cookie")
 		return
 	}
 
 	// Get session from Redis
 	session, err := h.sessionService.GetSession(r.Context(), cookie.Value)
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "INVALID_SESSION", "Session not found or expired")
+		writeError(r.Context(), w, http.StatusUnauthorized, "INVALID_SESSION", "Session not found or expired")
 		return
 	}
 
 	// Get user from database
 	user, err := h.userService.GetUserByID(r.Context(), session.UserID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "USER_NOT_FOUND", "Failed to retrieve user")
+		writeError(r.Context(), w, http.StatusInternalServerError, "USER_NOT_FOUND", "Failed to retrieve user")
 		return
 	}
 
@@ -191,7 +191,7 @@ func (h *AuthHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 // Logout handles user logout
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
 		return
 	}
 
@@ -199,16 +199,16 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
 		if err == http.ErrNoCookie {
-			writeError(w, http.StatusUnauthorized, "NO_SESSION", "No active session found")
+			writeError(r.Context(), w, http.StatusUnauthorized, "NO_SESSION", "No active session found")
 			return
 		}
-		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Failed to read session cookie")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Failed to read session cookie")
 		return
 	}
 
 	// Delete session from Redis
 	if err := h.sessionService.DeleteSession(r.Context(), cookie.Value); err != nil {
-		writeError(w, http.StatusInternalServerError, "LOGOUT_FAILED", "Failed to logout")
+		writeError(r.Context(), w, http.StatusInternalServerError, "LOGOUT_FAILED", "Failed to logout")
 		return
 	}
 
@@ -231,14 +231,4 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
-}
-
-// writeError is a helper to write error responses
-func writeError(w http.ResponseWriter, statusCode int, code string, message string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(models.ErrorResponse{
-		Error: message,
-		Code:  code,
-	})
 }

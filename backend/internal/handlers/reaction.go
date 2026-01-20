@@ -34,25 +34,25 @@ func NewReactionHandler(db *sql.DB, redisClient *redis.Client) *ReactionHandler 
 // AddReactionToPost handles POST /api/v1/posts/{postId}/reactions
 func (h *ReactionHandler) AddReactionToPost(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
 		return
 	}
 
 	userID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
 		return
 	}
 
 	postID, err := extractPostIDFromPath(r.URL.Path)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
 		return
 	}
 
 	var req models.CreateReactionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
 		return
 	}
 
@@ -60,13 +60,13 @@ func (h *ReactionHandler) AddReactionToPost(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		switch err.Error() {
 		case "emoji is required":
-			writeError(w, http.StatusBadRequest, "EMOJI_REQUIRED", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "EMOJI_REQUIRED", err.Error())
 		case "emoji must be 10 characters or less":
-			writeError(w, http.StatusBadRequest, "EMOJI_TOO_LONG", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "EMOJI_TOO_LONG", err.Error())
 		case "post not found":
-			writeError(w, http.StatusNotFound, "POST_NOT_FOUND", err.Error())
+			writeError(r.Context(), w, http.StatusNotFound, "POST_NOT_FOUND", err.Error())
 		default:
-			writeError(w, http.StatusInternalServerError, "REACTION_CREATION_FAILED", "Failed to add reaction")
+			writeError(r.Context(), w, http.StatusInternalServerError, "REACTION_CREATION_FAILED", "Failed to add reaction")
 		}
 		return
 	}
@@ -92,47 +92,47 @@ func (h *ReactionHandler) AddReactionToPost(w http.ResponseWriter, r *http.Reque
 // RemoveReactionFromPost handles DELETE /api/v1/posts/{postId}/reactions/{emoji}
 func (h *ReactionHandler) RemoveReactionFromPost(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only DELETE requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only DELETE requests are allowed")
 		return
 	}
 
 	userID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
 		return
 	}
 
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 7 {
-		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Post ID and emoji are required")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Post ID and emoji are required")
 		return
 	}
 
 	postIDStr := pathParts[4]
 	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
 		return
 	}
 
 	emoji, err := url.PathUnescape(pathParts[6])
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_EMOJI", "Invalid emoji format")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_EMOJI", "Invalid emoji format")
 		return
 	}
 
 	if emoji == "" {
-		writeError(w, http.StatusBadRequest, "EMOJI_REQUIRED", "Emoji is required")
+		writeError(r.Context(), w, http.StatusBadRequest, "EMOJI_REQUIRED", "Emoji is required")
 		return
 	}
 
 	err = h.reactionService.RemoveReactionFromPost(r.Context(), postID, emoji, userID)
 	if err != nil {
 		if err.Error() == "reaction not found" {
-			writeError(w, http.StatusNotFound, "REACTION_NOT_FOUND", "Reaction not found")
+			writeError(r.Context(), w, http.StatusNotFound, "REACTION_NOT_FOUND", "Reaction not found")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "REMOVE_REACTION_FAILED", "Failed to remove reaction")
+		writeError(r.Context(), w, http.StatusInternalServerError, "REMOVE_REACTION_FAILED", "Failed to remove reaction")
 		return
 	}
 
@@ -150,25 +150,25 @@ func (h *ReactionHandler) RemoveReactionFromPost(w http.ResponseWriter, r *http.
 // AddReactionToComment handles POST /api/v1/comments/{commentId}/reactions
 func (h *ReactionHandler) AddReactionToComment(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
 		return
 	}
 
 	userID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
 		return
 	}
 
 	commentID, err := extractCommentIDFromPath(r.URL.Path)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_COMMENT_ID", "Invalid comment ID format")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_COMMENT_ID", "Invalid comment ID format")
 		return
 	}
 
 	var req models.CreateReactionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
 		return
 	}
 
@@ -176,13 +176,13 @@ func (h *ReactionHandler) AddReactionToComment(w http.ResponseWriter, r *http.Re
 	if err != nil {
 		switch err.Error() {
 		case "emoji is required":
-			writeError(w, http.StatusBadRequest, "EMOJI_REQUIRED", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "EMOJI_REQUIRED", err.Error())
 		case "emoji must be 10 characters or less":
-			writeError(w, http.StatusBadRequest, "EMOJI_TOO_LONG", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "EMOJI_TOO_LONG", err.Error())
 		case "comment not found":
-			writeError(w, http.StatusNotFound, "COMMENT_NOT_FOUND", err.Error())
+			writeError(r.Context(), w, http.StatusNotFound, "COMMENT_NOT_FOUND", err.Error())
 		default:
-			writeError(w, http.StatusInternalServerError, "REACTION_CREATION_FAILED", "Failed to add reaction")
+			writeError(r.Context(), w, http.StatusInternalServerError, "REACTION_CREATION_FAILED", "Failed to add reaction")
 		}
 		return
 	}
@@ -208,47 +208,47 @@ func (h *ReactionHandler) AddReactionToComment(w http.ResponseWriter, r *http.Re
 // RemoveReactionFromComment handles DELETE /api/v1/comments/{commentId}/reactions/{emoji}
 func (h *ReactionHandler) RemoveReactionFromComment(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only DELETE requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only DELETE requests are allowed")
 		return
 	}
 
 	userID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
 		return
 	}
 
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 7 {
-		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Comment ID and emoji are required")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Comment ID and emoji are required")
 		return
 	}
 
 	commentIDStr := pathParts[4]
 	commentID, err := uuid.Parse(commentIDStr)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_COMMENT_ID", "Invalid comment ID format")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_COMMENT_ID", "Invalid comment ID format")
 		return
 	}
 
 	emoji, err := url.PathUnescape(pathParts[6])
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_EMOJI", "Invalid emoji format")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_EMOJI", "Invalid emoji format")
 		return
 	}
 
 	if emoji == "" {
-		writeError(w, http.StatusBadRequest, "EMOJI_REQUIRED", "Emoji is required")
+		writeError(r.Context(), w, http.StatusBadRequest, "EMOJI_REQUIRED", "Emoji is required")
 		return
 	}
 
 	err = h.reactionService.RemoveReactionFromComment(r.Context(), commentID, emoji, userID)
 	if err != nil {
 		if err.Error() == "reaction not found" {
-			writeError(w, http.StatusNotFound, "REACTION_NOT_FOUND", "Reaction not found")
+			writeError(r.Context(), w, http.StatusNotFound, "REACTION_NOT_FOUND", "Reaction not found")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "REMOVE_REACTION_FAILED", "Failed to remove reaction")
+		writeError(r.Context(), w, http.StatusInternalServerError, "REMOVE_REACTION_FAILED", "Failed to remove reaction")
 		return
 	}
 

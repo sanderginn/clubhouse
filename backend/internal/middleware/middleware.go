@@ -82,7 +82,7 @@ func RequireAuth(redis *redis.Client) Middleware {
 			// Get session cookie
 			cookie, err := r.Cookie("session_id")
 			if err != nil {
-				writeAuthError(w, http.StatusUnauthorized, "NO_SESSION", "Authentication required")
+				writeAuthError(r.Context(), w, http.StatusUnauthorized, "NO_SESSION", "Authentication required")
 				return
 			}
 
@@ -92,7 +92,7 @@ func RequireAuth(redis *redis.Client) Middleware {
 			// Validate session
 			session, err := sessionService.GetSession(r.Context(), sessionID)
 			if err != nil {
-				writeAuthError(w, http.StatusUnauthorized, "INVALID_SESSION", "Session not found or expired")
+				writeAuthError(r.Context(), w, http.StatusUnauthorized, "INVALID_SESSION", "Session not found or expired")
 				return
 			}
 
@@ -117,7 +117,7 @@ func RequireAdmin(redis *redis.Client) Middleware {
 			// First, validate authentication
 			cookie, err := r.Cookie("session_id")
 			if err != nil {
-				writeAuthError(w, http.StatusUnauthorized, "NO_SESSION", "Authentication required")
+				writeAuthError(r.Context(), w, http.StatusUnauthorized, "NO_SESSION", "Authentication required")
 				return
 			}
 
@@ -127,13 +127,13 @@ func RequireAdmin(redis *redis.Client) Middleware {
 			// Validate session
 			session, err := sessionService.GetSession(r.Context(), sessionID)
 			if err != nil {
-				writeAuthError(w, http.StatusUnauthorized, "INVALID_SESSION", "Session not found or expired")
+				writeAuthError(r.Context(), w, http.StatusUnauthorized, "INVALID_SESSION", "Session not found or expired")
 				return
 			}
 
 			// Check if user is admin
 			if !session.IsAdmin {
-				writeAuthError(w, http.StatusForbidden, "ADMIN_REQUIRED", "Admin access required")
+				writeAuthError(r.Context(), w, http.StatusForbidden, "ADMIN_REQUIRED", "Admin access required")
 				return
 			}
 
@@ -152,7 +152,18 @@ func RequireAdmin(redis *redis.Client) Middleware {
 }
 
 // writeAuthError is a helper to write authentication error responses
-func writeAuthError(w http.ResponseWriter, statusCode int, code string, message string) {
+func writeAuthError(ctx context.Context, w http.ResponseWriter, statusCode int, code string, message string) {
+	userID := ""
+	if id, err := GetUserIDFromContext(ctx); err == nil {
+		userID = id.String()
+	}
+	observability.LogError(ctx, observability.ErrorLog{
+		Message:    message,
+		Code:       code,
+		StatusCode: statusCode,
+		UserID:     userID,
+	})
+
 	type errorResponse struct {
 		Error string `json:"error"`
 		Code  string `json:"code"`

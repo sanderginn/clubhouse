@@ -35,13 +35,13 @@ func NewAdminHandler(db *sql.DB) *AdminHandler {
 // ListPendingUsers returns all users pending admin approval
 func (h *AdminHandler) ListPendingUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
 		return
 	}
 
 	pendingUsers, err := h.userService.GetPendingUsers(r.Context())
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to fetch pending users")
+		writeError(r.Context(), w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to fetch pending users")
 		return
 	}
 
@@ -53,14 +53,14 @@ func (h *AdminHandler) ListPendingUsers(w http.ResponseWriter, r *http.Request) 
 // ApproveUser approves a pending user (sets approved_at timestamp)
 func (h *AdminHandler) ApproveUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only PATCH requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only PATCH requests are allowed")
 		return
 	}
 
 	// Extract admin user ID from context
 	adminUserID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
 		return
 	}
 
@@ -70,7 +70,7 @@ func (h *AdminHandler) ApproveUser(w http.ResponseWriter, r *http.Request) {
 
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_USER_ID", "Invalid user ID format")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_USER_ID", "Invalid user ID format")
 		return
 	}
 
@@ -79,13 +79,13 @@ func (h *AdminHandler) ApproveUser(w http.ResponseWriter, r *http.Request) {
 		// Determine appropriate error code and status
 		switch err.Error() {
 		case "user not found":
-			writeError(w, http.StatusNotFound, "USER_NOT_FOUND", err.Error())
+			writeError(r.Context(), w, http.StatusNotFound, "USER_NOT_FOUND", err.Error())
 		case "user already approved":
-			writeError(w, http.StatusConflict, "USER_ALREADY_APPROVED", err.Error())
+			writeError(r.Context(), w, http.StatusConflict, "USER_ALREADY_APPROVED", err.Error())
 		case "user has been deleted":
-			writeError(w, http.StatusGone, "USER_DELETED", err.Error())
+			writeError(r.Context(), w, http.StatusGone, "USER_DELETED", err.Error())
 		default:
-			writeError(w, http.StatusInternalServerError, "APPROVAL_FAILED", "Failed to approve user")
+			writeError(r.Context(), w, http.StatusInternalServerError, "APPROVAL_FAILED", "Failed to approve user")
 		}
 		return
 	}
@@ -98,14 +98,14 @@ func (h *AdminHandler) ApproveUser(w http.ResponseWriter, r *http.Request) {
 // RejectUser rejects a pending user (hard delete)
 func (h *AdminHandler) RejectUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only DELETE requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only DELETE requests are allowed")
 		return
 	}
 
 	// Extract admin user ID from context
 	adminUserID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
 		return
 	}
 
@@ -114,7 +114,7 @@ func (h *AdminHandler) RejectUser(w http.ResponseWriter, r *http.Request) {
 
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_USER_ID", "Invalid user ID format")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_USER_ID", "Invalid user ID format")
 		return
 	}
 
@@ -123,11 +123,11 @@ func (h *AdminHandler) RejectUser(w http.ResponseWriter, r *http.Request) {
 		// Determine appropriate error code and status
 		switch err.Error() {
 		case "user not found":
-			writeError(w, http.StatusNotFound, "USER_NOT_FOUND", err.Error())
+			writeError(r.Context(), w, http.StatusNotFound, "USER_NOT_FOUND", err.Error())
 		case "cannot reject approved user":
-			writeError(w, http.StatusConflict, "USER_ALREADY_APPROVED", "Cannot reject an already approved user")
+			writeError(r.Context(), w, http.StatusConflict, "USER_ALREADY_APPROVED", "Cannot reject an already approved user")
 		default:
-			writeError(w, http.StatusInternalServerError, "REJECTION_FAILED", "Failed to reject user")
+			writeError(r.Context(), w, http.StatusInternalServerError, "REJECTION_FAILED", "Failed to reject user")
 		}
 		return
 	}
@@ -140,14 +140,14 @@ func (h *AdminHandler) RejectUser(w http.ResponseWriter, r *http.Request) {
 // HardDeletePost permanently deletes a post (admin only)
 func (h *AdminHandler) HardDeletePost(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only DELETE requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only DELETE requests are allowed")
 		return
 	}
 
 	// Extract admin user ID from context
 	adminUserID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
 		return
 	}
 
@@ -156,16 +156,16 @@ func (h *AdminHandler) HardDeletePost(w http.ResponseWriter, r *http.Request) {
 
 	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
 		return
 	}
 
 	err = h.postService.HardDeletePost(r.Context(), postID, adminUserID)
 	if err != nil {
 		if errors.Is(err, services.ErrPostNotFound) {
-			writeError(w, http.StatusNotFound, "POST_NOT_FOUND", "post not found")
+			writeError(r.Context(), w, http.StatusNotFound, "POST_NOT_FOUND", "post not found")
 		} else {
-			writeError(w, http.StatusInternalServerError, "DELETE_FAILED", "Failed to delete post")
+			writeError(r.Context(), w, http.StatusInternalServerError, "DELETE_FAILED", "Failed to delete post")
 		}
 		return
 	}
@@ -183,14 +183,14 @@ func (h *AdminHandler) HardDeletePost(w http.ResponseWriter, r *http.Request) {
 // HardDeleteComment permanently deletes a comment (admin only)
 func (h *AdminHandler) HardDeleteComment(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only DELETE requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only DELETE requests are allowed")
 		return
 	}
 
 	// Extract admin user ID from context
 	adminUserID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
 		return
 	}
 
@@ -199,16 +199,16 @@ func (h *AdminHandler) HardDeleteComment(w http.ResponseWriter, r *http.Request)
 
 	commentID, err := uuid.Parse(commentIDStr)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_COMMENT_ID", "Invalid comment ID format")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_COMMENT_ID", "Invalid comment ID format")
 		return
 	}
 
 	err = h.commentService.HardDeleteComment(r.Context(), commentID, adminUserID)
 	if err != nil {
 		if errors.Is(err, services.ErrCommentNotFound) {
-			writeError(w, http.StatusNotFound, "COMMENT_NOT_FOUND", "comment not found")
+			writeError(r.Context(), w, http.StatusNotFound, "COMMENT_NOT_FOUND", "comment not found")
 		} else {
-			writeError(w, http.StatusInternalServerError, "DELETE_FAILED", "Failed to delete comment")
+			writeError(r.Context(), w, http.StatusInternalServerError, "DELETE_FAILED", "Failed to delete comment")
 		}
 		return
 	}
@@ -226,14 +226,14 @@ func (h *AdminHandler) HardDeleteComment(w http.ResponseWriter, r *http.Request)
 // AdminRestorePost restores a soft-deleted post (admin only)
 func (h *AdminHandler) AdminRestorePost(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
 		return
 	}
 
 	// Extract admin user ID from context
 	adminUserID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
 		return
 	}
 
@@ -243,18 +243,18 @@ func (h *AdminHandler) AdminRestorePost(w http.ResponseWriter, r *http.Request) 
 
 	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
 		return
 	}
 
 	post, err := h.postService.AdminRestorePost(r.Context(), postID, adminUserID)
 	if err != nil {
 		if errors.Is(err, services.ErrPostNotFound) {
-			writeError(w, http.StatusNotFound, "POST_NOT_FOUND", "post not found")
+			writeError(r.Context(), w, http.StatusNotFound, "POST_NOT_FOUND", "post not found")
 		} else if err.Error() == "post is not deleted" {
-			writeError(w, http.StatusConflict, "POST_NOT_DELETED", "post is not deleted")
+			writeError(r.Context(), w, http.StatusConflict, "POST_NOT_DELETED", "post is not deleted")
 		} else {
-			writeError(w, http.StatusInternalServerError, "RESTORE_FAILED", "Failed to restore post")
+			writeError(r.Context(), w, http.StatusInternalServerError, "RESTORE_FAILED", "Failed to restore post")
 		}
 		return
 	}
@@ -271,14 +271,14 @@ func (h *AdminHandler) AdminRestorePost(w http.ResponseWriter, r *http.Request) 
 // AdminRestoreComment restores a soft-deleted comment (admin only)
 func (h *AdminHandler) AdminRestoreComment(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
 		return
 	}
 
 	// Extract admin user ID from context
 	adminUserID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
 		return
 	}
 
@@ -288,18 +288,18 @@ func (h *AdminHandler) AdminRestoreComment(w http.ResponseWriter, r *http.Reques
 
 	commentID, err := uuid.Parse(commentIDStr)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_COMMENT_ID", "Invalid comment ID format")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_COMMENT_ID", "Invalid comment ID format")
 		return
 	}
 
 	comment, err := h.commentService.AdminRestoreComment(r.Context(), commentID, adminUserID)
 	if err != nil {
 		if errors.Is(err, services.ErrCommentNotFound) {
-			writeError(w, http.StatusNotFound, "COMMENT_NOT_FOUND", "comment not found")
+			writeError(r.Context(), w, http.StatusNotFound, "COMMENT_NOT_FOUND", "comment not found")
 		} else if err.Error() == "comment is not deleted" {
-			writeError(w, http.StatusConflict, "COMMENT_NOT_DELETED", "comment is not deleted")
+			writeError(r.Context(), w, http.StatusConflict, "COMMENT_NOT_DELETED", "comment is not deleted")
 		} else {
-			writeError(w, http.StatusInternalServerError, "RESTORE_FAILED", "Failed to restore comment")
+			writeError(r.Context(), w, http.StatusInternalServerError, "RESTORE_FAILED", "Failed to restore comment")
 		}
 		return
 	}
@@ -326,7 +326,7 @@ type ConfigResponse struct {
 // GetConfig returns the current admin configuration
 func (h *AdminHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
 		return
 	}
 
@@ -341,13 +341,13 @@ func (h *AdminHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
 // UpdateConfig updates the admin configuration
 func (h *AdminHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only PATCH requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only PATCH requests are allowed")
 		return
 	}
 
 	var req UpdateConfigRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
 		return
 	}
 
@@ -362,7 +362,7 @@ func (h *AdminHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 // GetAuditLogs returns audit logs with pagination
 func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
 		return
 	}
 
@@ -375,14 +375,14 @@ func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 		parts := strings.SplitN(cursor, "|", 2)
 		parsedTime, err := time.Parse(time.RFC3339Nano, parts[0])
 		if err != nil {
-			writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid cursor format")
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid cursor format")
 			return
 		}
 		cursorTimestamp = &parsedTime
 		if len(parts) == 2 {
 			parsedID, err := uuid.Parse(parts[1])
 			if err != nil {
-				writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid cursor format")
+				writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid cursor format")
 				return
 			}
 			cursorID = &parsedID
@@ -407,7 +407,7 @@ func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := h.db.QueryContext(r.Context(), query, cursorTimestamp, cursorID, limit+1)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to fetch audit logs")
+		writeError(r.Context(), w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to fetch audit logs")
 		return
 	}
 	defer rows.Close()
@@ -420,14 +420,14 @@ func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 			&log.RelatedPostID, &log.RelatedCommentID, &log.RelatedUserID, &log.CreatedAt,
 		)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "SCAN_FAILED", "Failed to parse audit log")
+			writeError(r.Context(), w, http.StatusInternalServerError, "SCAN_FAILED", "Failed to parse audit log")
 			return
 		}
 		logs = append(logs, &log)
 	}
 
 	if err := rows.Err(); err != nil {
-		writeError(w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to fetch audit logs")
+		writeError(r.Context(), w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to fetch audit logs")
 		return
 	}
 
