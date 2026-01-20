@@ -202,9 +202,31 @@ func main() {
 		}
 	})))
 
-	// Admin hard delete routes
-	mux.Handle("/api/v1/admin/posts/", middleware.RequireAdmin(redisConn)(http.HandlerFunc(adminHandler.HardDeletePost)))
-	mux.Handle("/api/v1/admin/comments/", middleware.RequireAdmin(redisConn)(http.HandlerFunc(adminHandler.HardDeleteComment)))
+	// Admin post routes (hard delete and restore)
+	mux.Handle("/api/v1/admin/posts/", middleware.RequireAdmin(redisConn)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/restore") {
+			adminHandler.AdminRestorePost(w, r)
+		} else if r.Method == http.MethodDelete {
+			adminHandler.HardDeletePost(w, r)
+		} else {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			w.Write([]byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+		}
+	})))
+
+	// Admin comment routes (hard delete and restore)
+	mux.Handle("/api/v1/admin/comments/", middleware.RequireAdmin(redisConn)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/restore") {
+			adminHandler.AdminRestoreComment(w, r)
+		} else if r.Method == http.MethodDelete {
+			adminHandler.HardDeleteComment(w, r)
+		} else {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			w.Write([]byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+		}
+	})))
 
 	// Admin config route
 	mux.Handle("/api/v1/admin/config", middleware.RequireAdmin(redisConn)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -206,6 +206,96 @@ func (h *AdminHandler) HardDeleteComment(w http.ResponseWriter, r *http.Request)
 	json.NewEncoder(w).Encode(response)
 }
 
+// AdminRestorePost restores a soft-deleted post (admin only)
+func (h *AdminHandler) AdminRestorePost(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		return
+	}
+
+	// Extract admin user ID from context
+	adminUserID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
+		return
+	}
+
+	// Extract post ID from URL path: /admin/posts/{id}/restore
+	postIDStr := strings.TrimPrefix(r.URL.Path, "/api/v1/admin/posts/")
+	postIDStr = strings.TrimSuffix(postIDStr, "/restore")
+
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
+		return
+	}
+
+	post, err := h.postService.AdminRestorePost(r.Context(), postID, adminUserID)
+	if err != nil {
+		if errors.Is(err, services.ErrPostNotFound) {
+			writeError(w, http.StatusNotFound, "POST_NOT_FOUND", "post not found")
+		} else if err.Error() == "post is not deleted" {
+			writeError(w, http.StatusConflict, "POST_NOT_DELETED", "post is not deleted")
+		} else {
+			writeError(w, http.StatusInternalServerError, "RESTORE_FAILED", "Failed to restore post")
+		}
+		return
+	}
+
+	response := models.RestorePostResponse{
+		Post: *post,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
+// AdminRestoreComment restores a soft-deleted comment (admin only)
+func (h *AdminHandler) AdminRestoreComment(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		return
+	}
+
+	// Extract admin user ID from context
+	adminUserID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
+		return
+	}
+
+	// Extract comment ID from URL path: /admin/comments/{id}/restore
+	commentIDStr := strings.TrimPrefix(r.URL.Path, "/api/v1/admin/comments/")
+	commentIDStr = strings.TrimSuffix(commentIDStr, "/restore")
+
+	commentID, err := uuid.Parse(commentIDStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_COMMENT_ID", "Invalid comment ID format")
+		return
+	}
+
+	comment, err := h.commentService.AdminRestoreComment(r.Context(), commentID, adminUserID)
+	if err != nil {
+		if errors.Is(err, services.ErrCommentNotFound) {
+			writeError(w, http.StatusNotFound, "COMMENT_NOT_FOUND", "comment not found")
+		} else if err.Error() == "comment is not deleted" {
+			writeError(w, http.StatusConflict, "COMMENT_NOT_DELETED", "comment is not deleted")
+		} else {
+			writeError(w, http.StatusInternalServerError, "RESTORE_FAILED", "Failed to restore comment")
+		}
+		return
+	}
+
+	response := models.RestoreCommentResponse{
+		Comment: *comment,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
 // UpdateConfigRequest represents the request body for updating config
 type UpdateConfigRequest struct {
 	LinkMetadataEnabled *bool `json:"linkMetadataEnabled"`
