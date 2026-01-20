@@ -11,6 +11,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/models"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // PostService handles post-related operations
@@ -41,6 +43,14 @@ func (s *PostService) GetSectionIDByPostID(ctx context.Context, postID uuid.UUID
 
 // CreatePost creates a new post with optional links
 func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequest, userID uuid.UUID) (*models.Post, error) {
+	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.CreatePost")
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.Int("content_length", len(strings.TrimSpace(req.Content))),
+		attribute.Bool("has_links", len(req.Links) > 0),
+	)
+	defer span.End()
+
 	// Validate input
 	if err := validateCreatePostInput(req); err != nil {
 		return nil, err
@@ -51,6 +61,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 	if err != nil {
 		return nil, fmt.Errorf("invalid section id")
 	}
+	span.SetAttributes(attribute.String("section_id", sectionID.String()))
 
 	// Verify section exists
 	var sectionExists bool

@@ -7,7 +7,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/XSAM/otelsql"
 	_ "github.com/lib/pq"
+	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 )
 
 func Init(ctx context.Context) (*sql.DB, error) {
@@ -41,7 +43,9 @@ func Init(ctx context.Context) (*sql.DB, error) {
 		host, port, user, password, dbName,
 	)
 
-	db, err := sql.Open("postgres", dsn)
+	db, err := otelsql.Open("postgres", dsn,
+		otelsql.WithAttributes(semconv.DBSystemPostgreSQL),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
