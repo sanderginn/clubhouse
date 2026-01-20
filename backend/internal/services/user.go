@@ -291,7 +291,13 @@ func (s *UserService) GetPendingUsers(ctx context.Context) ([]*models.PendingUse
 }
 
 // ApproveUser marks a user as approved by setting approved_at timestamp
-func (s *UserService) ApproveUser(ctx context.Context, userID uuid.UUID) (*models.ApproveUserResponse, error) {
+func (s *UserService) ApproveUser(ctx context.Context, userID uuid.UUID, adminUserID uuid.UUID) (*models.ApproveUserResponse, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
 	// Get the user first to verify they exist and are pending
 	query := `
 		SELECT id, username, email, approved_at, deleted_at
@@ -300,7 +306,7 @@ func (s *UserService) ApproveUser(ctx context.Context, userID uuid.UUID) (*model
 	`
 
 	var user models.User
-	err := s.db.QueryRowContext(ctx, query, userID).
+	err = tx.QueryRowContext(ctx, query, userID).
 		Scan(&user.ID, &user.Username, &user.Email, &user.ApprovedAt, &user.DeletedAt)
 
 	if err != nil {
@@ -329,11 +335,24 @@ func (s *UserService) ApproveUser(ctx context.Context, userID uuid.UUID) (*model
 	`
 
 	var approvedUser models.User
-	err = s.db.QueryRowContext(ctx, updateQuery, userID).
+	err = tx.QueryRowContext(ctx, updateQuery, userID).
 		Scan(&approvedUser.ID, &approvedUser.Username, &approvedUser.Email)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to approve user: %w", err)
+	}
+
+	// Create audit log entry
+	_, err = tx.ExecContext(ctx, `
+		INSERT INTO audit_logs (admin_user_id, action, related_user_id, created_at)
+		VALUES ($1, 'approve_user', $2, now())
+	`, adminUserID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create audit log: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return &models.ApproveUserResponse{
@@ -345,7 +364,13 @@ func (s *UserService) ApproveUser(ctx context.Context, userID uuid.UUID) (*model
 }
 
 // RejectUser hard-deletes a pending user (must not be approved yet)
-func (s *UserService) RejectUser(ctx context.Context, userID uuid.UUID) (*models.RejectUserResponse, error) {
+func (s *UserService) RejectUser(ctx context.Context, userID uuid.UUID, adminUserID uuid.UUID) (*models.RejectUserResponse, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
 	// Get the user first to verify they exist and are pending
 	query := `
 		SELECT id, approved_at, deleted_at
@@ -354,7 +379,7 @@ func (s *UserService) RejectUser(ctx context.Context, userID uuid.UUID) (*models
 	`
 
 	var user models.User
-	err := s.db.QueryRowContext(ctx, query, userID).
+	err = tx.QueryRowContext(ctx, query, userID).
 		Scan(&user.ID, &user.ApprovedAt, &user.DeletedAt)
 
 	if err != nil {
@@ -369,13 +394,22 @@ func (s *UserService) RejectUser(ctx context.Context, userID uuid.UUID) (*models
 		return nil, fmt.Errorf("cannot reject approved user")
 	}
 
+	// Create audit log entry BEFORE deleting the user (FK constraint)
+	_, err = tx.ExecContext(ctx, `
+		INSERT INTO audit_logs (admin_user_id, action, related_user_id, created_at)
+		VALUES ($1, 'reject_user', $2, now())
+	`, adminUserID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create audit log: %w", err)
+	}
+
 	// Hard delete the user
 	deleteQuery := `
 		DELETE FROM users
 		WHERE id = $1
 	`
 
-	result, err := s.db.ExecContext(ctx, deleteQuery, userID)
+	result, err := tx.ExecContext(ctx, deleteQuery, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to reject user: %w", err)
 	}
@@ -387,6 +421,10 @@ func (s *UserService) RejectUser(ctx context.Context, userID uuid.UUID) (*models
 
 	if rowsAffected == 0 {
 		return nil, fmt.Errorf("user not found")
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return &models.RejectUserResponse{

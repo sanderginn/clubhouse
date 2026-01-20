@@ -241,6 +241,9 @@ func main() {
 		}
 	})))
 
+	// Admin audit logs route
+	mux.Handle("/api/v1/admin/audit-logs", middleware.RequireAdmin(redisConn)(http.HandlerFunc(adminHandler.GetAuditLogs)))
+
 	// WebSocket route (protected)
 	mux.Handle("/api/v1/ws", middleware.RequireAuth(redisConn)(http.HandlerFunc(wsHandler.HandleWS)))
 

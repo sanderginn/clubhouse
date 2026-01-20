@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/middleware"
@@ -15,6 +16,7 @@ import (
 
 // AdminHandler handles admin-specific endpoints
 type AdminHandler struct {
+	db             *sql.DB
 	userService    *services.UserService
 	postService    *services.PostService
 	commentService *services.CommentService
@@ -23,6 +25,7 @@ type AdminHandler struct {
 // NewAdminHandler creates a new admin handler
 func NewAdminHandler(db *sql.DB) *AdminHandler {
 	return &AdminHandler{
+		db:             db,
 		userService:    services.NewUserService(db),
 		postService:    services.NewPostService(db),
 		commentService: services.NewCommentService(db),
@@ -54,6 +57,13 @@ func (h *AdminHandler) ApproveUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Extract admin user ID from context
+	adminUserID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
+		return
+	}
+
 	// Extract user ID from URL path: /admin/users/{id}/approve
 	userIDStr := strings.TrimPrefix(r.URL.Path, "/api/v1/admin/users/")
 	userIDStr = strings.TrimSuffix(userIDStr, "/approve")
@@ -64,7 +74,7 @@ func (h *AdminHandler) ApproveUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	approveResponse, err := h.userService.ApproveUser(r.Context(), userID)
+	approveResponse, err := h.userService.ApproveUser(r.Context(), userID, adminUserID)
 	if err != nil {
 		// Determine appropriate error code and status
 		switch err.Error() {
@@ -92,6 +102,13 @@ func (h *AdminHandler) RejectUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Extract admin user ID from context
+	adminUserID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
+		return
+	}
+
 	// Extract user ID from URL path: /admin/users/{id}
 	userIDStr := strings.TrimPrefix(r.URL.Path, "/api/v1/admin/users/")
 
@@ -101,7 +118,7 @@ func (h *AdminHandler) RejectUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rejectResponse, err := h.userService.RejectUser(r.Context(), userID)
+	rejectResponse, err := h.userService.RejectUser(r.Context(), userID, adminUserID)
 	if err != nil {
 		// Determine appropriate error code and status
 		switch err.Error() {
@@ -340,4 +357,101 @@ func (h *AdminHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(ConfigResponse{Config: config})
+}
+
+// GetAuditLogs returns audit logs with pagination
+func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		return
+	}
+
+	// Parse query parameters for pagination
+	limit := 50 // Default limit
+	cursor := r.URL.Query().Get("cursor")
+	var cursorTimestamp *time.Time
+	var cursorID *uuid.UUID
+	if cursor != "" {
+		parts := strings.SplitN(cursor, "|", 2)
+		parsedTime, err := time.Parse(time.RFC3339Nano, parts[0])
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid cursor format")
+			return
+		}
+		cursorTimestamp = &parsedTime
+		if len(parts) == 2 {
+			parsedID, err := uuid.Parse(parts[1])
+			if err != nil {
+				writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid cursor format")
+				return
+			}
+			cursorID = &parsedID
+		}
+	}
+
+	// Query audit logs with admin username, ordered by created_at DESC
+	query := `
+		SELECT
+			a.id, a.admin_user_id, u.username, a.action,
+			a.related_post_id, a.related_comment_id, a.related_user_id, a.created_at
+		FROM audit_logs a
+		JOIN users u ON a.admin_user_id = u.id
+		WHERE (
+			$1 IS NULL
+			OR ($2 IS NULL AND a.created_at < $1)
+			OR ($2 IS NOT NULL AND (a.created_at, a.id) < ($1, $2))
+		)
+		ORDER BY a.created_at DESC, a.id DESC
+		LIMIT $3
+	`
+
+	rows, err := h.db.QueryContext(r.Context(), query, cursorTimestamp, cursorID, limit+1)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to fetch audit logs")
+		return
+	}
+	defer rows.Close()
+
+	var logs []*models.AuditLog
+	for rows.Next() {
+		var log models.AuditLog
+		err := rows.Scan(
+			&log.ID, &log.AdminUserID, &log.AdminUsername, &log.Action,
+			&log.RelatedPostID, &log.RelatedCommentID, &log.RelatedUserID, &log.CreatedAt,
+		)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "SCAN_FAILED", "Failed to parse audit log")
+			return
+		}
+		logs = append(logs, &log)
+	}
+
+	if err := rows.Err(); err != nil {
+		writeError(w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to fetch audit logs")
+		return
+	}
+
+	// Determine if there are more logs
+	hasMore := len(logs) > limit
+	if hasMore {
+		logs = logs[:limit]
+	}
+
+	// Determine next cursor
+	var nextCursor *string
+	if hasMore && len(logs) > 0 {
+		lastLog := logs[len(logs)-1]
+		cursorStr := lastLog.CreatedAt.Format(time.RFC3339Nano) + "|" + lastLog.ID.String()
+		nextCursor = &cursorStr
+	}
+
+	response := models.AuditLogsResponse{
+		Logs:       logs,
+		HasMore:    hasMore,
+		NextCursor: nextCursor,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 }
