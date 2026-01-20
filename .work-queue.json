@@ -38,6 +38,7 @@
     31,
     32,
     33,
+    34,
     49,
     50,
     51,
@@ -512,7 +513,7 @@
     {
       "issue_number": 34,
       "title": "Phase 4: Implement notifications table and insertion",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768907034-67548",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768907034-67548",
       "dependencies": [
@@ -527,7 +528,9 @@
         "notifications"
       ],
       "branch": "feat/issue-34-implement-notifications-table-and-insert",
-      "claimed_at": "2026-01-20T11:03:54Z"
+      "claimed_at": "2026-01-20T11:03:54Z",
+      "pr_number": 98,
+      "completed_at": "2026-01-20T11:29:53Z"
     },
     {
       "issue_number": 35,
