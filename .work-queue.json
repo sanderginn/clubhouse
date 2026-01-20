@@ -39,6 +39,7 @@
     32,
     33,
     34,
+    35,
     37,
     49,
     50,
@@ -536,7 +537,7 @@
     {
       "issue_number": 35,
       "title": "Phase 4: Implement get notifications endpoint",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768908744-75466",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768908744-75466",
       "dependencies": [
@@ -548,7 +549,9 @@
         "notifications"
       ],
       "branch": "feat/issue-35-implement-get-notifications-endpoint",
-      "claimed_at": "2026-01-20T11:32:24Z"
+      "claimed_at": "2026-01-20T11:32:24Z",
+      "pr_number": 105,
+      "completed_at": "2026-01-20T11:42:57Z"
     },
     {
       "issue_number": 36,
