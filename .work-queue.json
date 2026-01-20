@@ -471,9 +471,9 @@
     {
       "issue_number": 32,
       "title": "Phase 3: Implement WebSocket event broadcasting",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1768904561-56226",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768904561-56226",
       "dependencies": [
         30,
         31
@@ -482,7 +482,9 @@
       "labels": [
         "backend",
         "websocket"
-      ]
+      ],
+      "branch": "feat/issue-32-implement-websocket-event-broadcasting",
+      "claimed_at": "2026-01-20T10:22:41Z"
     },
     {
       "issue_number": 33,
