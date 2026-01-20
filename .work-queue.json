@@ -32,6 +32,7 @@
     27,
     28,
     29,
+    30,
     49,
     50,
     51,
@@ -237,7 +238,7 @@
     {
       "issue_number": 30,
       "title": "Phase 3: Implement WebSocket server",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768896608-22932",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768896608-22932",
       "dependencies": [
@@ -259,7 +260,9 @@
         "websocket"
       ],
       "branch": "feat/issue-30-implement-websocket-server",
-      "claimed_at": "2026-01-20T08:10:08Z"
+      "claimed_at": "2026-01-20T08:10:08Z",
+      "pr_number": 92,
+      "completed_at": "2026-01-20T09:17:09Z"
     },
     {
       "issue_number": 31,
