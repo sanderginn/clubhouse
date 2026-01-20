@@ -69,6 +69,7 @@ func main() {
 	reactionHandler := handlers.NewReactionHandler(dbConn, redisConn)
 	userHandler := handlers.NewUserHandler(dbConn)
 	sectionHandler := handlers.NewSectionHandler(dbConn)
+	searchHandler := handlers.NewSearchHandler(dbConn)
 	wsHandler := handlers.NewWebSocketHandler(redisConn)
 
 	// API routes
@@ -182,6 +183,9 @@ func main() {
 		http.HandlerFunc(commentHandler.CreateComment),
 	)
 	mux.Handle("/api/v1/comments", commentCreateHandler)
+
+	// Search routes (protected)
+	mux.Handle("/api/v1/search", middleware.RequireAuth(redisConn)(http.HandlerFunc(searchHandler.Search)))
 
 	// Admin routes (protected by RequireAdmin middleware)
 	mux.Handle("/api/v1/admin/users", middleware.RequireAdmin(redisConn)(http.HandlerFunc(adminHandler.ListPendingUsers)))
