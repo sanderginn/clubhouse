@@ -109,3 +109,19 @@ type UserProfileResponse struct {
 	CreatedAt         time.Time `json:"created_at"`
 	Stats             UserStats `json:"stats"`
 }
+
+// UpdateUserRequest represents the request to update user profile
+type UpdateUserRequest struct {
+	Bio               *string `json:"bio,omitempty"`
+	ProfilePictureUrl *string `json:"profile_picture_url,omitempty"`
+}
+
+// UpdateUserResponse represents the response from updating user profile
+type UpdateUserResponse struct {
+	ID                uuid.UUID `json:"id"`
+	Username          string    `json:"username"`
+	Email             string    `json:"email"`
+	ProfilePictureUrl *string   `json:"profile_picture_url,omitempty"`
+	Bio               *string   `json:"bio,omitempty"`
+	IsAdmin           bool      `json:"is_admin"`
+}

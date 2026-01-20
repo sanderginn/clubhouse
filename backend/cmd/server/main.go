@@ -78,8 +78,20 @@ func main() {
 
 	// User routes (protected - requires auth)
 	userRouteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Check if this is the /api/v1/users/me endpoint
+		if r.URL.Path == "/api/v1/users/me" {
+			if r.Method == http.MethodPatch {
+				updateMeHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(userHandler.UpdateMe))
+				updateMeHandler.ServeHTTP(w, r)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			w.Write([]byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+			return
+		}
+		// GET /api/v1/users/{id}/posts
 		if r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/posts") {
-			// GET /api/v1/users/{id}/posts
 			postsHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(userHandler.GetUserPosts))
 			postsHandler.ServeHTTP(w, r)
 		} else if r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/comments") {
