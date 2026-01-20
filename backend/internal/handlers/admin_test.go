@@ -991,3 +991,17 @@ func TestGetAuditLogsMethodNotAllowed(t *testing.T) {
 		t.Errorf("expected status %d, got %d", http.StatusMethodNotAllowed, w.Code)
 	}
 }
+
+// TestGetAuditLogsInvalidCursor tests that invalid cursor formats are rejected
+func TestGetAuditLogsInvalidCursor(t *testing.T) {
+	handler := NewAdminHandler(nil)
+
+	req := httptest.NewRequest("GET", "/api/v1/admin/audit-logs?cursor=not-a-timestamp", nil)
+	w := httptest.NewRecorder()
+
+	handler.GetAuditLogs(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+	}
+}
