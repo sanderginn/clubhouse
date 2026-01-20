@@ -51,6 +51,7 @@
     44,
     45,
     46,
+    47,
     49,
     50,
     51,
@@ -1158,7 +1159,7 @@
     {
       "issue_number": 47,
       "title": "Phase 6: Setup Grafana dashboards",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768948350-2151",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768948350-2151",
       "dependencies": [
@@ -1172,7 +1173,9 @@
         "observability"
       ],
       "branch": "feat/issue-47-setup-grafana-dashboards",
-      "claimed_at": "2026-01-20T22:32:30Z"
+      "claimed_at": "2026-01-20T22:32:30Z",
+      "pr_number": 133,
+      "completed_at": "2026-01-20T23:06:27Z"
     },
     {
       "issue_number": 48,
