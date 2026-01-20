@@ -18,6 +18,7 @@ import (
 type PostHandler struct {
 	postService *services.PostService
 	userService *services.UserService
+	notify      *services.NotificationService
 	redis       *redis.Client
 }
 
@@ -26,6 +27,7 @@ func NewPostHandler(db *sql.DB, redisClient *redis.Client) *PostHandler {
 	return &PostHandler{
 		postService: services.NewPostService(db),
 		userService: services.NewUserService(db),
+		notify:      services.NewNotificationService(db),
 		redis:       redisClient,
 	}
 }
@@ -81,8 +83,11 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	publishCtx, cancel := publishContext()
+	_ = h.notify.CreateNotificationsForNewPost(publishCtx, post.ID, post.SectionID, userID)
+	mentionedUserIDs, _ := resolveMentionedUserIDs(publishCtx, h.userService, post.Content, userID)
+	_ = h.notify.CreateMentionNotifications(publishCtx, mentionedUserIDs, userID, post.SectionID, post.ID, nil)
 	_ = publishEvent(publishCtx, h.redis, formatChannel(sectionPrefix, post.SectionID), "new_post", postEventData{Post: post})
-	_ = publishMentions(publishCtx, h.redis, h.userService, post.Content, userID, &post.ID, nil)
+	_ = publishMentions(publishCtx, h.redis, mentionedUserIDs, userID, &post.ID, nil)
 	cancel()
 
 	w.Header().Set("Content-Type", "application/json")
