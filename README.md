@@ -42,6 +42,8 @@ A self-hosted, lightweight social platform for sharing links within small-to-med
    - Prometheus: http://localhost:9090
    - Loki: http://localhost:3100
    - Tempo: http://localhost:3200
+   - Backend API: http://localhost:8080 (health: `/health`)
+   - Frontend: http://localhost:5173
    - PostgreSQL: localhost:5432
    - Redis: localhost:6379
 

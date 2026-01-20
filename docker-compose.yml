@@ -31,7 +31,7 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "changeme", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -102,6 +102,48 @@ services:
       - loki
       - prometheus
       - tempo
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+    container_name: clubhouse-backend
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: clubhouse
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: clubhouse
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: changeme
+      HTTP_PORT: "8080"
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - clubhouse
+
+  # Frontend (Vite dev server)
+  frontend:
+    image: node:20-alpine
+    container_name: clubhouse-frontend
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    environment:
+      VITE_API_PROXY_TARGET: http://backend:8080
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+    depends_on:
+      - backend
+    networks:
+      - clubhouse
 
 volumes:
   postgres_data:
