@@ -949,6 +949,74 @@
       "claimed_at": "2026-01-20T09:37:15Z",
       "pr_number": 95,
       "completed_at": "2026-01-20T09:44:48Z"
+    },
+    {
+      "issue_number": 99,
+      "title": "Phase 7: Search scope without explicit section_id",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 7,
+      "labels": [
+        "backend",
+        "search"
+      ]
+    },
+    {
+      "issue_number": 100,
+      "title": "Phase 7: Link metadata as first-class search result",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 7,
+      "labels": [
+        "backend",
+        "search",
+        "links"
+      ]
+    },
+    {
+      "issue_number": 101,
+      "title": "Phase 7: Search query length and token guards",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 7,
+      "labels": [
+        "backend",
+        "search"
+      ]
+    },
+    {
+      "issue_number": 102,
+      "title": "Phase 7: Search ranking order test coverage",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 7,
+      "labels": [
+        "backend",
+        "search",
+        "tests"
+      ]
+    },
+    {
+      "issue_number": 103,
+      "title": "Phase 7: Precomputed tsvector for search performance",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 7,
+      "labels": [
+        "backend",
+        "search",
+        "db"
+      ]
     }
   ]
 }
