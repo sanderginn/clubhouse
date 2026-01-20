@@ -35,6 +35,7 @@
     28,
     29,
     30,
+    31,
     49,
     50,
     51,
@@ -450,7 +451,7 @@
     {
       "issue_number": 31,
       "title": "Phase 3: Implement Redis pub/sub integration",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768901207-42531",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768901207-42531",
       "dependencies": [
@@ -463,7 +464,9 @@
         "redis"
       ],
       "branch": "feat/issue-31-implement-redis-pubsub-integration",
-      "claimed_at": "2026-01-20T09:26:47Z"
+      "claimed_at": "2026-01-20T09:26:47Z",
+      "pr_number": 94,
+      "completed_at": "2026-01-20T10:16:29Z"
     },
     {
       "issue_number": 32,
