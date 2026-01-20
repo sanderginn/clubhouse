@@ -47,7 +47,8 @@ Follow the issue description and acceptance criteria.
 
 ### 4a. Add Tests (When It Makes Sense)
 
-If you change or add backend logic, add or update **unit tests** (services/) and **handler tests** (handlers/) where applicable. If tests are not reasonable for the change, state why in the PR description.
+If you change or add backend logic, add or update **unit tests** (services/) and **handler tests** (handlers/) where applicable. If you change frontend logic, add **frontend unit tests** (stores/services) and **component tests** (Svelte) where reasonable. If tests are not reasonable for the change, state why in the PR description.
+If any newly added tests fail, **create follow-up issues per failing domain** and link them in the PR description.
 
 ### 5. Test Your Changes
 
@@ -57,6 +58,7 @@ cd backend && go build ./... && go test ./...
 
 # Frontend
 cd frontend && npm run check
+cd frontend && npm run test
 ```
 
 ### 6. Commit and Push
@@ -92,9 +94,10 @@ The orchestrator will review your PR and either:
 1. **Always use `start-agent.sh`** - it handles claiming atomically
 2. **Work in the worktree** - not the main repo
 3. **Check existing code** - follow established patterns
-4. **Add unit tests when it makes sense** - explain in PR if you didn’t add tests
-5. **Don't skip dependencies** - the script handles this automatically
-6. **Rebase if conflicts** - orchestrator will ask you to rebase, not fix it themselves
+4. **Add tests when it makes sense** - include frontend tests; explain in PR if you didn’t add tests
+5. **Failing tests policy** - file follow-up issues for failing domains and link them in the PR
+6. **Don't skip dependencies** - the script handles this automatically
+7. **Rebase if conflicts** - orchestrator will ask you to rebase, not fix it themselves
 
 ## Troubleshooting
 

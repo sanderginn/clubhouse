@@ -216,6 +216,8 @@ Later expansions: suspend users, configure sections, custom emojis.
 - **Integration tests** for handlers (happy path + error cases)
 - **Database tests** use transactions (rollback after each test)
 - **WebSocket tests** mock Redis or use real connection
+- **Frontend unit tests** for stores/services and component tests (Svelte) using Vitest + jsdom + Testing Library
+- **Failing tests policy**: It’s acceptable for new tests to fail initially, but you must file follow-up issues for each failing domain and link them in the PR
 
 ## Deployment
 
@@ -253,6 +255,9 @@ cd backend && go build ./...
 
 # Test
 cd backend && go test -v ./...
+
+# Frontend tests (unit + component)
+cd frontend && npm run test
 
 # Check dependencies
 go mod tidy && git diff go.mod

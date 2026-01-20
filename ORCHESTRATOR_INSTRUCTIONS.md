@@ -145,6 +145,8 @@ Before merging, verify:
 - [ ] Proper error handling with standard error format
 - [ ] No hardcoded secrets or credentials
 - [ ] PR body references issue (`Closes #X`)
+- [ ] Frontend changes include unit/component tests where appropriate
+- [ ] If tests are failing, PR links follow-up issues for each failing domain
 
 ## Tech Stack Reference
 
