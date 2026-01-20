@@ -627,7 +627,17 @@ func (s *CommentService) HardDeleteComment(ctx context.Context, commentID uuid.U
 		return fmt.Errorf("failed to check comment existence: %w", err)
 	}
 	if !exists {
-		return errors.New("comment not found")
+		return ErrCommentNotFound
+	}
+
+	// Create audit log entry BEFORE deleting the comment (FK constraint)
+	auditQuery := `
+		INSERT INTO audit_logs (admin_user_id, action, related_comment_id, created_at)
+		VALUES ($1, 'hard_delete_comment', $2, now())
+	`
+	_, err = tx.ExecContext(ctx, auditQuery, adminUserID, commentID)
+	if err != nil {
+		return fmt.Errorf("failed to create audit log: %w", err)
 	}
 
 	// Delete links associated with replies to this comment
@@ -695,17 +705,7 @@ func (s *CommentService) HardDeleteComment(ctx context.Context, commentID uuid.U
 		return fmt.Errorf("failed to get rows affected: %w", err)
 	}
 	if rowsAffected == 0 {
-		return errors.New("comment not found")
-	}
-
-	// Create audit log entry
-	auditQuery := `
-		INSERT INTO audit_logs (admin_user_id, action, related_comment_id, created_at)
-		VALUES ($1, 'hard_delete_comment', $2, now())
-	`
-	_, err = tx.ExecContext(ctx, auditQuery, adminUserID, commentID)
-	if err != nil {
-		return fmt.Errorf("failed to create audit log: %w", err)
+		return ErrCommentNotFound
 	}
 
 	if err := tx.Commit(); err != nil {

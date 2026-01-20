@@ -533,7 +533,17 @@ func (s *PostService) HardDeletePost(ctx context.Context, postID uuid.UUID, admi
 		return fmt.Errorf("failed to check post existence: %w", err)
 	}
 	if !exists {
-		return errors.New("post not found")
+		return ErrPostNotFound
+	}
+
+	// Create audit log entry BEFORE deleting the post (FK constraint)
+	auditQuery := `
+		INSERT INTO audit_logs (admin_user_id, action, related_post_id, created_at)
+		VALUES ($1, 'hard_delete_post', $2, now())
+	`
+	_, err = tx.ExecContext(ctx, auditQuery, adminUserID, postID)
+	if err != nil {
+		return fmt.Errorf("failed to create audit log: %w", err)
 	}
 
 	// Delete links associated with comments on this post
@@ -595,17 +605,7 @@ func (s *PostService) HardDeletePost(ctx context.Context, postID uuid.UUID, admi
 		return fmt.Errorf("failed to get rows affected: %w", err)
 	}
 	if rowsAffected == 0 {
-		return errors.New("post not found")
-	}
-
-	// Create audit log entry
-	auditQuery := `
-		INSERT INTO audit_logs (admin_user_id, action, related_post_id, created_at)
-		VALUES ($1, 'hard_delete_post', $2, now())
-	`
-	_, err = tx.ExecContext(ctx, auditQuery, adminUserID, postID)
-	if err != nil {
-		return fmt.Errorf("failed to create audit log: %w", err)
+		return ErrPostNotFound
 	}
 
 	if err := tx.Commit(); err != nil {

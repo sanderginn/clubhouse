@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 
@@ -144,10 +145,9 @@ func (h *AdminHandler) HardDeletePost(w http.ResponseWriter, r *http.Request) {
 
 	err = h.postService.HardDeletePost(r.Context(), postID, adminUserID)
 	if err != nil {
-		switch err.Error() {
-		case "post not found":
-			writeError(w, http.StatusNotFound, "POST_NOT_FOUND", err.Error())
-		default:
+		if errors.Is(err, services.ErrPostNotFound) {
+			writeError(w, http.StatusNotFound, "POST_NOT_FOUND", "post not found")
+		} else {
 			writeError(w, http.StatusInternalServerError, "DELETE_FAILED", "Failed to delete post")
 		}
 		return
@@ -188,10 +188,9 @@ func (h *AdminHandler) HardDeleteComment(w http.ResponseWriter, r *http.Request)
 
 	err = h.commentService.HardDeleteComment(r.Context(), commentID, adminUserID)
 	if err != nil {
-		switch err.Error() {
-		case "comment not found":
-			writeError(w, http.StatusNotFound, "COMMENT_NOT_FOUND", err.Error())
-		default:
+		if errors.Is(err, services.ErrCommentNotFound) {
+			writeError(w, http.StatusNotFound, "COMMENT_NOT_FOUND", "comment not found")
+		} else {
 			writeError(w, http.StatusInternalServerError, "DELETE_FAILED", "Failed to delete comment")
 		}
 		return
