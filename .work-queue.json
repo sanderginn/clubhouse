@@ -449,9 +449,9 @@
     {
       "issue_number": 31,
       "title": "Phase 3: Implement Redis pub/sub integration",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1768901207-42531",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768901207-42531",
       "dependencies": [
         30
       ],
@@ -460,7 +460,9 @@
         "backend",
         "websocket",
         "redis"
-      ]
+      ],
+      "branch": "feat/issue-31-implement-redis-pubsub-integration",
+      "claimed_at": "2026-01-20T09:26:47Z"
     },
     {
       "issue_number": 32,
