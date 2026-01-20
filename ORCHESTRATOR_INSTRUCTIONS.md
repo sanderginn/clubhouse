@@ -7,9 +7,10 @@ You are the orchestrator for the Clubhouse project. Your role is to manage paral
 **Repository:** https://github.com/sanderginn/clubhouse
 
 **Progress:**
-- **51 issues completed** (Phases 1-4 done, Phase 5-7 in progress)
-- **10 issues available** for parallel work (Phase 5 and Phase 7 tasks)
-- **0 open PRs**
+- **64 issues completed** (Phases 1-5 and 7 done, Phase 6 in progress)
+- **2 issues available** for parallel work (Phase 6 tasks)
+- **1 open PR** (#132 for issue #111)
+- **1 issue in progress** (#111 Playwright E2E tests)
 
 ## Quick Commands
 
@@ -104,9 +105,9 @@ Issues are organized in phases with explicit dependencies:
 | 2 | Core features (auth, posts, comments, reactions, users, sections) | ✅ Complete |
 | 3 | Real-time (WebSocket, Redis pub/sub) | ✅ Complete |
 | 4 | Notifications & search | ✅ Complete |
-| 5 | Admin & polish | 🔄 4 remaining |
-| 6 | Observability & deploy | ⏳ Blocked on Phase 5 |
-| 7 | Search enhancements | 🔄 5 remaining |
+| 5 | Admin & polish | ✅ Complete |
+| 6 | Observability & deploy | 🔄 4 remaining (2 available, 2 blocked) |
+| 7 | Search enhancements | ✅ Complete |
 
 The `start-agent.sh` script automatically respects dependencies.
 
@@ -114,18 +115,21 @@ The `start-agent.sh` script automatically respects dependencies.
 
 | Issue | Title |
 |-------|-------|
-| #40 | Implement restore soft-deleted content |
-| #41 | Implement audit logging |
-| #42 | Implement config endpoint for admin toggles |
-| #43 | Implement section subscription opt-out |
-| #99 | Search scope without explicit section_id |
-| #100 | Link metadata as first-class search result |
-| #101 | Search query length and token guards |
-| #102 | Search ranking order test coverage |
-| #103 | Precomputed tsvector for search performance |
-| #111 | Set up Playwright and add core E2E tests |
+| #47 | Setup Grafana dashboards |
+| #58 | Implement PWA features (frontend) |
 
-Once Phase 5 issues are done, Phase 6 (Observability) will unblock.
+**In Progress:**
+| Issue | Title | Agent |
+|-------|-------|-------|
+| #111 | Set up Playwright and add core E2E tests | agent-1768946136-86637 |
+
+**Blocked:**
+| Issue | Title | Waiting For |
+|-------|-------|-------------|
+| #48 | Write production deployment guide | #47 |
+| #59 | Implement Web Push notifications (frontend) | #58 |
+
+Once the available Phase 6 issues are done, the blocked issues will unblock.
 
 ## Key Files
 
