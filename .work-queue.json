@@ -1024,15 +1024,17 @@
     {
       "issue_number": 101,
       "title": "Phase 7: Search query length and token guards",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1768944994-77683",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768944994-77683",
       "dependencies": [],
       "phase": 7,
       "labels": [
         "backend",
         "search"
-      ]
+      ],
+      "branch": "feat/issue-101-search-query-length-and-token-guards",
+      "claimed_at": "2026-01-20T21:36:34Z"
     },
     {
       "issue_number": 102,
