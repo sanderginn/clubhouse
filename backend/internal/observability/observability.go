@@ -12,10 +12,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	otelprom "go.opentelemetry.io/otel/exporters/prometheus"
+	logglobal "go.opentelemetry.io/otel/log/global"
 	"go.opentelemetry.io/otel/propagation"
+	sdklog "go.opentelemetry.io/otel/sdk/log"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -74,6 +77,17 @@ func Init(ctx context.Context) (func(context.Context) error, http.Handler, error
 	)
 	otel.SetMeterProvider(mp)
 
+	logExporter, err := newLogExporter(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create log exporter: %w", err)
+	}
+
+	logProvider := sdklog.NewLoggerProvider(
+		sdklog.WithResource(res),
+		sdklog.WithProcessor(sdklog.NewBatchProcessor(logExporter)),
+	)
+	logglobal.SetLoggerProvider(logProvider)
+
 	if err := initMetrics(); err != nil {
 		return nil, nil, fmt.Errorf("failed to init metrics: %w", err)
 	}
@@ -81,6 +95,11 @@ func Init(ctx context.Context) (func(context.Context) error, http.Handler, error
 	handler := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 
 	return func(ctx context.Context) error {
+		if err := logProvider.Shutdown(ctx); err != nil {
+			_ = mp.Shutdown(ctx)
+			_ = tp.Shutdown(ctx)
+			return err
+		}
 		if err := mp.Shutdown(ctx); err != nil {
 			_ = tp.Shutdown(ctx)
 			return err
@@ -108,6 +127,28 @@ func newTraceExporter(ctx context.Context) (*otlptrace.Exporter, error) {
 
 	client := otlptracegrpc.NewClient(opts...)
 	return otlptrace.New(ctx, client)
+}
+
+func newLogExporter(ctx context.Context) (*otlploghttp.Exporter, error) {
+	endpoint := strings.TrimSpace(os.Getenv("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"))
+	if endpoint == "" {
+		endpoint = "http://loki:3100/otlp/v1/logs"
+	}
+
+	opts := []otlploghttp.Option{
+		otlploghttp.WithTimeout(5 * time.Second),
+	}
+
+	if strings.HasPrefix(endpoint, "http://") || strings.HasPrefix(endpoint, "https://") {
+		opts = append(opts, otlploghttp.WithEndpointURL(endpoint))
+	} else {
+		opts = append(opts, otlploghttp.WithEndpoint(endpoint))
+		if strings.EqualFold(os.Getenv("OTEL_EXPORTER_OTLP_LOGS_INSECURE"), "true") || strings.HasPrefix(endpoint, "localhost") {
+			opts = append(opts, otlploghttp.WithInsecure())
+		}
+	}
+
+	return otlploghttp.New(ctx, opts...)
 }
 
 func parseOtlpEndpoint(endpoint string) string {

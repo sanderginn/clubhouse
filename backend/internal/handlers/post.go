@@ -35,21 +35,21 @@ func NewPostHandler(db *sql.DB, redisClient *redis.Client) *PostHandler {
 // CreatePost handles POST /api/v1/posts
 func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
 		return
 	}
 
 	// Get user from context (set by auth middleware)
 	userID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
 		return
 	}
 
 	// Parse request body
 	var req models.CreatePostRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
 		return
 	}
 
@@ -59,21 +59,21 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		// Determine appropriate error code and status
 		switch err.Error() {
 		case "section_id is required":
-			writeError(w, http.StatusBadRequest, "SECTION_ID_REQUIRED", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "SECTION_ID_REQUIRED", err.Error())
 		case "invalid section id":
-			writeError(w, http.StatusBadRequest, "INVALID_SECTION_ID", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_SECTION_ID", err.Error())
 		case "section not found":
-			writeError(w, http.StatusNotFound, "SECTION_NOT_FOUND", err.Error())
+			writeError(r.Context(), w, http.StatusNotFound, "SECTION_NOT_FOUND", err.Error())
 		case "content is required":
-			writeError(w, http.StatusBadRequest, "CONTENT_REQUIRED", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "CONTENT_REQUIRED", err.Error())
 		case "content must be less than 5000 characters":
-			writeError(w, http.StatusBadRequest, "CONTENT_TOO_LONG", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "CONTENT_TOO_LONG", err.Error())
 		case "link url cannot be empty":
-			writeError(w, http.StatusBadRequest, "LINK_URL_REQUIRED", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "LINK_URL_REQUIRED", err.Error())
 		case "link url must be less than 2048 characters":
-			writeError(w, http.StatusBadRequest, "LINK_URL_TOO_LONG", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "LINK_URL_TOO_LONG", err.Error())
 		default:
-			writeError(w, http.StatusInternalServerError, "POST_CREATION_FAILED", "Failed to create post")
+			writeError(r.Context(), w, http.StatusInternalServerError, "POST_CREATION_FAILED", "Failed to create post")
 		}
 		return
 	}
@@ -98,21 +98,21 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 // GetPost handles GET /api/v1/posts/{id}
 func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
 		return
 	}
 
 	// Extract post ID from URL path
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 5 {
-		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Post ID is required")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Post ID is required")
 		return
 	}
 
 	postIDStr := pathParts[4]
 	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
 		return
 	}
 
@@ -120,10 +120,10 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 	post, err := h.postService.GetPostByID(r.Context(), postID)
 	if err != nil {
 		if err.Error() == "post not found" {
-			writeError(w, http.StatusNotFound, "POST_NOT_FOUND", "Post not found")
+			writeError(r.Context(), w, http.StatusNotFound, "POST_NOT_FOUND", "Post not found")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "GET_POST_FAILED", "Failed to get post")
+		writeError(r.Context(), w, http.StatusInternalServerError, "GET_POST_FAILED", "Failed to get post")
 		return
 	}
 
@@ -140,21 +140,21 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 // GetFeed handles GET /api/v1/sections/{sectionId}/feed
 func (h *PostHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
 		return
 	}
 
 	// Extract section ID from URL path
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 5 {
-		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Section ID is required")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Section ID is required")
 		return
 	}
 
 	sectionIDStr := pathParts[4]
 	sectionID, err := uuid.Parse(sectionIDStr)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_SECTION_ID", "Invalid section ID format")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_SECTION_ID", "Invalid section ID format")
 		return
 	}
 
@@ -182,7 +182,7 @@ func (h *PostHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
 
 	feed, err := h.postService.GetFeed(r.Context(), sectionID, cursorPtr, limit)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "GET_FEED_FAILED", "Failed to get feed")
+		writeError(r.Context(), w, http.StatusInternalServerError, "GET_FEED_FAILED", "Failed to get feed")
 		return
 	}
 
@@ -194,14 +194,14 @@ func (h *PostHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
 // DeletePost handles DELETE /api/v1/posts/{id}
 func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only DELETE requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only DELETE requests are allowed")
 		return
 	}
 
 	// Get user from context (set by auth middleware)
 	userID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
 		return
 	}
 
@@ -215,14 +215,14 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 	// Extract post ID from URL path
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 5 {
-		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Post ID is required")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Post ID is required")
 		return
 	}
 
 	postIDStr := pathParts[4]
 	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
 		return
 	}
 
@@ -232,11 +232,11 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		// Determine appropriate error code and status
 		switch err.Error() {
 		case "post not found":
-			writeError(w, http.StatusNotFound, "POST_NOT_FOUND", "Post not found")
+			writeError(r.Context(), w, http.StatusNotFound, "POST_NOT_FOUND", "Post not found")
 		case "unauthorized to delete this post":
-			writeError(w, http.StatusForbidden, "UNAUTHORIZED", "You can only delete your own posts")
+			writeError(r.Context(), w, http.StatusForbidden, "UNAUTHORIZED", "You can only delete your own posts")
 		default:
-			writeError(w, http.StatusInternalServerError, "POST_DELETION_FAILED", "Failed to delete post")
+			writeError(r.Context(), w, http.StatusInternalServerError, "POST_DELETION_FAILED", "Failed to delete post")
 		}
 		return
 	}
@@ -259,35 +259,35 @@ func parseIntParam(s string) (int, error) {
 // RestorePost handles POST /api/v1/posts/{id}/restore
 func (h *PostHandler) RestorePost(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
 		return
 	}
 
 	// Get user from context (set by auth middleware)
 	userID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
 		return
 	}
 
 	// Get user session to check if admin
 	session, err := middleware.GetUserFromContext(r.Context())
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user session")
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user session")
 		return
 	}
 
 	// Extract post ID from URL path
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 5 {
-		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Post ID is required")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Post ID is required")
 		return
 	}
 
 	postIDStr := pathParts[4]
 	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
 		return
 	}
 
@@ -297,13 +297,13 @@ func (h *PostHandler) RestorePost(w http.ResponseWriter, r *http.Request) {
 		// Determine appropriate error code and status
 		switch err.Error() {
 		case "post not found":
-			writeError(w, http.StatusNotFound, "POST_NOT_FOUND", "Post not found")
+			writeError(r.Context(), w, http.StatusNotFound, "POST_NOT_FOUND", "Post not found")
 		case "unauthorized":
-			writeError(w, http.StatusForbidden, "FORBIDDEN", "You do not have permission to restore this post")
+			writeError(r.Context(), w, http.StatusForbidden, "FORBIDDEN", "You do not have permission to restore this post")
 		case "post permanently deleted":
-			writeError(w, http.StatusGone, "POST_PERMANENTLY_DELETED", "Post was permanently deleted more than 7 days ago")
+			writeError(r.Context(), w, http.StatusGone, "POST_PERMANENTLY_DELETED", "Post was permanently deleted more than 7 days ago")
 		default:
-			writeError(w, http.StatusInternalServerError, "RESTORE_FAILED", "Failed to restore post")
+			writeError(r.Context(), w, http.StatusInternalServerError, "RESTORE_FAILED", "Failed to restore post")
 		}
 		return
 	}

@@ -27,13 +27,13 @@ func NewSearchHandler(db *sql.DB) *SearchHandler {
 // Search handles GET /api/v1/search?q=query&scope=global.
 func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
 		return
 	}
 
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	if q == "" {
-		writeError(w, http.StatusBadRequest, "QUERY_REQUIRED", "Query is required")
+		writeError(r.Context(), w, http.StatusBadRequest, "QUERY_REQUIRED", "Query is required")
 		return
 	}
 
@@ -49,7 +49,7 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 			if contextSectionID, err := middleware.GetSectionIDFromContext(r.Context()); err == nil {
 				sectionID = &contextSectionID
 			} else {
-				writeError(w, http.StatusBadRequest, "SECTION_ID_REQUIRED", "Section ID is required for section scope")
+				writeError(r.Context(), w, http.StatusBadRequest, "SECTION_ID_REQUIRED", "Section ID is required for section scope")
 				return
 			}
 		}
@@ -57,14 +57,14 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 		if sectionIDStr != "" {
 			parsedID, err := uuid.Parse(sectionIDStr)
 			if err != nil {
-				writeError(w, http.StatusBadRequest, "INVALID_SECTION_ID", "Invalid section ID format")
+				writeError(r.Context(), w, http.StatusBadRequest, "INVALID_SECTION_ID", "Invalid section ID format")
 				return
 			}
 
 			sectionID = &parsedID
 		}
 	} else if scope != "global" {
-		writeError(w, http.StatusBadRequest, "INVALID_SCOPE", "Scope must be 'section' or 'global'")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_SCOPE", "Scope must be 'section' or 'global'")
 		return
 	}
 
@@ -72,7 +72,7 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 	if limitStr := strings.TrimSpace(r.URL.Query().Get("limit")); limitStr != "" {
 		parsedLimit, err := parseIntParam(limitStr)
 		if err != nil {
-			writeError(w, http.StatusBadRequest, "INVALID_LIMIT", "Limit must be a number")
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_LIMIT", "Limit must be a number")
 			return
 		}
 		limit = parsedLimit
@@ -80,7 +80,7 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 
 	results, err := h.searchService.Search(r.Context(), q, scope, sectionID, limit)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "SEARCH_FAILED", "Failed to search")
+		writeError(r.Context(), w, http.StatusInternalServerError, "SEARCH_FAILED", "Failed to search")
 		return
 	}
 

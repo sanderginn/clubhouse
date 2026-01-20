@@ -37,21 +37,21 @@ func NewCommentHandler(db *sql.DB, redisClient *redis.Client) *CommentHandler {
 // CreateComment handles POST /api/v1/comments
 func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
 		return
 	}
 
 	// Get user from context (set by auth middleware)
 	userID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
 		return
 	}
 
 	// Parse request body
 	var req models.CreateCommentRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
 		return
 	}
 
@@ -61,25 +61,25 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		// Determine appropriate error code and status
 		switch err.Error() {
 		case "post_id is required":
-			writeError(w, http.StatusBadRequest, "POST_ID_REQUIRED", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "POST_ID_REQUIRED", err.Error())
 		case "invalid post id":
-			writeError(w, http.StatusBadRequest, "INVALID_POST_ID", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_POST_ID", err.Error())
 		case "post not found":
-			writeError(w, http.StatusNotFound, "POST_NOT_FOUND", err.Error())
+			writeError(r.Context(), w, http.StatusNotFound, "POST_NOT_FOUND", err.Error())
 		case "invalid parent comment id":
-			writeError(w, http.StatusBadRequest, "INVALID_PARENT_COMMENT_ID", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_PARENT_COMMENT_ID", err.Error())
 		case "parent comment not found":
-			writeError(w, http.StatusNotFound, "PARENT_COMMENT_NOT_FOUND", err.Error())
+			writeError(r.Context(), w, http.StatusNotFound, "PARENT_COMMENT_NOT_FOUND", err.Error())
 		case "content is required":
-			writeError(w, http.StatusBadRequest, "CONTENT_REQUIRED", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "CONTENT_REQUIRED", err.Error())
 		case "content must be less than 5000 characters":
-			writeError(w, http.StatusBadRequest, "CONTENT_TOO_LONG", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "CONTENT_TOO_LONG", err.Error())
 		case "link url cannot be empty":
-			writeError(w, http.StatusBadRequest, "LINK_URL_REQUIRED", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "LINK_URL_REQUIRED", err.Error())
 		case "link url must be less than 2048 characters":
-			writeError(w, http.StatusBadRequest, "LINK_URL_TOO_LONG", err.Error())
+			writeError(r.Context(), w, http.StatusBadRequest, "LINK_URL_TOO_LONG", err.Error())
 		default:
-			writeError(w, http.StatusInternalServerError, "COMMENT_CREATION_FAILED", "Failed to create comment")
+			writeError(r.Context(), w, http.StatusInternalServerError, "COMMENT_CREATION_FAILED", "Failed to create comment")
 		}
 		return
 	}
@@ -107,21 +107,21 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 // GetComment handles GET /api/v1/comments/{id}
 func (h *CommentHandler) GetComment(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
 		return
 	}
 
 	// Extract comment ID from URL path
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 5 {
-		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Comment ID is required")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Comment ID is required")
 		return
 	}
 
 	commentIDStr := pathParts[4]
 	commentID, err := uuid.Parse(commentIDStr)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_COMMENT_ID", "Invalid comment ID format")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_COMMENT_ID", "Invalid comment ID format")
 		return
 	}
 
@@ -129,10 +129,10 @@ func (h *CommentHandler) GetComment(w http.ResponseWriter, r *http.Request) {
 	comment, err := h.commentService.GetCommentByID(r.Context(), commentID)
 	if err != nil {
 		if err.Error() == "comment not found" {
-			writeError(w, http.StatusNotFound, "COMMENT_NOT_FOUND", "Comment not found")
+			writeError(r.Context(), w, http.StatusNotFound, "COMMENT_NOT_FOUND", "Comment not found")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "GET_COMMENT_FAILED", "Failed to get comment")
+		writeError(r.Context(), w, http.StatusInternalServerError, "GET_COMMENT_FAILED", "Failed to get comment")
 		return
 	}
 
@@ -149,7 +149,7 @@ func (h *CommentHandler) GetComment(w http.ResponseWriter, r *http.Request) {
 // GetThread handles GET /api/v1/posts/{postId}/comments
 func (h *CommentHandler) GetThread(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
 		return
 	}
 
@@ -157,14 +157,14 @@ func (h *CommentHandler) GetThread(w http.ResponseWriter, r *http.Request) {
 	pathParts := strings.Split(r.URL.Path, "/")
 	// pathParts: ["", "api", "v1", "posts", "{postId}", "comments"]
 	if len(pathParts) < 6 {
-		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Post ID is required")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Post ID is required")
 		return
 	}
 
 	postIDStr := pathParts[4]
 	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
 		return
 	}
 
@@ -186,18 +186,18 @@ func (h *CommentHandler) GetThread(w http.ResponseWriter, r *http.Request) {
 	comments, nextCursor, hasMore, err := h.commentService.GetThreadComments(r.Context(), postID, limit, cursorPtr)
 	if err != nil {
 		if err.Error() == "post not found" {
-			writeError(w, http.StatusNotFound, "POST_NOT_FOUND", "Post not found")
+			writeError(r.Context(), w, http.StatusNotFound, "POST_NOT_FOUND", "Post not found")
 			return
 		}
 		if err.Error() == "invalid cursor" {
-			writeError(w, http.StatusBadRequest, "INVALID_CURSOR", "Invalid cursor format")
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_CURSOR", "Invalid cursor format")
 			return
 		}
 		if err.Error() == "cursor not found" {
-			writeError(w, http.StatusBadRequest, "CURSOR_NOT_FOUND", "Cursor not found")
+			writeError(r.Context(), w, http.StatusBadRequest, "CURSOR_NOT_FOUND", "Cursor not found")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "GET_THREAD_FAILED", "Failed to get thread")
+		writeError(r.Context(), w, http.StatusInternalServerError, "GET_THREAD_FAILED", "Failed to get thread")
 		return
 	}
 
@@ -218,13 +218,13 @@ func (h *CommentHandler) GetThread(w http.ResponseWriter, r *http.Request) {
 // DeleteComment handles DELETE /api/v1/comments/{id}
 func (h *CommentHandler) DeleteComment(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only DELETE requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only DELETE requests are allowed")
 		return
 	}
 
 	userID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
 		return
 	}
 
@@ -235,14 +235,14 @@ func (h *CommentHandler) DeleteComment(w http.ResponseWriter, r *http.Request) {
 
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 5 {
-		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Comment ID is required")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Comment ID is required")
 		return
 	}
 
 	commentIDStr := pathParts[4]
 	commentID, err := uuid.Parse(commentIDStr)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_COMMENT_ID", "Invalid comment ID format")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_COMMENT_ID", "Invalid comment ID format")
 		return
 	}
 
@@ -250,11 +250,11 @@ func (h *CommentHandler) DeleteComment(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch err.Error() {
 		case "comment not found":
-			writeError(w, http.StatusNotFound, "COMMENT_NOT_FOUND", "Comment not found")
+			writeError(r.Context(), w, http.StatusNotFound, "COMMENT_NOT_FOUND", "Comment not found")
 		case "unauthorized to delete this comment":
-			writeError(w, http.StatusForbidden, "FORBIDDEN", "You can only delete your own comments")
+			writeError(r.Context(), w, http.StatusForbidden, "FORBIDDEN", "You can only delete your own comments")
 		default:
-			writeError(w, http.StatusInternalServerError, "COMMENT_DELETION_FAILED", "Failed to delete comment")
+			writeError(r.Context(), w, http.StatusInternalServerError, "COMMENT_DELETION_FAILED", "Failed to delete comment")
 		}
 		return
 	}
@@ -272,32 +272,32 @@ func (h *CommentHandler) DeleteComment(w http.ResponseWriter, r *http.Request) {
 // RestoreComment handles POST /api/v1/comments/{id}/restore
 func (h *CommentHandler) RestoreComment(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
 		return
 	}
 
 	userID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
 		return
 	}
 
 	session, err := middleware.GetUserFromContext(r.Context())
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user session")
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user session")
 		return
 	}
 
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 5 {
-		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Comment ID is required")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Comment ID is required")
 		return
 	}
 
 	commentIDStr := pathParts[4]
 	commentID, err := uuid.Parse(commentIDStr)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_COMMENT_ID", "Invalid comment ID format")
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_COMMENT_ID", "Invalid comment ID format")
 		return
 	}
 
@@ -305,13 +305,13 @@ func (h *CommentHandler) RestoreComment(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		switch err.Error() {
 		case "comment not found":
-			writeError(w, http.StatusNotFound, "COMMENT_NOT_FOUND", "Comment not found")
+			writeError(r.Context(), w, http.StatusNotFound, "COMMENT_NOT_FOUND", "Comment not found")
 		case "unauthorized":
-			writeError(w, http.StatusForbidden, "FORBIDDEN", "You do not have permission to restore this comment")
+			writeError(r.Context(), w, http.StatusForbidden, "FORBIDDEN", "You do not have permission to restore this comment")
 		case "comment permanently deleted":
-			writeError(w, http.StatusGone, "COMMENT_PERMANENTLY_DELETED", "Comment was permanently deleted more than 7 days ago")
+			writeError(r.Context(), w, http.StatusGone, "COMMENT_PERMANENTLY_DELETED", "Comment was permanently deleted more than 7 days ago")
 		default:
-			writeError(w, http.StatusInternalServerError, "RESTORE_FAILED", "Failed to restore comment")
+			writeError(r.Context(), w, http.StatusInternalServerError, "RESTORE_FAILED", "Failed to restore comment")
 		}
 		return
 	}
