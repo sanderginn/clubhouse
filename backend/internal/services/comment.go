@@ -70,6 +70,8 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 	// Create comment ID
 	commentID := uuid.New()
 
+	linkMetadata := fetchLinkMetadata(ctx, req.Links)
+
 	// Begin transaction
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -96,22 +98,31 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 	if len(req.Links) > 0 {
 		comment.Links = make([]models.Link, 0, len(req.Links))
 
-		for _, linkReq := range req.Links {
+		for i, linkReq := range req.Links {
 			linkID := uuid.New()
+
+			metadataValue := interface{}(nil)
+			if len(linkMetadata) > i && len(linkMetadata[i]) > 0 {
+				metadataValue = linkMetadata[i]
+			}
 
 			// Insert link for comment
 			linkQuery := `
-				INSERT INTO links (id, comment_id, url, created_at)
-				VALUES ($1, $2, $3, now())
+				INSERT INTO links (id, comment_id, url, metadata, created_at)
+				VALUES ($1, $2, $3, $4, now())
 				RETURNING id, url, created_at
 			`
 
 			var link models.Link
-			err := tx.QueryRowContext(ctx, linkQuery, linkID, commentID, linkReq.URL).
+			err := tx.QueryRowContext(ctx, linkQuery, linkID, commentID, linkReq.URL, metadataValue).
 				Scan(&link.ID, &link.URL, &link.CreatedAt)
 
 			if err != nil {
 				return nil, fmt.Errorf("failed to create link: %w", err)
+			}
+
+			if meta, ok := metadataValue.(models.JSONMap); ok && len(meta) > 0 {
+				link.Metadata = map[string]interface{}(meta)
 			}
 
 			comment.Links = append(comment.Links, link)
