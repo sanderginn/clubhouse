@@ -60,6 +60,7 @@
     55,
     56,
     57,
+    58,
     93,
     99,
     100,
@@ -1190,7 +1191,7 @@
     {
       "issue_number": 58,
       "title": "Phase 6: Implement PWA features (frontend)",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768948378-3294",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768948378-3294",
       "dependencies": [
@@ -1203,7 +1204,9 @@
         "pwa"
       ],
       "branch": "feat/issue-58-implement-pwa-features-frontend",
-      "claimed_at": "2026-01-20T22:32:58Z"
+      "claimed_at": "2026-01-20T22:32:58Z",
+      "pr_number": 134,
+      "completed_at": "2026-01-20T23:03:23Z"
     }
   ]
 }
