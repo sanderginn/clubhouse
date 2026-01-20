@@ -76,7 +76,14 @@ func main() {
 	mux.HandleFunc("/api/v1/auth/logout", authHandler.Logout)
 	mux.HandleFunc("/api/v1/auth/me", authHandler.GetMe)
 	mux.HandleFunc("/api/v1/sections", sectionHandler.ListSections)
-	mux.HandleFunc("/api/v1/sections/", postHandler.GetFeed)
+	sectionRouteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/feed") {
+			postHandler.GetFeed(w, r)
+		} else {
+			sectionHandler.GetSection(w, r)
+		}
+	})
+	mux.Handle("/api/v1/sections/", sectionRouteHandler)
 
 	// User routes (protected - requires auth)
 	userRouteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

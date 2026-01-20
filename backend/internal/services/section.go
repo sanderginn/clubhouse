@@ -3,7 +3,9 @@ package services
 import (
 	"context"
 	"database/sql"
+	"errors"
 
+	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/models"
 )
 
@@ -42,4 +44,19 @@ func (s *SectionService) ListSections(ctx context.Context) ([]models.Section, er
 	}
 
 	return sections, nil
+}
+
+func (s *SectionService) GetSectionByID(ctx context.Context, id uuid.UUID) (*models.Section, error) {
+	query := `SELECT id, name, type FROM sections WHERE id = $1`
+
+	var section models.Section
+	err := s.db.QueryRowContext(ctx, query, id).Scan(&section.ID, &section.Name, &section.Type)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("section not found")
+		}
+		return nil, err
+	}
+
+	return &section, nil
 }

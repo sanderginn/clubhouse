@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strings"
 
+	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/services"
 )
@@ -33,6 +35,44 @@ func (h *SectionHandler) ListSections(w http.ResponseWriter, r *http.Request) {
 
 	response := models.ListSectionsResponse{
 		Sections: sections,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
+func (h *SectionHandler) GetSection(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		return
+	}
+
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 5 {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "Section ID is required")
+		return
+	}
+
+	sectionIDStr := pathParts[4]
+	sectionID, err := uuid.Parse(sectionIDStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_SECTION_ID", "Invalid section ID format")
+		return
+	}
+
+	section, err := h.sectionService.GetSectionByID(r.Context(), sectionID)
+	if err != nil {
+		if err.Error() == "section not found" {
+			writeError(w, http.StatusNotFound, "SECTION_NOT_FOUND", "Section not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "GET_SECTION_FAILED", "Failed to get section")
+		return
+	}
+
+	response := models.GetSectionResponse{
+		Section: *section,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -11,3 +11,7 @@ type Section struct {
 type ListSectionsResponse struct {
 	Sections []Section `json:"sections"`
 }
+
+type GetSectionResponse struct {
+	Section Section `json:"section"`
+}
