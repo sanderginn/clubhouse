@@ -63,6 +63,7 @@
     93,
     99,
     100,
+    101,
     112,
     113,
     114
@@ -1027,7 +1028,7 @@
     {
       "issue_number": 101,
       "title": "Phase 7: Search query length and token guards",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768944994-77683",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768944994-77683",
       "dependencies": [],
@@ -1037,7 +1038,9 @@
         "search"
       ],
       "branch": "feat/issue-101-search-query-length-and-token-guards",
-      "claimed_at": "2026-01-20T21:36:34Z"
+      "claimed_at": "2026-01-20T21:36:34Z",
+      "pr_number": 129,
+      "completed_at": "2026-01-20T21:42:35Z"
     },
     {
       "issue_number": 102,
