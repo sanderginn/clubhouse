@@ -1065,6 +1065,17 @@
       ],
       "status": "available",
       "dependencies": []
+    },
+    {
+      "issue_number": 112,
+      "title": "Frontend unit test coverage audit + missing test cases",
+      "phase": "Phase 5",
+      "labels": [
+        "frontend",
+        "tests"
+      ],
+      "status": "available",
+      "dependencies": []
     }
   ]
 }
