@@ -1085,6 +1085,32 @@
       "claimed_at": "2026-01-20T14:20:49Z",
       "pr_number": 115,
       "completed_at": "2026-01-20T15:07:01Z"
+    },
+    {
+      "issue_number": 113,
+      "title": "Fix Layout matchMedia test (isMobile not updating in jsdom)",
+      "phase": "Phase 5",
+      "labels": [
+        "frontend",
+        "tests"
+      ],
+      "status": "available",
+      "dependencies": [
+        112
+      ]
+    },
+    {
+      "issue_number": 114,
+      "title": "Fix SectionFeed IntersectionObserver test (loadMorePosts not triggered)",
+      "phase": "Phase 5",
+      "labels": [
+        "frontend",
+        "tests"
+      ],
+      "status": "available",
+      "dependencies": [
+        112
+      ]
     }
   ]
 }
