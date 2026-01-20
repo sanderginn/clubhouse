@@ -42,6 +42,7 @@
     35,
     36,
     37,
+    38,
     49,
     50,
     51,
@@ -598,7 +599,7 @@
     {
       "issue_number": 38,
       "title": "Phase 4: Implement link metadata fetching strategy",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768915185-5637",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768915185-5637",
       "dependencies": [
@@ -613,7 +614,9 @@
         "links"
       ],
       "branch": "feat/issue-38-implement-link-metadata-fetching-strateg",
-      "claimed_at": "2026-01-20T13:19:45Z"
+      "claimed_at": "2026-01-20T13:19:45Z",
+      "pr_number": 107,
+      "completed_at": "2026-01-20T13:41:15Z"
     },
     {
       "issue_number": 39,
