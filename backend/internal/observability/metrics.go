@@ -12,11 +12,13 @@ import (
 )
 
 type metrics struct {
-	httpRequestCount     metric.Int64Counter
-	httpRequestDuration  metric.Float64Histogram
-	websocketConnections metric.Int64UpDownCounter
-	postsCreated         metric.Int64Counter
-	commentsCreated      metric.Int64Counter
+	httpRequestCount        metric.Int64Counter
+	httpRequestDuration     metric.Float64Histogram
+	websocketConnections    metric.Int64UpDownCounter
+	websocketConnectsTotal  metric.Int64Counter
+	websocketDisconnectsTotal metric.Int64Counter
+	postsCreated            metric.Int64Counter
+	commentsCreated         metric.Int64Counter
 }
 
 var (
@@ -58,6 +60,24 @@ func initMetrics() error {
 			return
 		}
 
+		websocketConnectsTotal, err := meter.Int64Counter(
+			"clubhouse.websocket.connects",
+			metric.WithDescription("Total websocket connection events"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		websocketDisconnectsTotal, err := meter.Int64Counter(
+			"clubhouse.websocket.disconnects",
+			metric.WithDescription("Total websocket disconnection events"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
 		postsCreated, err := meter.Int64Counter(
 			"clubhouse.posts.created",
 			metric.WithDescription("Number of posts created"),
@@ -77,11 +97,13 @@ func initMetrics() error {
 		}
 
 		metricsInstance = &metrics{
-			httpRequestCount:     httpRequestCount,
-			httpRequestDuration:  httpRequestDuration,
-			websocketConnections: websocketConnections,
-			postsCreated:         postsCreated,
-			commentsCreated:      commentsCreated,
+			httpRequestCount:          httpRequestCount,
+			httpRequestDuration:       httpRequestDuration,
+			websocketConnections:      websocketConnections,
+			websocketConnectsTotal:    websocketConnectsTotal,
+			websocketDisconnectsTotal: websocketDisconnectsTotal,
+			postsCreated:              postsCreated,
+			commentsCreated:           commentsCreated,
 		}
 	})
 
@@ -109,13 +131,24 @@ func RecordHTTPRequest(ctx context.Context, method, route string, statusCode int
 	m.httpRequestDuration.Record(ctx, float64(duration.Milliseconds()), metric.WithAttributes(attrs...))
 }
 
-// RecordWebsocketConnection updates the active websocket connection count.
-func RecordWebsocketConnection(ctx context.Context, delta int64) {
+// RecordWebsocketConnect increments the active connection gauge and connect counter.
+func RecordWebsocketConnect(ctx context.Context) {
 	m := getMetrics()
 	if m == nil {
 		return
 	}
-	m.websocketConnections.Add(ctx, delta)
+	m.websocketConnections.Add(ctx, 1)
+	m.websocketConnectsTotal.Add(ctx, 1)
+}
+
+// RecordWebsocketDisconnect decrements the active connection gauge and increments disconnect counter.
+func RecordWebsocketDisconnect(ctx context.Context) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.websocketConnections.Add(ctx, -1)
+	m.websocketDisconnectsTotal.Add(ctx, 1)
 }
 
 // RecordPostCreated increments the post created counter.
