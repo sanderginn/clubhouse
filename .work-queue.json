@@ -1157,9 +1157,9 @@
     {
       "issue_number": 47,
       "title": "Phase 6: Setup Grafana dashboards",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1768948350-2151",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768948350-2151",
       "dependencies": [
         44,
         45,
@@ -1169,7 +1169,9 @@
       "labels": [
         "backend",
         "observability"
-      ]
+      ],
+      "branch": "feat/issue-47-setup-grafana-dashboards",
+      "claimed_at": "2026-01-20T22:32:30Z"
     },
     {
       "issue_number": 48,
