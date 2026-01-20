@@ -29,6 +29,7 @@
     24,
     25,
     26,
+    27,
     49,
     50,
     51,
@@ -181,7 +182,7 @@
     {
       "issue_number": 27,
       "title": "Phase 2: Implement get user comments endpoint",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768852765-12315",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768852765-12315",
       "dependencies": [],
@@ -192,7 +193,9 @@
         "feed"
       ],
       "branch": "feat/issue-27-implement-get-user-comments-endpoint",
-      "claimed_at": "2026-01-19T19:59:25Z"
+      "claimed_at": "2026-01-19T19:59:25Z",
+      "pr_number": 88,
+      "completed_at": "2026-01-20T07:06:55Z"
     },
     {
       "issue_number": 28,
