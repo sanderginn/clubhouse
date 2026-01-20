@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
@@ -20,6 +21,8 @@ const (
 	UserContextKey ContextKey = "user"
 	// SessionIDContextKey is the key for storing session ID in context
 	SessionIDContextKey ContextKey = "session_id"
+	// SectionIDContextKey is the key for storing the current section ID in context
+	SectionIDContextKey ContextKey = "section_id"
 )
 
 // ChainMiddleware applies middleware in order
@@ -72,6 +75,11 @@ func RequireAuth(redis *redis.Client) Middleware {
 			// Inject session and user into context
 			ctx := context.WithValue(r.Context(), SessionIDContextKey, sessionID)
 			ctx = context.WithValue(ctx, UserContextKey, session)
+			if sectionID := strings.TrimSpace(r.Header.Get("X-Section-ID")); sectionID != "" {
+				if parsedID, err := uuid.Parse(sectionID); err == nil {
+					ctx = context.WithValue(ctx, SectionIDContextKey, parsedID)
+				}
+			}
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -108,6 +116,11 @@ func RequireAdmin(redis *redis.Client) Middleware {
 			// Inject session and user into context
 			ctx := context.WithValue(r.Context(), SessionIDContextKey, sessionID)
 			ctx = context.WithValue(ctx, UserContextKey, session)
+			if sectionID := strings.TrimSpace(r.Header.Get("X-Section-ID")); sectionID != "" {
+				if parsedID, err := uuid.Parse(sectionID); err == nil {
+					ctx = context.WithValue(ctx, SectionIDContextKey, parsedID)
+				}
+			}
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})

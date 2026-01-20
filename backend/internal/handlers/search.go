@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/services"
 )
@@ -45,17 +46,23 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 	if scope == "section" {
 		sectionIDStr := strings.TrimSpace(r.URL.Query().Get("section_id"))
 		if sectionIDStr == "" {
-			writeError(w, http.StatusBadRequest, "SECTION_ID_REQUIRED", "Section ID is required for section scope")
-			return
+			if contextSectionID, err := middleware.GetSectionIDFromContext(r.Context()); err == nil {
+				sectionID = &contextSectionID
+			} else {
+				writeError(w, http.StatusBadRequest, "SECTION_ID_REQUIRED", "Section ID is required for section scope")
+				return
+			}
 		}
 
-		parsedID, err := uuid.Parse(sectionIDStr)
-		if err != nil {
-			writeError(w, http.StatusBadRequest, "INVALID_SECTION_ID", "Invalid section ID format")
-			return
-		}
+		if sectionIDStr != "" {
+			parsedID, err := uuid.Parse(sectionIDStr)
+			if err != nil {
+				writeError(w, http.StatusBadRequest, "INVALID_SECTION_ID", "Invalid section ID format")
+				return
+			}
 
-		sectionID = &parsedID
+			sectionID = &parsedID
+		}
 	} else if scope != "global" {
 		writeError(w, http.StatusBadRequest, "INVALID_SCOPE", "Scope must be 'section' or 'global'")
 		return

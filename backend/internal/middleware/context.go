@@ -64,3 +64,16 @@ func GetIsAdminFromContext(ctx context.Context) (bool, error) {
 	}
 	return session.IsAdmin, nil
 }
+
+// GetSectionIDFromContext extracts the current section ID from the request context
+func GetSectionIDFromContext(ctx context.Context) (uuid.UUID, error) {
+	sectionID := ctx.Value(SectionIDContextKey)
+	if sectionID == nil {
+		return uuid.Nil, fmt.Errorf("section id not found in context")
+	}
+	parsedID, ok := sectionID.(uuid.UUID)
+	if !ok {
+		return uuid.Nil, fmt.Errorf("invalid section id context type")
+	}
+	return parsedID, nil
+}
