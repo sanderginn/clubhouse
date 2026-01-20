@@ -22,7 +22,9 @@
     });
   }
 
-  $: hasQuery = $searchQuery.trim().length > 0;
+  $: normalizedQuery = $searchQuery.trim();
+  $: hasQuery = normalizedQuery.length > 0;
+  $: showResults = $lastSearchQuery && $lastSearchQuery === normalizedQuery;
 </script>
 
 <section class="space-y-4">
@@ -48,11 +50,11 @@
     <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
       <p class="text-red-600">{$searchError}</p>
     </div>
-  {:else if $lastSearchQuery && $searchResults.length === 0}
+  {:else if showResults && $searchResults.length === 0}
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
       <p class="text-gray-500">No results for "{$lastSearchQuery}".</p>
     </div>
-  {:else if !$lastSearchQuery}
+  {:else if !showResults}
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
       <p class="text-gray-500">Press Search to see results.</p>
     </div>
