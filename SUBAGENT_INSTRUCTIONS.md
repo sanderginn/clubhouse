@@ -48,7 +48,7 @@ Follow the issue description and acceptance criteria.
 ### 4a. Add Tests (When It Makes Sense)
 
 If you change or add backend logic, add or update **unit tests** (services/) and **handler tests** (handlers/) where applicable. If you change frontend logic, add **frontend unit tests** (stores/services) and **component tests** (Svelte) where reasonable. If tests are not reasonable for the change, state why in the PR description.
-If any newly added tests fail, **create follow-up issues per failing domain** and link them in the PR description.
+Tests should pass before finalizing an issue. If you’re explicitly instructed that tests may fail, **create follow-up issues per failing domain** and link them in the PR description.
 
 ### 5. Test Your Changes
 
@@ -95,7 +95,7 @@ The orchestrator will review your PR and either:
 2. **Work in the worktree** - not the main repo
 3. **Check existing code** - follow established patterns
 4. **Add tests when it makes sense** - include frontend tests; explain in PR if you didn’t add tests
-5. **Failing tests policy** - file follow-up issues for failing domains and link them in the PR
+5. **Failing tests policy** - tests must pass unless explicitly told otherwise; if allowed to fail, file follow-up issues and link them in the PR
 6. **Don't skip dependencies** - the script handles this automatically
 7. **Rebase if conflicts** - orchestrator will ask you to rebase, not fix it themselves
 
