@@ -68,12 +68,14 @@ func main() {
 	adminHandler := handlers.NewAdminHandler(dbConn)
 	reactionHandler := handlers.NewReactionHandler(dbConn)
 	userHandler := handlers.NewUserHandler(dbConn)
+	sectionHandler := handlers.NewSectionHandler(dbConn)
 
 	// API routes
 	mux.HandleFunc("/api/v1/auth/register", authHandler.Register)
 	mux.HandleFunc("/api/v1/auth/login", authHandler.Login)
 	mux.HandleFunc("/api/v1/auth/logout", authHandler.Logout)
 	mux.HandleFunc("/api/v1/auth/me", authHandler.GetMe)
+	mux.HandleFunc("/api/v1/sections", sectionHandler.ListSections)
 	mux.HandleFunc("/api/v1/sections/", postHandler.GetFeed)
 
 	// User routes (protected - requires auth)
