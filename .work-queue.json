@@ -73,6 +73,7 @@
     112,
     113,
     114,
+    136,
     137
   ],
   "issues": [
@@ -1250,7 +1251,7 @@
     {
       "issue_number": 136,
       "title": "Bug: New posts show 'Unknown' username and 'Invalid Date' timestamp",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768986845-58711",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768986845-58711",
       "dependencies": [],
@@ -1263,7 +1264,9 @@
         "critical"
       ],
       "branch": "fix/issue-136-new-posts-show-unknown-username-and-inva",
-      "claimed_at": "2026-01-21T09:14:05Z"
+      "claimed_at": "2026-01-21T09:14:05Z",
+      "pr_number": 148,
+      "completed_at": "2026-01-21T09:31:48Z"
     },
     {
       "issue_number": 137,
