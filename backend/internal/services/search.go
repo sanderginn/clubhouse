@@ -83,7 +83,7 @@ func (s *SearchService) Search(ctx context.Context, query string, scope string, 
 					OR l.search_vector @@ q.query
 				)
 				%s
-			GROUP BY p.id
+			GROUP BY p.id, q.query
 		),
 		comment_matches AS (
 			SELECT c.id,
@@ -100,7 +100,7 @@ func (s *SearchService) Search(ctx context.Context, query string, scope string, 
 					OR l.search_vector @@ q.query
 				)
 				%s
-			GROUP BY c.id
+			GROUP BY c.id, q.query
 		),
 		link_matches AS (
 			SELECT l.id,
