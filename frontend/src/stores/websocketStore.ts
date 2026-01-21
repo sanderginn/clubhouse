@@ -7,7 +7,13 @@ import { api } from '../services/api';
 import { mapApiComment } from './commentMapper';
 import { mapApiPost, type ApiPost } from './postMapper';
 
-type WebSocketStatus = 'disconnected' | 'connecting' | 'connected';
+type WebSocketStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+
+interface WebSocketError {
+  message: string;
+  timestamp: Date;
+  reconnectAttempt: number;
+}
 
 interface WsEvent<T = unknown> {
   type: string;
@@ -58,10 +64,12 @@ function hasComment(comments: Comment[] | undefined, commentId: string): boolean
 }
 
 const status = writable<WebSocketStatus>('disconnected');
+const lastError = writable<WebSocketError | null>(null);
 
 let socket: WebSocket | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let reconnectAttempts = 0;
+const maxReconnectAttempts = 10;
 let initialized = false;
 let lastAuthState = false;
 let currentSectionId: string | null = null;
@@ -115,8 +123,22 @@ function scheduleReconnect() {
   if (reconnectTimer || !lastAuthState) {
     return;
   }
+
+  if (reconnectAttempts >= maxReconnectAttempts) {
+    const error: WebSocketError = {
+      message: `Failed to reconnect after ${maxReconnectAttempts} attempts`,
+      timestamp: new Date(),
+      reconnectAttempt: reconnectAttempts,
+    };
+    lastError.set(error);
+    status.set('error');
+    console.error('[WebSocket] Max reconnection attempts reached:', error);
+    return;
+  }
+
   const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 10000);
   reconnectAttempts += 1;
+  console.log(`[WebSocket] Scheduling reconnection attempt ${reconnectAttempts} in ${delay}ms`);
   reconnectTimer = setTimeout(() => {
     reconnectTimer = null;
     connect();
@@ -128,12 +150,16 @@ function connect() {
     return;
   }
 
+  const wsUrl = getWebSocketUrl();
+  console.log(`[WebSocket] Attempting to connect to ${wsUrl} (attempt ${reconnectAttempts + 1})`);
   status.set('connecting');
 
-  socket = new WebSocket(getWebSocketUrl());
+  socket = new WebSocket(wsUrl);
 
   socket.addEventListener('open', () => {
+    console.log('[WebSocket] Connection established');
     reconnectAttempts = 0;
+    lastError.set(null);
     status.set('connected');
     if (currentSectionId) {
       subscribeToSection(currentSectionId);
@@ -208,23 +234,41 @@ function connect() {
     }
   });
 
-  socket.addEventListener('close', () => {
+  socket.addEventListener('close', (event) => {
+    console.log(`[WebSocket] Connection closed (code: ${event.code}, reason: ${event.reason || 'none'})`);
     socket = null;
     status.set('disconnected');
+
+    const error: WebSocketError = {
+      message: event.reason || `Connection closed with code ${event.code}`,
+      timestamp: new Date(),
+      reconnectAttempt: reconnectAttempts,
+    };
+    lastError.set(error);
+
     scheduleReconnect();
   });
 
-  socket.addEventListener('error', () => {
+  socket.addEventListener('error', (event) => {
+    console.error('[WebSocket] Connection error:', event);
+    const error: WebSocketError = {
+      message: 'WebSocket connection error - check authentication and network connectivity',
+      timestamp: new Date(),
+      reconnectAttempt: reconnectAttempts,
+    };
+    lastError.set(error);
     socket?.close();
   });
 }
 
 function disconnect() {
+  console.log('[WebSocket] Disconnecting');
   if (reconnectTimer) {
     clearTimeout(reconnectTimer);
     reconnectTimer = null;
   }
   reconnectAttempts = 0;
+  lastError.set(null);
   if (socket) {
     socket.close();
     socket = null;
@@ -266,12 +310,27 @@ function cleanup() {
   initialized = false;
 }
 
+function retry() {
+  console.log('[WebSocket] Manual retry requested');
+  reconnectAttempts = 0;
+  lastError.set(null);
+  if (lastAuthState && !socket) {
+    connect();
+  }
+}
+
 export const websocketStore = {
   init,
   cleanup,
+  retry,
   status,
+  lastError,
 };
 
 export const websocketStatus = {
   subscribe: status.subscribe,
+};
+
+export const websocketError = {
+  subscribe: lastError.subscribe,
 };
