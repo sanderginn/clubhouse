@@ -846,6 +846,41 @@
       "completed_at": "2026-01-20T21:36:04Z"
     },
     {
+      "issue_number": 47,
+      "title": "Phase 6: Setup Grafana dashboards",
+      "status": "completed",
+      "assigned_to": "agent-1768948350-2151",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768948350-2151",
+      "dependencies": [
+        44,
+        45,
+        46
+      ],
+      "phase": 6,
+      "labels": [
+        "backend",
+        "observability"
+      ],
+      "branch": "feat/issue-47-setup-grafana-dashboards",
+      "claimed_at": "2026-01-20T22:32:30Z",
+      "pr_number": 133,
+      "completed_at": "2026-01-20T23:06:27Z"
+    },
+    {
+      "issue_number": 48,
+      "title": "Phase 6: Write production deployment guide",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        47
+      ],
+      "phase": 6,
+      "labels": [
+        "devops"
+      ]
+    },
+    {
       "issue_number": 49,
       "title": "Phase 1: Initialize Svelte project",
       "status": "completed",
@@ -897,7 +932,7 @@
     },
     {
       "issue_number": 54,
-      "title": "Phase 3: Implement WebSocket integration (frontend)",
+      "title": "Phase 3: Implement WebSocket integration",
       "status": "completed",
       "assigned_to": "agent-1768915222-5997",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768915222-5997",
@@ -916,7 +951,7 @@
     },
     {
       "issue_number": 55,
-      "title": "Phase 4: Implement comments view (frontend)",
+      "title": "Phase 4: Implement comments view",
       "status": "completed",
       "assigned_to": "agent-1768916657-17393",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768916657-17393",
@@ -935,7 +970,7 @@
     },
     {
       "issue_number": 56,
-      "title": "Phase 4: Implement search (frontend)",
+      "title": "Phase 4: Implement search",
       "status": "completed",
       "assigned_to": "agent-1768916700-17893",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768916700-17893",
@@ -954,7 +989,7 @@
     },
     {
       "issue_number": 57,
-      "title": "Phase 5: Implement admin panel (frontend)",
+      "title": "Phase 5: Implement admin panel",
       "status": "completed",
       "assigned_to": "agent-1768939449-40733",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768939449-40733",
@@ -975,8 +1010,28 @@
       "pr_number": 123
     },
     {
+      "issue_number": 58,
+      "title": "Phase 6: Implement PWA features",
+      "status": "completed",
+      "assigned_to": "agent-1768948378-3294",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768948378-3294",
+      "dependencies": [
+        55,
+        57
+      ],
+      "phase": 6,
+      "labels": [
+        "frontend",
+        "pwa"
+      ],
+      "branch": "feat/issue-58-implement-pwa-features-frontend",
+      "claimed_at": "2026-01-20T22:32:58Z",
+      "pr_number": 134,
+      "completed_at": "2026-01-20T23:03:23Z"
+    },
+    {
       "issue_number": 59,
-      "title": "Phase 6: Implement Web Push notifications (frontend)",
+      "title": "Phase 6: Implement Web Push notifications",
       "status": "completed",
       "assigned_to": "agent-1768983077-39931",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768983077-39931",
@@ -996,7 +1051,7 @@
     },
     {
       "issue_number": 93,
-      "title": "Add frontend/backend services to docker-compose setup",
+      "title": "Add frontend/backend services to docker-compose",
       "status": "completed",
       "assigned_to": "agent-1768901835-46496",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768901835-46496",
@@ -1174,61 +1229,6 @@
       "completed_at": "2026-01-20T15:39:14Z"
     },
     {
-      "issue_number": 47,
-      "title": "Phase 6: Setup Grafana dashboards",
-      "status": "completed",
-      "assigned_to": "agent-1768948350-2151",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768948350-2151",
-      "dependencies": [
-        44,
-        45,
-        46
-      ],
-      "phase": 6,
-      "labels": [
-        "backend",
-        "observability"
-      ],
-      "branch": "feat/issue-47-setup-grafana-dashboards",
-      "claimed_at": "2026-01-20T22:32:30Z",
-      "pr_number": 133,
-      "completed_at": "2026-01-20T23:06:27Z"
-    },
-    {
-      "issue_number": 48,
-      "title": "Phase 6: Write production deployment guide",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
-      "dependencies": [
-        47
-      ],
-      "phase": 6,
-      "labels": [
-        "devops"
-      ]
-    },
-    {
-      "issue_number": 58,
-      "title": "Phase 6: Implement PWA features (frontend)",
-      "status": "completed",
-      "assigned_to": "agent-1768948378-3294",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768948378-3294",
-      "dependencies": [
-        55,
-        57
-      ],
-      "phase": 6,
-      "labels": [
-        "frontend",
-        "pwa"
-      ],
-      "branch": "feat/issue-58-implement-pwa-features-frontend",
-      "claimed_at": "2026-01-20T22:32:58Z",
-      "pr_number": 134,
-      "completed_at": "2026-01-20T23:03:23Z"
-    },
-    {
       "issue_number": 135,
       "title": "Phase 6: Backend Web Push API endpoints",
       "status": "available",
@@ -1239,26 +1239,6 @@
       "labels": [
         "backend"
       ]
-    },
-    {
-      "issue_number": 140,
-      "title": "Bug: Moderation panel infinite loading for pending users, blocks navigation",
-      "status": "completed",
-      "assigned_to": "agent-1768983548-44286",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768983548-44286",
-      "dependencies": [],
-      "phase": "bug-critical",
-      "priority": 1,
-      "labels": [
-        "bug",
-        "frontend",
-        "admin",
-        "critical"
-      ],
-      "branch": "fix/issue-140-moderation-panel-infinite-loading",
-      "claimed_at": "2026-01-21T08:19:47.516357Z",
-      "pr_number": 147,
-      "completed_at": "2026-01-21T11:35:03Z"
     },
     {
       "issue_number": 136,
@@ -1321,7 +1301,7 @@
     },
     {
       "issue_number": 139,
-      "title": "Bug: Admin moderation section in sidebar not fixed to viewport",
+      "title": "Bug: Admin moderation section in sidebar not fixed to viewport - scrolls with content",
       "status": "completed",
       "assigned_to": "agent-1769001574-90667",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769001574-90667",
@@ -1337,6 +1317,26 @@
       "claimed_at": "2026-01-21T13:19:34Z",
       "pr_number": 153,
       "completed_at": "2026-01-21T13:28:54Z"
+    },
+    {
+      "issue_number": 140,
+      "title": "Bug: Moderation panel infinite loading for pending users, blocks navigation",
+      "status": "completed",
+      "assigned_to": "agent-1768983548-44286",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768983548-44286",
+      "dependencies": [],
+      "phase": "bug-critical",
+      "priority": 1,
+      "labels": [
+        "bug",
+        "frontend",
+        "admin",
+        "critical"
+      ],
+      "branch": "fix/issue-140-moderation-panel-infinite-loading",
+      "claimed_at": "2026-01-21T08:19:47.516357Z",
+      "pr_number": 147,
+      "completed_at": "2026-01-21T11:35:03Z"
     },
     {
       "issue_number": 140,
@@ -1440,25 +1440,6 @@
       ]
     },
     {
-      "issue_number": 160,
-      "title": "Bug: Query error when performing a search",
-      "status": "completed",
-      "assigned_to": "agent-1769030670-91720",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769030670-91720",
-      "dependencies": [],
-      "phase": "bug-critical",
-      "priority": 2,
-      "labels": [
-        "bug",
-        "backend",
-        "search"
-      ],
-      "branch": "fix/issue-160-query-error-when-performing-a-search",
-      "claimed_at": "2026-01-21T21:24:30Z",
-      "pr_number": 165,
-      "completed_at": "2026-01-21T21:36:17Z"
-    },
-    {
       "issue_number": 151,
       "title": "Fix: Playwright e2e tests picked up by Vitest",
       "status": "completed",
@@ -1512,6 +1493,25 @@
       "completed_at": "2026-01-21T14:06:19Z"
     },
     {
+      "issue_number": 160,
+      "title": "Bug: Query error when performing a search",
+      "status": "completed",
+      "assigned_to": "agent-1769030670-91720",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769030670-91720",
+      "dependencies": [],
+      "phase": "bug-critical",
+      "priority": 2,
+      "labels": [
+        "bug",
+        "backend",
+        "search"
+      ],
+      "branch": "fix/issue-160-query-error-when-performing-a-search",
+      "claimed_at": "2026-01-21T21:24:30Z",
+      "pr_number": 165,
+      "completed_at": "2026-01-21T21:36:17Z"
+    },
+    {
       "issue_number": 162,
       "title": "Frontend freezes with WebSocket connection error",
       "status": "completed",
@@ -1541,6 +1541,22 @@
       "priority": 13,
       "labels": [
         "frontend",
+        "ui"
+      ]
+    },
+    {
+      "issue_number": 166,
+      "title": "Bug: Link previews vanish after posting",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug-medium",
+      "priority": 8,
+      "labels": [
+        "bug",
+        "frontend",
+        "links",
         "ui"
       ]
     }
