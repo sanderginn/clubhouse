@@ -1547,9 +1547,9 @@
     {
       "issue_number": 166,
       "title": "Bug: Link previews vanish after posting",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769031895-95928",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769031895-95928",
       "dependencies": [],
       "phase": "bug-medium",
       "priority": 8,
@@ -1558,7 +1558,9 @@
         "frontend",
         "links",
         "ui"
-      ]
+      ],
+      "branch": "fix/issue-166-link-previews-vanish-after-posting",
+      "claimed_at": "2026-01-21T21:44:55Z"
     }
   ]
 }
