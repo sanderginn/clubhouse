@@ -22,6 +22,23 @@ export default defineConfig({
         changeOrigin: true,
         ws: true,
         secure: false,
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('[Vite Proxy] Error:', err.message);
+          });
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('[Vite Proxy] Request:', req.method, req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.log('[Vite Proxy] Response:', proxyRes.statusCode, req.url);
+          });
+          proxy.on('open', (proxySocket) => {
+            console.log('[Vite Proxy] WebSocket connection opened');
+          });
+          proxy.on('close', (res, socket, head) => {
+            console.log('[Vite Proxy] WebSocket connection closed');
+          });
+        },
       },
     },
   },
