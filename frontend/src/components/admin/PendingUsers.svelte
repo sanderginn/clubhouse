@@ -46,6 +46,9 @@
         controller ? { signal: controller.signal } : undefined
       );
     } catch (error) {
+      if (pendingUsersAbortController !== controller) {
+        return;
+      }
       if (error instanceof Error && error.name === 'AbortError') {
         errorMessage = 'Request timed out. Please try again.';
       } else {
@@ -54,9 +57,9 @@
     } finally {
       if (pendingUsersAbortController === controller) {
         pendingUsersAbortController = null;
+        clearPendingUsersTimeout();
+        isLoading = false;
       }
-      clearPendingUsersTimeout();
-      isLoading = false;
     }
   };
 
