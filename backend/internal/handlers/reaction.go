@@ -211,7 +211,14 @@ func (h *ReactionHandler) AddReactionToComment(w http.ResponseWriter, r *http.Re
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode create reaction response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusCreated,
+			Err:        err,
+		})
+	}
 }
 
 // RemoveReactionFromComment handles DELETE /api/v1/comments/{commentId}/reactions/{emoji}
