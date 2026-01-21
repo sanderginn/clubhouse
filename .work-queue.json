@@ -1314,9 +1314,9 @@
     {
       "issue_number": 139,
       "title": "Bug: Admin moderation section in sidebar not fixed to viewport",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769001574-90667",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769001574-90667",
       "dependencies": [],
       "phase": "bug-high",
       "priority": 5,
@@ -1324,7 +1324,9 @@
         "bug",
         "frontend",
         "layout"
-      ]
+      ],
+      "branch": "fix/issue-139-admin-moderation-section-in-sidebar-not-",
+      "claimed_at": "2026-01-21T13:19:34Z"
     },
     {
       "issue_number": 141,
