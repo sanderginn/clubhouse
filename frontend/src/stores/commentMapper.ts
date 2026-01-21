@@ -12,6 +12,7 @@ export interface ApiComment {
   user?: ApiUser;
   replies?: ApiComment[];
   reaction_counts?: Record<string, number>;
+  viewer_reactions?: string[];
   created_at: string;
   updated_at?: string;
 }
@@ -48,6 +49,7 @@ export function mapApiComment(apiComment: ApiComment): Comment {
       : undefined,
     replies: apiComment.replies?.map(mapApiComment) ?? [],
     reactionCounts: apiComment.reaction_counts ?? undefined,
+    viewerReactions: apiComment.viewer_reactions,
     createdAt: apiComment.created_at,
     updatedAt: apiComment.updated_at,
   };
