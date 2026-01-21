@@ -822,7 +822,9 @@ func (s *CommentService) AdminRestoreComment(ctx context.Context, commentID uuid
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	// Check if comment exists and is soft-deleted
 	var exists bool
