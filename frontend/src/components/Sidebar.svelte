@@ -28,11 +28,11 @@
 
 <!-- Sidebar -->
 <aside
-  class="fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out
+  class="fixed top-16 bottom-0 left-0 z-50 lg:z-30 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out
     {sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}"
   aria-label="Sidebar"
 >
-  <div class="h-full flex flex-col pt-16 lg:pt-0">
+  <div class="h-full flex flex-col">
     <!-- Mobile header in sidebar -->
     <div class="lg:hidden flex items-center justify-between h-16 px-4 border-b border-gray-200">
       <span class="text-lg font-bold text-gray-900">Sections</span>
