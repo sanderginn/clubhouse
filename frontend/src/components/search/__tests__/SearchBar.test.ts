@@ -1,28 +1,34 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { render, fireEvent, screen, cleanup } from '@testing-library/svelte';
 import { createRequire } from 'module';
+import type { Writable } from 'svelte/store';
 
 const require = createRequire(import.meta.url);
 const { writable } = require('svelte/store') as typeof import('svelte/store');
 
+interface SearchState {
+  query: string;
+  scope: string;
+}
+
 const storeRefs: {
-  activeSection: ReturnType<typeof writable>;
-  state: ReturnType<typeof writable>;
+  activeSection: Writable<{ id: string; name: string } | null>;
+  state: Writable<SearchState>;
   searchStore: {
-    subscribe: ReturnType<typeof writable>['subscribe'];
-    setQuery: ReturnType<typeof vi.fn>;
-    setScope: ReturnType<typeof vi.fn>;
-    search: ReturnType<typeof vi.fn>;
-    clear: ReturnType<typeof vi.fn>;
+    subscribe: Writable<SearchState>['subscribe'];
+    setQuery: Mock;
+    setScope: Mock;
+    search: Mock;
+    clear: Mock;
   };
-} = {} as any;
+} = {} as typeof storeRefs;
 
 vi.mock('../../../stores', () => {
   storeRefs.activeSection = writable<{ id: string; name: string } | null>({
     id: 'section-1',
     name: 'Music',
   });
-  storeRefs.state = writable({
+  storeRefs.state = writable<SearchState>({
     query: '',
     scope: 'section',
   });

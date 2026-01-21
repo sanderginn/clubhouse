@@ -12,7 +12,7 @@
     uiStore.setIsMobile(mediaQuery.matches);
 
     const handleResize = (event?: MediaQueryListEvent) => {
-      uiStore.setIsMobile(event?.matches ?? mediaQuery.matches);
+      uiStore.setIsMobile(event?.matches ?? mediaQuery?.matches ?? false);
     };
 
     handleResize();
@@ -20,8 +20,9 @@
       mediaQuery.addEventListener('change', handleResize);
       cleanupListener = () => mediaQuery?.removeEventListener('change', handleResize);
     } else {
-      mediaQuery.addListener(handleResize);
-      cleanupListener = () => mediaQuery?.removeListener(handleResize);
+      // Legacy browsers support addListener/removeListener
+      (mediaQuery as MediaQueryList).addListener(handleResize);
+      cleanupListener = () => (mediaQuery as MediaQueryList | null)?.removeListener(handleResize);
     }
   }
 

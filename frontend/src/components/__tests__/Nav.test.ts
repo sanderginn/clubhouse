@@ -20,7 +20,7 @@ describe('Nav', () => {
     await fireEvent.click(button);
 
     expect(setActiveSpy).toHaveBeenCalled();
-    const call = setActiveSpy.mock.calls[0][0];
-    expect(call.id).toBe('section-2');
+    const call = setActiveSpy.mock.calls[0]?.[0];
+    expect(call?.id).toBe('section-2');
   });
 });
