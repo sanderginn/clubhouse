@@ -217,6 +217,7 @@ Later expansions: suspend users, configure sections, custom emojis.
 - **Database tests** use transactions (rollback after each test)
 - **WebSocket tests** mock Redis or use real connection
 - **Frontend unit tests** for stores/services and component tests (Svelte) using Vitest + jsdom + Testing Library
+- **Frontend typecheck**: Run `cd frontend && npm run check` for any frontend changes
 - **Failing tests policy**: Tests should pass before finalizing an issue. If explicitly instructed that tests may fail, file follow-up issues for each failing domain and link them in the PR.
 
 ## Deployment
