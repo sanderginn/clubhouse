@@ -464,9 +464,9 @@ func (s *UserService) GetUserProfile(ctx context.Context, id uuid.UUID) (*models
 func (s *UserService) getCommentReactions(ctx context.Context, commentID uuid.UUID, viewerID uuid.UUID) (map[string]int, []string, error) {
 	// Get counts
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT emoji, COUNT(*) 
-		FROM reactions 
-		WHERE comment_id = $1 AND deleted_at IS NULL 
+		SELECT emoji, COUNT(*)
+		FROM reactions
+		WHERE comment_id = $1 AND deleted_at IS NULL
 		GROUP BY emoji
 	`, commentID)
 	if err != nil {
@@ -487,8 +487,8 @@ func (s *UserService) getCommentReactions(ctx context.Context, commentID uuid.UU
 	var viewerReactions []string
 	if viewerID != uuid.Nil {
 		rows, err := s.db.QueryContext(ctx, `
-			SELECT emoji 
-			FROM reactions 
+			SELECT emoji
+			FROM reactions
 			WHERE comment_id = $1 AND user_id = $2 AND deleted_at IS NULL
 		`, commentID, viewerID)
 		if err != nil {

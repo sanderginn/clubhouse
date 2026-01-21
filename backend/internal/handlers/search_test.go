@@ -209,25 +209,16 @@ func TestSearchSectionScopeUsesContextSectionID(t *testing.T) {
 		WithArgs(postID).
 		WillReturnRows(postRows)
 
-	        mock.ExpectQuery(regexp.QuoteMeta("FROM links")).
+	mock.ExpectQuery(regexp.QuoteMeta("FROM links")).
+		WithArgs(postID).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "url", "metadata", "created_at"}))
 
-	                WithArgs(postID).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT emoji, COUNT")).
+		WithArgs(postID).
+		WillReturnRows(sqlmock.NewRows([]string{"emoji", "count"}))
 
-	                WillReturnRows(sqlmock.NewRows([]string{"id", "url", "metadata", "created_at"}))
+	commentRows := sqlmock.NewRows([]string{
 
-	
-
-	        mock.ExpectQuery(regexp.QuoteMeta("SELECT emoji, COUNT")).
-
-	                WithArgs(postID).
-
-	                WillReturnRows(sqlmock.NewRows([]string{"emoji", "count"}))
-
-	
-
-	        commentRows := sqlmock.NewRows([]string{
-
-	
 		"id", "user_id", "post_id", "parent_comment_id", "content", "created_at", "updated_at", "deleted_at", "deleted_by_user_id",
 		"id", "username", "email", "profile_picture_url", "bio", "is_admin", "created_at",
 	}).AddRow(
@@ -239,25 +230,15 @@ func TestSearchSectionScopeUsesContextSectionID(t *testing.T) {
 		WithArgs(commentID).
 		WillReturnRows(commentRows)
 
-	        mock.ExpectQuery(regexp.QuoteMeta("FROM links")).
+	mock.ExpectQuery(regexp.QuoteMeta("FROM links")).
+		WithArgs(commentID).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "url", "metadata", "created_at"}))
 
-	                WithArgs(commentID).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT emoji, COUNT")).
+		WithArgs(commentID).
+		WillReturnRows(sqlmock.NewRows([]string{"emoji", "count"}))
 
-	                WillReturnRows(sqlmock.NewRows([]string{"id", "url", "metadata", "created_at"}))
-
-	
-
-	        mock.ExpectQuery(regexp.QuoteMeta("SELECT emoji, COUNT")).
-
-	                WithArgs(commentID).
-
-	                WillReturnRows(sqlmock.NewRows([]string{"emoji", "count"}))
-
-	
-
-	        linkRows := sqlmock.NewRows([]string{"id", "url", "metadata", "post_id", "comment_id"}).
-
-	
+	linkRows := sqlmock.NewRows([]string{"id", "url", "metadata", "post_id", "comment_id"}).
 		AddRow(linkID, "https://example.com", []byte(`{"title":"Example"}`), postID, nil)
 
 	mock.ExpectQuery(`FROM links\s+WHERE id = \$1`).
@@ -370,25 +351,16 @@ func TestSearchSuccessGlobal(t *testing.T) {
 		WithArgs(postID).
 		WillReturnRows(postRows)
 
-	        mock.ExpectQuery(regexp.QuoteMeta("FROM links")).
+	mock.ExpectQuery(regexp.QuoteMeta("FROM links")).
+		WithArgs(postID).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "url", "metadata", "created_at"}))
 
-	                WithArgs(postID).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT emoji, COUNT")).
+		WithArgs(postID).
+		WillReturnRows(sqlmock.NewRows([]string{"emoji", "count"}))
 
-	                WillReturnRows(sqlmock.NewRows([]string{"id", "url", "metadata", "created_at"}))
+	commentRows := sqlmock.NewRows([]string{
 
-	
-
-	        mock.ExpectQuery(regexp.QuoteMeta("SELECT emoji, COUNT")).
-
-	                WithArgs(postID).
-
-	                WillReturnRows(sqlmock.NewRows([]string{"emoji", "count"}))
-
-	
-
-	        commentRows := sqlmock.NewRows([]string{
-
-	
 		"id", "user_id", "post_id", "parent_comment_id", "content", "created_at", "updated_at", "deleted_at", "deleted_by_user_id",
 		"id", "username", "email", "profile_picture_url", "bio", "is_admin", "created_at",
 	}).AddRow(
@@ -400,25 +372,15 @@ func TestSearchSuccessGlobal(t *testing.T) {
 		WithArgs(commentID).
 		WillReturnRows(commentRows)
 
-	        mock.ExpectQuery(regexp.QuoteMeta("FROM links")).
+	mock.ExpectQuery(regexp.QuoteMeta("FROM links")).
+		WithArgs(commentID).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "url", "metadata", "created_at"}))
 
-	                WithArgs(commentID).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT emoji, COUNT")).
+		WithArgs(commentID).
+		WillReturnRows(sqlmock.NewRows([]string{"emoji", "count"}))
 
-	                WillReturnRows(sqlmock.NewRows([]string{"id", "url", "metadata", "created_at"}))
-
-	
-
-	        mock.ExpectQuery(regexp.QuoteMeta("SELECT emoji, COUNT")).
-
-	                WithArgs(commentID).
-
-	                WillReturnRows(sqlmock.NewRows([]string{"emoji", "count"}))
-
-	
-
-	        linkRows := sqlmock.NewRows([]string{"id", "url", "metadata", "post_id", "comment_id"}).
-
-	
+	linkRows := sqlmock.NewRows([]string{"id", "url", "metadata", "post_id", "comment_id"}).
 		AddRow(linkID, "https://example.com", []byte(`{"title":"Example"}`), postID, nil)
 
 	mock.ExpectQuery(`FROM links\s+WHERE id = \$1`).

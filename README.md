@@ -110,6 +110,17 @@ See [DESIGN.md](DESIGN.md) for complete system design.
 
 See [AGENTS.md](AGENTS.md) for AI agent development guidelines.
 
+## Pre-commit Checks
+
+Before committing and pushing, run:
+```bash
+# Run checks only for files changed in the current changeset
+prek run
+
+# Or run everything
+prek run --all-files
+```
+
 ## License
 
 MIT

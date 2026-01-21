@@ -7,9 +7,9 @@ CREATE TABLE reactions (
   emoji VARCHAR(10) NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT now(),
   deleted_at TIMESTAMP,
-  
+
   CONSTRAINT reaction_target CHECK (
-    (post_id IS NOT NULL AND comment_id IS NULL) OR 
+    (post_id IS NOT NULL AND comment_id IS NULL) OR
     (post_id IS NULL AND comment_id IS NOT NULL)
   ),
   CONSTRAINT unique_post_reaction UNIQUE(user_id, post_id, emoji),

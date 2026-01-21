@@ -157,7 +157,7 @@ function createPostStore() {
           }
           const viewerReactions = new Set(post.viewerReactions ?? []);
           const counts = { ...(post.reactionCounts ?? {}) };
-          
+
           if (viewerReactions.has(emoji)) {
             viewerReactions.delete(emoji);
             const next = (counts[emoji] ?? 0) - 1;
@@ -167,7 +167,7 @@ function createPostStore() {
             viewerReactions.add(emoji);
             counts[emoji] = (counts[emoji] ?? 0) + 1;
           }
-          
+
           return {
             ...post,
             reactionCounts: counts,

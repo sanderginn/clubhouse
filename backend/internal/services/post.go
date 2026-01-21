@@ -146,8 +146,8 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 // GetPostByID retrieves a post by ID with all related data
 func (s *PostService) GetPostByID(ctx context.Context, postID uuid.UUID, userID uuid.UUID) (*models.Post, error) {
 	query := `
-		SELECT 
-			p.id, p.user_id, p.section_id, p.content, 
+		SELECT
+			p.id, p.user_id, p.section_id, p.content,
 			p.created_at, p.updated_at, p.deleted_at, p.deleted_by_user_id,
 			u.id, u.username, u.email, u.profile_picture_url, u.bio, u.is_admin, u.created_at,
 			COALESCE(COUNT(DISTINCT c.id), 0) as comment_count
@@ -243,9 +243,9 @@ func (s *PostService) getPostLinks(ctx context.Context, postID uuid.UUID) ([]mod
 func (s *PostService) getPostReactions(ctx context.Context, postID uuid.UUID, viewerID uuid.UUID) (map[string]int, []string, error) {
 	// Get counts
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT emoji, COUNT(*) 
-		FROM reactions 
-		WHERE post_id = $1 AND deleted_at IS NULL 
+		SELECT emoji, COUNT(*)
+		FROM reactions
+		WHERE post_id = $1 AND deleted_at IS NULL
 		GROUP BY emoji
 	`, postID)
 	if err != nil {
@@ -266,8 +266,8 @@ func (s *PostService) getPostReactions(ctx context.Context, postID uuid.UUID, vi
 	var viewerReactions []string
 	if viewerID != uuid.Nil {
 		rows, err := s.db.QueryContext(ctx, `
-			SELECT emoji 
-			FROM reactions 
+			SELECT emoji
+			FROM reactions
 			WHERE post_id = $1 AND user_id = $2 AND deleted_at IS NULL
 		`, postID, viewerID)
 		if err != nil {
@@ -295,8 +295,8 @@ func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *
 
 	// Build base query
 	query := `
-		SELECT 
-			p.id, p.user_id, p.section_id, p.content, 
+		SELECT
+			p.id, p.user_id, p.section_id, p.content,
 			p.created_at, p.updated_at, p.deleted_at, p.deleted_by_user_id,
 			u.id, u.username, u.email, u.profile_picture_url, u.bio, u.is_admin, u.created_at,
 			COALESCE(COUNT(DISTINCT c.id), 0) as comment_count
@@ -434,8 +434,8 @@ func (s *PostService) DeletePost(ctx context.Context, postID uuid.UUID, userID u
 func (s *PostService) RestorePost(ctx context.Context, postID uuid.UUID, userID uuid.UUID, isAdmin bool) (*models.Post, error) {
 	// First, fetch the deleted post
 	query := `
-		SELECT 
-			p.id, p.user_id, p.section_id, p.content, 
+		SELECT
+			p.id, p.user_id, p.section_id, p.content,
 			p.created_at, p.updated_at, p.deleted_at, p.deleted_by_user_id,
 			u.id, u.username, u.email, u.profile_picture_url, u.bio, u.is_admin, u.created_at,
 			COALESCE(COUNT(DISTINCT c.id), 0) as comment_count

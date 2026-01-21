@@ -153,7 +153,7 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 // GetCommentByID retrieves a comment by ID with all related data
 func (s *CommentService) GetCommentByID(ctx context.Context, commentID uuid.UUID, userID uuid.UUID) (*models.Comment, error) {
 	query := `
-		SELECT 
+		SELECT
 			c.id, c.user_id, c.post_id, c.parent_comment_id, c.content,
 			c.created_at, c.updated_at, c.deleted_at, c.deleted_by_user_id,
 			u.id, u.username, u.email, u.profile_picture_url, u.bio, u.is_admin, u.created_at
@@ -246,9 +246,9 @@ func (s *CommentService) getCommentLinks(ctx context.Context, commentID uuid.UUI
 func (s *CommentService) getCommentReactions(ctx context.Context, commentID uuid.UUID, viewerID uuid.UUID) (map[string]int, []string, error) {
 	// Get counts
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT emoji, COUNT(*) 
-		FROM reactions 
-		WHERE comment_id = $1 AND deleted_at IS NULL 
+		SELECT emoji, COUNT(*)
+		FROM reactions
+		WHERE comment_id = $1 AND deleted_at IS NULL
 		GROUP BY emoji
 	`, commentID)
 	if err != nil {
@@ -269,8 +269,8 @@ func (s *CommentService) getCommentReactions(ctx context.Context, commentID uuid
 	var viewerReactions []string
 	if viewerID != uuid.Nil {
 		rows, err := s.db.QueryContext(ctx, `
-			SELECT emoji 
-			FROM reactions 
+			SELECT emoji
+			FROM reactions
 			WHERE comment_id = $1 AND user_id = $2 AND deleted_at IS NULL
 		`, commentID, viewerID)
 		if err != nil {
@@ -335,8 +335,8 @@ func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID
 
 	// Build query for top-level comments
 	query := `
-		SELECT 
-			c.id, c.user_id, c.post_id, c.parent_comment_id, c.content, 
+		SELECT
+			c.id, c.user_id, c.post_id, c.parent_comment_id, c.content,
 			c.created_at, c.updated_at, c.deleted_at, c.deleted_by_user_id,
 			u.id, u.username, u.email, u.profile_picture_url, u.bio, u.is_admin, u.created_at
 		FROM comments c
@@ -458,8 +458,8 @@ func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID
 // getCommentReplies retrieves all replies to a comment
 func (s *CommentService) getCommentReplies(ctx context.Context, parentCommentID uuid.UUID, userID uuid.UUID) ([]models.Comment, error) {
 	query := `
-		SELECT 
-			c.id, c.user_id, c.post_id, c.parent_comment_id, c.content, 
+		SELECT
+			c.id, c.user_id, c.post_id, c.parent_comment_id, c.content,
 			c.created_at, c.updated_at, c.deleted_at, c.deleted_by_user_id,
 			u.id, u.username, u.email, u.profile_picture_url, u.bio, u.is_admin, u.created_at
 		FROM comments c
@@ -603,7 +603,7 @@ func (s *CommentService) DeleteComment(ctx context.Context, commentID uuid.UUID,
 // Only the comment owner (within 7 days) or an admin can restore
 func (s *CommentService) RestoreComment(ctx context.Context, commentID uuid.UUID, userID uuid.UUID, isAdmin bool) (*models.Comment, error) {
 	query := `
-		SELECT 
+		SELECT
 			c.id, c.user_id, c.post_id, c.parent_comment_id, c.content,
 			c.created_at, c.updated_at, c.deleted_at, c.deleted_by_user_id,
 			u.id, u.username, u.email, u.profile_picture_url, u.bio, u.is_admin, u.created_at

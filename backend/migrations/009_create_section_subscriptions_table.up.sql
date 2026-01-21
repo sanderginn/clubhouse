@@ -3,7 +3,7 @@ CREATE TABLE section_subscriptions (
   user_id UUID NOT NULL REFERENCES users(id),
   section_id UUID NOT NULL REFERENCES sections(id),
   opted_out_at TIMESTAMP NOT NULL DEFAULT now(),
-  
+
   PRIMARY KEY (user_id, section_id)
 );
 

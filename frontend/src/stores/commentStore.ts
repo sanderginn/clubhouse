@@ -89,7 +89,7 @@ function createCommentStore() {
       if (comment.id === commentId) {
         const viewerReactions = new Set(comment.viewerReactions ?? []);
         const counts = { ...(comment.reactionCounts ?? {}) };
-        
+
         if (viewerReactions.has(emoji)) {
           viewerReactions.delete(emoji);
           const next = (counts[emoji] ?? 0) - 1;
@@ -99,7 +99,7 @@ function createCommentStore() {
           viewerReactions.add(emoji);
           counts[emoji] = (counts[emoji] ?? 0) + 1;
         }
-        
+
         return {
           ...comment,
           reactionCounts: counts,

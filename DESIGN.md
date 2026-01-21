@@ -1,7 +1,7 @@
 # Clubhouse - Design Document
 
-**Version:** 1.0  
-**Date:** January 16, 2026  
+**Version:** 1.0
+**Date:** January 16, 2026
 **Status:** Specification Complete, Ready for Implementation
 
 ---
@@ -240,9 +240,9 @@ CREATE TABLE reactions (
   emoji VARCHAR(10) NOT NULL,
   created_at TIMESTAMP DEFAULT now(),
   deleted_at TIMESTAMP,
-  
+
   CONSTRAINT reaction_target CHECK (
-    (post_id IS NOT NULL AND comment_id IS NULL) OR 
+    (post_id IS NOT NULL AND comment_id IS NULL) OR
     (post_id IS NULL AND comment_id IS NOT NULL)
   ),
   UNIQUE(user_id, post_id, emoji),
@@ -259,9 +259,9 @@ CREATE TABLE links (
   url TEXT NOT NULL,
   metadata JSONB,  -- {title, description, image_url, provider, ...}
   created_at TIMESTAMP DEFAULT now(),
-  
+
   CONSTRAINT link_target CHECK (
-    (post_id IS NOT NULL AND comment_id IS NULL) OR 
+    (post_id IS NOT NULL AND comment_id IS NULL) OR
     (post_id IS NULL AND comment_id IS NOT NULL)
   )
 );
@@ -275,9 +275,9 @@ CREATE TABLE mentions (
   comment_id UUID REFERENCES comments(id),
   mentioned_user_id UUID NOT NULL REFERENCES users(id),
   created_at TIMESTAMP DEFAULT now(),
-  
+
   CONSTRAINT mention_target CHECK (
-    (post_id IS NOT NULL AND comment_id IS NULL) OR 
+    (post_id IS NOT NULL AND comment_id IS NULL) OR
     (post_id IS NULL AND comment_id IS NOT NULL)
   )
 );
@@ -289,7 +289,7 @@ CREATE TABLE section_subscriptions (
   user_id UUID NOT NULL REFERENCES users(id),
   section_id UUID NOT NULL REFERENCES sections(id),
   opted_out_at TIMESTAMP DEFAULT now(),
-  
+
   PRIMARY KEY (user_id, section_id)
 );
 -- No row = user is subscribed (default)
