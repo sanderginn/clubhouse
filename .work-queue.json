@@ -1583,6 +1583,20 @@
         "devops",
         "ci"
       ]
+    },
+    {
+      "issue_number": 170,
+      "title": "Chore: Production-ready deployment checklist",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "devops",
+      "priority": 9,
+      "labels": [
+        "devops",
+        "deployment"
+      ]
     }
   ]
 }
