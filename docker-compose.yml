@@ -89,6 +89,8 @@ services:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
       GF_INSTALL_PLUGINS: grafana-piechart-panel
+      GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS: ""
+      GF_FEATURE_TOGGLES_ENABLE: ""
     ports:
       - "3000:3000"
     volumes:

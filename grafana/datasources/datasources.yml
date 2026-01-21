@@ -26,7 +26,7 @@ datasources:
     access: proxy
     jsonData:
       httpMethod: GET
-      streamingEnabled: true
+      streamingEnabled: false
       tracesToLogsV2:
         datasourceUid: loki
       tracesToMetrics:
