@@ -12,13 +12,13 @@ import (
 )
 
 type metrics struct {
-	httpRequestCount        metric.Int64Counter
-	httpRequestDuration     metric.Float64Histogram
-	websocketConnections    metric.Int64UpDownCounter
-	websocketConnectsTotal  metric.Int64Counter
+	httpRequestCount          metric.Int64Counter
+	httpRequestDuration       metric.Float64Histogram
+	websocketConnections      metric.Int64UpDownCounter
+	websocketConnectsTotal    metric.Int64Counter
 	websocketDisconnectsTotal metric.Int64Counter
-	postsCreated            metric.Int64Counter
-	commentsCreated         metric.Int64Counter
+	postsCreated              metric.Int64Counter
+	commentsCreated           metric.Int64Counter
 }
 
 var (

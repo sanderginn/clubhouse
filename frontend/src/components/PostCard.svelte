@@ -14,7 +14,7 @@
     const hasReacted = userReactions.has(emoji);
     // Optimistic update
     postStore.toggleReaction(post.id, emoji);
-    
+
     try {
       if (hasReacted) {
         await api.removePostReaction(post.id, emoji);

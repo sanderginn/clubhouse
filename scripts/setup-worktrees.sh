@@ -27,19 +27,19 @@ AGENT_NUM=1
 while IFS='|' read -r ISSUE_NUM BRANCH_NAME ISSUE_TITLE; do
   WORKTREE_PATH="$WORKTREES_DIR/agent-$AGENT_NUM"
   AGENT_NAME="agent-$AGENT_NUM"
-  
+
   echo ""
   echo "Creating worktree for issue #$ISSUE_NUM: $ISSUE_TITLE"
   echo "  Branch: $BRANCH_NAME"
   echo "  Worktree: $WORKTREE_PATH"
-  
+
   # Create worktree with new branch
   git -C "$REPO_ROOT" worktree add "$WORKTREE_PATH" -b "$BRANCH_NAME" main
-  
+
   # Update work queue for this issue
   jq ".issues[] |= if .issue_number == $ISSUE_NUM then .status = \"in_progress\" | .assigned_to = \"$AGENT_NAME\" else . end" "$WORK_QUEUE" > "$WORK_QUEUE.tmp"
   mv "$WORK_QUEUE.tmp" "$WORK_QUEUE"
-  
+
   # Generate command for agent
   AGENT_CMD="cd '$WORKTREE_PATH' && bash -c 'source /dev/stdin' << 'EOF'
 # Issue #$ISSUE_NUM: $ISSUE_TITLE
@@ -57,10 +57,10 @@ echo \"After PR is merged by orchestrator, your work is done!\"
 echo \"\"
 EOF
 "
-  
+
   AGENT_COMMANDS="$AGENT_COMMANDS$AGENT_CMD
 "
-  
+
   AGENT_NUM=$((AGENT_NUM + 1))
 done <<< "$AVAILABLE_ISSUES"
 

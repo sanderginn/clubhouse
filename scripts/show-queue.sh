@@ -30,20 +30,20 @@ deps_satisfied() {
     local issue_number=$1
     local deps
     deps=$(jq -r ".issues[] | select(.issue_number == $issue_number) | .dependencies | .[]" "$WORK_QUEUE" 2>/dev/null || echo "")
-    
+
     if [ -z "$deps" ]; then
         return 0
     fi
-    
+
     local completed
     completed=$(get_completed)
-    
+
     for dep in $deps; do
         if ! echo "$completed" | grep -q "^${dep}$"; then
             return 1
         fi
     done
-    
+
     return 0
 }
 
@@ -111,7 +111,7 @@ show_summary() {
     available=$(jq '[.issues[] | select(.status == "available")] | length' "$WORK_QUEUE")
     in_progress=$(jq '[.issues[] | select(.status == "in_progress")] | length' "$WORK_QUEUE")
     completed=$(jq '.completed_issues | length' "$WORK_QUEUE")
-    
+
     echo "════════════════════════════════════════════════════════════════"
     echo "                    CLUBHOUSE WORK QUEUE STATUS"
     echo "════════════════════════════════════════════════════════════════"

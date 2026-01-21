@@ -6,9 +6,9 @@ CREATE TABLE links (
   url TEXT NOT NULL,
   metadata JSONB,
   created_at TIMESTAMP NOT NULL DEFAULT now(),
-  
+
   CONSTRAINT link_target CHECK (
-    (post_id IS NOT NULL AND comment_id IS NULL) OR 
+    (post_id IS NOT NULL AND comment_id IS NULL) OR
     (post_id IS NULL AND comment_id IS NOT NULL)
   )
 );

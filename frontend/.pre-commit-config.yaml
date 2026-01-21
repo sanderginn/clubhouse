@@ -1,0 +1,25 @@
+repos:
+  - repo: local
+    hooks:
+      - id: eslint
+        name: eslint
+        entry: npx eslint --ext .js,.ts,.svelte --fix
+        language: system
+        files: \\.(js|ts|svelte)$
+      - id: prettier
+        name: prettier
+        entry: npx prettier --write
+        language: system
+        files: \\.(js|ts|svelte|json|ya?ml|md)$
+      - id: svelte-check
+        name: svelte-check
+        entry: npm run check
+        language: system
+        pass_filenames: false
+        files: \\.(js|ts|svelte)$
+      - id: vitest
+        name: vitest
+        entry: npm run test
+        language: system
+        pass_filenames: false
+        files: \\.(js|ts|svelte)$

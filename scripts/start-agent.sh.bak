@@ -42,7 +42,7 @@ trap cleanup EXIT
 acquire_lock() {
     local timeout=30
     local waited=0
-    
+
     while [ -f "$LOCK_FILE" ]; do
         if [ $waited -ge $timeout ]; then
             log_error "Timeout waiting for lock. Another agent may be stuck."
@@ -52,7 +52,7 @@ acquire_lock() {
         sleep 1
         waited=$((waited + 1))
     done
-    
+
     echo $$ > "$LOCK_FILE"
 }
 
@@ -62,7 +62,7 @@ get_completed_issues() {
     completed_array=$(jq -r '.completed_issues // [] | .[]' "$WORK_QUEUE" 2>/dev/null || echo "")
     local completed_status
     completed_status=$(jq -r '.issues[] | select(.status == "completed") | .issue_number' "$WORK_QUEUE" 2>/dev/null || echo "")
-    
+
     echo "$completed_array"
     echo "$completed_status"
 }
@@ -72,20 +72,20 @@ dependencies_satisfied() {
     local issue_number=$1
     local deps
     deps=$(jq -r ".issues[] | select(.issue_number == $issue_number) | .dependencies | .[]" "$WORK_QUEUE" 2>/dev/null || echo "")
-    
+
     if [ -z "$deps" ]; then
         return 0  # No dependencies
     fi
-    
+
     local completed
     completed=$(get_completed_issues)
-    
+
     for dep in $deps; do
         if ! echo "$completed" | grep -q "^${dep}$"; then
             return 1  # Dependency not satisfied
         fi
     done
-    
+
     return 0  # All dependencies satisfied
 }
 
@@ -93,14 +93,14 @@ dependencies_satisfied() {
 find_next_issue() {
     local available_issues
     available_issues=$(jq -r '.issues[] | select(.status == "available") | .issue_number' "$WORK_QUEUE")
-    
+
     for issue_number in $available_issues; do
         if dependencies_satisfied "$issue_number"; then
             echo "$issue_number"
             return 0
         fi
     done
-    
+
     return 1
 }
 
@@ -113,7 +113,7 @@ generate_agent_id() {
 create_branch_name() {
     local issue_number=$1
     local title=$2
-    
+
     # Convert title to kebab-case, remove special chars
     local slug
     slug=$(echo "$title" | \
@@ -123,30 +123,30 @@ create_branch_name() {
         sed 's/  */ /g' | \
         sed 's/ /-/g' | \
         cut -c1-40)
-    
+
     echo "feat/issue-${issue_number}-${slug}"
 }
 
 # Main execution
 main() {
     log_info "Starting Clubhouse Agent..."
-    
+
     # Ensure we're in the repo root
     cd "$REPO_ROOT"
-    
+
     # Sync with remote
     log_info "Syncing with main branch..."
     git checkout main 2>/dev/null || true
     git pull origin main 2>/dev/null || true
-    
+
     # Acquire lock
     log_info "Acquiring work queue lock..."
     acquire_lock
-    
+
     # Find next available issue
     log_info "Finding next available issue..."
     ISSUE_NUMBER=$(find_next_issue)
-    
+
     if [ -z "$ISSUE_NUMBER" ]; then
         log_warning "No available issues with satisfied dependencies."
         echo ""
@@ -154,39 +154,39 @@ main() {
         jq -r '.issues[] | select(.status == "available") | "  #\(.issue_number): \(.title)\n    Waiting for: \(.dependencies | map("#\(.)") | join(", "))"' "$WORK_QUEUE"
         exit 0
     fi
-    
+
     # Get issue details
     ISSUE_TITLE=$(jq -r ".issues[] | select(.issue_number == $ISSUE_NUMBER) | .title" "$WORK_QUEUE")
     ISSUE_PHASE=$(jq -r ".issues[] | select(.issue_number == $ISSUE_NUMBER) | .phase" "$WORK_QUEUE")
     ISSUE_LABELS=$(jq -r ".issues[] | select(.issue_number == $ISSUE_NUMBER) | .labels | join(\", \")" "$WORK_QUEUE")
-    
+
     log_success "Found issue #$ISSUE_NUMBER: $ISSUE_TITLE"
-    
+
     # Generate agent ID and branch name
     AGENT_ID=$(generate_agent_id)
     BRANCH_NAME=$(create_branch_name "$ISSUE_NUMBER" "$ISSUE_TITLE")
     WORKTREE_PATH="$WORKTREES_DIR/$AGENT_ID"
-    
+
     # Update work queue
     log_info "Claiming issue #$ISSUE_NUMBER..."
     jq ".issues |= map(if .issue_number == $ISSUE_NUMBER then . + {\"status\": \"in_progress\", \"assigned_to\": \"$AGENT_ID\", \"worktree\": \"$WORKTREE_PATH\", \"branch\": \"$BRANCH_NAME\", \"claimed_at\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"} else . end)" "$WORK_QUEUE" > "$WORK_QUEUE.tmp"
     mv "$WORK_QUEUE.tmp" "$WORK_QUEUE"
-    
+
     # Commit the claim
     git add "$WORK_QUEUE"
     git commit -m "chore: agent $AGENT_ID claims issue #$ISSUE_NUMBER" 2>/dev/null || true
-    
+
     # Push with retry on conflict
     if ! git push origin main 2>/dev/null; then
         log_warning "Push conflict detected, pulling and retrying..."
         git pull --rebase origin main 2>/dev/null || true
         git push origin main 2>/dev/null || true
     fi
-    
+
     # Create worktree
     log_info "Creating worktree at $WORKTREE_PATH..."
     mkdir -p "$WORKTREES_DIR"
-    
+
     # Check if branch already exists remotely
     if git ls-remote --heads origin "$BRANCH_NAME" | grep -q "$BRANCH_NAME"; then
         log_info "Branch $BRANCH_NAME exists, checking it out..."
@@ -196,16 +196,16 @@ main() {
     else
         git worktree add "$WORKTREE_PATH" -b "$BRANCH_NAME" main
     fi
-    
+
     log_success "Worktree created at $WORKTREE_PATH"
-    
+
     # Release lock (cleanup will handle this, but be explicit)
     rm -f "$LOCK_FILE"
-    
+
     # Fetch issue body from GitHub
     log_info "Fetching issue details from GitHub..."
     ISSUE_BODY=$(gh issue view "$ISSUE_NUMBER" --json body --jq '.body' 2>/dev/null || echo "Could not fetch issue body")
-    
+
     # Output summary
     echo ""
     echo "════════════════════════════════════════════════════════════════════════════"

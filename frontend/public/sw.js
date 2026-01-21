@@ -66,14 +66,14 @@ self.addEventListener('fetch', (event) => {
       .then((response) => {
         // Clone the response for caching
         const responseClone = response.clone();
-        
+
         // Cache successful responses
         if (response.status === 200) {
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseClone);
           });
         }
-        
+
         return response;
       })
       .catch(async () => {

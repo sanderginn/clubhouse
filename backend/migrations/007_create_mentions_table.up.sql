@@ -5,9 +5,9 @@ CREATE TABLE mentions (
   comment_id UUID REFERENCES comments(id),
   mentioned_user_id UUID NOT NULL REFERENCES users(id),
   created_at TIMESTAMP NOT NULL DEFAULT now(),
-  
+
   CONSTRAINT mention_target CHECK (
-    (post_id IS NOT NULL AND comment_id IS NULL) OR 
+    (post_id IS NOT NULL AND comment_id IS NULL) OR
     (post_id IS NULL AND comment_id IS NOT NULL)
   )
 );
