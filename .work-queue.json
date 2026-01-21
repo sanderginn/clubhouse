@@ -78,6 +78,7 @@
     138,
     139,
     140,
+    141,
     151,
     152,
     156
@@ -1356,7 +1357,7 @@
     {
       "issue_number": 141,
       "title": "Bug: Grafana dashboards show 'No data' - metrics not being collected or exported",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "bug-medium",
       "priority": 6,
@@ -1368,7 +1369,9 @@
       "assigned_to": "agent-1769015380-18468",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769015380-18468",
       "branch": "fix/issue-141-grafana-dashboards-show-no-data-metrics-",
-      "claimed_at": "2026-01-21T17:09:40Z"
+      "claimed_at": "2026-01-21T17:09:40Z",
+      "pr_number": 158,
+      "completed_at": "2026-01-21T17:12:18Z"
     },
     {
       "issue_number": 142,
