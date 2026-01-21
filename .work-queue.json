@@ -81,7 +81,8 @@
     141,
     151,
     152,
-    156
+    156,
+    162
   ],
   "issues": [
     {
@@ -1505,7 +1506,7 @@
     {
       "issue_number": 162,
       "title": "Frontend freezes with WebSocket connection error",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769020269-37729",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769020269-37729",
       "dependencies": [],
@@ -1517,7 +1518,9 @@
         "websocket"
       ],
       "branch": "fix/issue-162-frontend-freezes-with-websocket-connecti",
-      "claimed_at": "2026-01-21T18:31:09Z"
+      "claimed_at": "2026-01-21T18:31:09Z",
+      "pr_number": 164,
+      "completed_at": "2026-01-21T21:22:06Z"
     },
     {
       "issue_number": 163,
