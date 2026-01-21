@@ -156,7 +156,7 @@
       rows="3"
       disabled={isSubmitting}
       class="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:bg-gray-100"
-    />
+    ></textarea>
   </div>
 
   {#if linkMetadata}

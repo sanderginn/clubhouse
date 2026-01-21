@@ -106,7 +106,7 @@
       <PostCard {post} />
     {/each}
 
-    <div bind:this={sentinel} class="h-4" />
+    <div bind:this={sentinel} class="h-4"></div>
 
     {#if isLoadingMore}
       <div class="flex justify-center py-4">

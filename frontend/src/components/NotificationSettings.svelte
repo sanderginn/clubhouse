@@ -98,7 +98,7 @@
           <span
             class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out
               {$isPushSubscribed ? 'translate-x-4' : 'translate-x-0'}"
-          />
+          ></span>
         </div>
       {/if}
     </button>
