@@ -1429,7 +1429,7 @@
     {
       "issue_number": 151,
       "title": "Fix: Playwright e2e tests picked up by Vitest",
-      "status": "available",
+      "status": "completed",
       "assigned_to": null,
       "worktree": null,
       "dependencies": [],
@@ -1439,7 +1439,11 @@
         "bug",
         "frontend",
         "tests"
-      ]
+      ],
+      "branch": "unknown",
+      "claimed_at": "unknown",
+      "completed_at": "unknown",
+      "pr_number": 155
     },
     {
       "issue_number": 152,
