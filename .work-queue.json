@@ -1399,9 +1399,9 @@
     {
       "issue_number": 143,
       "title": "Bug: Grafana piechart panel plugin fails to load - Angular plugins deprecated",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769032581-99525",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769032581-99525",
       "dependencies": [],
       "phase": "bug-low",
       "priority": 10,
@@ -1409,7 +1409,9 @@
         "bug",
         "devops",
         "observability"
-      ]
+      ],
+      "branch": "fix/issue-143-grafana-piechart-panel-plugin-fails-to-l",
+      "claimed_at": "2026-01-21T21:56:21Z"
     },
     {
       "issue_number": 144,
