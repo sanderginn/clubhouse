@@ -23,6 +23,7 @@ export default defineConfig({
         ws: true,
         secure: false,
         configure: (proxy, options) => {
+          // HTTP request/response logging
           proxy.on('error', (err, req, res) => {
             console.log('[Vite Proxy] Error:', err.message);
           });
@@ -32,8 +33,19 @@ export default defineConfig({
           proxy.on('proxyRes', (proxyRes, req, res) => {
             console.log('[Vite Proxy] Response:', proxyRes.statusCode, req.url);
           });
+
+          // WebSocket-specific logging
+          proxy.on('upgrade', (req, socket, head) => {
+            console.log('[Vite Proxy] WebSocket upgrade request:', req.url);
+          });
+          proxy.on('proxyReqWs', (proxyReq, req, socket, options, head) => {
+            console.log('[Vite Proxy] WebSocket proxying to backend:', req.url);
+          });
           proxy.on('open', (proxySocket) => {
-            console.log('[Vite Proxy] WebSocket connection opened');
+            console.log('[Vite Proxy] WebSocket connection opened to backend');
+            proxySocket.on('data', (chunk) => {
+              console.log('[Vite Proxy] WebSocket data from backend');
+            });
           });
           proxy.on('close', (res, socket, head) => {
             console.log('[Vite Proxy] WebSocket connection closed');
