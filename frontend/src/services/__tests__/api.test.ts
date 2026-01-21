@@ -69,10 +69,18 @@ describe('api client', () => {
     fetchMock.mockResolvedValue({
       ok: true,
       status: 200,
-      json: vi.fn().mockResolvedValue({ post: {} }),
+      json: vi.fn().mockResolvedValue({
+        post: {
+          id: 'post-1',
+          user_id: 'user-1',
+          section_id: 'section-1',
+          content: 'Hello',
+          created_at: '2025-01-01T00:00:00Z',
+        },
+      }),
     });
 
-    await api.createPost({
+    const response = await api.createPost({
       sectionId: 'section-1',
       content: 'Hello',
       links: [{ url: 'https://example.com' }],
@@ -81,6 +89,8 @@ describe('api client', () => {
     const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
     expect(body.section_id).toBe('section-1');
     expect(body.content).toBe('Hello');
+    expect(response.post.createdAt).toBe('2025-01-01T00:00:00Z');
+    expect(response.post.userId).toBe('user-1');
   });
 
   it('createComment maps fields', async () => {
