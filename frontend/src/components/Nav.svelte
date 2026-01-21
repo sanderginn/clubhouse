@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { sections, activeSection, sectionStore, uiStore, isAdmin, activeView } from '../stores';
+  import { sections, activeSection, sectionStore, uiStore, isAdmin, activeView, isAuthenticated } from '../stores';
   import type { Section } from '../stores/sectionStore';
+  import NotificationSettings from './NotificationSettings.svelte';
 
   function handleSectionClick(section: Section) {
     sectionStore.setActiveSection(section);
@@ -35,6 +36,13 @@
       {/each}
     </ul>
   </div>
+
+  {#if $isAuthenticated}
+    <div class="border-t border-gray-200 px-3 py-4">
+      <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Settings</h2>
+      <NotificationSettings />
+    </div>
+  {/if}
 
   {#if $isAdmin}
     <div class="border-t border-gray-200 px-3 py-4">
