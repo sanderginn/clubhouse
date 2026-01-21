@@ -75,6 +75,7 @@ func main() {
 	searchHandler := handlers.NewSearchHandler(dbConn)
 	notificationHandler := handlers.NewNotificationHandler(dbConn)
 	wsHandler := handlers.NewWebSocketHandler(redisConn)
+	linkHandler := handlers.NewLinkHandler()
 
 	// API routes
 	mux.HandleFunc("/api/v1/auth/register", authHandler.Register)
@@ -208,6 +209,9 @@ func main() {
 
 	// Search routes (protected)
 	mux.Handle("/api/v1/search", middleware.RequireAuth(redisConn)(http.HandlerFunc(searchHandler.Search)))
+
+	// Link preview route (protected)
+	mux.Handle("/api/v1/links/preview", middleware.RequireAuth(redisConn)(http.HandlerFunc(linkHandler.PreviewLink)))
 
 	// Notification routes (protected)
 	mux.Handle("/api/v1/notifications", middleware.RequireAuth(redisConn)(http.HandlerFunc(notificationHandler.GetNotifications)))
