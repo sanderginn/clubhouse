@@ -231,16 +231,13 @@ prek run
 prek run --all-files
 ```
 
-### Pre-commit Checks (prek)
+### Writing GitHub Comments/Issues/PRs
 
-These checks must pass before committing and pushing:
-```bash
-# Run checks only for files changed in the current changeset
-prek run
+- Never use literal `\\n` in GitHub issues, PRs, or comments. Use real newlines instead.
 
-# Or run everything
-prek run --all-files
-```
+### Writing GitHub Comments/Issues/PRs
+
+- Never use literal `\\n` in GitHub issues, PRs, or comments. Use real newlines instead.
 
 ## Deployment
 
