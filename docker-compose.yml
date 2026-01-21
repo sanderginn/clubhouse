@@ -64,6 +64,7 @@ services:
       - clubhouse
     depends_on:
       - loki
+      - backend
 
   # Tempo (Traces)
   tempo:
