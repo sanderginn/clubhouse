@@ -87,7 +87,8 @@
     156,
     160,
     162,
-    166
+    166,
+    169
   ],
   "issues": [
     {
@@ -1580,7 +1581,7 @@
     {
       "issue_number": 169,
       "title": "Chore: Set up Buildkite CI pipeline for PR checks on main",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769033749-5851",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769033749-5851",
       "dependencies": [],
@@ -1591,7 +1592,9 @@
         "ci"
       ],
       "branch": "feat/issue-169-chore-set-up-buildkite-ci-pipeline-for-p",
-      "claimed_at": "2026-01-21T22:15:49Z"
+      "claimed_at": "2026-01-21T22:15:49Z",
+      "pr_number": 172,
+      "completed_at": "2026-01-21T22:21:17Z"
     },
     {
       "issue_number": 170,
