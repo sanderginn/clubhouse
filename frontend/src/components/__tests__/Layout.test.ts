@@ -8,15 +8,15 @@ const { default: Layout } = await import('../Layout.svelte');
 describe('Layout', () => {
   it('sets isMobile based on matchMedia changes', async () => {
     const listeners: Array<(event: MediaQueryListEvent) => void> = [];
-    const media = {
+    const media: { matches: boolean } & Omit<MediaQueryList, 'matches'> = {
       matches: true,
       media: '(max-width: 1023px)',
       onchange: null,
-      addEventListener: (_event: string, handler: (event: MediaQueryListEvent) => void) => {
-        listeners.push(handler);
+      addEventListener: (_event: string, handler: EventListenerOrEventListenerObject | null) => {
+        listeners.push(handler as (event: MediaQueryListEvent) => void);
       },
-      removeEventListener: (_event: string, handler: (event: MediaQueryListEvent) => void) => {
-        const index = listeners.indexOf(handler);
+      removeEventListener: (_event: string, handler: EventListenerOrEventListenerObject | null) => {
+        const index = listeners.indexOf(handler as (event: MediaQueryListEvent) => void);
         if (index >= 0) {
           listeners.splice(index, 1);
         }
@@ -24,8 +24,8 @@ describe('Layout', () => {
       addListener: () => {},
       removeListener: () => {},
       dispatchEvent: () => true,
-    } as MediaQueryList;
-    const matchMediaSpy = vi.spyOn(window, 'matchMedia').mockReturnValue(media);
+    };
+    const matchMediaSpy = vi.spyOn(window, 'matchMedia').mockReturnValue(media as MediaQueryList);
     let isMobile = false;
     const unsubscribe = uiStore.subscribe((state) => {
       isMobile = state.isMobile;
@@ -37,7 +37,7 @@ describe('Layout', () => {
     expect(isMobile).toBe(true);
 
     media.matches = false;
-    listeners.forEach((handler) => handler(media as MediaQueryListEvent));
+    listeners.forEach((handler) => handler({ matches: false } as MediaQueryListEvent));
     expect(isMobile).toBe(false);
     matchMediaSpy.mockRestore();
     unsubscribe();

@@ -4,14 +4,14 @@ import { vi } from 'vitest';
 if (!window.matchMedia) {
   window.matchMedia = vi.fn().mockImplementation((query: string) => {
     let listeners: Array<(event: MediaQueryListEvent) => void> = [];
-    const mediaQueryList: MediaQueryList = {
+    const mediaQueryList: { matches: boolean } & Omit<MediaQueryList, 'matches'> = {
       matches: false,
       media: query,
       onchange: null,
-      addEventListener: (_event, handler) => {
+      addEventListener: (_event: string, handler: EventListenerOrEventListenerObject | null) => {
         listeners.push(handler as (event: MediaQueryListEvent) => void);
       },
-      removeEventListener: (_event, handler) => {
+      removeEventListener: (_event: string, handler: EventListenerOrEventListenerObject | null) => {
         listeners = listeners.filter((item) => item !== handler);
       },
       addListener: () => {},
@@ -20,9 +20,9 @@ if (!window.matchMedia) {
     };
     (mediaQueryList as unknown as { trigger: (matches: boolean) => void }).trigger = (matches: boolean) => {
       mediaQueryList.matches = matches;
-      listeners.forEach((handler) => handler(mediaQueryList as MediaQueryListEvent));
+      listeners.forEach((handler) => handler({ matches } as MediaQueryListEvent));
     };
-    return mediaQueryList;
+    return mediaQueryList as MediaQueryList;
   }) as unknown as typeof window.matchMedia;
 }
 
