@@ -331,8 +331,16 @@ func sameOrigin(r *http.Request) bool {
 	}
 
 	// Allow localhost:5173 in development (Vite dev server)
+	// This covers both local development and Docker Compose frontend
 	if strings.HasPrefix(u.Host, "localhost:5173") || u.Host == "127.0.0.1:5173" {
 		observability.LogInfo(ctx, "WebSocket origin check passed: localhost:5173")
+		return true
+	}
+
+	// Allow any origin in development when Host is backend:8080 (Docker Compose)
+	// This is safe because in production, the backend won't be accessible at "backend:8080"
+	if strings.Contains(r.Host, "backend:8080") || strings.Contains(r.Host, "localhost:8080") || strings.Contains(r.Host, "127.0.0.1:8080") {
+		observability.LogInfo(ctx, "WebSocket origin check passed: development backend host")
 		return true
 	}
 
