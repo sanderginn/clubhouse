@@ -83,6 +83,7 @@
     151,
     152,
     156,
+    160,
     162
   ],
   "issues": [
@@ -1441,7 +1442,7 @@
     {
       "issue_number": 160,
       "title": "Bug: Query error when performing a search",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769030670-91720",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769030670-91720",
       "dependencies": [],
@@ -1453,7 +1454,9 @@
         "search"
       ],
       "branch": "fix/issue-160-query-error-when-performing-a-search",
-      "claimed_at": "2026-01-21T21:24:30Z"
+      "claimed_at": "2026-01-21T21:24:30Z",
+      "pr_number": 165,
+      "completed_at": "2026-01-21T21:36:17Z"
     },
     {
       "issue_number": 151,
