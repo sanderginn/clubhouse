@@ -1308,7 +1308,8 @@
       ],
       "branch": "fix/issue-138-emoji-reactions-ui-missing-from-posts-an",
       "claimed_at": "2026-01-21T09:34:27Z",
-      "completed_at": "2026-01-21T09:40:34Z"
+      "completed_at": "2026-01-21T13:17:31Z",
+      "pr_number": 150
     },
     {
       "issue_number": 139,
