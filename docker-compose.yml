@@ -91,6 +91,7 @@ services:
       GF_INSTALL_PLUGINS: grafana-piechart-panel
       GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS: ""
       GF_FEATURE_TOGGLES_ENABLE: ""
+      GF_GRAFANA_APISERVER_ENABLED: "false"
     ports:
       - "3000:3000"
     volumes:
