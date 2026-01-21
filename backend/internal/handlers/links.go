@@ -36,12 +36,18 @@ func (h *LinkHandler) PreviewLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if strings.TrimSpace(req.URL) == "" {
+	trimmedURL := strings.TrimSpace(req.URL)
+	if trimmedURL == "" {
 		writeError(r.Context(), w, http.StatusBadRequest, "URL_REQUIRED", "URL is required")
 		return
 	}
 
-	metadata, err := linkmeta.FetchMetadata(r.Context(), strings.TrimSpace(req.URL))
+	if len(trimmedURL) > 2048 {
+		writeError(r.Context(), w, http.StatusBadRequest, "URL_TOO_LONG", "Link URL must be less than 2048 characters")
+		return
+	}
+
+	metadata, err := linkmeta.FetchMetadata(r.Context(), trimmedURL)
 	if err != nil {
 		writeError(r.Context(), w, http.StatusBadGateway, "LINK_METADATA_FETCH_FAILED", "Failed to fetch link metadata")
 		return
@@ -51,7 +57,7 @@ func (h *LinkHandler) PreviewLink(w http.ResponseWriter, r *http.Request) {
 		metadata = map[string]interface{}{}
 	}
 	if _, ok := metadata["url"]; !ok {
-		metadata["url"] = strings.TrimSpace(req.URL)
+		metadata["url"] = trimmedURL
 	}
 
 	w.Header().Set("Content-Type", "application/json")

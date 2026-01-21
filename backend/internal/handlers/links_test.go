@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -119,5 +120,37 @@ func TestPreviewLinkMethodNotAllowed(t *testing.T) {
 
 	if recorder.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("expected status 405, got %d", recorder.Code)
+	}
+}
+
+func TestPreviewLinkURLTooLong(t *testing.T) {
+	handler := NewLinkHandler()
+	longURL := "https://example.com/" + strings.Repeat("a", 2030)
+	body, _ := json.Marshal(models.LinkPreviewRequest{URL: longURL})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/links/preview", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	session := &services.Session{
+		UserID:   uuid.New(),
+		Username: "tester",
+		IsAdmin:  false,
+	}
+	ctx := context.WithValue(req.Context(), middleware.UserContextKey, session)
+	req = req.WithContext(ctx)
+
+	recorder := httptest.NewRecorder()
+	handler.PreviewLink(recorder, req)
+
+	if recorder.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", recorder.Code)
+	}
+
+	var errResp models.ErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &errResp); err != nil {
+		t.Fatalf("failed to parse error response: %v", err)
+	}
+
+	if errResp.Code != "URL_TOO_LONG" {
+		t.Fatalf("expected error code URL_TOO_LONG, got %s", errResp.Code)
 	}
 }
