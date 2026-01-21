@@ -2,7 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   import { api } from '../../services/api';
   import { activeSection, postStore, currentUser } from '../../stores';
-  import type { LinkMetadata } from '../../stores/postStore';
+  import type { Link, LinkMetadata } from '../../stores/postStore';
   import LinkPreview from './LinkPreview.svelte';
 
   const dispatch = createEventDispatcher<{
@@ -97,7 +97,14 @@
         links: links.length > 0 ? links : undefined,
       });
 
-      postStore.addPost(response.post);
+      const createdPost = linkMetadata
+        ? {
+            ...response.post,
+            links: mergeLinkMetadata(response.post.links, linkMetadata),
+          }
+        : response.post;
+
+      postStore.addPost(createdPost);
 
       content = '';
       linkUrl = '';
@@ -110,6 +117,22 @@
     } finally {
       isSubmitting = false;
     }
+  }
+
+  function mergeLinkMetadata(links: Link[] | undefined, metadata: LinkMetadata): Link[] {
+    if (!links || links.length === 0) {
+      return [{ url: metadata.url, metadata }];
+    }
+    return links.map((link, index) => {
+      if (index !== 0) {
+        return link;
+      }
+      return {
+        ...link,
+        url: link.url || metadata.url,
+        metadata: link.metadata ?? metadata,
+      };
+    });
   }
 
   function handleKeyDown(event: KeyboardEvent) {

@@ -121,6 +121,35 @@ describe('PostForm', () => {
     expect(screen.getByText('Example')).toBeInTheDocument();
   });
 
+  it('includes link metadata in newly created post', async () => {
+    setAuthenticated();
+    setActiveSection();
+    previewLink.mockResolvedValue({
+      metadata: {
+        url: 'https://example.com',
+        title: 'Example',
+      },
+    });
+    createPost.mockResolvedValue({
+      post: { id: 'post-1', userId: 'user-1', sectionId: 'section-1', content: 'Hello', createdAt: 'now' },
+    });
+    const addPostSpy = vi.spyOn(postStore, 'addPost');
+
+    const { container } = render(PostForm);
+    const textarea = screen.getByLabelText('Post content');
+    await fireEvent.input(textarea, { target: { value: 'Check https://example.com' } });
+    await tick();
+
+    const form = container.querySelector('form');
+    if (!form) throw new Error('form not found');
+    await fireEvent.submit(form);
+    await tick();
+
+    const addedPost = addPostSpy.mock.calls[0][0];
+    expect(addedPost.links?.[0].url).toBe('https://example.com');
+    expect(addedPost.links?.[0].metadata?.title).toBe('Example');
+  });
+
   it('removes link preview', async () => {
     setAuthenticated();
     setActiveSection();
