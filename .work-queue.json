@@ -1398,7 +1398,7 @@
       "worktree": null,
       "dependencies": [],
       "phase": "bug-low",
-      "priority": 8,
+      "priority": 10,
       "labels": [
         "bug",
         "devops",
@@ -1413,7 +1413,7 @@
       "worktree": null,
       "dependencies": [],
       "phase": "bug-low",
-      "priority": 9,
+      "priority": 11,
       "labels": [
         "bug",
         "frontend",
@@ -1428,10 +1428,25 @@
       "worktree": null,
       "dependencies": [],
       "phase": "bug-low",
-      "priority": 10,
+      "priority": 12,
       "labels": [
         "bug",
         "devops"
+      ]
+    },
+    {
+      "issue_number": 160,
+      "title": "Bug: Query error when performing a search",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug-critical",
+      "priority": 2,
+      "labels": [
+        "bug",
+        "backend",
+        "search"
       ]
     },
     {
@@ -1486,6 +1501,35 @@
       "claimed_at": "2026-01-21T14:04:46Z",
       "pr_number": 157,
       "completed_at": "2026-01-21T14:06:19Z"
+    },
+    {
+      "issue_number": 162,
+      "title": "Frontend freezes with WebSocket connection error",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug-critical",
+      "priority": 1,
+      "labels": [
+        "bug",
+        "frontend",
+        "websocket"
+      ]
+    },
+    {
+      "issue_number": 163,
+      "title": "UI: Make 'General' default section at top and always show comment window",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 13,
+      "labels": [
+        "frontend",
+        "ui"
+      ]
     }
   ]
 }
