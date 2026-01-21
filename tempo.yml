@@ -1,6 +1,5 @@
 server:
   http_listen_port: 3200
-  grpc_listen_port: 9095
   log_level: info
 
 distributor:
@@ -33,8 +32,6 @@ querier:
 query_frontend:
   search:
     query_shards: 5
-
-stream_over_http_enabled: true
 
 metrics_generator:
   storage:
