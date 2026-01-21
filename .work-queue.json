@@ -79,6 +79,7 @@
     139,
     140,
     141,
+    142,
     151,
     152,
     156,
@@ -1377,7 +1378,7 @@
     {
       "issue_number": 142,
       "title": "Bug: Grafana cannot connect to Tempo - gRPC/HTTP protocol mismatch on port 3200",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769018594-25630",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769018594-25630",
       "dependencies": [],
@@ -1389,7 +1390,9 @@
         "observability"
       ],
       "branch": "fix/issue-142-grafana-cannot-connect-to-tempo-grpchttp",
-      "claimed_at": "2026-01-21T18:03:14Z"
+      "claimed_at": "2026-01-21T18:03:14Z",
+      "pr_number": 161,
+      "completed_at": "2026-01-21T21:23:06Z"
     },
     {
       "issue_number": 143,
