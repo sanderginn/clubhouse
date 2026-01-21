@@ -304,7 +304,18 @@ func sameOrigin(r *http.Request) bool {
 	if err != nil {
 		return false
 	}
-	return strings.EqualFold(u.Host, r.Host)
+
+	// Allow same origin
+	if strings.EqualFold(u.Host, r.Host) {
+		return true
+	}
+
+	// Allow localhost:5173 in development (Vite dev server)
+	if strings.HasPrefix(u.Host, "localhost:5173") || u.Host == "127.0.0.1:5173" {
+		return true
+	}
+
+	return false
 }
 
 type wsMessage struct {
