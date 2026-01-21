@@ -30,6 +30,12 @@ storage:
 querier:
   max_concurrent_queries: 20
 
+query_frontend:
+  search:
+    query_shards: 5
+
+stream_over_http_enabled: true
+
 metrics_generator:
   storage:
     path: /var/tempo/generator/metrics

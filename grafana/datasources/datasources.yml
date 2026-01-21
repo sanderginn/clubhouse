@@ -26,7 +26,7 @@ datasources:
     access: proxy
     jsonData:
       httpMethod: GET
-      grpcAddress: tempo:9095
+      streamingEnabled: true
       tracesToLogsV2:
         datasourceUid: loki
       tracesToMetrics:
