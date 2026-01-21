@@ -70,10 +70,13 @@ function createPostStore() {
         error: null,
       })),
     addPost: (post: Post) =>
-      update((state) => ({
-        ...state,
-        posts: [post, ...state.posts],
-      })),
+      update((state) => {
+        const nextPosts = state.posts.filter((existing) => existing.id !== post.id);
+        return {
+          ...state,
+          posts: [post, ...nextPosts],
+        };
+      }),
     upsertPost: (post: Post) =>
       update((state) => {
         const index = state.posts.findIndex((p) => p.id === post.id);
@@ -91,13 +94,23 @@ function createPostStore() {
         };
       }),
     appendPosts: (posts: Post[], cursor: string | null, hasMore: boolean) =>
-      update((state) => ({
-        ...state,
-        posts: [...state.posts, ...posts],
-        cursor,
-        hasMore,
-        isLoading: false,
-      })),
+      update((state) => {
+        const seen = new Set(state.posts.map((post) => post.id));
+        const unique = posts.filter((post) => {
+          if (seen.has(post.id)) {
+            return false;
+          }
+          seen.add(post.id);
+          return true;
+        });
+        return {
+          ...state,
+          posts: [...state.posts, ...unique],
+          cursor,
+          hasMore,
+          isLoading: false,
+        };
+      }),
     removePost: (postId: string) =>
       update((state) => ({
         ...state,
