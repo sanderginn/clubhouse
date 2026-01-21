@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/sanderginn/clubhouse/internal/models"
+	"github.com/sanderginn/clubhouse/internal/observability"
 	"github.com/sanderginn/clubhouse/internal/services"
 	linkmeta "github.com/sanderginn/clubhouse/internal/services/links"
 )
@@ -62,5 +63,12 @@ func (h *LinkHandler) PreviewLink(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(models.LinkPreviewResponse{Metadata: metadata})
+	if err := json.NewEncoder(w).Encode(models.LinkPreviewResponse{Metadata: metadata}); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode link preview response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }
