@@ -79,7 +79,8 @@
     139,
     140,
     151,
-    152
+    152,
+    156
   ],
   "issues": [
     {
@@ -1463,7 +1464,7 @@
     {
       "issue_number": 156,
       "title": "Fix: svelte-check errors in test files due to missing @types/node",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769004286-5093",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769004286-5093",
       "dependencies": [],
@@ -1475,7 +1476,9 @@
         "tests"
       ],
       "branch": "fix/issue-156-fix-sveltecheck-errors-in-test-files-due",
-      "claimed_at": "2026-01-21T14:04:46Z"
+      "claimed_at": "2026-01-21T14:04:46Z",
+      "pr_number": 157,
+      "completed_at": "2026-01-21T14:06:19Z"
     }
   ]
 }
