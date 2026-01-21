@@ -75,7 +75,8 @@
     114,
     136,
     137,
-    138
+    138,
+    140
   ],
   "issues": [
     {
@@ -1234,7 +1235,7 @@
     {
       "issue_number": 140,
       "title": "Bug: Moderation panel infinite loading for pending users, blocks navigation",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768983548-44286",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768983548-44286",
       "dependencies": [],
@@ -1247,7 +1248,9 @@
         "critical"
       ],
       "branch": "fix/issue-140-moderation-panel-infinite-loading",
-      "claimed_at": "2026-01-21T08:19:47.516357Z"
+      "claimed_at": "2026-01-21T08:19:47.516357Z",
+      "pr_number": 147,
+      "completed_at": "2026-01-21T11:35:03Z"
     },
     {
       "issue_number": 136,
