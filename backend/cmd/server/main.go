@@ -17,6 +17,19 @@ import (
 	"github.com/sanderginn/clubhouse/internal/observability"
 )
 
+func writeJSONBytes(ctx context.Context, w http.ResponseWriter, statusCode int, body []byte) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	if _, err := w.Write(body); err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to write response",
+			Code:       "WRITE_FAILED",
+			StatusCode: statusCode,
+			Err:        err,
+		})
+	}
+}
+
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -56,9 +69,7 @@ func main() {
 
 	// Health check endpoint
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ok"}`))
+		writeJSONBytes(r.Context(), w, http.StatusOK, []byte(`{"status":"ok"}`))
 	})
 	if metricsHandler != nil {
 		mux.Handle("/metrics", metricsHandler)
@@ -107,9 +118,7 @@ func main() {
 				sectionSubHandler(http.HandlerFunc(userHandler.UpdateMySectionSubscription)).ServeHTTP(w, r)
 				return
 			}
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			w.Write([]byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+			writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
 			return
 		}
 		// Check if this is the /api/v1/users/me endpoint
@@ -119,9 +128,7 @@ func main() {
 				updateMeHandler.ServeHTTP(w, r)
 				return
 			}
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			w.Write([]byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+			writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
 			return
 		}
 		// GET /api/v1/users/{id}/posts
@@ -137,9 +144,7 @@ func main() {
 			profileHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(userHandler.GetProfile))
 			profileHandler.ServeHTTP(w, r)
 		} else {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			w.Write([]byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+			writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
 		}
 	})
 	mux.Handle("/api/v1/users/", userRouteHandler)
@@ -163,9 +168,7 @@ func main() {
 			deleteHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(commentHandler.DeleteComment))
 			deleteHandler.ServeHTTP(w, r)
 		} else {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			w.Write([]byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+			writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
 		}
 	})
 	mux.Handle("/api/v1/comments/", commentRouteHandler)
@@ -234,9 +237,7 @@ func main() {
 		} else if r.Method == http.MethodDelete {
 			adminHandler.HardDeletePost(w, r)
 		} else {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			w.Write([]byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+			writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
 		}
 	})))
 
@@ -247,9 +248,7 @@ func main() {
 		} else if r.Method == http.MethodDelete {
 			adminHandler.HardDeleteComment(w, r)
 		} else {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			w.Write([]byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+			writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
 		}
 	})))
 
@@ -260,9 +259,7 @@ func main() {
 		} else if r.Method == http.MethodPatch {
 			adminHandler.UpdateConfig(w, r)
 		} else {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			w.Write([]byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+			writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
 		}
 	})))
 
