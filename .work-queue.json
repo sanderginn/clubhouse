@@ -1267,9 +1267,9 @@
     {
       "issue_number": 137,
       "title": "Bug: Link preview fails with 'An unexpected error occurred' when inserting URL",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1768987240-60949",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768987240-60949",
       "dependencies": [],
       "phase": "bug-critical",
       "priority": 3,
@@ -1278,7 +1278,9 @@
         "frontend",
         "backend",
         "links"
-      ]
+      ],
+      "branch": "fix/issue-137-link-preview-fails-with-an-unexpected-er",
+      "claimed_at": "2026-01-21T09:20:40Z"
     },
     {
       "issue_number": 138,
