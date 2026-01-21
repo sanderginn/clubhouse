@@ -1460,6 +1460,21 @@
         "frontend",
         "tests"
       ]
+    },
+    {
+      "issue_number": 156,
+      "title": "Fix: svelte-check errors in test files due to missing @types/node",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug-medium",
+      "priority": 3,
+      "labels": [
+        "bug",
+        "frontend",
+        "tests"
+      ]
     }
   ]
 }
