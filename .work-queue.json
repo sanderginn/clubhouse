@@ -1289,7 +1289,8 @@
       ],
       "branch": "fix/issue-137-link-preview-fails-with-an-unexpected-er",
       "claimed_at": "2026-01-21T09:20:40Z",
-      "completed_at": "2026-01-21T09:25:09Z"
+      "completed_at": "2026-01-21T11:37:53Z",
+      "pr_number": 149
     },
     {
       "issue_number": 138,
