@@ -14,6 +14,7 @@ export interface Comment {
     profilePictureUrl?: string;
   };
   replies?: Comment[];
+  reactionCounts?: Record<string, number>;
   createdAt: string;
   updatedAt?: string;
 }
@@ -47,6 +48,36 @@ const defaultThreadState = (): CommentThreadState => ({
 
 function createCommentStore() {
   const { subscribe, update } = writable<CommentStoreState>({});
+
+  function updateReactionCounts(
+    comments: Comment[],
+    commentId: string,
+    emoji: string,
+    delta: number
+  ): Comment[] {
+    return comments.map((comment) => {
+      if (comment.id === commentId) {
+        const counts = { ...(comment.reactionCounts ?? {}) };
+        const next = (counts[emoji] ?? 0) + delta;
+        if (next <= 0) {
+          delete counts[emoji];
+        } else {
+          counts[emoji] = next;
+        }
+        return {
+          ...comment,
+          reactionCounts: counts,
+        };
+      }
+      if (comment.replies?.length) {
+        return {
+          ...comment,
+          replies: updateReactionCounts(comment.replies, commentId, emoji, delta),
+        };
+      }
+      return comment;
+    });
+  }
 
   function ensureThread(state: CommentStoreState, postId: string): CommentThreadState {
     return state[postId] ?? defaultThreadState();
@@ -118,6 +149,11 @@ function createCommentStore() {
         const { [postId]: _, ...rest } = state;
         return rest;
       }),
+    updateReactionCount: (postId: string, commentId: string, emoji: string, delta: number) =>
+      updateThread(postId, (thread) => ({
+        ...thread,
+        comments: updateReactionCounts(thread.comments, commentId, emoji, delta),
+      })),
   };
 }
 

@@ -29,6 +29,7 @@ export interface ApiPost {
   links?: ApiLink[];
   user?: ApiUser;
   comment_count?: number;
+  reaction_counts?: Record<string, number>;
   created_at: string;
   updated_at?: string;
 }
@@ -63,6 +64,7 @@ export function mapApiPost(apiPost: ApiPost): Post {
         }
       : undefined,
     commentCount: apiPost.comment_count,
+    reactionCounts: apiPost.reaction_counts ?? undefined,
     createdAt: apiPost.created_at,
     updatedAt: apiPost.updated_at,
   };

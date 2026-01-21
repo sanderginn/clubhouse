@@ -1,8 +1,10 @@
 <script lang="ts">
   import { commentStore, type CommentThreadState } from '../../stores/commentStore';
   import { loadThreadComments, loadMoreThreadComments } from '../../stores/commentFeedStore';
+  import { api } from '../../services/api';
   import CommentForm from './CommentForm.svelte';
   import ReplyForm from './ReplyForm.svelte';
+  import ReactionBar from '../reactions/ReactionBar.svelte';
 
   export let postId: string;
 
@@ -16,6 +18,40 @@
   };
 
   let openReplies = new Set<string>();
+  let userReactionsByComment = new Map<string, Set<string>>();
+
+  function getUserReactions(commentId: string): Set<string> {
+    return userReactionsByComment.get(commentId) ?? new Set();
+  }
+
+  function setUserReaction(commentId: string, emoji: string, add: boolean) {
+    const next = new Set(getUserReactions(commentId));
+    if (add) {
+      next.add(emoji);
+    } else {
+      next.delete(emoji);
+    }
+    const updated = new Map(userReactionsByComment);
+    updated.set(commentId, next);
+    userReactionsByComment = updated;
+  }
+
+  async function toggleCommentReaction(commentId: string, emoji: string) {
+    const hasReacted = getUserReactions(commentId).has(emoji);
+    try {
+      if (hasReacted) {
+        await api.removeCommentReaction(commentId, emoji);
+        commentStore.updateReactionCount(postId, commentId, emoji, -1);
+        setUserReaction(commentId, emoji, false);
+      } else {
+        await api.addCommentReaction(commentId, emoji);
+        commentStore.updateReactionCount(postId, commentId, emoji, 1);
+        setUserReaction(commentId, emoji, true);
+      }
+    } catch {
+      // Ignore reaction errors to keep the thread usable.
+    }
+  }
 
   $: thread = $commentStore[postId] ?? emptyThread;
 
@@ -203,6 +239,14 @@
               {/if}
 
               <div class="mt-2">
+                <ReactionBar
+                  reactionCounts={comment.reactionCounts ?? {}}
+                  userReactions={getUserReactions(comment.id)}
+                  onToggle={(emoji) => toggleCommentReaction(comment.id, emoji)}
+                />
+              </div>
+
+              <div class="mt-2">
                 <button
                   type="button"
                   on:click={() => toggleReply(comment.id)}
@@ -254,6 +298,13 @@
                         <p class="text-gray-800 text-sm whitespace-pre-wrap break-words">
                           {reply.content}
                         </p>
+                        <div class="mt-2">
+                          <ReactionBar
+                            reactionCounts={reply.reactionCounts ?? {}}
+                            userReactions={getUserReactions(reply.id)}
+                            onToggle={(emoji) => toggleCommentReaction(reply.id, emoji)}
+                          />
+                        </div>
                       </div>
                     </div>
                   {/each}
