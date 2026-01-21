@@ -39,7 +39,7 @@ function createPWAStore() {
       // Check if already installed (display-mode: standalone)
       const isInstalled =
         window.matchMedia('(display-mode: standalone)').matches ||
-        (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+        (window.navigator as (Navigator & { standalone?: boolean }) | undefined)?.standalone === true;
 
       // Check push notification support
       const isPushSupported = 'PushManager' in window && 'serviceWorker' in navigator;
