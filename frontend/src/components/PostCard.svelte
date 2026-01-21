@@ -1,10 +1,32 @@
 <script lang="ts">
   import type { Post } from '../stores/postStore';
+  import { postStore } from '../stores/postStore';
+  import { api } from '../services/api';
   import CommentThread from './comments/CommentThread.svelte';
+  import ReactionBar from './reactions/ReactionBar.svelte';
 
   export let post: Post;
 
   let showComments = false;
+  $: userReactions = new Set(post.viewerReactions ?? []);
+
+  async function toggleReaction(emoji: string) {
+    const hasReacted = userReactions.has(emoji);
+    // Optimistic update
+    postStore.toggleReaction(post.id, emoji);
+    
+    try {
+      if (hasReacted) {
+        await api.removePostReaction(post.id, emoji);
+      } else {
+        await api.addPostReaction(post.id, emoji);
+      }
+    } catch (e) {
+      console.error('Failed to toggle reaction:', e);
+      // Revert on error
+      postStore.toggleReaction(post.id, emoji);
+    }
+  }
 
   function formatDate(dateString: string): string {
     const date = new Date(dateString);
@@ -146,6 +168,14 @@
           <span>💬</span>
           <span>{post.commentCount || 0}</span>
         </button>
+      </div>
+
+      <div class="mt-3">
+        <ReactionBar
+          reactionCounts={post.reactionCounts ?? {}}
+          userReactions={userReactions}
+          onToggle={toggleReaction}
+        />
       </div>
 
       {#if showComments}

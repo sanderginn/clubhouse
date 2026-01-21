@@ -129,7 +129,8 @@ func (h *ReactionHandler) RemoveReactionFromPost(w http.ResponseWriter, r *http.
 	err = h.reactionService.RemoveReactionFromPost(r.Context(), postID, emoji, userID)
 	if err != nil {
 		if err.Error() == "reaction not found" {
-			writeError(r.Context(), w, http.StatusNotFound, "REACTION_NOT_FOUND", "Reaction not found")
+			// Idempotent: return 204 even if not found
+			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 		writeError(r.Context(), w, http.StatusInternalServerError, "REMOVE_REACTION_FAILED", "Failed to remove reaction")
@@ -245,7 +246,8 @@ func (h *ReactionHandler) RemoveReactionFromComment(w http.ResponseWriter, r *ht
 	err = h.reactionService.RemoveReactionFromComment(r.Context(), commentID, emoji, userID)
 	if err != nil {
 		if err.Error() == "reaction not found" {
-			writeError(r.Context(), w, http.StatusNotFound, "REACTION_NOT_FOUND", "Reaction not found")
+			// Idempotent: return 204 even if not found
+			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 		writeError(r.Context(), w, http.StatusInternalServerError, "REMOVE_REACTION_FAILED", "Failed to remove reaction")

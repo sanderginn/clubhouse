@@ -1,8 +1,10 @@
 <script lang="ts">
   import { commentStore, type CommentThreadState } from '../../stores/commentStore';
   import { loadThreadComments, loadMoreThreadComments } from '../../stores/commentFeedStore';
+  import { api } from '../../services/api';
   import CommentForm from './CommentForm.svelte';
   import ReplyForm from './ReplyForm.svelte';
+  import ReactionBar from '../reactions/ReactionBar.svelte';
 
   export let postId: string;
 
@@ -16,6 +18,44 @@
   };
 
   let openReplies = new Set<string>();
+
+  function getUserReactions(comment: { viewerReactions?: string[] }): Set<string> {
+    return new Set(comment.viewerReactions ?? []);
+  }
+
+  async function toggleCommentReaction(commentId: string, emoji: string) {
+    const threadState = $commentStore[postId];
+    if (!threadState) return;
+
+    // Helper to find comment in tree
+    const findComment = (comments: typeof threadState.comments): { viewerReactions?: string[] } | undefined => {
+      for (const c of comments) {
+        if (c.id === commentId) return c;
+        if (c.replies) {
+          const found = findComment(c.replies);
+          if (found) return found;
+        }
+      }
+    };
+
+    const comment = findComment(threadState.comments);
+    const hasReacted = comment ? new Set(comment.viewerReactions ?? []).has(emoji) : false;
+
+    // Optimistic update
+    commentStore.toggleReaction(postId, commentId, emoji);
+
+    try {
+      if (hasReacted) {
+        await api.removeCommentReaction(commentId, emoji);
+      } else {
+        await api.addCommentReaction(commentId, emoji);
+      }
+    } catch (e) {
+      console.error('Failed to toggle comment reaction:', e);
+      // Revert
+      commentStore.toggleReaction(postId, commentId, emoji);
+    }
+  }
 
   $: thread = $commentStore[postId] ?? emptyThread;
 
@@ -203,6 +243,14 @@
               {/if}
 
               <div class="mt-2">
+                <ReactionBar
+                  reactionCounts={comment.reactionCounts ?? {}}
+                  userReactions={getUserReactions(comment)}
+                  onToggle={(emoji) => toggleCommentReaction(comment.id, emoji)}
+                />
+              </div>
+
+              <div class="mt-2">
                 <button
                   type="button"
                   on:click={() => toggleReply(comment.id)}
@@ -254,6 +302,13 @@
                         <p class="text-gray-800 text-sm whitespace-pre-wrap break-words">
                           {reply.content}
                         </p>
+                        <div class="mt-2">
+                          <ReactionBar
+                            reactionCounts={reply.reactionCounts ?? {}}
+                            userReactions={getUserReactions(reply)}
+                            onToggle={(emoji) => toggleCommentReaction(reply.id, emoji)}
+                          />
+                        </div>
                       </div>
                     </div>
                   {/each}

@@ -123,6 +123,22 @@ class ApiClient {
   async getComment(commentId: string): Promise<{ comment: ApiComment }> {
     return this.get(`/comments/${commentId}`);
   }
+
+  async addPostReaction(postId: string, emoji: string): Promise<void> {
+    await this.post(`/posts/${postId}/reactions`, { emoji });
+  }
+
+  async removePostReaction(postId: string, emoji: string): Promise<void> {
+    await this.delete(`/posts/${postId}/reactions/${encodeURIComponent(emoji)}`);
+  }
+
+  async addCommentReaction(commentId: string, emoji: string): Promise<void> {
+    await this.post(`/comments/${commentId}/reactions`, { emoji });
+  }
+
+  async removeCommentReaction(commentId: string, emoji: string): Promise<void> {
+    await this.delete(`/comments/${commentId}/reactions/${encodeURIComponent(emoji)}`);
+  }
 }
 
 export const api = new ApiClient();

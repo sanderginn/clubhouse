@@ -105,7 +105,8 @@ func (h *UserHandler) GetUserPosts(w http.ResponseWriter, r *http.Request) {
 		cursorPtr = &cursor
 	}
 
-	feed, err := h.postService.GetPostsByUserID(r.Context(), userID, cursorPtr, limit)
+	viewerID, _ := middleware.GetUserIDFromContext(r.Context())
+	feed, err := h.postService.GetPostsByUserID(r.Context(), userID, cursorPtr, limit, viewerID)
 	if err != nil {
 		writeError(r.Context(), w, http.StatusInternalServerError, "GET_USER_POSTS_FAILED", "Failed to get user posts")
 		return

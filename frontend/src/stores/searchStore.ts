@@ -15,6 +15,8 @@ export interface CommentResult {
     profilePictureUrl?: string;
   };
   links?: Link[];
+  reactionCounts?: Record<string, number>;
+  viewerReactions?: string[];
   createdAt: string;
 }
 
@@ -44,6 +46,8 @@ interface ApiPost {
   content: string;
   links?: ApiLink[];
   user?: ApiUser;
+  reaction_counts?: Record<string, number>;
+  viewer_reactions?: string[];
   comment_count?: number;
   created_at: string;
   updated_at?: string;
@@ -56,6 +60,8 @@ interface ApiComment {
   content: string;
   links?: ApiLink[];
   user?: ApiUser;
+  reaction_counts?: Record<string, number>;
+  viewer_reactions?: string[];
   created_at: string;
   updated_at?: string;
 }
@@ -116,6 +122,8 @@ function mapApiPost(apiPost: ApiPost): Post {
           profilePictureUrl: apiPost.user.profile_picture_url,
         }
       : undefined,
+    reactionCounts: apiPost.reaction_counts,
+    viewerReactions: apiPost.viewer_reactions,
     commentCount: apiPost.comment_count,
     createdAt: apiPost.created_at,
     updatedAt: apiPost.updated_at,
@@ -135,6 +143,8 @@ function mapApiComment(apiComment: ApiComment): CommentResult {
           profilePictureUrl: apiComment.user.profile_picture_url,
         }
       : undefined,
+    reactionCounts: apiComment.reaction_counts,
+    viewerReactions: apiComment.viewer_reactions,
     createdAt: apiComment.created_at,
   };
 }
