@@ -297,7 +297,9 @@ func (s *UserService) ApproveUser(ctx context.Context, userID uuid.UUID, adminUs
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	// Get the user first to verify they exist and are pending
 	query := `
@@ -370,7 +372,9 @@ func (s *UserService) RejectUser(ctx context.Context, userID uuid.UUID, adminUse
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	// Get the user first to verify they exist and are pending
 	query := `

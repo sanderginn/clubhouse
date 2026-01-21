@@ -720,7 +720,9 @@ func (s *PostService) AdminRestorePost(ctx context.Context, postID uuid.UUID, ad
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	// Check if post exists and is soft-deleted
 	var exists bool
