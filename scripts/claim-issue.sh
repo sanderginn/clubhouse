@@ -19,9 +19,10 @@ echo "Syncing with main branch..."
 git checkout main
 git pull origin main
 
-# Find first available issue
+# Find first available issue (sorted by priority - lower number = higher priority)
+# Issues without a priority field are assigned priority 999 (picked last)
 echo "Searching for available issues..."
-AVAILABLE_ISSUE=$(jq -r '.issues[] | select(.status == "available") | .issue_number' "$WORK_QUEUE" | head -1)
+AVAILABLE_ISSUE=$(jq -r '[.issues[] | select(.status == "available")] | sort_by(.priority // 999) | .[0].issue_number // empty' "$WORK_QUEUE")
 
 if [ -z "$AVAILABLE_ISSUE" ]; then
   echo "No available issues found in work queue"

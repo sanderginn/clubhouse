@@ -1222,6 +1222,158 @@
       "labels": [
         "backend"
       ]
+    },
+    {
+      "issue_number": 140,
+      "title": "Bug: Moderation panel infinite loading for pending users, blocks navigation",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug-critical",
+      "priority": 1,
+      "labels": [
+        "bug",
+        "frontend",
+        "admin",
+        "critical"
+      ]
+    },
+    {
+      "issue_number": 136,
+      "title": "Bug: New posts show 'Unknown' username and 'Invalid Date' timestamp",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug-critical",
+      "priority": 2,
+      "labels": [
+        "bug",
+        "frontend",
+        "backend",
+        "critical"
+      ]
+    },
+    {
+      "issue_number": 137,
+      "title": "Bug: Link preview fails with 'An unexpected error occurred' when inserting URL",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug-critical",
+      "priority": 3,
+      "labels": [
+        "bug",
+        "frontend",
+        "backend",
+        "links"
+      ]
+    },
+    {
+      "issue_number": 138,
+      "title": "Bug: Emoji reactions UI missing from posts and comments",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug-high",
+      "priority": 4,
+      "labels": [
+        "bug",
+        "frontend",
+        "reactions"
+      ]
+    },
+    {
+      "issue_number": 139,
+      "title": "Bug: Admin moderation section in sidebar not fixed to viewport",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug-high",
+      "priority": 5,
+      "labels": [
+        "bug",
+        "frontend",
+        "layout"
+      ]
+    },
+    {
+      "issue_number": 141,
+      "title": "Bug: Grafana dashboards show 'No data' - metrics not being collected or exported",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug-medium",
+      "priority": 6,
+      "labels": [
+        "bug",
+        "backend",
+        "observability"
+      ]
+    },
+    {
+      "issue_number": 142,
+      "title": "Bug: Grafana cannot connect to Tempo - gRPC/HTTP protocol mismatch on port 3200",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug-medium",
+      "priority": 7,
+      "labels": [
+        "bug",
+        "devops",
+        "observability"
+      ]
+    },
+    {
+      "issue_number": 143,
+      "title": "Bug: Grafana piechart panel plugin fails to load - Angular plugins deprecated",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug-low",
+      "priority": 8,
+      "labels": [
+        "bug",
+        "devops",
+        "observability"
+      ]
+    },
+    {
+      "issue_number": 144,
+      "title": "Bug: Frontend has 7 moderate severity npm vulnerabilities",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug-low",
+      "priority": 9,
+      "labels": [
+        "bug",
+        "frontend",
+        "security"
+      ]
+    },
+    {
+      "issue_number": 145,
+      "title": "Bug: Deprecated GF_INSTALL_PLUGINS environment variable in docker-compose",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug-low",
+      "priority": 10,
+      "labels": [
+        "bug",
+        "devops"
+      ]
     }
   ]
 }
