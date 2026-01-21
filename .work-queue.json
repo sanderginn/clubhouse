@@ -1182,18 +1182,16 @@
     {
       "issue_number": 48,
       "title": "Phase 6: Write production deployment guide",
-      "status": "in_progress",
-      "assigned_to": "agent-1768983548-44286",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768983548-44286",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
       "dependencies": [
         47
       ],
       "phase": 6,
       "labels": [
         "devops"
-      ],
-      "branch": "feat/issue-48-write-production-deployment-guide",
-      "claimed_at": "2026-01-21T08:19:08Z"
+      ]
     },
     {
       "issue_number": 58,
@@ -1230,9 +1228,9 @@
     {
       "issue_number": 140,
       "title": "Bug: Moderation panel infinite loading for pending users, blocks navigation",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1768983548-44286",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768983548-44286",
       "dependencies": [],
       "phase": "bug-critical",
       "priority": 1,
@@ -1241,7 +1239,9 @@
         "frontend",
         "admin",
         "critical"
-      ]
+      ],
+      "branch": "fix/issue-140-moderation-panel-infinite-loading",
+      "claimed_at": "2026-01-21T08:19:47.516357Z"
     },
     {
       "issue_number": 136,
