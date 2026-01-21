@@ -19,17 +19,9 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:8080',
-        changeOrigin: false,
+        changeOrigin: true,
         ws: true,
         secure: false,
-        configure: (proxy) => {
-          proxy.on('proxyReq', (proxyReq, req) => {
-            // Ensure cookies are forwarded for WebSocket upgrade requests
-            if (req.headers.cookie) {
-              proxyReq.setHeader('cookie', req.headers.cookie);
-            }
-          });
-        },
       },
     },
   },
