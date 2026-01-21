@@ -8,3 +8,23 @@ repos:
       - id: check-yaml
       - id: check-json
       - id: check-added-large-files
+  - repo: local
+    hooks:
+      - id: backend-lint
+        name: backend-lint
+        entry: bash -lc "set -euo pipefail; cd backend; git ls-files '*.go' | xargs -r gofmt -w; git diff --exit-code; golangci-lint run ./... --out-format=colored-line-number"
+        language: system
+        pass_filenames: false
+        files: ^backend/
+      - id: backend-test
+        name: backend-test
+        entry: bash -lc "set -euo pipefail; cd backend; go test ./...; go build ./..."
+        language: system
+        pass_filenames: false
+        files: ^backend/
+      - id: frontend-checks
+        name: frontend-checks
+        entry: bash -lc "set -euo pipefail; cd frontend; export NPM_CONFIG_FUND=false NPM_CONFIG_AUDIT=false; npm install --silent; npm run lint --silent -- --resolve-plugins-relative-to . --quiet; git diff --exit-code; npm run check --silent; npm run test --silent -- --silent"
+        language: system
+        pass_filenames: false
+        files: ^frontend/
