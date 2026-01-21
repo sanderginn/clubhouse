@@ -16,7 +16,7 @@ class MockWebSocket {
   send = vi.fn();
   close = vi.fn(() => {
     this.readyState = MockWebSocket.CLOSED;
-    this.emit('close');
+    this.emit('close', { code: 1000, reason: '' });
   });
 
   private listeners: Record<string, Array<(event: any) => void>> = {};

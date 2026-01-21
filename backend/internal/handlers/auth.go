@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/sanderginn/clubhouse/internal/models"
@@ -117,6 +118,8 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	secureCookie := isSecureRequest(r)
+
 	// Set httpOnly secure cookie
 	cookie := &http.Cookie{
 		Name:     "session_id",
@@ -124,7 +127,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		MaxAge:   int(services.SessionDuration.Seconds()),
 		HttpOnly: true,
-		Secure:   true, // Set to false in development, true in production
+		Secure:   secureCookie,
 		SameSite: http.SameSiteLaxMode,
 	}
 	http.SetCookie(w, cookie)
@@ -212,6 +215,8 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	secureCookie := isSecureRequest(r)
+
 	// Clear session cookie by setting MaxAge to -1
 	cookie = &http.Cookie{
 		Name:     "session_id",
@@ -219,7 +224,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		MaxAge:   -1,
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   secureCookie,
 		SameSite: http.SameSiteLaxMode,
 	}
 	http.SetCookie(w, cookie)
@@ -231,4 +236,11 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
+}
+
+func isSecureRequest(r *http.Request) bool {
+	if r.TLS != nil {
+		return true
+	}
+	return strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https")
 }

@@ -61,21 +61,32 @@ func NewWebSocketHandler(redis *redis.Client) *WebSocketHandler {
 
 // HandleWS upgrades authenticated requests to WebSocket connections.
 func (h *WebSocketHandler) HandleWS(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	observability.LogInfo(ctx, "WebSocket connection attempt",
+		"method", r.Method,
+		"origin", r.Header.Get("Origin"),
+		"host", r.Host)
+
 	if r.Method != http.MethodGet {
+		observability.LogInfo(ctx, "WebSocket rejected: non-GET method", "method", r.Method)
 		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
 		return
 	}
 
 	userID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil {
+		observability.LogInfo(ctx, "WebSocket auth failed", "error", err.Error())
 		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
 		return
 	}
 
+	observability.LogInfo(ctx, "Upgrading WebSocket connection", "user_id", userID.String())
 	conn, err := h.upgrader.Upgrade(w, r, nil)
 	if err != nil {
+		observability.LogInfo(ctx, "WebSocket upgrade failed", "error", err.Error())
 		return
 	}
+	observability.LogInfo(ctx, "WebSocket connection established")
 
 	ctx, cancel := context.WithCancel(r.Context())
 	wsConn := &wsConnection{
@@ -297,14 +308,44 @@ func (h *WebSocketHandler) addEvent(ctx context.Context, userID uuid.UUID, event
 
 func sameOrigin(r *http.Request) bool {
 	origin := r.Header.Get("Origin")
+	ctx := r.Context()
+
+	observability.LogInfo(ctx, "WebSocket origin check",
+		"origin", origin,
+		"host", r.Host)
+
 	if origin == "" {
+		observability.LogInfo(ctx, "WebSocket origin check failed: empty origin")
 		return false
 	}
 	u, err := url.Parse(origin)
 	if err != nil {
+		observability.LogInfo(ctx, "WebSocket origin check failed: parse error", "error", err.Error())
 		return false
 	}
-	return strings.EqualFold(u.Host, r.Host)
+
+	// Allow same origin
+	if strings.EqualFold(u.Host, r.Host) {
+		observability.LogInfo(ctx, "WebSocket origin check passed: same origin")
+		return true
+	}
+
+	// Allow localhost:5173 in development (Vite dev server)
+	// This covers both local development and Docker Compose frontend
+	if strings.HasPrefix(u.Host, "localhost:5173") || u.Host == "127.0.0.1:5173" {
+		observability.LogInfo(ctx, "WebSocket origin check passed: localhost:5173")
+		return true
+	}
+
+	// Allow any origin in development when Host is backend:8080 (Docker Compose)
+	// This is safe because in production, the backend won't be accessible at "backend:8080"
+	if strings.Contains(r.Host, "backend:8080") || strings.Contains(r.Host, "localhost:8080") || strings.Contains(r.Host, "127.0.0.1:8080") {
+		observability.LogInfo(ctx, "WebSocket origin check passed: development backend host")
+		return true
+	}
+
+	observability.LogInfo(ctx, "WebSocket origin check failed: origin not allowed", "origin_host", u.Host)
+	return false
 }
 
 type wsMessage struct {

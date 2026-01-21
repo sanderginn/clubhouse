@@ -120,6 +120,18 @@ function createCommentStore() {
     return state[postId] ?? defaultThreadState();
   }
 
+  function hasComment(comments: Comment[], commentId: string): boolean {
+    for (const comment of comments) {
+      if (comment.id === commentId) {
+        return true;
+      }
+      if (comment.replies?.length && hasComment(comment.replies, commentId)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   function updateThread(
     postId: string,
     updater: (thread: CommentThreadState) => CommentThreadState
@@ -145,18 +157,26 @@ function createCommentStore() {
     appendThread: (postId: string, comments: Comment[], cursor: string | null, hasMore: boolean) =>
       updateThread(postId, (thread) => ({
         ...thread,
-        comments: [...thread.comments, ...comments],
+        comments: [
+          ...thread.comments,
+          ...comments.filter((comment) => !hasComment(thread.comments, comment.id)),
+        ],
         cursor,
         hasMore,
         isLoading: false,
         loaded: true,
       })),
     addComment: (postId: string, comment: Comment) =>
-      updateThread(postId, (thread) => ({
-        ...thread,
-        comments: [comment, ...thread.comments],
-        loaded: true,
-      })),
+      updateThread(postId, (thread) => {
+        if (hasComment(thread.comments, comment.id)) {
+          return { ...thread, loaded: true };
+        }
+        return {
+          ...thread,
+          comments: [comment, ...thread.comments],
+          loaded: true,
+        };
+      }),
     addReply: (postId: string, parentCommentId: string, reply: Comment) =>
       updateThread(postId, (thread) => ({
         ...thread,
@@ -164,7 +184,9 @@ function createCommentStore() {
           comment.id === parentCommentId
             ? {
                 ...comment,
-                replies: [...(comment.replies ?? []), reply],
+                replies: hasComment(comment.replies ?? [], reply.id)
+                  ? comment.replies
+                  : [...(comment.replies ?? []), reply],
               }
             : comment
         ),
