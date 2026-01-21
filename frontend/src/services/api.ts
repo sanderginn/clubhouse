@@ -1,6 +1,7 @@
 import type { Post, CreatePostRequest, LinkMetadata } from '../stores/postStore';
 import type { CreateCommentRequest } from '../stores/commentStore';
 import type { ApiComment } from '../stores/commentMapper';
+import { mapApiPost, type ApiPost } from '../stores/postMapper';
 
 const API_BASE = '/api/v1';
 
@@ -74,11 +75,12 @@ class ApiClient {
   }
 
   async createPost(data: CreatePostRequest): Promise<{ post: Post }> {
-    return this.post('/posts', {
+    const response = await this.post<{ post: ApiPost }>('/posts', {
       section_id: data.sectionId,
       content: data.content,
       links: data.links,
     });
+    return { post: mapApiPost(response.post) };
   }
 
   async getFeed(

@@ -78,6 +78,10 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if user, err := h.userService.GetUserByID(r.Context(), userID); err == nil {
+		post.User = user
+	}
+
 	response := models.CreatePostResponse{
 		Post: *post,
 	}
