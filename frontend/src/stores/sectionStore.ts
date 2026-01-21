@@ -33,7 +33,7 @@ interface SectionState {
 }
 
 function createSectionStore() {
-  const { subscribe, set, update } = writable<SectionState>({
+  const { subscribe, update } = writable<SectionState>({
     sections: [],
     activeSection: null,
     isLoading: false,
