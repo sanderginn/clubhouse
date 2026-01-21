@@ -1,0 +1,43 @@
+env:
+  CI: "true"
+
+steps:
+  - label: ":go: Backend format & lint"
+    key: backend-lint
+    command:
+      - "cd backend"
+      - "git ls-files '*.go' | xargs -r gofmt -w"
+      - "git diff --exit-code"
+      - "golangci-lint run ./..."
+    plugins:
+      - docker#v5.12.0:
+          image: "golangci/golangci-lint:v1.56.2"
+          mount-checkout: true
+          workdir: /workdir
+
+  - label: ":go: Backend tests & build"
+    key: backend-test
+    command:
+      - "cd backend"
+      - "go test ./..."
+      - "go build ./..."
+    plugins:
+      - docker#v5.12.0:
+          image: "golang:1.21"
+          mount-checkout: true
+          workdir: /workdir
+
+  - label: ":node: Frontend lint, check & test"
+    key: frontend
+    command:
+      - "cd frontend"
+      - "npm ci"
+      - "npm run lint"
+      - "git diff --exit-code"
+      - "npm run check"
+      - "npm run test"
+    plugins:
+      - docker#v5.12.0:
+          image: "node:20-bullseye"
+          mount-checkout: true
+          workdir: /workdir

@@ -110,6 +110,13 @@ See [DESIGN.md](DESIGN.md) for complete system design.
 
 See [AGENTS.md](AGENTS.md) for AI agent development guidelines.
 
+## CI (Buildkite)
+
+Pull requests targeting `main` run in Buildkite and must pass all checks before merge. The pipeline lives in `.buildkite/pipeline.yml` and runs:
+- Backend format/lint (gofmt + golangci-lint)
+- Backend tests + build
+- Frontend lint + typecheck + tests
+
 ## Pre-commit Checks
 
 Before committing and pushing, run:

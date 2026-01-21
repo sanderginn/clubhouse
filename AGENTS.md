@@ -231,6 +231,10 @@ prek run
 prek run --all-files
 ```
 
+### CI (Buildkite)
+
+PRs targeting `main` run Buildkite using `.buildkite/pipeline.yml`. Ensure backend and frontend steps pass before merge. The required checks are the Buildkite pipeline steps (backend format/lint, backend tests/build, frontend lint/check/test).
+
 ### Writing GitHub Comments/Issues/PRs
 
 - Never use literal `\\n` in GitHub issues, PRs, or comments. Use real newlines instead.
