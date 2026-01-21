@@ -1569,6 +1569,20 @@
       "claimed_at": "2026-01-21T21:44:55Z",
       "pr_number": 167,
       "completed_at": "2026-01-21T21:55:52Z"
+    },
+    {
+      "issue_number": 169,
+      "title": "Chore: Set up Buildkite CI pipeline for PR checks on main",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "devops",
+      "priority": 9,
+      "labels": [
+        "devops",
+        "ci"
+      ]
     }
   ]
 }
