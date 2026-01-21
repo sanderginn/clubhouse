@@ -15,6 +15,7 @@ export interface Comment {
   };
   replies?: Comment[];
   reactionCounts?: Record<string, number>;
+  viewerReactions?: string[];
   createdAt: string;
   updatedAt?: string;
 }
@@ -73,6 +74,42 @@ function createCommentStore() {
         return {
           ...comment,
           replies: updateReactionCounts(comment.replies, commentId, emoji, delta),
+        };
+      }
+      return comment;
+    });
+  }
+
+  function toggleReactions(
+    comments: Comment[],
+    commentId: string,
+    emoji: string
+  ): Comment[] {
+    return comments.map((comment) => {
+      if (comment.id === commentId) {
+        const viewerReactions = new Set(comment.viewerReactions ?? []);
+        const counts = { ...(comment.reactionCounts ?? {}) };
+        
+        if (viewerReactions.has(emoji)) {
+          viewerReactions.delete(emoji);
+          const next = (counts[emoji] ?? 0) - 1;
+          if (next <= 0) delete counts[emoji];
+          else counts[emoji] = next;
+        } else {
+          viewerReactions.add(emoji);
+          counts[emoji] = (counts[emoji] ?? 0) + 1;
+        }
+        
+        return {
+          ...comment,
+          reactionCounts: counts,
+          viewerReactions: Array.from(viewerReactions),
+        };
+      }
+      if (comment.replies?.length) {
+        return {
+          ...comment,
+          replies: toggleReactions(comment.replies, commentId, emoji),
         };
       }
       return comment;
@@ -153,6 +190,11 @@ function createCommentStore() {
       updateThread(postId, (thread) => ({
         ...thread,
         comments: updateReactionCounts(thread.comments, commentId, emoji, delta),
+      })),
+    toggleReaction: (postId: string, commentId: string, emoji: string) =>
+      updateThread(postId, (thread) => ({
+        ...thread,
+        comments: toggleReactions(thread.comments, commentId, emoji),
       })),
   };
 }

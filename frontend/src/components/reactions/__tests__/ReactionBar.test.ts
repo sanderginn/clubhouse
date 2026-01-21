@@ -12,7 +12,7 @@ describe('ReactionBar', () => {
     const onToggle = vi.fn();
     render(ReactionBar, {
       reactionCounts: { '👍': 2 },
-      userReactions: new Set(),
+      userReactions: new Set<string>(),
       onToggle,
     });
 
@@ -26,7 +26,7 @@ describe('ReactionBar', () => {
     const onToggle = vi.fn();
     render(ReactionBar, {
       reactionCounts: {},
-      userReactions: new Set(),
+      userReactions: new Set<string>(),
       onToggle,
     });
 

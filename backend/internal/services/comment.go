@@ -151,7 +151,7 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 }
 
 // GetCommentByID retrieves a comment by ID with all related data
-func (s *CommentService) GetCommentByID(ctx context.Context, commentID uuid.UUID) (*models.Comment, error) {
+func (s *CommentService) GetCommentByID(ctx context.Context, commentID uuid.UUID, userID uuid.UUID) (*models.Comment, error) {
 	query := `
 		SELECT 
 			c.id, c.user_id, c.post_id, c.parent_comment_id, c.content,
@@ -186,6 +186,14 @@ func (s *CommentService) GetCommentByID(ctx context.Context, commentID uuid.UUID
 		return nil, err
 	}
 	comment.Links = links
+
+	// Fetch reactions
+	counts, viewerReactions, err := s.getCommentReactions(ctx, commentID, userID)
+	if err != nil {
+		return nil, err
+	}
+	comment.ReactionCounts = counts
+	comment.ViewerReactions = viewerReactions
 
 	return &comment, nil
 }
@@ -234,6 +242,54 @@ func (s *CommentService) getCommentLinks(ctx context.Context, commentID uuid.UUI
 	return links, nil
 }
 
+// getCommentReactions retrieves reaction counts and viewer reactions for a comment
+func (s *CommentService) getCommentReactions(ctx context.Context, commentID uuid.UUID, viewerID uuid.UUID) (map[string]int, []string, error) {
+	// Get counts
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT emoji, COUNT(*) 
+		FROM reactions 
+		WHERE comment_id = $1 AND deleted_at IS NULL 
+		GROUP BY emoji
+	`, commentID)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	counts := make(map[string]int)
+	for rows.Next() {
+		var emoji string
+		var count int
+		if err := rows.Scan(&emoji, &count); err != nil {
+			return nil, nil, err
+		}
+		counts[emoji] = count
+	}
+
+	var viewerReactions []string
+	if viewerID != uuid.Nil {
+		rows, err := s.db.QueryContext(ctx, `
+			SELECT emoji 
+			FROM reactions 
+			WHERE comment_id = $1 AND user_id = $2 AND deleted_at IS NULL
+		`, commentID, viewerID)
+		if err != nil {
+			return nil, nil, err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var emoji string
+			if err := rows.Scan(&emoji); err != nil {
+				return nil, nil, err
+			}
+			viewerReactions = append(viewerReactions, emoji)
+		}
+	}
+
+	return counts, viewerReactions, nil
+}
+
 // validateCreateCommentInput validates comment creation input
 func validateCreateCommentInput(req *models.CreateCommentRequest) error {
 	if strings.TrimSpace(req.PostID) == "" {
@@ -262,7 +318,7 @@ func validateCreateCommentInput(req *models.CreateCommentRequest) error {
 }
 
 // GetThreadComments retrieves all comments for a post with cursor-based pagination
-func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID, limit int, cursor *string) ([]models.Comment, *string, bool, error) {
+func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID, limit int, cursor *string, userID uuid.UUID) ([]models.Comment, *string, bool, error) {
 	if limit <= 0 || limit > 100 {
 		limit = 50
 	}
@@ -362,6 +418,14 @@ func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID
 		}
 		c.Links = links
 
+		// Fetch reactions
+		counts, viewerReactions, err := s.getCommentReactions(ctx, c.ID, userID)
+		if err != nil {
+			return nil, nil, false, fmt.Errorf("failed to get comment reactions: %w", err)
+		}
+		c.ReactionCounts = counts
+		c.ViewerReactions = viewerReactions
+
 		comments = append(comments, c)
 	}
 
@@ -381,7 +445,7 @@ func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID
 
 	// Fetch replies for each top-level comment
 	for i := range comments {
-		replies, err := s.getCommentReplies(ctx, comments[i].ID)
+		replies, err := s.getCommentReplies(ctx, comments[i].ID, userID)
 		if err != nil {
 			return nil, nil, false, fmt.Errorf("failed to get comment replies: %w", err)
 		}
@@ -392,7 +456,7 @@ func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID
 }
 
 // getCommentReplies retrieves all replies to a comment
-func (s *CommentService) getCommentReplies(ctx context.Context, parentCommentID uuid.UUID) ([]models.Comment, error) {
+func (s *CommentService) getCommentReplies(ctx context.Context, parentCommentID uuid.UUID, userID uuid.UUID) ([]models.Comment, error) {
 	query := `
 		SELECT 
 			c.id, c.user_id, c.post_id, c.parent_comment_id, c.content, 
@@ -452,6 +516,14 @@ func (s *CommentService) getCommentReplies(ctx context.Context, parentCommentID 
 		}
 		c.Links = links
 
+		// Fetch reactions
+		counts, viewerReactions, err := s.getCommentReactions(ctx, c.ID, userID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get reply reactions: %w", err)
+		}
+		c.ReactionCounts = counts
+		c.ViewerReactions = viewerReactions
+
 		replies = append(replies, c)
 	}
 
@@ -462,7 +534,7 @@ func (s *CommentService) getCommentReplies(ctx context.Context, parentCommentID 
 // Only the comment owner or an admin can delete
 // If admin deletes, an audit log entry is created
 func (s *CommentService) DeleteComment(ctx context.Context, commentID uuid.UUID, userID uuid.UUID, isAdmin bool) (*models.Comment, error) {
-	comment, err := s.GetCommentByID(ctx, commentID)
+	comment, err := s.GetCommentByID(ctx, commentID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -521,6 +593,8 @@ func (s *CommentService) DeleteComment(ctx context.Context, commentID uuid.UUID,
 
 	updatedComment.User = comment.User
 	updatedComment.Links = comment.Links
+	updatedComment.ReactionCounts = comment.ReactionCounts
+	updatedComment.ViewerReactions = comment.ViewerReactions
 
 	return &updatedComment, nil
 }
@@ -621,6 +695,14 @@ func (s *CommentService) RestoreComment(ctx context.Context, commentID uuid.UUID
 		return nil, err
 	}
 	restoredComment.Links = links
+
+	// Fetch reactions
+	counts, viewerReactions, err := s.getCommentReactions(ctx, commentID, userID)
+	if err != nil {
+		return nil, err
+	}
+	restoredComment.ReactionCounts = counts
+	restoredComment.ViewerReactions = viewerReactions
 
 	return &restoredComment, nil
 }
@@ -810,6 +892,14 @@ func (s *CommentService) AdminRestoreComment(ctx context.Context, commentID uuid
 		return nil, err
 	}
 	comment.Links = links
+
+	// Fetch reactions
+	counts, viewerReactions, err := s.getCommentReactions(ctx, commentID, adminUserID)
+	if err != nil {
+		return nil, err
+	}
+	comment.ReactionCounts = counts
+	comment.ViewerReactions = viewerReactions
 
 	return &comment, nil
 }

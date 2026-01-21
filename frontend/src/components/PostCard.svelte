@@ -8,22 +8,23 @@
   export let post: Post;
 
   let showComments = false;
-  let userReactions = new Set<string>();
+  $: userReactions = new Set(post.viewerReactions ?? []);
 
   async function toggleReaction(emoji: string) {
     const hasReacted = userReactions.has(emoji);
+    // Optimistic update
+    postStore.toggleReaction(post.id, emoji);
+    
     try {
       if (hasReacted) {
         await api.removePostReaction(post.id, emoji);
-        postStore.updateReactionCount(post.id, emoji, -1);
-        userReactions = new Set([...userReactions].filter((item) => item !== emoji));
       } else {
         await api.addPostReaction(post.id, emoji);
-        postStore.updateReactionCount(post.id, emoji, 1);
-        userReactions = new Set([...userReactions, emoji]);
       }
-    } catch {
-      // Ignore reaction errors for now to avoid blocking the UI.
+    } catch (e) {
+      console.error('Failed to toggle reaction:', e);
+      // Revert on error
+      postStore.toggleReaction(post.id, emoji);
     }
   }
 

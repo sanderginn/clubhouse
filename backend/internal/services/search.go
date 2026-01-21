@@ -146,7 +146,7 @@ func (s *SearchService) Search(ctx context.Context, query string, scope string, 
 
 		switch resultType {
 		case "post":
-			post, err := s.postService.GetPostByID(ctx, id)
+			post, err := s.postService.GetPostByID(ctx, id, uuid.Nil)
 			if err != nil {
 				continue
 			}
@@ -156,7 +156,7 @@ func (s *SearchService) Search(ctx context.Context, query string, scope string, 
 				Post:  post,
 			})
 		case "comment":
-			comment, err := s.commentService.GetCommentByID(ctx, id)
+			comment, err := s.commentService.GetCommentByID(ctx, id, uuid.Nil)
 			if err != nil {
 				continue
 			}

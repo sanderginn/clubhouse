@@ -20,8 +20,10 @@ type Post struct {
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       *time.Time `json:"updated_at,omitempty"`
 	DeletedAt       *time.Time `json:"deleted_at,omitempty"`
-	DeletedByUserID *uuid.UUID `json:"deleted_by_user_id,omitempty"`
-	User            *User      `json:"user,omitempty"`
+	DeletedByUserID *uuid.UUID     `json:"deleted_by_user_id,omitempty"`
+	User            *User          `json:"user,omitempty"`
+	ReactionCounts  map[string]int `json:"reaction_counts,omitempty"`
+	ViewerReactions []string       `json:"viewer_reactions,omitempty"`
 }
 
 // Link represents metadata for a URL

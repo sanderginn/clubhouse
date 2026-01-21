@@ -18,38 +18,42 @@
   };
 
   let openReplies = new Set<string>();
-  let userReactionsByComment = new Map<string, Set<string>>();
 
-  function getUserReactions(commentId: string): Set<string> {
-    return userReactionsByComment.get(commentId) ?? new Set();
-  }
-
-  function setUserReaction(commentId: string, emoji: string, add: boolean) {
-    const next = new Set(getUserReactions(commentId));
-    if (add) {
-      next.add(emoji);
-    } else {
-      next.delete(emoji);
-    }
-    const updated = new Map(userReactionsByComment);
-    updated.set(commentId, next);
-    userReactionsByComment = updated;
+  function getUserReactions(comment: { viewerReactions?: string[] }): Set<string> {
+    return new Set(comment.viewerReactions ?? []);
   }
 
   async function toggleCommentReaction(commentId: string, emoji: string) {
-    const hasReacted = getUserReactions(commentId).has(emoji);
+    const threadState = $commentStore[postId];
+    if (!threadState) return;
+
+    // Helper to find comment in tree
+    const findComment = (comments: typeof threadState.comments): { viewerReactions?: string[] } | undefined => {
+      for (const c of comments) {
+        if (c.id === commentId) return c;
+        if (c.replies) {
+          const found = findComment(c.replies);
+          if (found) return found;
+        }
+      }
+    };
+
+    const comment = findComment(threadState.comments);
+    const hasReacted = comment ? new Set(comment.viewerReactions ?? []).has(emoji) : false;
+
+    // Optimistic update
+    commentStore.toggleReaction(postId, commentId, emoji);
+
     try {
       if (hasReacted) {
         await api.removeCommentReaction(commentId, emoji);
-        commentStore.updateReactionCount(postId, commentId, emoji, -1);
-        setUserReaction(commentId, emoji, false);
       } else {
         await api.addCommentReaction(commentId, emoji);
-        commentStore.updateReactionCount(postId, commentId, emoji, 1);
-        setUserReaction(commentId, emoji, true);
       }
-    } catch {
-      // Ignore reaction errors to keep the thread usable.
+    } catch (e) {
+      console.error('Failed to toggle comment reaction:', e);
+      // Revert
+      commentStore.toggleReaction(postId, commentId, emoji);
     }
   }
 
@@ -241,7 +245,7 @@
               <div class="mt-2">
                 <ReactionBar
                   reactionCounts={comment.reactionCounts ?? {}}
-                  userReactions={getUserReactions(comment.id)}
+                  userReactions={getUserReactions(comment)}
                   onToggle={(emoji) => toggleCommentReaction(comment.id, emoji)}
                 />
               </div>
@@ -301,7 +305,7 @@
                         <div class="mt-2">
                           <ReactionBar
                             reactionCounts={reply.reactionCounts ?? {}}
-                            userReactions={getUserReactions(reply.id)}
+                            userReactions={getUserReactions(reply)}
                             onToggle={(emoji) => toggleCommentReaction(reply.id, emoji)}
                           />
                         </div>

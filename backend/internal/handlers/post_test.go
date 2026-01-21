@@ -44,11 +44,25 @@ func TestGetPostSuccess(t *testing.T) {
 
 	mock.ExpectQuery("SELECT").WithArgs(postID).WillReturnRows(rows)
 
-	// Mock the links query
-	linksRows := mock.NewRows([]string{"id", "url", "metadata", "created_at"})
-	mock.ExpectQuery("SELECT id, url, metadata, created_at").WithArgs(postID).WillReturnRows(linksRows)
+	        // Mock the links query
 
-	req, err := http.NewRequest("GET", "/api/v1/posts/"+postID.String(), nil)
+	        linksRows := mock.NewRows([]string{"id", "url", "metadata", "created_at"})
+
+	        mock.ExpectQuery("SELECT id, url, metadata, created_at").WithArgs(postID).WillReturnRows(linksRows)
+
+	
+
+	        // Mock the reactions count query
+
+	        reactionRows := mock.NewRows([]string{"emoji", "count"})
+
+	        mock.ExpectQuery("SELECT emoji, COUNT").WithArgs(postID).WillReturnRows(reactionRows)
+
+	
+
+	        req, err := http.NewRequest("GET", "/api/v1/posts/"+postID.String(), nil)
+
+	
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
@@ -227,12 +241,25 @@ func TestGetFeedSuccess(t *testing.T) {
 
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 
-	// Mock links queries
-	linksRows := mock.NewRows([]string{"id", "url", "metadata", "created_at"})
-	mock.ExpectQuery("SELECT id, url, metadata, created_at").WillReturnRows(linksRows)
-	mock.ExpectQuery("SELECT id, url, metadata, created_at").WillReturnRows(linksRows)
+	        // Mock links queries
 
-	req, err := http.NewRequest("GET", "/api/v1/sections/"+sectionID.String()+"/feed", nil)
+	        linksRows := mock.NewRows([]string{"id", "url", "metadata", "created_at"})
+
+	        mock.ExpectQuery("SELECT id, url, metadata, created_at").WillReturnRows(linksRows)
+
+	        mock.ExpectQuery("SELECT emoji, COUNT").WithArgs(post1ID).WillReturnRows(mock.NewRows([]string{"emoji", "count"}))
+
+	        
+
+	        mock.ExpectQuery("SELECT id, url, metadata, created_at").WillReturnRows(linksRows)
+
+	        mock.ExpectQuery("SELECT emoji, COUNT").WithArgs(post2ID).WillReturnRows(mock.NewRows([]string{"emoji", "count"}))
+
+	
+
+	        req, err := http.NewRequest("GET", "/api/v1/sections/"+sectionID.String()+"/feed", nil)
+
+	
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
@@ -291,11 +318,19 @@ func TestGetFeedWithCursor(t *testing.T) {
 
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 
-	// Mock links query
-	linksRows := mock.NewRows([]string{"id", "url", "metadata", "created_at"})
-	mock.ExpectQuery("SELECT id, url, metadata, created_at").WillReturnRows(linksRows)
+	        // Mock links query
 
-	cursor := now.Add(-2 * time.Hour).Format("2006-01-02T15:04:05.000Z07:00")
+	        linksRows := mock.NewRows([]string{"id", "url", "metadata", "created_at"})
+
+	        mock.ExpectQuery("SELECT id, url, metadata, created_at").WillReturnRows(linksRows)
+
+	        mock.ExpectQuery("SELECT emoji, COUNT").WithArgs(postID).WillReturnRows(mock.NewRows([]string{"emoji", "count"}))
+
+	
+
+	        cursor := now.Add(-2 * time.Hour).Format("2006-01-02T15:04:05.000Z07:00")
+
+	
 	req, err := http.NewRequest("GET", "/api/v1/sections/"+sectionID.String()+"/feed?cursor="+cursor, nil)
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
@@ -395,11 +430,25 @@ func TestRestorePostSuccess(t *testing.T) {
 
 	mock.ExpectQuery("UPDATE posts").WithArgs(postID).WillReturnRows(updateRows)
 
-	// Mock the links query
-	linksRows := mock.NewRows([]string{"id", "url", "metadata", "created_at"})
-	mock.ExpectQuery("SELECT id, url, metadata, created_at").WithArgs(postID).WillReturnRows(linksRows)
+	        // Mock the links query
 
-	req, err := http.NewRequest("POST", "/api/v1/posts/"+postID.String()+"/restore", nil)
+	        linksRows := mock.NewRows([]string{"id", "url", "metadata", "created_at"})
+
+	        mock.ExpectQuery("SELECT id, url, metadata, created_at").WithArgs(postID).WillReturnRows(linksRows)
+
+	
+
+	        // Mock reactions queries (count + viewer because user context is present)
+
+	        mock.ExpectQuery("SELECT emoji, COUNT").WithArgs(postID).WillReturnRows(mock.NewRows([]string{"emoji", "count"}))
+
+	        mock.ExpectQuery("SELECT emoji").WithArgs(postID, userID).WillReturnRows(mock.NewRows([]string{"emoji"}))
+
+	
+
+	        req, err := http.NewRequest("POST", "/api/v1/posts/"+postID.String()+"/restore", nil)
+
+	
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
@@ -474,11 +523,25 @@ func TestRestorePostByAdmin(t *testing.T) {
 
 	mock.ExpectQuery("UPDATE posts").WithArgs(postID).WillReturnRows(updateRows)
 
-	// Mock the links query
-	linksRows := mock.NewRows([]string{"id", "url", "metadata", "created_at"})
-	mock.ExpectQuery("SELECT id, url, metadata, created_at").WithArgs(postID).WillReturnRows(linksRows)
+	        // Mock the links query
 
-	req, err := http.NewRequest("POST", "/api/v1/posts/"+postID.String()+"/restore", nil)
+	        linksRows := mock.NewRows([]string{"id", "url", "metadata", "created_at"})
+
+	        mock.ExpectQuery("SELECT id, url, metadata, created_at").WithArgs(postID).WillReturnRows(linksRows)
+
+	
+
+	        // Mock reactions queries (count + viewer)
+
+	        mock.ExpectQuery("SELECT emoji, COUNT").WithArgs(postID).WillReturnRows(mock.NewRows([]string{"emoji", "count"}))
+
+	        mock.ExpectQuery("SELECT emoji").WithArgs(postID, adminID).WillReturnRows(mock.NewRows([]string{"emoji"}))
+
+	
+
+	        req, err := http.NewRequest("POST", "/api/v1/posts/"+postID.String()+"/restore", nil)
+
+	
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}

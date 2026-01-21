@@ -144,7 +144,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 }
 
 // GetPostByID retrieves a post by ID with all related data
-func (s *PostService) GetPostByID(ctx context.Context, postID uuid.UUID) (*models.Post, error) {
+func (s *PostService) GetPostByID(ctx context.Context, postID uuid.UUID, userID uuid.UUID) (*models.Post, error) {
 	query := `
 		SELECT 
 			p.id, p.user_id, p.section_id, p.content, 
@@ -183,6 +183,14 @@ func (s *PostService) GetPostByID(ctx context.Context, postID uuid.UUID) (*model
 		return nil, err
 	}
 	post.Links = links
+
+	// Fetch reactions
+	counts, viewerReactions, err := s.getPostReactions(ctx, postID, userID)
+	if err != nil {
+		return nil, err
+	}
+	post.ReactionCounts = counts
+	post.ViewerReactions = viewerReactions
 
 	return &post, nil
 }
@@ -231,8 +239,56 @@ func (s *PostService) getPostLinks(ctx context.Context, postID uuid.UUID) ([]mod
 	return links, nil
 }
 
+// getPostReactions retrieves reaction counts and viewer reactions for a post
+func (s *PostService) getPostReactions(ctx context.Context, postID uuid.UUID, viewerID uuid.UUID) (map[string]int, []string, error) {
+	// Get counts
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT emoji, COUNT(*) 
+		FROM reactions 
+		WHERE post_id = $1 AND deleted_at IS NULL 
+		GROUP BY emoji
+	`, postID)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	counts := make(map[string]int)
+	for rows.Next() {
+		var emoji string
+		var count int
+		if err := rows.Scan(&emoji, &count); err != nil {
+			return nil, nil, err
+		}
+		counts[emoji] = count
+	}
+
+	var viewerReactions []string
+	if viewerID != uuid.Nil {
+		rows, err := s.db.QueryContext(ctx, `
+			SELECT emoji 
+			FROM reactions 
+			WHERE post_id = $1 AND user_id = $2 AND deleted_at IS NULL
+		`, postID, viewerID)
+		if err != nil {
+			return nil, nil, err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var emoji string
+			if err := rows.Scan(&emoji); err != nil {
+				return nil, nil, err
+			}
+			viewerReactions = append(viewerReactions, emoji)
+		}
+	}
+
+	return counts, viewerReactions, nil
+}
+
 // GetFeed retrieves a paginated feed of posts for a section using cursor-based pagination
-func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *string, limit int) (*models.FeedResponse, error) {
+func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *string, limit int, userID uuid.UUID) (*models.FeedResponse, error) {
 	if limit <= 0 || limit > 100 {
 		limit = 20
 	}
@@ -293,6 +349,14 @@ func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *
 		}
 		post.Links = links
 
+		// Fetch reactions
+		counts, viewerReactions, err := s.getPostReactions(ctx, post.ID, userID)
+		if err != nil {
+			return nil, err
+		}
+		post.ReactionCounts = counts
+		post.ViewerReactions = viewerReactions
+
 		posts = append(posts, &post)
 	}
 
@@ -325,7 +389,7 @@ func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *
 // DeletePost soft-deletes a post (only post owner or admin can delete)
 func (s *PostService) DeletePost(ctx context.Context, postID uuid.UUID, userID uuid.UUID, isAdmin bool) (*models.Post, error) {
 	// Fetch the post to verify ownership
-	post, err := s.GetPostByID(ctx, postID)
+	post, err := s.GetPostByID(ctx, postID, userID)
 	if err != nil {
 		if err.Error() == "post not found" {
 			return nil, errors.New("post not found")
@@ -359,6 +423,8 @@ func (s *PostService) DeletePost(ctx context.Context, postID uuid.UUID, userID u
 	// Copy over the user and links from the original post
 	updatedPost.User = post.User
 	updatedPost.Links = post.Links
+	updatedPost.ReactionCounts = post.ReactionCounts
+	updatedPost.ViewerReactions = post.ViewerReactions
 
 	return &updatedPost, nil
 }
@@ -437,11 +503,19 @@ func (s *PostService) RestorePost(ctx context.Context, postID uuid.UUID, userID 
 	}
 	post.Links = links
 
+	// Fetch reactions
+	counts, viewerReactions, err := s.getPostReactions(ctx, postID, userID)
+	if err != nil {
+		return nil, err
+	}
+	post.ReactionCounts = counts
+	post.ViewerReactions = viewerReactions
+
 	return &post, nil
 }
 
 // GetPostsByUserID retrieves a paginated list of posts by a specific user using cursor-based pagination
-func (s *PostService) GetPostsByUserID(ctx context.Context, userID uuid.UUID, cursor *string, limit int) (*models.FeedResponse, error) {
+func (s *PostService) GetPostsByUserID(ctx context.Context, targetUserID uuid.UUID, cursor *string, limit int, viewerID uuid.UUID) (*models.FeedResponse, error) {
 	if limit <= 0 || limit > 100 {
 		limit = 20
 	}
@@ -459,7 +533,7 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, userID uuid.UUID, cu
 		WHERE p.user_id = $1 AND p.deleted_at IS NULL
 	`
 
-	args := []interface{}{userID}
+	args := []interface{}{targetUserID}
 	argIndex := 2
 
 	// Apply cursor if provided (cursor is the created_at timestamp from the last post)
@@ -501,6 +575,14 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, userID uuid.UUID, cu
 			return nil, err
 		}
 		post.Links = links
+
+		// Fetch reactions
+		counts, viewerReactions, err := s.getPostReactions(ctx, post.ID, viewerID)
+		if err != nil {
+			return nil, err
+		}
+		post.ReactionCounts = counts
+		post.ViewerReactions = viewerReactions
 
 		posts = append(posts, &post)
 	}
@@ -682,7 +764,7 @@ func (s *PostService) AdminRestorePost(ctx context.Context, postID uuid.UUID, ad
 	}
 
 	// Fetch the full post with user info
-	fullPost, err := s.GetPostByID(ctx, postID)
+	fullPost, err := s.GetPostByID(ctx, postID, adminUserID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch restored post: %w", err)
 	}

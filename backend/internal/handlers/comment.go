@@ -126,7 +126,8 @@ func (h *CommentHandler) GetComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get comment from service
-	comment, err := h.commentService.GetCommentByID(r.Context(), commentID)
+	userID, _ := middleware.GetUserIDFromContext(r.Context())
+	comment, err := h.commentService.GetCommentByID(r.Context(), commentID, userID)
 	if err != nil {
 		if err.Error() == "comment not found" {
 			writeError(r.Context(), w, http.StatusNotFound, "COMMENT_NOT_FOUND", "Comment not found")
@@ -183,7 +184,8 @@ func (h *CommentHandler) GetThread(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get thread comments
-	comments, nextCursor, hasMore, err := h.commentService.GetThreadComments(r.Context(), postID, limit, cursorPtr)
+	userID, _ := middleware.GetUserIDFromContext(r.Context())
+	comments, nextCursor, hasMore, err := h.commentService.GetThreadComments(r.Context(), postID, limit, cursorPtr, userID)
 	if err != nil {
 		if err.Error() == "post not found" {
 			writeError(r.Context(), w, http.StatusNotFound, "POST_NOT_FOUND", "Post not found")

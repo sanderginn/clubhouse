@@ -121,7 +121,8 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get post from service
-	post, err := h.postService.GetPostByID(r.Context(), postID)
+	userID, _ := middleware.GetUserIDFromContext(r.Context())
+	post, err := h.postService.GetPostByID(r.Context(), postID, userID)
 	if err != nil {
 		if err.Error() == "post not found" {
 			writeError(r.Context(), w, http.StatusNotFound, "POST_NOT_FOUND", "Post not found")
@@ -184,7 +185,8 @@ func (h *PostHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
 		cursorPtr = &cursor
 	}
 
-	feed, err := h.postService.GetFeed(r.Context(), sectionID, cursorPtr, limit)
+	userID, _ := middleware.GetUserIDFromContext(r.Context())
+	feed, err := h.postService.GetFeed(r.Context(), sectionID, cursorPtr, limit, userID)
 	if err != nil {
 		writeError(r.Context(), w, http.StatusInternalServerError, "GET_FEED_FAILED", "Failed to get feed")
 		return

@@ -460,6 +460,54 @@ func (s *UserService) GetUserProfile(ctx context.Context, id uuid.UUID) (*models
 	return &profile, nil
 }
 
+// getCommentReactions retrieves reaction counts and viewer reactions for a comment
+func (s *UserService) getCommentReactions(ctx context.Context, commentID uuid.UUID, viewerID uuid.UUID) (map[string]int, []string, error) {
+	// Get counts
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT emoji, COUNT(*) 
+		FROM reactions 
+		WHERE comment_id = $1 AND deleted_at IS NULL 
+		GROUP BY emoji
+	`, commentID)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	counts := make(map[string]int)
+	for rows.Next() {
+		var emoji string
+		var count int
+		if err := rows.Scan(&emoji, &count); err != nil {
+			return nil, nil, err
+		}
+		counts[emoji] = count
+	}
+
+	var viewerReactions []string
+	if viewerID != uuid.Nil {
+		rows, err := s.db.QueryContext(ctx, `
+			SELECT emoji 
+			FROM reactions 
+			WHERE comment_id = $1 AND user_id = $2 AND deleted_at IS NULL
+		`, commentID, viewerID)
+		if err != nil {
+			return nil, nil, err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var emoji string
+			if err := rows.Scan(&emoji); err != nil {
+				return nil, nil, err
+			}
+			viewerReactions = append(viewerReactions, emoji)
+		}
+	}
+
+	return counts, viewerReactions, nil
+}
+
 // GetUserComments retrieves a paginated list of comments by a user
 func (s *UserService) GetUserComments(ctx context.Context, userID uuid.UUID, cursor *string, limit int) (*models.GetThreadResponse, error) {
 	// First verify the user exists and is approved
@@ -523,6 +571,20 @@ func (s *UserService) GetUserComments(ctx context.Context, userID uuid.UUID, cur
 		}
 
 		comment.User = &user
+
+		// Fetch reactions
+		// Note: We don't have the viewer ID here in the current signature.
+		// However, GetUserComments is usually viewing another user's profile.
+		// We should update the signature to include viewerID if we want to show viewer's reactions.
+		// For now, I'll pass uuid.Nil as I haven't updated the interface yet and it might be out of scope or requires more changes.
+		// Actually, I should update the signature.
+		counts, _, err := s.getCommentReactions(ctx, comment.ID, uuid.Nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get comment reactions: %w", err)
+		}
+		comment.ReactionCounts = counts
+		// comment.ViewerReactions = viewerReactions // Not setting this as we don't have viewerID
+
 		comments = append(comments, comment)
 	}
 

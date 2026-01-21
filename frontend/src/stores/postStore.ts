@@ -29,6 +29,7 @@ export interface Post {
     profilePictureUrl?: string;
   };
   reactionCounts?: Record<string, number>;
+  viewerReactions?: string[];
   commentCount?: number;
   createdAt: string;
   updatedAt?: string;
@@ -131,6 +132,33 @@ function createPostStore() {
           return {
             ...post,
             reactionCounts: counts,
+          };
+        }),
+      })),
+    toggleReaction: (postId: string, emoji: string) =>
+      update((state) => ({
+        ...state,
+        posts: state.posts.map((post) => {
+          if (post.id !== postId) {
+            return post;
+          }
+          const viewerReactions = new Set(post.viewerReactions ?? []);
+          const counts = { ...(post.reactionCounts ?? {}) };
+          
+          if (viewerReactions.has(emoji)) {
+            viewerReactions.delete(emoji);
+            const next = (counts[emoji] ?? 0) - 1;
+            if (next <= 0) delete counts[emoji];
+            else counts[emoji] = next;
+          } else {
+            viewerReactions.add(emoji);
+            counts[emoji] = (counts[emoji] ?? 0) + 1;
+          }
+          
+          return {
+            ...post,
+            reactionCounts: counts,
+            viewerReactions: Array.from(viewerReactions),
           };
         }),
       })),
