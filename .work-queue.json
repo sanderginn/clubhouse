@@ -84,7 +84,8 @@
     152,
     156,
     160,
-    162
+    162,
+    166
   ],
   "issues": [
     {
@@ -1547,7 +1548,7 @@
     {
       "issue_number": 166,
       "title": "Bug: Link previews vanish after posting",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769031895-95928",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769031895-95928",
       "dependencies": [],
@@ -1560,7 +1561,9 @@
         "ui"
       ],
       "branch": "fix/issue-166-link-previews-vanish-after-posting",
-      "claimed_at": "2026-01-21T21:44:55Z"
+      "claimed_at": "2026-01-21T21:44:55Z",
+      "pr_number": 167,
+      "completed_at": "2026-01-21T21:55:52Z"
     }
   ]
 }
