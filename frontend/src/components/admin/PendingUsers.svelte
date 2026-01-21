@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import { api } from '../../services/api';
 
   interface PendingUser {
@@ -10,21 +10,56 @@
   }
 
   let pendingUsers: PendingUser[] = [];
-  let isLoading = false;
+  let isLoading = true;
   let errorMessage = '';
   let actionUserId: string | null = null;
+  let pendingUsersAbortController: AbortController | null = null;
+  let pendingUsersTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   const formatDate = (value: string) => new Date(value).toLocaleString();
 
+  const clearPendingUsersTimeout = () => {
+    if (pendingUsersTimeoutId) {
+      clearTimeout(pendingUsersTimeoutId);
+      pendingUsersTimeoutId = null;
+    }
+  };
+
   const loadPendingUsers = async () => {
+    pendingUsersAbortController?.abort();
+    clearPendingUsersTimeout();
+
+    const controller =
+      typeof AbortController === 'undefined' ? null : new AbortController();
+    pendingUsersAbortController = controller;
+
     isLoading = true;
     errorMessage = '';
+
+    if (controller) {
+      pendingUsersTimeoutId = setTimeout(() => controller.abort(), 10000);
+    }
+
     try {
-      pendingUsers = await api.get<PendingUser[]>('/admin/users');
+      pendingUsers = await api.get<PendingUser[]>(
+        '/admin/users',
+        controller ? { signal: controller.signal } : undefined
+      );
     } catch (error) {
-      errorMessage = error instanceof Error ? error.message : 'Failed to load pending users.';
+      if (pendingUsersAbortController !== controller) {
+        return;
+      }
+      if (error instanceof Error && error.name === 'AbortError') {
+        errorMessage = 'Request timed out. Please try again.';
+      } else {
+        errorMessage = error instanceof Error ? error.message : 'Failed to load pending users.';
+      }
     } finally {
-      isLoading = false;
+      if (pendingUsersAbortController === controller) {
+        pendingUsersAbortController = null;
+        clearPendingUsersTimeout();
+        isLoading = false;
+      }
     }
   };
 
@@ -57,6 +92,11 @@
   onMount(() => {
     loadPendingUsers();
   });
+
+  onDestroy(() => {
+    pendingUsersAbortController?.abort();
+    clearPendingUsersTimeout();
+  });
 </script>
 
 <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -71,7 +111,6 @@
     <button
       class="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
       on:click={loadPendingUsers}
-      disabled={isLoading}
     >
       Refresh
     </button>

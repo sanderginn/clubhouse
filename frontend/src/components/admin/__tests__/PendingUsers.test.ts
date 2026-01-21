@@ -16,6 +16,22 @@ vi.mock('../../../services/api', () => ({
 
 const { default: PendingUsers } = await import('../PendingUsers.svelte');
 
+const flushPendingUsersLoad = async () => {
+  await tick();
+  await Promise.resolve();
+  await tick();
+};
+
+const createDeferred = <T,>() => {
+  let resolve: (value: T) => void;
+  let reject: (reason?: unknown) => void;
+  const promise = new Promise<T>((resolveFn, rejectFn) => {
+    resolve = resolveFn;
+    reject = rejectFn;
+  });
+  return { promise, resolve: resolve!, reject: reject! };
+};
+
 beforeEach(() => {
   apiGet.mockReset();
   apiPatch.mockReset();
@@ -28,7 +44,17 @@ afterEach(() => {
 
 describe('PendingUsers', () => {
   it('renders pending users from API', async () => {
-    apiGet.mockResolvedValue([
+    const deferred = createDeferred<
+      Array<{
+        id: string;
+        username: string;
+        email: string;
+        created_at: string;
+      }>
+    >();
+    apiGet.mockReturnValue(deferred.promise);
+
+    deferred.resolve([
       {
         id: 'user-1',
         username: 'lena',
@@ -39,15 +65,35 @@ describe('PendingUsers', () => {
 
     render(PendingUsers);
     await fireEvent.click(screen.getByText('Refresh'));
-    await tick();
+    await flushPendingUsersLoad();
 
-    expect(apiGet).toHaveBeenCalledWith('/admin/users');
-    expect(screen.getByText('lena')).toBeInTheDocument();
+    expect(await screen.findByText('lena')).toBeInTheDocument();
     expect(screen.getByText('lena@example.com')).toBeInTheDocument();
+    if (typeof AbortController === 'undefined') {
+      expect(apiGet).toHaveBeenCalledWith('/admin/users');
+    } else {
+      expect(apiGet).toHaveBeenCalledWith(
+        '/admin/users',
+        expect.objectContaining({ signal: expect.any(AbortSignal) })
+      );
+    }
   });
 
   it('approves a user and removes them from the list', async () => {
-    apiGet.mockResolvedValue([
+    const deferred = createDeferred<
+      Array<{
+        id: string;
+        username: string;
+        email: string;
+        created_at: string;
+      }>
+    >();
+    apiGet.mockReturnValue(deferred.promise);
+    apiPatch.mockResolvedValue({});
+
+    render(PendingUsers);
+    await fireEvent.click(screen.getByText('Refresh'));
+    deferred.resolve([
       {
         id: 'user-2',
         username: 'marco',
@@ -55,11 +101,8 @@ describe('PendingUsers', () => {
         created_at: '2024-02-01T00:00:00Z',
       },
     ]);
-    apiPatch.mockResolvedValue({});
-
-    render(PendingUsers);
-    await fireEvent.click(screen.getByText('Refresh'));
-    await tick();
+    await flushPendingUsersLoad();
+    await screen.findByText('marco');
 
     const approveButton = screen.getByText('Approve');
     await fireEvent.click(approveButton);
@@ -70,7 +113,20 @@ describe('PendingUsers', () => {
   });
 
   it('rejects a user and removes them from the list', async () => {
-    apiGet.mockResolvedValue([
+    const deferred = createDeferred<
+      Array<{
+        id: string;
+        username: string;
+        email: string;
+        created_at: string;
+      }>
+    >();
+    apiGet.mockReturnValue(deferred.promise);
+    apiDelete.mockResolvedValue({});
+
+    render(PendingUsers);
+    await fireEvent.click(screen.getByText('Refresh'));
+    deferred.resolve([
       {
         id: 'user-3',
         username: 'sol',
@@ -78,11 +134,8 @@ describe('PendingUsers', () => {
         created_at: '2024-03-01T00:00:00Z',
       },
     ]);
-    apiDelete.mockResolvedValue({});
-
-    render(PendingUsers);
-    await fireEvent.click(screen.getByText('Refresh'));
-    await tick();
+    await flushPendingUsersLoad();
+    await screen.findByText('sol');
 
     const rejectButton = screen.getByText('Reject');
     await fireEvent.click(rejectButton);
@@ -90,5 +143,17 @@ describe('PendingUsers', () => {
 
     expect(apiDelete).toHaveBeenCalledWith('/admin/users/user-3');
     expect(screen.queryByText('sol')).not.toBeInTheDocument();
+  });
+
+  it('shows a timeout message when the request is aborted', async () => {
+    const deferred = createDeferred<never>();
+    apiGet.mockReturnValue(deferred.promise);
+
+    render(PendingUsers);
+    await fireEvent.click(screen.getByText('Refresh'));
+    deferred.reject(Object.assign(new Error('Request aborted'), { name: 'AbortError' }));
+    await flushPendingUsersLoad();
+
+    expect(await screen.findByText('Request timed out. Please try again.')).toBeInTheDocument();
   });
 });
