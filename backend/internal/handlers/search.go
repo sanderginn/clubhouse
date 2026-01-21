@@ -94,7 +94,10 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	results, err := h.searchService.Search(r.Context(), q, scope, sectionID, limit)
+	// Get the current user ID for reaction state (optional - uuid.Nil if not authenticated)
+	userID, _ := middleware.GetUserIDFromContext(r.Context())
+
+	results, err := h.searchService.Search(r.Context(), q, scope, sectionID, limit, userID)
 	if err != nil {
 		writeError(r.Context(), w, http.StatusInternalServerError, "SEARCH_FAILED", "Failed to search")
 		return

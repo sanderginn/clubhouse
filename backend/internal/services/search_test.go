@@ -53,6 +53,11 @@ func TestSearchServiceGlobal(t *testing.T) {
 		WithArgs(postID).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "url", "metadata", "created_at"}))
 
+	// Mock reaction counts for post
+	mock.ExpectQuery(regexp.QuoteMeta("FROM reactions")).
+		WithArgs(postID).
+		WillReturnRows(sqlmock.NewRows([]string{"emoji", "count"}))
+
 	commentRows := sqlmock.NewRows([]string{
 		"id", "user_id", "post_id", "parent_comment_id", "content", "created_at", "updated_at", "deleted_at", "deleted_by_user_id",
 		"id", "username", "email", "profile_picture_url", "bio", "is_admin", "created_at",
@@ -69,7 +74,12 @@ func TestSearchServiceGlobal(t *testing.T) {
 		WithArgs(commentID).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "url", "metadata", "created_at"}))
 
-	results, err := service.Search(context.Background(), query, "global", nil, limit)
+	// Mock reaction counts for comment
+	mock.ExpectQuery(regexp.QuoteMeta("FROM reactions")).
+		WithArgs(commentID).
+		WillReturnRows(sqlmock.NewRows([]string{"emoji", "count"}))
+
+	results, err := service.Search(context.Background(), query, "global", nil, limit, uuid.Nil)
 	if err != nil {
 		t.Fatalf("search failed: %v", err)
 	}
@@ -102,7 +112,7 @@ func TestSearchServiceSectionScope(t *testing.T) {
 		WithArgs(query, sectionID, limit).
 		WillReturnRows(searchRows)
 
-	results, err := service.Search(context.Background(), query, "section", &sectionID, limit)
+	results, err := service.Search(context.Background(), query, "section", &sectionID, limit, uuid.Nil)
 	if err != nil {
 		t.Fatalf("search failed: %v", err)
 	}

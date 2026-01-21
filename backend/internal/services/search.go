@@ -39,7 +39,7 @@ func (s *SearchService) IsQueryMeaningful(ctx context.Context, query string) (bo
 }
 
 // Search searches posts and comments, including link metadata, with optional scope filtering.
-func (s *SearchService) Search(ctx context.Context, query string, scope string, sectionID *uuid.UUID, limit int) ([]models.SearchResult, error) {
+func (s *SearchService) Search(ctx context.Context, query string, scope string, sectionID *uuid.UUID, limit int, userID uuid.UUID) ([]models.SearchResult, error) {
 	if limit <= 0 || limit > 100 {
 		limit = 20
 	}
@@ -146,7 +146,7 @@ func (s *SearchService) Search(ctx context.Context, query string, scope string, 
 
 		switch resultType {
 		case "post":
-			post, err := s.postService.GetPostByID(ctx, id, uuid.Nil)
+			post, err := s.postService.GetPostByID(ctx, id, userID)
 			if err != nil {
 				continue
 			}
@@ -156,7 +156,7 @@ func (s *SearchService) Search(ctx context.Context, query string, scope string, 
 				Post:  post,
 			})
 		case "comment":
-			comment, err := s.commentService.GetCommentByID(ctx, id, uuid.Nil)
+			comment, err := s.commentService.GetCommentByID(ctx, id, userID)
 			if err != nil {
 				continue
 			}

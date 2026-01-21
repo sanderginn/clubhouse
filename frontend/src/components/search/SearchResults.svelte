@@ -1,6 +1,63 @@
 <script lang="ts">
   import { searchResults, isSearching, searchError, searchQuery, lastSearchQuery, searchScope, activeSection } from '../../stores';
   import PostCard from '../PostCard.svelte';
+  import ReactionBar from '../reactions/ReactionBar.svelte';
+  import { api } from '../../services/api';
+  import type { CommentResult } from '../../stores/searchStore';
+
+  // Track pending reactions to prevent double-clicks
+  let pendingReactions = new Set<string>();
+
+  async function toggleCommentReaction(comment: CommentResult, emoji: string) {
+    const key = `${comment.id}-${emoji}`;
+    if (pendingReactions.has(key)) return;
+
+    const userReactions = new Set(comment.viewerReactions ?? []);
+    const hasReacted = userReactions.has(emoji);
+
+    // Optimistic update
+    pendingReactions.add(key);
+    if (hasReacted) {
+      comment.viewerReactions = (comment.viewerReactions ?? []).filter((e) => e !== emoji);
+      if (comment.reactionCounts && comment.reactionCounts[emoji]) {
+        comment.reactionCounts[emoji]--;
+        if (comment.reactionCounts[emoji] <= 0) {
+          delete comment.reactionCounts[emoji];
+        }
+      }
+    } else {
+      comment.viewerReactions = [...(comment.viewerReactions ?? []), emoji];
+      comment.reactionCounts = { ...(comment.reactionCounts ?? {}), [emoji]: (comment.reactionCounts?.[emoji] ?? 0) + 1 };
+    }
+    // Trigger reactivity
+    $searchResults = $searchResults;
+
+    try {
+      if (hasReacted) {
+        await api.removeCommentReaction(comment.id, emoji);
+      } else {
+        await api.addCommentReaction(comment.id, emoji);
+      }
+    } catch (e) {
+      console.error('Failed to toggle comment reaction:', e);
+      // Revert on error
+      if (hasReacted) {
+        comment.viewerReactions = [...(comment.viewerReactions ?? []), emoji];
+        comment.reactionCounts = { ...(comment.reactionCounts ?? {}), [emoji]: (comment.reactionCounts?.[emoji] ?? 0) + 1 };
+      } else {
+        comment.viewerReactions = (comment.viewerReactions ?? []).filter((e) => e !== emoji);
+        if (comment.reactionCounts && comment.reactionCounts[emoji]) {
+          comment.reactionCounts[emoji]--;
+          if (comment.reactionCounts[emoji] <= 0) {
+            delete comment.reactionCounts[emoji];
+          }
+        }
+      }
+      $searchResults = $searchResults;
+    } finally {
+      pendingReactions.delete(key);
+    }
+  }
 
   function formatDate(dateString: string): string {
     const date = new Date(dateString);
@@ -122,6 +179,14 @@
                   </a>
                 </div>
               {/if}
+
+              <div class="mt-3">
+                <ReactionBar
+                  reactionCounts={result.comment.reactionCounts ?? {}}
+                  userReactions={new Set(result.comment.viewerReactions ?? [])}
+                  onToggle={(emoji) => result.comment && toggleCommentReaction(result.comment, emoji)}
+                />
+              </div>
             </div>
           </div>
         </article>
