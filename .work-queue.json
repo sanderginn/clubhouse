@@ -72,7 +72,8 @@
     111,
     112,
     113,
-    114
+    114,
+    137
   ],
   "issues": [
     {
@@ -1267,7 +1268,7 @@
     {
       "issue_number": 137,
       "title": "Bug: Link preview fails with 'An unexpected error occurred' when inserting URL",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1768987240-60949",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768987240-60949",
       "dependencies": [],
@@ -1280,7 +1281,8 @@
         "links"
       ],
       "branch": "fix/issue-137-link-preview-fails-with-an-unexpected-er",
-      "claimed_at": "2026-01-21T09:20:40Z"
+      "claimed_at": "2026-01-21T09:20:40Z",
+      "completed_at": "2026-01-21T09:25:09Z"
     },
     {
       "issue_number": 138,
