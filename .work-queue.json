@@ -81,6 +81,7 @@
     141,
     142,
     143,
+    145,
     151,
     152,
     156,
@@ -1436,7 +1437,7 @@
     {
       "issue_number": 145,
       "title": "Bug: Deprecated GF_INSTALL_PLUGINS environment variable in docker-compose",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769033715-4230",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769033715-4230",
       "dependencies": [],
@@ -1447,7 +1448,9 @@
         "devops"
       ],
       "branch": "fix/issue-145-deprecated-gfinstallplugins-environment-",
-      "claimed_at": "2026-01-21T22:15:15Z"
+      "claimed_at": "2026-01-21T22:15:15Z",
+      "pr_number": 171,
+      "completed_at": "2026-01-21T22:19:51Z"
     },
     {
       "issue_number": 151,
