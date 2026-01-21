@@ -235,10 +235,6 @@ prek run --all-files
 
 - Never use literal `\\n` in GitHub issues, PRs, or comments. Use real newlines instead.
 
-### Writing GitHub Comments/Issues/PRs
-
-- Never use literal `\\n` in GitHub issues, PRs, or comments. Use real newlines instead.
-
 ## Deployment
 
 Production:
