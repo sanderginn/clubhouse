@@ -43,6 +43,7 @@ When a PR comes in:
    - SQL uses correct column names (check migrations)
    - Error handling is proper
    - Tests exist (if applicable)
+   - Fit within project scope and architecture; watch for changes that violate core principles or create regressions across domains
 
 3. **If issues found:** Always leave a comment with feedback
    ```bash
