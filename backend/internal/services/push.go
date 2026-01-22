@@ -84,6 +84,9 @@ func (s *PushService) PublicKey() (string, error) {
 	if strings.TrimSpace(pushConfigData.publicKey) == "" {
 		return "", errors.New("vapid public key not configured")
 	}
+	if !pushConfigData.enabled {
+		return "", errors.New("vapid keys incomplete")
+	}
 	return pushConfigData.publicKey, nil
 }
 
