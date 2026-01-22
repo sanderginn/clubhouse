@@ -90,22 +90,18 @@ func main() {
 	wsHandler := handlers.NewWebSocketHandler(redisConn)
 	linkHandler := handlers.NewLinkHandler()
 	pushHandler := handlers.NewPushHandler(dbConn, pushService)
+	requireAuth := middleware.RequireAuth(redisConn)
 
 	// API routes
 	mux.HandleFunc("/api/v1/auth/register", authHandler.Register)
 	mux.HandleFunc("/api/v1/auth/login", authHandler.Login)
 	mux.HandleFunc("/api/v1/auth/logout", authHandler.Logout)
 	mux.HandleFunc("/api/v1/auth/me", authHandler.GetMe)
-	mux.HandleFunc("/api/v1/sections", sectionHandler.ListSections)
-	sectionRouteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.Contains(r.URL.Path, "/feed") {
-			postHandler.GetFeed(w, r)
-		} else if r.URL.Path == "/api/v1/sections/" {
-			// Handle trailing slash as list sections
-			sectionHandler.ListSections(w, r)
-		} else {
-			sectionHandler.GetSection(w, r)
-		}
+	mux.Handle("/api/v1/sections", requireAuth(http.HandlerFunc(sectionHandler.ListSections)))
+	sectionRouteHandler := newSectionRouteHandler(requireAuth, sectionRouteDeps{
+		listSections: sectionHandler.ListSections,
+		getSection:   sectionHandler.GetSection,
+		getFeed:      postHandler.GetFeed,
 	})
 	mux.Handle("/api/v1/sections/", sectionRouteHandler)
 
@@ -166,9 +162,9 @@ func main() {
 			reactionAuthHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(reactionHandler.RemoveReactionFromComment))
 			reactionAuthHandler.ServeHTTP(w, r)
 		} else if r.Method == http.MethodGet {
-			commentHandler.GetComment(w, r)
+			requireAuth(http.HandlerFunc(commentHandler.GetComment)).ServeHTTP(w, r)
 		} else if r.Method == http.MethodDelete {
-			deleteHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(commentHandler.DeleteComment))
+			deleteHandler := requireAuth(http.HandlerFunc(commentHandler.DeleteComment))
 			deleteHandler.ServeHTTP(w, r)
 		} else {
 			writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
@@ -177,7 +173,7 @@ func main() {
 	mux.Handle("/api/v1/comments/", commentRouteHandler)
 
 	// Post routes - route to appropriate handler
-	postRouteHandler := newPostRouteHandler(middleware.RequireAuth(redisConn), postRouteDeps{
+	postRouteHandler := newPostRouteHandler(requireAuth, postRouteDeps{
 		getThread:              commentHandler.GetThread,
 		restorePost:            postHandler.RestorePost,
 		addReactionToPost:      reactionHandler.AddReactionToPost,
@@ -188,30 +184,30 @@ func main() {
 	mux.Handle("/api/v1/posts/", postRouteHandler)
 
 	// Protected post create route
-	postCreateHandler := middleware.RequireAuth(redisConn)(
+	postCreateHandler := requireAuth(
 		http.HandlerFunc(postHandler.CreatePost),
 	)
 	mux.Handle("/api/v1/posts", postCreateHandler)
 
 	// Protected comment routes
-	commentCreateHandler := middleware.RequireAuth(redisConn)(
+	commentCreateHandler := requireAuth(
 		http.HandlerFunc(commentHandler.CreateComment),
 	)
 	mux.Handle("/api/v1/comments", commentCreateHandler)
 
 	// Search routes (protected)
-	mux.Handle("/api/v1/search", middleware.RequireAuth(redisConn)(http.HandlerFunc(searchHandler.Search)))
+	mux.Handle("/api/v1/search", requireAuth(http.HandlerFunc(searchHandler.Search)))
 
 	// Link preview route (protected)
-	mux.Handle("/api/v1/links/preview", middleware.RequireAuth(redisConn)(http.HandlerFunc(linkHandler.PreviewLink)))
+	mux.Handle("/api/v1/links/preview", requireAuth(http.HandlerFunc(linkHandler.PreviewLink)))
 
 	// Notification routes (protected)
-	mux.Handle("/api/v1/notifications", middleware.RequireAuth(redisConn)(http.HandlerFunc(notificationHandler.GetNotifications)))
-	mux.Handle("/api/v1/notifications/", middleware.RequireAuth(redisConn)(http.HandlerFunc(notificationHandler.MarkNotificationRead)))
+	mux.Handle("/api/v1/notifications", requireAuth(http.HandlerFunc(notificationHandler.GetNotifications)))
+	mux.Handle("/api/v1/notifications/", requireAuth(http.HandlerFunc(notificationHandler.MarkNotificationRead)))
 
 	// Push routes (protected)
-	mux.Handle("/api/v1/push/vapid-key", middleware.RequireAuth(redisConn)(http.HandlerFunc(pushHandler.GetVAPIDKey)))
-	mux.Handle("/api/v1/push/subscribe", middleware.RequireAuth(redisConn)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/api/v1/push/vapid-key", requireAuth(http.HandlerFunc(pushHandler.GetVAPIDKey)))
+	mux.Handle("/api/v1/push/subscribe", requireAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			pushHandler.Subscribe(w, r)
 			return
@@ -270,7 +266,7 @@ func main() {
 	mux.Handle("/api/v1/admin/audit-logs", middleware.RequireAdmin(redisConn)(http.HandlerFunc(adminHandler.GetAuditLogs)))
 
 	// WebSocket route (protected)
-	mux.Handle("/api/v1/ws", middleware.RequireAuth(redisConn)(http.HandlerFunc(wsHandler.HandleWS)))
+	mux.Handle("/api/v1/ws", requireAuth(http.HandlerFunc(wsHandler.HandleWS)))
 
 	// Apply middleware
 	handler := middleware.ChainMiddleware(mux,

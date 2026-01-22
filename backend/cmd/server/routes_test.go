@@ -215,3 +215,88 @@ func TestPostRouteHandlerDeletePostCommentsPath(t *testing.T) {
 		t.Fatal("did not expect delete handler to be called")
 	}
 }
+
+func TestPostRouteHandlerGetThreadRequiresAuth(t *testing.T) {
+	authCalled := false
+
+	requireAuth := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authCalled = true
+			w.WriteHeader(http.StatusUnauthorized)
+		})
+	}
+
+	deps := postRouteDeps{
+		getThread: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getThread should not be called without auth")
+		},
+		restorePost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("restorePost should not be called")
+		},
+		addReactionToPost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("addReactionToPost should not be called")
+		},
+		removeReactionFromPost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("removeReactionFromPost should not be called")
+		},
+		getPost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPost should not be called")
+		},
+		deletePost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("deletePost should not be called")
+		},
+	}
+
+	handler := newPostRouteHandler(requireAuth, deps)
+	postID := uuid.New()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/posts/"+postID.String()+"/comments", nil)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusUnauthorized {
+		t.Fatalf("expected status %v, got %v", http.StatusUnauthorized, status)
+	}
+
+	if !authCalled {
+		t.Fatal("expected auth middleware to be called")
+	}
+}
+
+func TestSectionRouteHandlerFeedRequiresAuth(t *testing.T) {
+	authCalled := false
+
+	requireAuth := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authCalled = true
+			w.WriteHeader(http.StatusUnauthorized)
+		})
+	}
+
+	deps := sectionRouteDeps{
+		listSections: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("listSections should not be called without auth")
+		},
+		getSection: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getSection should not be called without auth")
+		},
+		getFeed: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getFeed should not be called without auth")
+		},
+	}
+
+	handler := newSectionRouteHandler(requireAuth, deps)
+	sectionID := uuid.New()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/sections/"+sectionID.String()+"/feed", nil)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusUnauthorized {
+		t.Fatalf("expected status %v, got %v", http.StatusUnauthorized, status)
+	}
+
+	if !authCalled {
+		t.Fatal("expected auth middleware to be called")
+	}
+}
