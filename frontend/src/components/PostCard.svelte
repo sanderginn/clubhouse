@@ -7,7 +7,6 @@
 
   export let post: Post;
 
-  let showComments = false;
   $: userReactions = new Set(post.viewerReactions ?? []);
 
   async function toggleReaction(emoji: string) {
@@ -159,15 +158,10 @@
       {/if}
 
       <div class="flex items-center gap-4 mt-3 text-gray-500 text-sm">
-        <button
-          type="button"
-          class="flex items-center gap-1 hover:text-gray-700 transition-colors"
-          aria-expanded={showComments}
-          on:click={() => (showComments = !showComments)}
-        >
+        <div class="flex items-center gap-1">
           <span>💬</span>
           <span>{post.commentCount || 0}</span>
-        </button>
+        </div>
       </div>
 
       <div class="mt-3">
@@ -178,11 +172,9 @@
         />
       </div>
 
-      {#if showComments}
-        <div class="mt-4 border-t border-gray-200 pt-4">
-          <CommentThread postId={post.id} />
-        </div>
-      {/if}
+      <div class="mt-4 border-t border-gray-200 pt-4">
+        <CommentThread postId={post.id} />
+      </div>
     </div>
   </div>
 </article>

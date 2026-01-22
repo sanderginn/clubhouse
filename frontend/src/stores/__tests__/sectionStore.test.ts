@@ -21,17 +21,19 @@ describe('sectionStore', () => {
     apiGet.mockResolvedValue({
       sections: [
         { id: 'section-1', name: 'Music', type: 'music' },
-        { id: 'section-2', name: 'Books', type: 'book' },
+        { id: 'section-2', name: 'General', type: 'general' },
+        { id: 'section-3', name: 'Books', type: 'book' },
       ],
     });
 
     await sectionStore.loadSections();
     const state = get(sectionStore);
 
-    expect(state.sections).toHaveLength(2);
-    expect(state.sections[0].icon).toBe('🎵');
-    expect(state.sections[1].icon).toBe('📚');
-    expect(state.activeSection?.id).toBe('section-1');
+    expect(state.sections).toHaveLength(3);
+    expect(state.sections[0].icon).toBe('💬');
+    expect(state.sections[1].icon).toBe('🎵');
+    expect(state.sections[2].icon).toBe('📚');
+    expect(state.activeSection?.id).toBe('section-2');
     expect(state.isLoading).toBe(false);
   });
 
@@ -54,12 +56,14 @@ describe('sectionStore', () => {
     sectionStore.setSections([
       { id: 'section-1', name: 'Music', type: 'music', icon: '🎵' },
       { id: 'section-2', name: 'Books', type: 'book', icon: '📚' },
+      { id: 'section-3', name: 'General', type: 'general', icon: '💬' },
     ]);
     sectionStore.setActiveSection({ id: 'section-2', name: 'Books', type: 'book', icon: '📚' });
 
     sectionStore.setSections([
       { id: 'section-2', name: 'Books', type: 'book', icon: '📚' },
-      { id: 'section-3', name: 'Photos', type: 'photo', icon: '📷' },
+      { id: 'section-3', name: 'General', type: 'general', icon: '💬' },
+      { id: 'section-4', name: 'Photos', type: 'photo', icon: '📷' },
     ]);
 
     const state = get(sectionStore);
@@ -71,9 +75,10 @@ describe('sectionStore', () => {
 
     sectionStore.setSections([
       { id: 'section-1', name: 'Music', type: 'music', icon: '🎵' },
+      { id: 'section-2', name: 'General', type: 'general', icon: '💬' },
     ]);
     let state = get(sectionStore);
-    expect(state.activeSection?.id).toBe('section-1');
+    expect(state.activeSection?.id).toBe('section-2');
 
     sectionStore.setSections([]);
     state = get(sectionStore);
