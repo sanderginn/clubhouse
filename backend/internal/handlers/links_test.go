@@ -131,6 +131,35 @@ func TestPreviewLinkInvalidBody(t *testing.T) {
 	}
 }
 
+func TestPreviewLinkRequestTooLarge(t *testing.T) {
+	enabled := true
+	services.GetConfigService().UpdateConfig(&enabled)
+
+	handler := NewLinkHandler()
+	largeURL := "https://example.com/" + strings.Repeat("a", int(maxJSONBodyBytes)+1024)
+	body, err := json.Marshal(models.LinkPreviewRequest{URL: largeURL})
+	if err != nil {
+		t.Fatalf("failed to marshal body: %v", err)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/links/preview", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	recorder := httptest.NewRecorder()
+	handler.PreviewLink(recorder, req)
+
+	if recorder.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("expected status 413, got %d", recorder.Code)
+	}
+
+	var errResp models.ErrorResponse
+	if err := json.NewDecoder(recorder.Body).Decode(&errResp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if errResp.Code != "REQUEST_TOO_LARGE" {
+		t.Fatalf("expected error code REQUEST_TOO_LARGE, got %s", errResp.Code)
+	}
+}
+
 func TestPreviewLinkMethodNotAllowed(t *testing.T) {
 	handler := NewLinkHandler()
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/links/preview", nil)

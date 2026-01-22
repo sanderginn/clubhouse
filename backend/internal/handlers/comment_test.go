@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -103,6 +104,43 @@ func TestCreateCommentHandlerMissingUserID(t *testing.T) {
 
 	if errResp.Code != "UNAUTHORIZED" {
 		t.Errorf("handler returned wrong error code: got %v want UNAUTHORIZED", errResp.Code)
+	}
+}
+
+func TestCreateCommentHandlerRequestTooLarge(t *testing.T) {
+	handler := &CommentHandler{}
+
+	largeContent := strings.Repeat("a", int(maxJSONBodyBytes)+1024)
+	reqBody := models.CreateCommentRequest{
+		PostID:  uuid.New().String(),
+		Content: largeContent,
+	}
+
+	body, err := json.Marshal(reqBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req, err := http.NewRequest("POST", "/api/v1/comments", bytes.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req = req.WithContext(createTestUserContext(req.Context(), uuid.New(), "testuser", false))
+
+	rr := httptest.NewRecorder()
+	handler.CreateComment(rr, req)
+
+	if status := rr.Code; status != http.StatusRequestEntityTooLarge {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusRequestEntityTooLarge)
+	}
+
+	var errResp models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&errResp); err != nil {
+		t.Fatal(err)
+	}
+
+	if errResp.Code != "REQUEST_TOO_LARGE" {
+		t.Errorf("handler returned wrong error code: got %v want REQUEST_TOO_LARGE", errResp.Code)
 	}
 }
 
