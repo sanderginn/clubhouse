@@ -88,6 +88,7 @@
     156,
     160,
     162,
+    163,
     166,
     169,
     170
@@ -1551,7 +1552,7 @@
     {
       "issue_number": 163,
       "title": "UI: Make 'General' default section at top and always show comment window",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769062770-51496",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769062770-51496",
       "dependencies": [],
@@ -1562,7 +1563,9 @@
         "ui"
       ],
       "branch": "feat/issue-163-ui-make-general-default-section-at-top-a",
-      "claimed_at": "2026-01-22T06:19:30Z"
+      "claimed_at": "2026-01-22T06:19:30Z",
+      "pr_number": 176,
+      "completed_at": "2026-01-22T07:46:48Z"
     },
     {
       "issue_number": 166,
