@@ -52,6 +52,7 @@
     45,
     46,
     47,
+    48,
     49,
     50,
     51,
@@ -887,7 +888,7 @@
     {
       "issue_number": 48,
       "title": "Phase 6: Write production deployment guide",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769086535-4259",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769086535-4259",
       "dependencies": [],
@@ -898,7 +899,9 @@
       ],
       "priority": 9999,
       "branch": "feat/issue-48-write-production-deployment-guide",
-      "claimed_at": "2026-01-22T12:55:35Z"
+      "claimed_at": "2026-01-22T12:55:35Z",
+      "pr_number": 217,
+      "completed_at": "2026-01-22T13:00:53Z"
     },
     {
       "issue_number": 49,
