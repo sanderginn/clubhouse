@@ -31,9 +31,22 @@ JSON
 
   queue_response=$(api_call "${queue_payload}")
 
+  graphql_error=$(jq -r '.errors[0].message // empty' <<<"${queue_response}")
+  if [[ -n "${graphql_error}" ]]; then
+    echo "Buildkite GraphQL error: ${graphql_error}"
+    exit 1
+  fi
+
+  cluster_exists=$(jq -r '.data.organization.cluster != null' <<<"${queue_response}")
+  if [[ "${cluster_exists}" != "true" ]]; then
+    echo "No cluster found for id '${cluster_id}'."
+    exit 1
+  fi
+
   self_hosted_queue_id=$(jq -r --arg key "${self_hosted_queue_key}" '.data.organization.cluster.queues.edges // [] | .[].node | select(.key == $key) | .id' <<<"${queue_response}")
   if [[ -z "${self_hosted_queue_id}" || "${self_hosted_queue_id}" == "null" ]]; then
-    echo "No queue found for key '${self_hosted_queue_key}'."
+    available_keys=$(jq -r '.data.organization.cluster.queues.edges // [] | .[].node.key' <<<"${queue_response}")
+    echo "No queue found for key '${self_hosted_queue_key}'. Available keys: ${available_keys}"
     exit 1
   fi
 fi
