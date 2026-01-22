@@ -22,7 +22,7 @@ func newPostRouteHandler(requireAuth authMiddleware, deps postRouteDeps) http.Ha
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check if this is a thread comments request (GET /api/v1/posts/{id}/comments)
 		if r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/comments") {
-			deps.getThread(w, r)
+			requireAuth(http.HandlerFunc(deps.getThread)).ServeHTTP(w, r)
 			return
 		}
 		if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/restore") {
@@ -46,11 +46,33 @@ func newPostRouteHandler(requireAuth authMiddleware, deps postRouteDeps) http.Ha
 			return
 		}
 		if r.Method == http.MethodGet {
-			deps.getPost(w, r)
+			requireAuth(http.HandlerFunc(deps.getPost)).ServeHTTP(w, r)
 			return
 		}
 
 		writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+	})
+}
+
+type sectionRouteDeps struct {
+	listSections http.HandlerFunc
+	getSection   http.HandlerFunc
+	getFeed      http.HandlerFunc
+}
+
+func newSectionRouteHandler(requireAuth authMiddleware, deps sectionRouteDeps) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/feed") {
+			requireAuth(http.HandlerFunc(deps.getFeed)).ServeHTTP(w, r)
+			return
+		}
+		if r.URL.Path == "/api/v1/sections/" {
+			// Handle trailing slash as list sections
+			requireAuth(http.HandlerFunc(deps.listSections)).ServeHTTP(w, r)
+			return
+		}
+
+		requireAuth(http.HandlerFunc(deps.getSection)).ServeHTTP(w, r)
 	})
 }
 
