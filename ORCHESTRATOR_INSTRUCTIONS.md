@@ -44,12 +44,12 @@ When a PR comes in:
    - Error handling is proper
    - Tests exist (if applicable)
 
-3. **If issues found:** Leave a comment with feedback
+3. **If issues found:** Always leave a comment with feedback
    ```bash
    gh pr comment <PR_NUMBER> --body "Feedback message"
    ```
 
-4. **If ready to merge:**
+4. **If no issues found:** Proceed with the merge steps
    ```bash
    gh pr merge <PR_NUMBER> --merge --delete-branch
    ./scripts/complete-issue.sh <ISSUE_NUMBER> <PR_NUMBER>
