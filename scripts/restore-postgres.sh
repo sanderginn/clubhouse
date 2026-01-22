@@ -19,8 +19,15 @@ if [ ! -f "$BACKUP_FILE" ]; then
   exit 1
 fi
 
-# Restore by streaming the decompressed SQL into psql in the container.
-gunzip -c "$BACKUP_FILE" | docker compose -f docker-compose.prod.yml exec -T postgres \
-  sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+TMP_SQL="$(mktemp -t clubhouse_restore.XXXXXX)"
+
+gunzip -t "$BACKUP_FILE"
+gunzip -c "$BACKUP_FILE" > "$TMP_SQL"
+
+# Restore by streaming the SQL file into psql in the container.
+docker compose -f docker-compose.prod.yml exec -T postgres \
+  sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "$TMP_SQL"
+
+rm -f "$TMP_SQL"
 
 echo "Restore completed from $BACKUP_FILE"
