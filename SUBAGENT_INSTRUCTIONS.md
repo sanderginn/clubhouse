@@ -194,6 +194,7 @@ The orchestrator will review your PR and either:
 8. **Rebase if conflicts** - orchestrator will ask you to rebase, not fix it themselves
 9. **Minimize exploration** - see "What NOT to Explore" section
 10. **Start immediately** - once in the worktree, begin work without waiting for more user input; keep going until the PR is opened
+11. **No confirmation prompts** - never ask whether to run extra tests or whether to commit/create a PR; decide and proceed without asking
 
 ## Troubleshooting
 
