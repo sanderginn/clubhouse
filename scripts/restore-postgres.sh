@@ -21,13 +21,17 @@ fi
 
 TMP_SQL="$(mktemp -t clubhouse_restore.XXXXXX)"
 
+cleanup() {
+  rm -f "$TMP_SQL"
+}
+
+trap cleanup EXIT
+
 gunzip -t "$BACKUP_FILE"
 gunzip -c "$BACKUP_FILE" > "$TMP_SQL"
 
 # Restore by streaming the SQL file into psql in the container.
 docker compose -f docker-compose.prod.yml exec -T postgres \
-  sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "$TMP_SQL"
-
-rm -f "$TMP_SQL"
+  sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "$TMP_SQL"
 
 echo "Restore completed from $BACKUP_FILE"
