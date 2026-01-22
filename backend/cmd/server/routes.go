@@ -40,7 +40,7 @@ func newPostRouteHandler(requireAuth authMiddleware, deps postRouteDeps) http.Ha
 			requireAuth(http.HandlerFunc(deps.removeReactionFromPost)).ServeHTTP(w, r)
 			return
 		}
-		if r.Method == http.MethodDelete {
+		if r.Method == http.MethodDelete && isPostIDPath(r.URL.Path) {
 			// DELETE /api/v1/posts/{id}
 			requireAuth(http.HandlerFunc(deps.deletePost)).ServeHTTP(w, r)
 			return
@@ -52,4 +52,13 @@ func newPostRouteHandler(requireAuth authMiddleware, deps postRouteDeps) http.Ha
 
 		writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
 	})
+}
+
+func isPostIDPath(path string) bool {
+	trimmed := strings.TrimSuffix(path, "/")
+	parts := strings.Split(trimmed, "/")
+	if len(parts) != 5 {
+		return false
+	}
+	return parts[1] == "api" && parts[2] == "v1" && parts[3] == "posts" && parts[4] != ""
 }
