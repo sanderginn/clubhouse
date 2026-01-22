@@ -23,6 +23,11 @@ Required environment values:
 - `REDIS_PASSWORD`
 - `GF_SECURITY_ADMIN_USER`, `GF_SECURITY_ADMIN_PASSWORD`, `GF_SERVER_ROOT_URL`
 
+Optional environment values (override defaults or enable features):
+
+- `OTEL_SERVICE_NAME`, `OTEL_SERVICE_VERSION` (defaults set in `docker-compose.prod.yml`)
+- `BACKUP_DIR`, `BACKUP_RETENTION_DAYS` (only needed if you run `scripts/backup-postgres.sh`)
+
 Required secrets to generate (do not use defaults):
 
 - `POSTGRES_PASSWORD`
@@ -41,7 +46,20 @@ Set your public domains and ACME email:
 - `CLUBHOUSE_GRAFANA_DOMAIN=grafana.example.com`
 - `ACME_EMAIL=admin@example.com`
 
-## 3) Build and tag production images
+## 3) Database setup
+
+The production compose file runs Postgres in a container and the backend entrypoint
+automatically runs migrations plus seeds the default admin user on startup.
+You do not need to run migrations manually for the default setup.
+
+If you use an external Postgres instance:
+
+- Point the backend to it by setting `POSTGRES_HOST` and `POSTGRES_PORT` in
+  `docker-compose.prod.yml` (or by overriding those env vars at deploy time).
+- Ensure the database and user from `.env.production` already exist.
+- Keep `sslmode` requirements in mind (the default entrypoint uses `sslmode=disable`).
+
+## 4) Build and tag production images
 
 Build and tag images on the deploy host or in CI, then push to your registry.
 
@@ -57,7 +75,7 @@ BACKEND_IMAGE=ghcr.io/your-org/clubhouse-backend:2026-01-22
 FRONTEND_IMAGE=ghcr.io/your-org/clubhouse-frontend:2026-01-22
 ```
 
-## 4) Start the production stack
+## 5) Start the production stack
 
 ```bash
 docker compose -f docker-compose.prod.yml --env-file .env.production up -d
@@ -69,7 +87,7 @@ Verify status:
 docker compose -f docker-compose.prod.yml ps
 ```
 
-## 5) TLS and reverse proxy
+## 6) TLS and reverse proxy
 
 TLS is terminated by Caddy using `Caddyfile` and the `CLUBHOUSE_APP_DOMAIN` / `CLUBHOUSE_GRAFANA_DOMAIN` values.
 
@@ -78,11 +96,18 @@ TLS is terminated by Caddy using `Caddyfile` and the `CLUBHOUSE_APP_DOMAIN` / `C
 
 Caddy forwards `/api` and `/health` to the backend and everything else to the frontend.
 
-## 6) Secure internal services
+## 7) Secure internal services
 
 The production compose file does not publish ports for Postgres, Redis, Grafana, Loki, Tempo, or Prometheus. Access is only via the internal Docker network or the Caddy reverse proxy.
 
-## 7) Persistence and backups
+## 8) Secret management
+
+- Store `.env.production` in a secrets manager (1Password, Vault, SSM Parameter Store, etc.) and
+  lock down file permissions on the host.
+- Rotate `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, and `GF_SECURITY_ADMIN_PASSWORD` regularly.
+- Avoid checking secrets into source control or CI logs; use CI secret injection instead.
+
+## 9) Persistence and backups
 
 All stateful services use named volumes:
 
@@ -117,7 +142,17 @@ The backup/restore scripts source `.env.production` automatically when present.
 ./scripts/restore-postgres.sh /path/to/backup.sql.gz
 ```
 
-## 8) Observability
+## 10) Scaling considerations
+
+- **Backend**: You can scale horizontally by running multiple backend containers and
+  putting Caddy (or another load balancer) in front. Sessions are Redis-backed, and
+  WebSocket events are distributed through Redis pub/sub.
+- **Postgres**: For larger communities, move Postgres to a managed service and
+  provision enough CPU/RAM/IOPS. Backups become the database provider's responsibility.
+- **Redis**: Start with a single instance; upgrade to a managed Redis or Redis cluster
+  if session storage or pub/sub throughput becomes a bottleneck.
+
+## 11) Observability
 
 - Traces: OTLP gRPC -> Tempo (`OTEL_EXPORTER_OTLP_ENDPOINT=tempo:4317`)
 - Logs: OTLP HTTP -> Loki (`OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://loki:3100/otlp/v1/logs`)
@@ -132,7 +167,7 @@ Pinned observability image versions (see `docker-compose.yml` and `docker-compos
 - Prometheus: `prom/prometheus:2.54.1`
 - Tempo: `grafana/tempo:2.6.1`
 
-## 9) Security hardening checklist
+## 12) Security hardening checklist
 
 - Replace the default admin password on first login. The seed user is created from `backend/migrations/seed_admin.sql`.
 - Confirm Caddy is setting `X-Forwarded-Proto: https` so secure cookies are issued.
@@ -143,7 +178,7 @@ Pinned observability image versions (see `docker-compose.yml` and `docker-compos
 - Review environment values for production: `ENVIRONMENT=production`, `LOG_LEVEL=info`.
 - Use a least-privilege database user for the app (separate admin/maintenance credentials).
 
-## 10) Health checks and uptime monitoring
+## 13) Health checks and uptime monitoring
 
 The backend exposes `GET /health`. Caddy forwards `/health` to the backend, so you can monitor:
 
@@ -153,7 +188,7 @@ https://<CLUBHOUSE_APP_DOMAIN>/health
 
 Use your uptime monitor of choice (Grafana Synthetic Monitoring, Uptime Kuma, or a managed service).
 
-## 11) Rollback plan
+## 14) Rollback plan
 
 1. Keep prior image tags (e.g., `clubhouse-backend:2026-01-21`).
 2. Update `.env.production` to point to the previous image tags.
@@ -169,7 +204,7 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d
 docker compose -f docker-compose.prod.yml logs -f backend
 ```
 
-## 12) Troubleshooting
+## 15) Troubleshooting
 
 - Check logs: `docker compose -f docker-compose.prod.yml logs -f`
 - Verify containers are healthy: `docker compose -f docker-compose.prod.yml ps`
