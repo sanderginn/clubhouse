@@ -881,14 +881,13 @@
       "status": "available",
       "assigned_to": null,
       "worktree": null,
-      "dependencies": [
-        47
-      ],
+      "dependencies": [],
       "phase": 6,
       "labels": [
+        "phase6",
         "devops"
       ],
-      "priority": 3
+      "priority": 9999
     },
     {
       "issue_number": 49,
@@ -1649,6 +1648,421 @@
       "claimed_at": "2026-01-22T07:58:09Z",
       "pr_number": 178,
       "completed_at": "2026-01-22T09:56:28Z"
+    },
+    {
+      "issue_number": 180,
+      "title": "Backend: Wire DELETE /posts and return 405 on unsupported methods",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "backend",
+        "posts"
+      ]
+    },
+    {
+      "issue_number": 181,
+      "title": "Backend: Require auth on read-only content endpoints",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        180
+      ],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "backend",
+        "auth"
+      ]
+    },
+    {
+      "issue_number": 182,
+      "title": "Backend: Add request body size limits for JSON endpoints",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        181
+      ],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "backend"
+      ]
+    },
+    {
+      "issue_number": 183,
+      "title": "Backend: Add SSRF protections to link metadata fetcher",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "backend",
+        "links"
+      ]
+    },
+    {
+      "issue_number": 184,
+      "title": "Backend: Add ReadHeaderTimeout to HTTP server",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        182
+      ],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "backend"
+      ]
+    },
+    {
+      "issue_number": 186,
+      "title": "Frontend: Service worker should handle SKIP_WAITING message",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "pwa"
+      ]
+    },
+    {
+      "issue_number": 187,
+      "title": "Infra: Backend Dockerfile installs wrong migrate binary on amd64",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "backend",
+        "devops"
+      ]
+    },
+    {
+      "issue_number": 188,
+      "title": "Infra: Pin observability image versions in compose files",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "observability",
+        "devops"
+      ]
+    },
+    {
+      "issue_number": 189,
+      "title": "Auth: Replace default admin seed with bootstrap flow",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        184
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "backend",
+        "auth",
+        "admin"
+      ]
+    },
+    {
+      "issue_number": 190,
+      "title": "Auth: Add rate limiting for login/register",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        199
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "backend",
+        "auth",
+        "redis"
+      ]
+    },
+    {
+      "issue_number": 191,
+      "title": "Auth: Failed login tracking + temporary lockout",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        190
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "backend",
+        "auth",
+        "redis"
+      ]
+    },
+    {
+      "issue_number": 192,
+      "title": "Auth: Reduce user enumeration in login/register",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        191
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "backend",
+        "auth"
+      ]
+    },
+    {
+      "issue_number": 193,
+      "title": "Auth: Add CSRF token issuance + verification (backend)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        189,
+        195
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "backend",
+        "auth"
+      ]
+    },
+    {
+      "issue_number": 194,
+      "title": "Auth: Add CSRF token handling in frontend client",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        193
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "auth"
+      ]
+    },
+    {
+      "issue_number": 195,
+      "title": "Auth: Track sessions per user + add logout-all endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        202
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "backend",
+        "auth",
+        "redis"
+      ]
+    },
+    {
+      "issue_number": 196,
+      "title": "Auth: Admin generates one-time password reset links (backend)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        195
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "backend",
+        "db",
+        "auth",
+        "admin"
+      ]
+    },
+    {
+      "issue_number": 197,
+      "title": "Auth: Admin UI to generate password reset links",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        196
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "auth",
+        "admin"
+      ]
+    },
+    {
+      "issue_number": 198,
+      "title": "Auth: Password reset page (frontend)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        196
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "auth"
+      ]
+    },
+    {
+      "issue_number": 199,
+      "title": "Auth: Username-based registration/login + make email optional (backend)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "backend",
+        "db",
+        "auth"
+      ]
+    },
+    {
+      "issue_number": 200,
+      "title": "Auth: Update login/register UI for username-based auth",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        199
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "auth"
+      ]
+    },
+    {
+      "issue_number": 201,
+      "title": "Docs: Update auth docs for username-based login",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        199
+      ],
+      "phase": 5,
+      "labels": [
+        "documentation",
+        "enhancement",
+        "auth"
+      ]
+    },
+    {
+      "issue_number": 202,
+      "title": "Auth: Update password policy validation (backend)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        192
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "backend",
+        "auth"
+      ]
+    },
+    {
+      "issue_number": 203,
+      "title": "Auth: Update frontend password guidance to match new policy",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        202
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "auth"
+      ]
+    },
+    {
+      "issue_number": 204,
+      "title": "Auth: Add auth event logging (backend)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        196
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "backend",
+        "db",
+        "auth"
+      ]
+    },
+    {
+      "issue_number": 205,
+      "title": "Auth: Add admin TOTP enrollment + verification (backend)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        204
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "backend",
+        "db",
+        "auth",
+        "admin"
+      ]
+    },
+    {
+      "issue_number": 206,
+      "title": "Auth: Admin TOTP UI + login challenge (frontend)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        205
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "auth",
+        "admin"
+      ]
     }
   ]
 }
