@@ -132,7 +132,7 @@ Required Buildkite environment variables (set as secrets):
 Optional:
 - `BUILDKITE_SELF_HOSTED_QUEUE_ID` (skip queue lookup if you already know the queue ID)
 
-Note: the selector step uses the built-in `BUILDKITE_ORGANIZATION_SLUG` and requires `python3` on the hosted agent image.
+Note: the selector step uses the built-in `BUILDKITE_ORGANIZATION_SLUG` and requires `jq` on the hosted agent image.
 
 ## Pre-commit Checks
 

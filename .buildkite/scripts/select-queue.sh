@@ -5,8 +5,8 @@ org_slug="${BUILDKITE_ORGANIZATION_SLUG:?BUILDKITE_ORGANIZATION_SLUG is required
 cluster_id="${BUILDKITE_CLUSTER_ID:?BUILDKITE_CLUSTER_ID is required}"
 graphql_token="${DYNAMIC_PIPELINE_GRAPHQL_TOKEN:?DYNAMIC_PIPELINE_GRAPHQL_TOKEN is required}"
 
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "python3 is required for Buildkite queue selection. Install Python 3 or update the script to use a different JSON parser."
+if ! command -v jq >/dev/null 2>&1; then
+  echo "jq is required for Buildkite queue selection. Install jq on the hosted agent image."
   exit 1
 fi
 
@@ -31,28 +31,11 @@ JSON
 
   queue_response=$(api_call "${queue_payload}")
 
-  self_hosted_queue_id=$(python3 - <<'PY'
-import json
-import os
-import sys
-
-key = os.environ.get("BUILDKITE_SELF_HOSTED_QUEUE_KEY", "local-agents")
-
-try:
-    data = json.load(sys.stdin)
-    queues = data["data"]["organization"]["cluster"]["queues"]["edges"]
-except Exception as exc:
-    raise SystemExit(f"Failed to read Buildkite queue response: {exc}")
-
-for edge in queues:
-    node = edge.get("node", {})
-    if node.get("key") == key:
-        print(node.get("id"))
-        raise SystemExit(0)
-
-raise SystemExit(f"No queue found for key '{key}'.")
-PY
-  <<<"${queue_response}")
+  self_hosted_queue_id=$(jq -r --arg key "${self_hosted_queue_key}" '.data.organization.cluster.queues.edges[].node | select(.key == $key) | .id' <<<"${queue_response}")
+  if [[ -z "${self_hosted_queue_id}" || "${self_hosted_queue_id}" == "null" ]]; then
+    echo "No queue found for key '${self_hosted_queue_key}'."
+    exit 1
+  fi
 fi
 
 agents_payload=$(cat <<JSON
@@ -62,25 +45,7 @@ JSON
 
 agents_response=$(api_call "${agents_payload}")
 
-connected_count=$(python3 - <<'PY'
-import json
-import sys
-
-try:
-    data = json.load(sys.stdin)
-    edges = data["data"]["organization"]["agents"]["edges"]
-except Exception as exc:
-    raise SystemExit(f"Failed to read Buildkite agents response: {exc}")
-
-connected = 0
-for edge in edges:
-    node = edge.get("node", {})
-    if node.get("connectionState") == "connected":
-        connected += 1
-
-print(connected)
-PY
-<<<"${agents_response}")
+connected_count=$(jq '[.data.organization.agents.edges[].node | select(.connectionState == "connected")] | length' <<<"${agents_response}")
 
 if [[ "${connected_count}" -gt 0 ]]; then
   target_queue="${self_hosted_queue_key}"
