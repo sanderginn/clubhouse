@@ -1699,16 +1699,18 @@
     {
       "issue_number": 183,
       "title": "Backend: Add SSRF protections to link metadata fetcher",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769084111-71943",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769084111-71943",
       "dependencies": [],
       "phase": "bug",
       "labels": [
         "bug",
         "backend",
         "links"
-      ]
+      ],
+      "branch": "fix/issue-183-backend-add-ssrf-protections-to-link-met",
+      "claimed_at": "2026-01-22T12:15:11Z"
     },
     {
       "issue_number": 184,
