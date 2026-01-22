@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd backend
-
-go test ./...
-go build ./...
+bash scripts/buildkite/backend-test.sh
