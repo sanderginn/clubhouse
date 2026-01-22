@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -17,11 +18,17 @@ import (
 const (
 	fetchTimeout = 5 * time.Second
 	maxBodyBytes = 2 << 20 // 2MB
+	maxRedirects = 5
 )
 
 // Fetcher retrieves metadata for links.
 type Fetcher struct {
-	client *http.Client
+	client   *http.Client
+	resolver ipResolver
+}
+
+type ipResolver interface {
+	LookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error)
 }
 
 // NewFetcher creates a new fetcher with a default client if none is provided.
@@ -29,7 +36,10 @@ func NewFetcher(client *http.Client) *Fetcher {
 	if client == nil {
 		client = &http.Client{Timeout: fetchTimeout}
 	}
-	return &Fetcher{client: client}
+	return &Fetcher{
+		client:   client,
+		resolver: net.DefaultResolver,
+	}
 }
 
 var defaultFetcher = NewFetcher(nil)
@@ -52,14 +62,8 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	if err != nil {
 		return nil, fmt.Errorf("parse url: %w", err)
 	}
-	if u.Scheme == "" {
-		return nil, errors.New("missing url scheme")
-	}
-	if u.Host == "" {
-		return nil, errors.New("missing url host")
-	}
-	if u.Scheme != "http" && u.Scheme != "https" {
-		return nil, errors.New("unsupported url scheme")
+	if err := f.validateURL(ctx, u); err != nil {
+		return nil, err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
@@ -68,7 +72,14 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	}
 	req.Header.Set("User-Agent", "ClubhouseMetadataFetcher/1.0")
 
-	resp, err := f.client.Do(req)
+	client := f.client
+	if client == nil {
+		client = &http.Client{Timeout: fetchTimeout}
+	}
+	clientCopy := *client
+	clientCopy.CheckRedirect = f.redirectValidator(ctx, client.CheckRedirect)
+
+	resp, err := clientCopy.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("fetch url: %w", err)
 	}
@@ -131,6 +142,88 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	}
 
 	return metadata, nil
+}
+
+func (f *Fetcher) redirectValidator(ctx context.Context, existing func(req *http.Request, via []*http.Request) error) func(req *http.Request, via []*http.Request) error {
+	return func(req *http.Request, via []*http.Request) error {
+		if len(via) >= maxRedirects {
+			return errors.New("too many redirects")
+		}
+		if err := f.validateURL(ctx, req.URL); err != nil {
+			return err
+		}
+		if existing != nil {
+			return existing(req, via)
+		}
+		return nil
+	}
+}
+
+func (f *Fetcher) validateURL(ctx context.Context, u *url.URL) error {
+	if u == nil {
+		return errors.New("url is required")
+	}
+	if u.Scheme == "" {
+		return errors.New("missing url scheme")
+	}
+	if u.Host == "" {
+		return errors.New("missing url host")
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return errors.New("unsupported url scheme")
+	}
+
+	host := strings.ToLower(strings.TrimSuffix(u.Hostname(), "."))
+	if host == "" {
+		return errors.New("missing url host")
+	}
+	if isBlockedHostname(host) {
+		return fmt.Errorf("blocked host: %s", host)
+	}
+
+	if ip := net.ParseIP(host); ip != nil {
+		if isBlockedIP(ip) {
+			return fmt.Errorf("blocked ip: %s", host)
+		}
+		return nil
+	}
+
+	resolver := f.resolver
+	if resolver == nil {
+		resolver = net.DefaultResolver
+	}
+	addrs, err := resolver.LookupIPAddr(ctx, host)
+	if err != nil {
+		return fmt.Errorf("resolve host: %w", err)
+	}
+	if len(addrs) == 0 {
+		return errors.New("resolve host: no addresses")
+	}
+	for _, addr := range addrs {
+		if isBlockedIP(addr.IP) {
+			return fmt.Errorf("blocked ip: %s", addr.IP.String())
+		}
+	}
+
+	return nil
+}
+
+func isBlockedHostname(host string) bool {
+	switch host {
+	case "localhost", "metadata.google.internal":
+		return true
+	}
+	return strings.HasSuffix(host, ".localhost")
+}
+
+func isBlockedIP(ip net.IP) bool {
+	if ip == nil {
+		return true
+	}
+	if ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsPrivate() || ip.IsUnspecified() {
+		return true
+	}
+	return false
 }
 
 func extractHTMLMeta(body []byte) (map[string]string, string) {
