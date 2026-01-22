@@ -25,7 +25,7 @@ api_call() {
 
 if [[ -z "${self_hosted_queue_id}" ]]; then
   queue_payload=$(cat <<JSON
-{"query":"query(\$org:String!,\$cluster:ID!){organization(slug:\$org){cluster(id:\$cluster){queues(first:100){edges{node{id key}}}}}}","variables":{"org":"${org_slug}","cluster":"${cluster_id}"}}
+{"query":"query(\$org:ID!,\$cluster:ID!){organization(slug:\$org){cluster(id:\$cluster){queues(first:100){edges{node{id key}}}}}}","variables":{"org":"${org_slug}","cluster":"${cluster_id}"}}
 JSON
 )
 
@@ -52,7 +52,7 @@ JSON
 fi
 
 agents_payload=$(cat <<JSON
-{"query":"query(\$org:String!,\$queue:[ID!]){organization(slug:\$org){agents(first:50,clusterQueue:\$queue){edges{node{id connectionState}}}}}","variables":{"org":"${org_slug}","queue":["${self_hosted_queue_id}"]}}
+{"query":"query(\$org:ID!,\$queue:[ID!]){organization(slug:\$org){agents(first:50,clusterQueue:\$queue){edges{node{id connectionState}}}}}","variables":{"org":"${org_slug}","queue":["${self_hosted_queue_id}"]}}
 JSON
 )
 
