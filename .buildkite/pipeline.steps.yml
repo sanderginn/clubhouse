@@ -1,0 +1,27 @@
+steps:
+  - label: ":go: Backend format & lint"
+    key: backend-lint
+    command: "bash .buildkite/scripts/backend-lint.sh"
+    plugins:
+      - docker#v5.12.0:
+          image: "golang:1.24"
+          mount-checkout: true
+          workdir: /workdir
+
+  - label: ":go: Backend tests & build"
+    key: backend-test
+    command: "bash .buildkite/scripts/backend-test.sh"
+    plugins:
+      - docker#v5.12.0:
+          image: "golang:1.24"
+          mount-checkout: true
+          workdir: /workdir
+
+  - label: ":node: Frontend lint, check & test"
+    key: frontend
+    command: "bash .buildkite/scripts/frontend-checks.sh"
+    plugins:
+      - docker#v5.12.0:
+          image: "node:20-bullseye"
+          mount-checkout: true
+          workdir: /workdir
