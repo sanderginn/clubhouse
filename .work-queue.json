@@ -98,7 +98,8 @@
     181,
     183,
     186,
-    187
+    187,
+    188
   ],
   "issues": [
     {
@@ -1781,7 +1782,7 @@
     {
       "issue_number": 188,
       "title": "Infra: Pin observability image versions in compose files",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769085831-88987",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769085831-88987",
       "dependencies": [],
@@ -1792,7 +1793,9 @@
         "devops"
       ],
       "branch": "feat/issue-188-infra-pin-observability-image-versions-i",
-      "claimed_at": "2026-01-22T12:43:51Z"
+      "claimed_at": "2026-01-22T12:43:51Z",
+      "pr_number": 213,
+      "completed_at": "2026-01-22T12:48:54Z"
     },
     {
       "issue_number": 189,
