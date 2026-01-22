@@ -1730,16 +1730,18 @@
     {
       "issue_number": 186,
       "title": "Frontend: Service worker should handle SKIP_WAITING message",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769084132-72709",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769084132-72709",
       "dependencies": [],
       "phase": "bug",
       "labels": [
         "bug",
         "frontend",
         "pwa"
-      ]
+      ],
+      "branch": "fix/issue-186-frontend-service-worker-should-handle-sk",
+      "claimed_at": "2026-01-22T12:15:32Z"
     },
     {
       "issue_number": 187,
