@@ -1,7 +1,7 @@
 steps:
   - label: ":go: Backend format & lint"
     key: backend-lint
-    command: "bash scripts/buildkite/backend-lint.sh"
+    command: "bash -c 'if [ ! -d .git ]; then if ! command -v git >/dev/null 2>&1; then apt-get update && apt-get install -y git; fi; if [ -z \"${BUILDKITE_REPO:-}\" ]; then echo \"Missing BUILDKITE_REPO for checkout\"; exit 1; fi; git clone \"$BUILDKITE_REPO\" .; if [ -n \"${BUILDKITE_COMMIT:-}\" ]; then git checkout \"$BUILDKITE_COMMIT\"; fi; fi; bash scripts/buildkite/backend-lint.sh'"
     plugins:
       - docker#v5.12.0:
           image: "golang:1.24"
@@ -10,7 +10,7 @@ steps:
 
   - label: ":go: Backend tests & build"
     key: backend-test
-    command: "bash scripts/buildkite/backend-test.sh"
+    command: "bash -c 'if [ ! -d .git ]; then if ! command -v git >/dev/null 2>&1; then apt-get update && apt-get install -y git; fi; if [ -z \"${BUILDKITE_REPO:-}\" ]; then echo \"Missing BUILDKITE_REPO for checkout\"; exit 1; fi; git clone \"$BUILDKITE_REPO\" .; if [ -n \"${BUILDKITE_COMMIT:-}\" ]; then git checkout \"$BUILDKITE_COMMIT\"; fi; fi; bash scripts/buildkite/backend-test.sh'"
     plugins:
       - docker#v5.12.0:
           image: "golang:1.24"
@@ -19,7 +19,7 @@ steps:
 
   - label: ":node: Frontend lint, check & test"
     key: frontend
-    command: "bash scripts/buildkite/frontend-checks.sh"
+    command: "bash -c 'if [ ! -d .git ]; then if ! command -v git >/dev/null 2>&1; then apt-get update && apt-get install -y git; fi; if [ -z \"${BUILDKITE_REPO:-}\" ]; then echo \"Missing BUILDKITE_REPO for checkout\"; exit 1; fi; git clone \"$BUILDKITE_REPO\" .; if [ -n \"${BUILDKITE_COMMIT:-}\" ]; then git checkout \"$BUILDKITE_COMMIT\"; fi; fi; bash scripts/buildkite/frontend-checks.sh'"
     plugins:
       - docker#v5.12.0:
           image: "node:20-bullseye"
