@@ -29,19 +29,27 @@ self.addEventListener('install', (event) => {
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((cacheName) => cacheName !== CACHE_NAME)
-          .map((cacheName) => {
-            console.log('[SW] Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          })
-      );
-    })
+    caches
+      .keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames
+            .filter((cacheName) => cacheName !== CACHE_NAME)
+            .map((cacheName) => {
+              console.log('[SW] Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            })
+        );
+      })
+      .then(() => self.clients.claim())
+      .then(() =>
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+          clients.forEach((client) => {
+            client.postMessage({ type: 'SW_ACTIVATED' });
+          });
+        })
+      )
   );
-  // Take control of all pages immediately
-  self.clients.claim();
 });
 
 // Fetch event - network first, then cache, with offline fallback
@@ -222,7 +230,11 @@ self.addEventListener('pushsubscriptionchange', (event) => {
 self.addEventListener('message', (event) => {
   console.log('[SW] Message received:', event.data);
 
-  if (event.data && event.data.type === 'SKIP_WAITING') {
+  const messageType = typeof event.data === 'string' ? event.data : event.data?.type;
+  if (messageType === 'SKIP_WAITING') {
     self.skipWaiting();
+    if (event.source && 'postMessage' in event.source) {
+      event.source.postMessage({ type: 'SKIP_WAITING_ACK' });
+    }
   }
 });
