@@ -885,16 +885,18 @@
     {
       "issue_number": 48,
       "title": "Phase 6: Write production deployment guide",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769086535-4259",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769086535-4259",
       "dependencies": [],
       "phase": 6,
       "labels": [
         "phase6",
         "devops"
       ],
-      "priority": 9999
+      "priority": 9999,
+      "branch": "feat/issue-48-write-production-deployment-guide",
+      "claimed_at": "2026-01-22T12:55:35Z"
     },
     {
       "issue_number": 49,
