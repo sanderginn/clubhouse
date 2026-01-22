@@ -89,7 +89,8 @@
     160,
     162,
     166,
-    169
+    169,
+    170
   ],
   "issues": [
     {
@@ -1604,7 +1605,7 @@
     {
       "issue_number": 170,
       "title": "Chore: Production-ready deployment checklist",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769062711-47843",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769062711-47843",
       "dependencies": [],
@@ -1615,7 +1616,9 @@
         "deployment"
       ],
       "branch": "feat/issue-170-chore-productionready-deployment-checkli",
-      "claimed_at": "2026-01-22T06:18:31Z"
+      "claimed_at": "2026-01-22T06:18:31Z",
+      "pr_number": 175,
+      "completed_at": "2026-01-22T07:46:34Z"
     }
   ]
 }
