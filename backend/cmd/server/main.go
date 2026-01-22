@@ -177,27 +177,13 @@ func main() {
 	mux.Handle("/api/v1/comments/", commentRouteHandler)
 
 	// Post routes - route to appropriate handler
-	postRouteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Check if this is a thread comments request (GET /api/v1/posts/{id}/comments)
-		if r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/comments") {
-			commentHandler.GetThread(w, r)
-		} else if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/restore") {
-			// Check if this is a restore request (POST /api/v1/posts/{id}/restore)
-			// Apply auth middleware and call RestorePost
-			authHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(postHandler.RestorePost))
-			authHandler.ServeHTTP(w, r)
-		} else if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/reactions") {
-			// Check if this is an add reaction request (POST /api/v1/posts/{id}/reactions)
-			// Apply auth middleware and call AddReactionToPost
-			reactionAuthHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(reactionHandler.AddReactionToPost))
-			reactionAuthHandler.ServeHTTP(w, r)
-		} else if r.Method == http.MethodDelete && strings.Contains(r.URL.Path, "/reactions/") {
-			// DELETE /api/v1/posts/{id}/reactions/{emoji}
-			reactionAuthHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(reactionHandler.RemoveReactionFromPost))
-			reactionAuthHandler.ServeHTTP(w, r)
-		} else if r.Method == http.MethodGet {
-			postHandler.GetPost(w, r)
-		}
+	postRouteHandler := newPostRouteHandler(middleware.RequireAuth(redisConn), postRouteDeps{
+		getThread:              commentHandler.GetThread,
+		restorePost:            postHandler.RestorePost,
+		addReactionToPost:      reactionHandler.AddReactionToPost,
+		removeReactionFromPost: reactionHandler.RemoveReactionFromPost,
+		getPost:                postHandler.GetPost,
+		deletePost:             postHandler.DeletePost,
 	})
 	mux.Handle("/api/v1/posts/", postRouteHandler)
 
