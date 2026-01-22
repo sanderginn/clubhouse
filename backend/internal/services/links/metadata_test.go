@@ -3,30 +3,67 @@ package links
 import (
 	"context"
 	"errors"
+	"io"
+	"net"
 	"net/http"
-	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
 )
 
-func TestFetchMetadataHTML(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = w.Write([]byte(`<!doctype html>
-			<html>
-			<head>
-				<title>Fallback Title</title>
-				<meta property="og:title" content="OG Title" />
-				<meta name="description" content="Desc" />
-				<meta property="og:image" content="/img.png" />
-				<meta property="og:site_name" content="ExampleSite" />
-			</head>
-			</html>`))
-	}))
-	defer server.Close()
+type roundTripperFunc func(*http.Request) (*http.Response, error)
 
-	metadata, err := FetchMetadata(context.Background(), server.URL)
+func (f roundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
+	return f(r)
+}
+
+type fakeResolver struct {
+	addrs map[string][]net.IPAddr
+	err   error
+}
+
+func (f fakeResolver) LookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	addrs, ok := f.addrs[host]
+	if !ok {
+		return nil, errors.New("host not found")
+	}
+	return addrs, nil
+}
+
+func TestFetchMetadataHTML(t *testing.T) {
+	htmlBody := `<!doctype html>
+		<html>
+		<head>
+			<title>Fallback Title</title>
+			<meta property="og:title" content="OG Title" />
+			<meta name="description" content="Desc" />
+			<meta property="og:image" content="/img.png" />
+			<meta property="og:site_name" content="ExampleSite" />
+		</head>
+		</html>`
+
+	fetcher := NewFetcher(&http.Client{
+		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Status:     "200 OK",
+				Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
+				Body:       io.NopCloser(strings.NewReader(htmlBody)),
+				Request:    r,
+			}, nil
+		}),
+	})
+	fetcher.resolver = fakeResolver{
+		addrs: map[string][]net.IPAddr{
+			"example.com": {{IP: net.ParseIP("93.184.216.34")}},
+		},
+	}
+
+	metadata, err := fetcher.Fetch(context.Background(), "https://example.com/post")
 	if err != nil {
 		t.Fatalf("FetchMetadata error: %v", err)
 	}
@@ -41,29 +78,89 @@ func TestFetchMetadataHTML(t *testing.T) {
 		t.Errorf("provider = %v, want ExampleSite", provider)
 	}
 	image, _ := metadata["image"].(string)
-	if !strings.HasPrefix(image, server.URL) {
-		t.Errorf("image = %q, want prefix %q", image, server.URL)
+	if !strings.HasPrefix(image, "https://example.com") {
+		t.Errorf("image = %q, want prefix %q", image, "https://example.com")
 	}
 }
 
 func TestFetchMetadataTimeout(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(200 * time.Millisecond)
-		w.Header().Set("Content-Type", "text/html")
-		_, _ = w.Write([]byte("<html></html>"))
-	}))
-	defer server.Close()
-
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
 
-	fetcher := NewFetcher(&http.Client{})
-	_, err := fetcher.Fetch(ctx, server.URL)
+	fetcher := NewFetcher(&http.Client{
+		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			<-r.Context().Done()
+			return nil, r.Context().Err()
+		}),
+	})
+	fetcher.resolver = fakeResolver{
+		addrs: map[string][]net.IPAddr{
+			"example.com": {{IP: net.ParseIP("93.184.216.34")}},
+		},
+	}
+
+	_, err := fetcher.Fetch(ctx, "https://example.com/slow")
 	if err == nil {
 		t.Fatal("expected timeout error")
 	}
 	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("expected deadline exceeded, got %v", err)
+	}
+}
+
+func TestValidateURLBlocksHosts(t *testing.T) {
+	fetcher := NewFetcher(&http.Client{})
+	fetcher.resolver = fakeResolver{
+		addrs: map[string][]net.IPAddr{
+			"private.example": {{IP: net.ParseIP("10.0.0.10")}},
+			"public.example":  {{IP: net.ParseIP("93.184.216.34")}},
+		},
+	}
+
+	tests := []struct {
+		rawURL  string
+		allowed bool
+	}{
+		{rawURL: "http://localhost", allowed: false},
+		{rawURL: "http://127.0.0.1", allowed: false},
+		{rawURL: "http://169.254.169.254", allowed: false},
+		{rawURL: "http://private.example", allowed: false},
+		{rawURL: "https://public.example", allowed: true},
+	}
+
+	for _, tt := range tests {
+		u, err := url.Parse(tt.rawURL)
+		if err != nil {
+			t.Fatalf("parse url: %v", err)
+		}
+		err = fetcher.validateURL(context.Background(), u)
+		if tt.allowed && err != nil {
+			t.Errorf("validateURL(%q) error = %v, want nil", tt.rawURL, err)
+		}
+		if !tt.allowed && err == nil {
+			t.Errorf("validateURL(%q) = nil, want error", tt.rawURL)
+		}
+	}
+}
+
+func TestRedirectValidator(t *testing.T) {
+	fetcher := NewFetcher(&http.Client{})
+	fetcher.resolver = fakeResolver{
+		addrs: map[string][]net.IPAddr{
+			"example.com": {{IP: net.ParseIP("93.184.216.34")}},
+		},
+	}
+	check := fetcher.redirectValidator(context.Background(), nil)
+
+	req := &http.Request{URL: mustParseURL(t, "https://example.com")}
+	via := make([]*http.Request, maxRedirects)
+	if err := check(req, via); err == nil {
+		t.Fatalf("expected redirect limit error")
+	}
+
+	reqBlocked := &http.Request{URL: mustParseURL(t, "http://localhost")}
+	if err := check(reqBlocked, nil); err == nil {
+		t.Fatalf("expected blocked redirect error")
 	}
 }
 
@@ -83,4 +180,13 @@ func TestDetectProvider(t *testing.T) {
 			t.Errorf("detectProvider(%q) = %q, want %q", tt.host, got, tt.want)
 		}
 	}
+}
+
+func mustParseURL(t *testing.T, raw string) *url.URL {
+	t.Helper()
+	parsed, err := url.Parse(raw)
+	if err != nil {
+		t.Fatalf("parse url: %v", err)
+	}
+	return parsed
 }

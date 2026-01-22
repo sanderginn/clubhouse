@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -15,20 +17,38 @@ import (
 	"github.com/sanderginn/clubhouse/internal/services"
 )
 
+type roundTripperFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
+	return f(r)
+}
+
 func TestPreviewLinkSuccess(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`<!doctype html><html><head>
+	htmlBody := `<!doctype html><html><head>
       <meta property="og:title" content="Test Title" />
       <meta property="og:description" content="Test Description" />
       <meta property="og:image" content="/image.png" />
-      </head><body></body></html>`))
-	}))
-	defer server.Close()
+      </head><body></body></html>`
+
+	previousTransport := http.DefaultTransport
+	http.DefaultTransport = roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		if r.URL.Hostname() != "93.184.216.34" {
+			return nil, errors.New("unexpected host")
+		}
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Status:     "200 OK",
+			Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
+			Body:       io.NopCloser(strings.NewReader(htmlBody)),
+			Request:    r,
+		}, nil
+	})
+	defer func() {
+		http.DefaultTransport = previousTransport
+	}()
 
 	handler := NewLinkHandler()
-	body, _ := json.Marshal(models.LinkPreviewRequest{URL: server.URL})
+	body, _ := json.Marshal(models.LinkPreviewRequest{URL: "http://93.184.216.34/test"})
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/links/preview", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 
@@ -55,7 +75,7 @@ func TestPreviewLinkSuccess(t *testing.T) {
 	if response.Metadata["title"] != "Test Title" {
 		t.Fatalf("expected title metadata, got %v", response.Metadata["title"])
 	}
-	if response.Metadata["url"] != server.URL {
+	if response.Metadata["url"] != "http://93.184.216.34/test" {
 		t.Fatalf("expected url metadata, got %v", response.Metadata["url"])
 	}
 }
