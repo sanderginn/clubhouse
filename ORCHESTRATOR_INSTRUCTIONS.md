@@ -2,16 +2,6 @@
 
 You are the orchestrator for the Clubhouse project. Your role is to manage parallel subagent work, review PRs, merge code, and maintain the work queue.
 
-## Current Project State (as of Jan 20, 2026)
-
-**Repository:** https://github.com/sanderginn/clubhouse
-
-**Progress:**
-- **64 issues completed** (Phases 1-5 and 7 done, Phase 6 in progress)
-- **2 issues available** for parallel work (Phase 6 tasks)
-- **1 open PR** (#132 for issue #111)
-- **1 issue in progress** (#111 Playwright E2E tests)
-
 ## Quick Commands
 
 ```bash
@@ -78,7 +68,7 @@ gh pr comment <PR_NUMBER> --body "This PR has conflicts with main. Please rebase
 # Full queue status
 ./scripts/show-queue.sh --all
 
-# Check what's blocking Phase 3
+# Check what's blocked by dependencies
 ./scripts/show-queue.sh --blocked
 ```
 
@@ -94,42 +84,6 @@ This script will:
 2. Claim it atomically in the work queue
 3. Create a git worktree
 4. Output instructions for the subagent
-
-## Dependency System
-
-Issues are organized in phases with explicit dependencies:
-
-| Phase | Description | Status |
-|-------|-------------|--------|
-| 1 | Setup & DB migrations | ✅ Complete |
-| 2 | Core features (auth, posts, comments, reactions, users, sections) | ✅ Complete |
-| 3 | Real-time (WebSocket, Redis pub/sub) | ✅ Complete |
-| 4 | Notifications & search | ✅ Complete |
-| 5 | Admin & polish | ✅ Complete |
-| 6 | Observability & deploy | 🔄 4 remaining (2 available, 2 blocked) |
-| 7 | Search enhancements | ✅ Complete |
-
-The `start-agent.sh` script automatically respects dependencies.
-
-## Currently Available Issues
-
-| Issue | Title |
-|-------|-------|
-| #47 | Setup Grafana dashboards |
-| #58 | Implement PWA features (frontend) |
-
-**In Progress:**
-| Issue | Title | Agent |
-|-------|-------|-------|
-| #111 | Set up Playwright and add core E2E tests | agent-1768946136-86637 |
-
-**Blocked:**
-| Issue | Title | Waiting For |
-|-------|-------|-------------|
-| #48 | Write production deployment guide | #47 |
-| #59 | Implement Web Push notifications (frontend) | #58 |
-
-Once the available Phase 6 issues are done, the blocked issues will unblock.
 
 ## Key Files
 
@@ -153,10 +107,11 @@ Before merging, verify:
 - [ ] PR body references issue (`Closes #X`)
 - [ ] Frontend changes include unit/component tests where appropriate
 - [ ] Tests pass before finalizing issues unless explicitly instructed otherwise; if failing is allowed, PR links follow-up issues for each failing domain
+- [ ] Relevant markdown docs reflect the changes (README, DESIGN, AGENTS, orchestrator/subagent instructions, or `docs/`)
 
 ## Tech Stack Reference
 
-- **Backend:** Go 1.21+, PostgreSQL 14+, Redis 7+
+- **Backend:** Go 1.24+, PostgreSQL 16+, Redis 7+
 - **Frontend:** Svelte 4, TypeScript, Tailwind CSS
 - **Deployment:** Docker Compose
 - **Observability:** OpenTelemetry → Grafana Stack (Loki, Prometheus, Tempo)
@@ -177,7 +132,7 @@ gh pr diff 87
 gh pr merge 87 --merge --delete-branch
 ./scripts/complete-issue.sh 25 87
 
-# 4. Check queue - maybe Phase 3 is now unblocked
+# 4. Check queue - maybe dependencies are now unblocked
 ./scripts/show-queue.sh
 ```
 
@@ -185,10 +140,10 @@ gh pr merge 87 --merge --delete-branch
 
 1. **Never resolve merge conflicts yourself** - subagents should rebase
 2. **Always use `./scripts/complete-issue.sh`** after merging to update the work queue
-3. **Check dependencies** before approving - don't merge Phase 3 issues before Phase 2 is done
+3. **Check dependencies** before approving - don't merge issues before their dependencies are complete
 4. **Subagents work in worktrees** at `.worktrees/agent-<timestamp>-<pid>`
 5. **Lock file** at `.work-queue.lock` prevents race conditions
 
 ---
 
-**Last Updated:** January 20, 2026
+**Last Updated:** January 22, 2026

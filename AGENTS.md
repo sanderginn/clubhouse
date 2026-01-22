@@ -16,13 +16,13 @@ This document guides AI agents on how to work with the Clubhouse codebase effect
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Go 1.21+ |
-| Frontend | Svelte (PWA) |
-| Database | PostgreSQL 14+ |
+| Backend | Go 1.24+ |
+| Frontend | Svelte 4 (PWA) |
+| Database | PostgreSQL 16+ |
 | Cache/Pub-Sub | Redis 7+ |
 | Deployment | Docker Compose |
 | Observability | OpenTelemetry + Grafana Stack (Loki, Prometheus, Tempo) |
-| Authentication | JWT sessions (Redis-backed, httpOnly cookies) |
+| Authentication | Session-based (Redis-backed, httpOnly cookies) |
 
 ## Architecture
 
@@ -89,8 +89,8 @@ clubhouse/
 - **Cursor-based pagination** for feeds/comments
 
 ### 2. Database
-- **9 core tables**: users, sections, posts, comments, reactions, links, mentions, audit_logs, notifications
-- **Soft deletes** with 7-day retention before hard purge
+- **11 core tables**: users, sections, posts, comments, reactions, links, mentions, notifications, section_subscriptions, audit_logs, push_subscriptions
+- **Soft deletes** with a 7-day owner restore window (no automated purge job in repo)
 - **Audit logging** for admin actions
 - **Full-text search** on posts/comments/link metadata
 
@@ -115,21 +115,21 @@ clubhouse/
 - **All three OTel signals**: traces, metrics, logs
 - **Trace every request** (no sampling for small scale)
 - **Direct OTLP export** to Grafana Stack
-- **30-day retention** minimum
+- **Retention** follows service configs (see `tempo.yml`, `prometheus.yml`, and Loki defaults)
 
 ## Common Tasks
 
 ### Running Locally
 ```bash
 # Start all services
-docker-compose up -d
+docker compose up -d
 
 # View logs
-docker-compose logs -f backend
-docker-compose logs -f frontend
+docker compose logs -f backend
+docker compose logs -f frontend
 
 # Stop
-docker-compose down
+docker compose down
 ```
 
 ### Database Migrations
@@ -250,8 +250,8 @@ go build -o clubhouse-server ./cmd/server
 docker build -t myregistry/clubhouse:latest .
 docker push myregistry/clubhouse:latest
 
-# Deploy via docker-compose on server
-docker-compose -f docker-compose.prod.yml up -d
+# Deploy via Docker Compose on server
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ## Questions for the Team
@@ -311,5 +311,5 @@ Always check `backend/migrations/` for the actual schema before writing queries.
 
 ---
 
-**Last Updated**: January 19, 2026
+**Last Updated**: January 22, 2026
 **Version**: 1.1

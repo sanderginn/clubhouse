@@ -130,7 +130,7 @@ Follow the issue description and acceptance criteria.
 
 ### 4a. Add Tests (When It Makes Sense)
 
-If you change or add backend logic, add or update **unit tests** (services/) and **handler tests** (handlers/) where applicable. If you change frontend logic, add **frontend unit tests** (stores/services) and **component tests** (Svelte) where reasonable. If tests are not reasonable for the change, state why in the PR description.
+If you change or add backend logic, add or update **unit tests** (services/) and **handler tests** (handlers/) where applicable. If you change frontend logic, add **frontend unit tests** (stores/services) and **component tests** (Svelte) where reasonable. If the change affects critical user flows, add or extend **E2E tests** (Playwright) to cover the new behavior. If tests are not reasonable for the change, state why in the PR description.
 Tests should pass before finalizing an issue. If you’re explicitly instructed that tests may fail, **create follow-up issues per failing domain** and link them in the PR description.
 
 ### 5. Test Your Changes
@@ -157,6 +157,10 @@ git add .
 git commit -m "feat(issue-NN): description"
 git push -u origin <BRANCH_NAME>
 ```
+
+### 6a. Update Markdown Docs (When Relevant)
+
+If your changes affect behavior, setup, or architecture, update relevant markdown docs (README, DESIGN, AGENTS, `docs/`, or these instructions) to reflect the new reality.
 
 ### 7. Create Pull Request
 

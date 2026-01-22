@@ -1,8 +1,8 @@
 # Clubhouse - Design Document
 
-**Version:** 1.0
-**Date:** January 16, 2026
-**Status:** Specification Complete, Ready for Implementation
+**Version:** 1.1
+**Date:** January 22, 2026
+**Status:** Implementation In Progress
 
 ---
 
@@ -150,7 +150,7 @@ PostgreSQL        Redis          OTel
 #### Backend (Go)
 - **Entry point:** `cmd/server/main.go`
 - **HTTP server:** Standard library `net/http` with custom router
-- **Database:** PostgreSQL 14+, migrations via `sql-migrate` or similar
+- **Database:** PostgreSQL 16+, migrations via `sql-migrate` or similar
 - **Session storage:** Redis 7+
 - **Real-time:** Redis pub/sub + WebSocket
 - **Observability:** OpenTelemetry SDK (all three signals)
@@ -165,7 +165,7 @@ PostgreSQL        Redis          OTel
 
 #### Infrastructure
 - **Docker Compose:** Local dev and production deployment
-- **PostgreSQL 14+:** Primary data store
+- **PostgreSQL 16+:** Primary data store
 - **Redis 7+:** Sessions + pub/sub
 - **Grafana Stack:** Loki (logs), Prometheus (metrics), Tempo (traces)
 
@@ -362,9 +362,9 @@ CREATE INDEX idx_notifications_user_read ON notifications(user_id, read_at);
 
 ### Data Retention
 
-- **Soft-deleted content:** Retained for 7 days, then hard-deleted via background job
-- **Notifications:** Retained for 30 days, then archived/deleted
-- **Audit logs:** Retained for 90 days minimum, configurable
+- **Soft-deleted content:** Owners can restore within 7 days; admins can restore anytime. No automated purge job in the repo.
+- **Notifications:** Retained until deleted by related-content cleanup or manual deletion
+- **Audit logs:** Retained indefinitely unless manually purged
 - **Sessions (Redis):** 30-day expiry, auto-deleted by Redis
 
 ---
@@ -986,9 +986,9 @@ If disabled:
 - **Exporters:** OTLP to Grafana Loki
 
 ### Retention & Storage
-- **Traces:** 7 days
-- **Metrics:** 30 days (Prometheus scrape interval: 15s)
-- **Logs:** 30 days (Loki retention)
+- **Traces:** Tempo local config uses `compacted_block_retention: 10m` (see `tempo.yml`)
+- **Metrics:** Prometheus uses default retention unless overridden (scrape interval: 15s in `prometheus.yml`)
+- **Logs:** Loki uses its default local config unless overridden
 
 ### Local Development
 ```yaml
@@ -1014,13 +1014,13 @@ services:
 
 **Local Dev:**
 ```bash
-docker-compose up -d
+docker compose up -d
 # Starts: PostgreSQL, Redis, Grafana Stack, backend, frontend
 ```
 
 **Production:**
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 # Same services, production-grade configs
 ```
 
@@ -1030,7 +1030,7 @@ docker-compose -f docker-compose.prod.yml up -d
 migrate create -ext sql -dir backend/migrations -seq add_users_table
 
 # Run migrations
-docker-compose exec backend migrate -path migrations -database "postgres://..." up
+docker compose exec backend migrate -path migrations -database "postgres://..." up
 ```
 
 ### Secrets Management
@@ -1053,52 +1053,6 @@ docker-compose exec backend migrate -path migrations -database "postgres://..." 
 - Redis pub/sub distributes real-time events → can add multiple servers
 - PostgreSQL is single instance (upgrade hardware, or later: replication + read replicas)
 - No sharding needed for 500 users
-
----
-
-## Implementation Roadmap (Suggested)
-
-### Phase 1: Foundation (Week 1-2)
-- [ ] Project setup (Go modules, Svelte, Docker Compose)
-- [ ] Database schema & migrations
-- [ ] Auth endpoints (register, login, logout)
-- [ ] User approval flow
-
-### Phase 2: Core Features (Week 3-4)
-- [ ] Post CRUD endpoints
-- [ ] Comment CRUD endpoints
-- [ ] Reactions endpoints
-- [ ] Basic feed (GET /sections/{id}/feed)
-
-### Phase 3: Real-Time (Week 5)
-- [ ] WebSocket server
-- [ ] Redis pub/sub integration
-- [ ] Event broadcasting
-
-### Phase 4: Notifications & Search (Week 6)
-- [ ] Notification endpoints
-- [ ] Full-text search
-- [ ] Link metadata fetching
-
-### Phase 5: Admin & Polish (Week 7)
-- [ ] Admin endpoints
-- [ ] Audit logging
-- [ ] Soft delete & restore
-
-### Phase 6: Observability & Deploy (Week 8)
-- [ ] OpenTelemetry integration
-- [ ] Grafana stack setup
-- [ ] Production deployment guide
-
----
-
-## Questions & Decisions to Revisit
-
-1. **Soft delete retention:** Currently 7 days. Adjustable per instance?
-2. **Link metadata timeout:** Currently 5s. Should it be configurable?
-3. **WebSocket reconnection:** How should clients handle disconnects?
-4. **Rate limiting:** Tunable per instance or hardcoded?
-5. **Custom emoji:** Defer to Phase 2?
 
 ---
 

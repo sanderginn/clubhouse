@@ -6,8 +6,8 @@ A self-hosted, lightweight social platform for sharing links within small-to-med
 
 ### Prerequisites
 - Docker & Docker Compose 2.0+
-- Go 1.21+ (for local backend development)
-- Node.js 18+ (for frontend development)
+- Go 1.24+ (for local backend development)
+- Node.js 20+ (for frontend development)
 
 ### Running Locally
 
@@ -24,18 +24,15 @@ A self-hosted, lightweight social platform for sharing links within small-to-med
 
 3. **Start all services:**
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 
 4. **Verify services are healthy:**
    ```bash
-   docker-compose ps
+   docker compose ps
    ```
 
-   Expected output:
-   ```
-   STATUS: healthy
-   ```
+   Look for `healthy` in the STATUS column for Postgres/Redis (and backend once it's started).
 
 5. **Access services:**
    - Grafana (Observability): http://localhost:3000 (admin/admin)
@@ -51,23 +48,23 @@ A self-hosted, lightweight social platform for sharing links within small-to-med
 
 ```bash
 # All services
-docker-compose logs -f
+docker compose logs -f
 
 # Specific service
-docker-compose logs -f postgres
-docker-compose logs -f redis
-docker-compose logs -f grafana
+docker compose logs -f postgres
+docker compose logs -f redis
+docker compose logs -f grafana
 ```
 
 ### Stopping Services
 
 ```bash
-docker-compose down
+docker compose down
 ```
 
 To also remove volumes:
 ```bash
-docker-compose down -v
+docker compose down -v
 ```
 
 ## Production Deployment
