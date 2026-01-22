@@ -100,7 +100,8 @@
     183,
     186,
     187,
-    188
+    188,
+    199
   ],
   "issues": [
     {
@@ -1975,7 +1976,7 @@
     {
       "issue_number": 199,
       "title": "Auth: Username-based registration/login + make email optional (backend)",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769085852-89717",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769085852-89717",
       "dependencies": [],
@@ -1987,7 +1988,9 @@
         "auth"
       ],
       "branch": "feat/issue-199-auth-usernamebased-registrationlogin-mak",
-      "claimed_at": "2026-01-22T12:44:12Z"
+      "claimed_at": "2026-01-22T12:44:12Z",
+      "pr_number": 215,
+      "completed_at": "2026-01-22T12:57:14Z"
     },
     {
       "issue_number": 200,
