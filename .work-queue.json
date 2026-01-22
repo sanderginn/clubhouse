@@ -1749,16 +1749,18 @@
     {
       "issue_number": 187,
       "title": "Infra: Backend Dockerfile installs wrong migrate binary on amd64",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769084880-79326",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769084880-79326",
       "dependencies": [],
       "phase": "bug",
       "labels": [
         "bug",
         "backend",
         "devops"
-      ]
+      ],
+      "branch": "fix/issue-187-infra-backend-dockerfile-installs-wrong-",
+      "claimed_at": "2026-01-22T12:28:00Z"
     },
     {
       "issue_number": 188,
