@@ -38,7 +38,7 @@ services:
 
   # Loki (Log Aggregation)
   loki:
-    image: grafana/loki:latest
+    image: grafana/loki:3.0.1
     container_name: clubhouse-loki
     command: -config.file=/etc/loki/local-config.yaml
     ports:
@@ -50,7 +50,7 @@ services:
 
   # Prometheus (Metrics)
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:2.54.1
     container_name: clubhouse-prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -68,7 +68,7 @@ services:
 
   # Tempo (Traces)
   tempo:
-    image: grafana/tempo:latest
+    image: grafana/tempo:2.6.1
     container_name: clubhouse-tempo
     command: ["-config.file=/etc/tempo/tempo.yml"]
     ports:
@@ -83,7 +83,7 @@ services:
 
   # Grafana (Observability UI)
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.2.0
     container_name: clubhouse-grafana
     environment:
       GF_SECURITY_ADMIN_USER: admin

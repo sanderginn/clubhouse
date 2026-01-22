@@ -125,6 +125,13 @@ The backup/restore scripts source `.env.production` automatically when present.
 
 Grafana dashboards are provisioned from `grafana/dashboards`.
 
+Pinned observability image versions (see `docker-compose.yml` and `docker-compose.prod.yml`):
+
+- Grafana: `grafana/grafana:11.2.0`
+- Loki: `grafana/loki:3.0.1`
+- Prometheus: `prom/prometheus:2.54.1`
+- Tempo: `grafana/tempo:2.6.1`
+
 ## 9) Security hardening checklist
 
 - Replace the default admin password on first login. The seed user is created from `backend/migrations/seed_admin.sql`.

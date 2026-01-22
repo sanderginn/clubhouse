@@ -106,7 +106,7 @@ services:
       - clubhouse
 
   loki:
-    image: grafana/loki:latest
+    image: grafana/loki:3.0.1
     container_name: clubhouse-loki
     restart: unless-stopped
     command: -config.file=/etc/loki/local-config.yaml
@@ -116,7 +116,7 @@ services:
       - clubhouse
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:2.54.1
     container_name: clubhouse-prometheus
     restart: unless-stopped
     command:
@@ -131,7 +131,7 @@ services:
       - backend
 
   tempo:
-    image: grafana/tempo:latest
+    image: grafana/tempo:2.6.1
     container_name: clubhouse-tempo
     restart: unless-stopped
     command: ["-config.file=/etc/tempo/tempo.yml"]
@@ -142,7 +142,7 @@ services:
       - clubhouse
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.2.0
     container_name: clubhouse-grafana
     restart: unless-stopped
     environment:
