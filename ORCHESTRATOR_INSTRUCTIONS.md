@@ -20,7 +20,7 @@ gh pr list --state open
 # View PR diff
 gh pr diff <PR_NUMBER>
 
-# Merge a PR
+# Merge a PR (never bypass checks)
 gh pr merge <PR_NUMBER> --merge --delete-branch
 
 # Mark issue as completed (after PR merged)
@@ -54,6 +54,7 @@ When a PR comes in:
    gh pr merge <PR_NUMBER> --merge --delete-branch
    ./scripts/complete-issue.sh <ISSUE_NUMBER> <PR_NUMBER>
    ```
+   - If checks haven’t finished, wait 60 seconds and retry `gh pr merge` until they pass.
 
 ### 2. Handle Merge Conflicts
 
@@ -139,10 +140,11 @@ gh pr merge 87 --merge --delete-branch
 ## Important Notes
 
 1. **Never resolve merge conflicts yourself** - subagents should rebase
-2. **Always use `./scripts/complete-issue.sh`** after merging to update the work queue
-3. **Check dependencies** before approving - don't merge issues before their dependencies are complete
-4. **Subagents work in worktrees** at `.worktrees/agent-<timestamp>-<pid>`
-5. **Lock file** at `.work-queue.lock` prevents race conditions
+2. **Never bypass checks when merging** - do not use `--admin` or any bypass; if checks are still running, sleep 60 seconds and retry
+3. **Always use `./scripts/complete-issue.sh`** after merging to update the work queue
+4. **Check dependencies** before approving - don't merge issues before their dependencies are complete
+5. **Subagents work in worktrees** at `.worktrees/agent-<timestamp>-<pid>`
+6. **Lock file** at `.work-queue.lock` prevents race conditions
 
 ---
 
