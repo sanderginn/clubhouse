@@ -151,7 +151,7 @@ func (s *PostService) GetPostByID(ctx context.Context, postID uuid.UUID, userID 
 		SELECT
 			p.id, p.user_id, p.section_id, p.content,
 			p.created_at, p.updated_at, p.deleted_at, p.deleted_by_user_id,
-			u.id, u.username, u.email, u.profile_picture_url, u.bio, u.is_admin, u.created_at,
+			u.id, u.username, COALESCE(u.email, '') as email, u.profile_picture_url, u.bio, u.is_admin, u.created_at,
 			COALESCE(COUNT(DISTINCT c.id), 0) as comment_count
 		FROM posts p
 		JOIN users u ON p.user_id = u.id
@@ -300,7 +300,7 @@ func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *
 		SELECT
 			p.id, p.user_id, p.section_id, p.content,
 			p.created_at, p.updated_at, p.deleted_at, p.deleted_by_user_id,
-			u.id, u.username, u.email, u.profile_picture_url, u.bio, u.is_admin, u.created_at,
+			u.id, u.username, COALESCE(u.email, '') as email, u.profile_picture_url, u.bio, u.is_admin, u.created_at,
 			COALESCE(COUNT(DISTINCT c.id), 0) as comment_count
 		FROM posts p
 		JOIN users u ON p.user_id = u.id
@@ -439,7 +439,7 @@ func (s *PostService) RestorePost(ctx context.Context, postID uuid.UUID, userID 
 		SELECT
 			p.id, p.user_id, p.section_id, p.content,
 			p.created_at, p.updated_at, p.deleted_at, p.deleted_by_user_id,
-			u.id, u.username, u.email, u.profile_picture_url, u.bio, u.is_admin, u.created_at,
+			u.id, u.username, COALESCE(u.email, '') as email, u.profile_picture_url, u.bio, u.is_admin, u.created_at,
 			COALESCE(COUNT(DISTINCT c.id), 0) as comment_count
 		FROM posts p
 		JOIN users u ON p.user_id = u.id
@@ -527,7 +527,7 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, targetUserID uuid.UU
 		SELECT
 			p.id, p.user_id, p.section_id, p.content,
 			p.created_at, p.updated_at, p.deleted_at, p.deleted_by_user_id,
-			u.id, u.username, u.email, u.profile_picture_url, u.bio, u.is_admin, u.created_at,
+			u.id, u.username, COALESCE(u.email, '') as email, u.profile_picture_url, u.bio, u.is_admin, u.created_at,
 			COALESCE(COUNT(DISTINCT c.id), 0) as comment_count
 		FROM posts p
 		JOIN users u ON p.user_id = u.id

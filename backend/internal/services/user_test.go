@@ -53,14 +53,13 @@ func TestValidateRegisterInput(t *testing.T) {
 			errMsg:  "username can only contain alphanumeric characters and underscores",
 		},
 		{
-			name: "empty email",
+			name: "empty email allowed",
 			req: &models.RegisterRequest{
 				Username: "testuser",
 				Email:    "",
 				Password: "Password123",
 			},
-			wantErr: true,
-			errMsg:  "email is required",
+			wantErr: false,
 		},
 		{
 			name: "invalid email",
@@ -122,6 +121,54 @@ func TestValidateRegisterInput(t *testing.T) {
 			}
 			if err != nil && tt.errMsg != "" && err.Error() != tt.errMsg {
 				t.Errorf("validateRegisterInput() error = %v, want %v", err.Error(), tt.errMsg)
+			}
+		})
+	}
+}
+
+func TestValidateLoginInput(t *testing.T) {
+	tests := []struct {
+		name    string
+		req     *models.LoginRequest
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name: "valid login",
+			req: &models.LoginRequest{
+				Username: "testuser",
+				Password: "Password123",
+			},
+			wantErr: false,
+		},
+		{
+			name: "empty username",
+			req: &models.LoginRequest{
+				Username: "",
+				Password: "Password123",
+			},
+			wantErr: true,
+			errMsg:  "username is required",
+		},
+		{
+			name: "empty password",
+			req: &models.LoginRequest{
+				Username: "testuser",
+				Password: "",
+			},
+			wantErr: true,
+			errMsg:  "password is required",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateLoginInput(tt.req)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("validateLoginInput() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if err != nil && tt.errMsg != "" && err.Error() != tt.errMsg {
+				t.Errorf("validateLoginInput() error = %v, want %v", err.Error(), tt.errMsg)
 			}
 		})
 	}

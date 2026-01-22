@@ -158,7 +158,7 @@ func (s *CommentService) GetCommentByID(ctx context.Context, commentID uuid.UUID
 		SELECT
 			c.id, c.user_id, c.post_id, c.parent_comment_id, c.content,
 			c.created_at, c.updated_at, c.deleted_at, c.deleted_by_user_id,
-			u.id, u.username, u.email, u.profile_picture_url, u.bio, u.is_admin, u.created_at
+			u.id, u.username, COALESCE(u.email, '') as email, u.profile_picture_url, u.bio, u.is_admin, u.created_at
 		FROM comments c
 		JOIN users u ON c.user_id = u.id
 		WHERE c.id = $1 AND c.deleted_at IS NULL
@@ -340,7 +340,7 @@ func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID
 		SELECT
 			c.id, c.user_id, c.post_id, c.parent_comment_id, c.content,
 			c.created_at, c.updated_at, c.deleted_at, c.deleted_by_user_id,
-			u.id, u.username, u.email, u.profile_picture_url, u.bio, u.is_admin, u.created_at
+			u.id, u.username, COALESCE(u.email, '') as email, u.profile_picture_url, u.bio, u.is_admin, u.created_at
 		FROM comments c
 		JOIN users u ON c.user_id = u.id
 		WHERE c.post_id = $1 AND c.parent_comment_id IS NULL AND c.deleted_at IS NULL
@@ -463,7 +463,7 @@ func (s *CommentService) getCommentReplies(ctx context.Context, parentCommentID 
 		SELECT
 			c.id, c.user_id, c.post_id, c.parent_comment_id, c.content,
 			c.created_at, c.updated_at, c.deleted_at, c.deleted_by_user_id,
-			u.id, u.username, u.email, u.profile_picture_url, u.bio, u.is_admin, u.created_at
+			u.id, u.username, COALESCE(u.email, '') as email, u.profile_picture_url, u.bio, u.is_admin, u.created_at
 		FROM comments c
 		JOIN users u ON c.user_id = u.id
 		WHERE c.parent_comment_id = $1 AND c.deleted_at IS NULL
@@ -610,7 +610,7 @@ func (s *CommentService) RestoreComment(ctx context.Context, commentID uuid.UUID
 		SELECT
 			c.id, c.user_id, c.post_id, c.parent_comment_id, c.content,
 			c.created_at, c.updated_at, c.deleted_at, c.deleted_by_user_id,
-			u.id, u.username, u.email, u.profile_picture_url, u.bio, u.is_admin, u.created_at
+			u.id, u.username, COALESCE(u.email, '') as email, u.profile_picture_url, u.bio, u.is_admin, u.created_at
 		FROM comments c
 		JOIN users u ON c.user_id = u.id
 		WHERE c.id = $1 AND c.deleted_at IS NOT NULL
@@ -884,7 +884,7 @@ func (s *CommentService) AdminRestoreComment(ctx context.Context, commentID uuid
 	// Fetch user info
 	var user models.User
 	err = s.db.QueryRowContext(ctx, `
-		SELECT id, username, email, profile_picture_url, bio, is_admin, created_at
+		SELECT id, username, COALESCE(email, '') as email, profile_picture_url, bio, is_admin, created_at
 		FROM users WHERE id = $1
 	`, comment.UserID).Scan(
 		&user.ID, &user.Username, &user.Email, &user.ProfilePictureURL, &user.Bio, &user.IsAdmin, &user.CreatedAt,
