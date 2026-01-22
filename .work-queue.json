@@ -1811,9 +1811,9 @@
     {
       "issue_number": 189,
       "title": "Auth: Replace default admin seed with bootstrap flow",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769086805-8364",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769086805-8364",
       "dependencies": [
         184
       ],
@@ -1823,7 +1823,9 @@
         "backend",
         "auth",
         "admin"
-      ]
+      ],
+      "branch": "feat/issue-189-auth-replace-default-admin-seed-with-boo",
+      "claimed_at": "2026-01-22T13:00:05Z"
     },
     {
       "issue_number": 190,
