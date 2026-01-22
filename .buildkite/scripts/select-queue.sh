@@ -72,7 +72,6 @@ fi
   cat <<YAML
 env:
   CI: "true"
-  BUILDKITE_SKIP_CHECKOUT: "true"
 
 agents:
   queue: "${target_queue}"

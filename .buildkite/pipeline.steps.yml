@@ -1,7 +1,7 @@
 steps:
   - label: ":go: Backend format & lint"
     key: backend-lint
-    command: "bash -c 'checkout_dir=/workdir; if ! (touch \"$checkout_dir/.bk_write\" 2>/dev/null); then checkout_dir=/tmp/checkout; fi; rm -f \"$checkout_dir/.bk_write\"; if [ ! -d \"$checkout_dir/.git\" ]; then if ! command -v git >/dev/null 2>&1; then apt-get update && apt-get install -y git; fi; if [ -z \"${BUILDKITE_REPO:-}\" ]; then echo \"Missing BUILDKITE_REPO for checkout\"; exit 1; fi; git clone \"$BUILDKITE_REPO\" \"$checkout_dir\"; if [ -n \"${BUILDKITE_COMMIT:-}\" ]; then git -C \"$checkout_dir\" checkout \"$BUILDKITE_COMMIT\"; fi; fi; cd \"$checkout_dir\"; bash scripts/buildkite/backend-lint.sh'"
+    command: "bash scripts/buildkite/backend-lint.sh"
     plugins:
       - docker#v5.12.0:
           image: "golang:1.24"
@@ -10,7 +10,7 @@ steps:
 
   - label: ":go: Backend tests & build"
     key: backend-test
-    command: "bash -c 'checkout_dir=/workdir; if ! (touch \"$checkout_dir/.bk_write\" 2>/dev/null); then checkout_dir=/tmp/checkout; fi; rm -f \"$checkout_dir/.bk_write\"; if [ ! -d \"$checkout_dir/.git\" ]; then if ! command -v git >/dev/null 2>&1; then apt-get update && apt-get install -y git; fi; if [ -z \"${BUILDKITE_REPO:-}\" ]; then echo \"Missing BUILDKITE_REPO for checkout\"; exit 1; fi; git clone \"$BUILDKITE_REPO\" \"$checkout_dir\"; if [ -n \"${BUILDKITE_COMMIT:-}\" ]; then git -C \"$checkout_dir\" checkout \"$BUILDKITE_COMMIT\"; fi; fi; cd \"$checkout_dir\"; bash scripts/buildkite/backend-test.sh'"
+    command: "bash scripts/buildkite/backend-test.sh"
     plugins:
       - docker#v5.12.0:
           image: "golang:1.24"
@@ -19,7 +19,7 @@ steps:
 
   - label: ":node: Frontend lint, check & test"
     key: frontend
-    command: "bash -c 'checkout_dir=/workdir; if ! (touch \"$checkout_dir/.bk_write\" 2>/dev/null); then checkout_dir=/tmp/checkout; fi; rm -f \"$checkout_dir/.bk_write\"; if [ ! -d \"$checkout_dir/.git\" ]; then if ! command -v git >/dev/null 2>&1; then apt-get update && apt-get install -y git; fi; if [ -z \"${BUILDKITE_REPO:-}\" ]; then echo \"Missing BUILDKITE_REPO for checkout\"; exit 1; fi; git clone \"$BUILDKITE_REPO\" \"$checkout_dir\"; if [ -n \"${BUILDKITE_COMMIT:-}\" ]; then git -C \"$checkout_dir\" checkout \"$BUILDKITE_COMMIT\"; fi; fi; cd \"$checkout_dir\"; bash scripts/buildkite/frontend-checks.sh'"
+    command: "bash scripts/buildkite/frontend-checks.sh"
     plugins:
       - docker#v5.12.0:
           image: "node:20-bullseye"
