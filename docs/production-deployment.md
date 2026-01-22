@@ -22,8 +22,11 @@ Required environment values:
 - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
 - `REDIS_PASSWORD`
 - `GF_SECURITY_ADMIN_USER`, `GF_SECURITY_ADMIN_PASSWORD`, `GF_SERVER_ROOT_URL`
-- `OTEL_SERVICE_NAME`, `OTEL_SERVICE_VERSION`
-- `BACKUP_DIR`, `BACKUP_RETENTION_DAYS`
+
+Optional environment values (override defaults or enable features):
+
+- `OTEL_SERVICE_NAME`, `OTEL_SERVICE_VERSION` (defaults set in `docker-compose.prod.yml`)
+- `BACKUP_DIR`, `BACKUP_RETENTION_DAYS` (only needed if you run `scripts/backup-postgres.sh`)
 
 Required secrets to generate (do not use defaults):
 
