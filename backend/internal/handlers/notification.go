@@ -20,9 +20,9 @@ type NotificationHandler struct {
 }
 
 // NewNotificationHandler creates a new notification handler.
-func NewNotificationHandler(db *sql.DB) *NotificationHandler {
+func NewNotificationHandler(db *sql.DB, pushService *services.PushService) *NotificationHandler {
 	return &NotificationHandler{
-		notificationService: services.NewNotificationService(db),
+		notificationService: services.NewNotificationService(db, pushService),
 	}
 }
 

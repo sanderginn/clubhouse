@@ -15,6 +15,7 @@ import (
 	"github.com/sanderginn/clubhouse/internal/handlers"
 	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/observability"
+	"github.com/sanderginn/clubhouse/internal/services"
 )
 
 func writeJSONBytes(ctx context.Context, w http.ResponseWriter, statusCode int, body []byte) {
@@ -77,16 +78,18 @@ func main() {
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(dbConn, redisConn)
-	postHandler := handlers.NewPostHandler(dbConn, redisConn)
-	commentHandler := handlers.NewCommentHandler(dbConn, redisConn)
+	pushService := services.NewPushService(dbConn)
+	postHandler := handlers.NewPostHandler(dbConn, redisConn, pushService)
+	commentHandler := handlers.NewCommentHandler(dbConn, redisConn, pushService)
 	adminHandler := handlers.NewAdminHandler(dbConn)
-	reactionHandler := handlers.NewReactionHandler(dbConn, redisConn)
+	reactionHandler := handlers.NewReactionHandler(dbConn, redisConn, pushService)
 	userHandler := handlers.NewUserHandler(dbConn)
 	sectionHandler := handlers.NewSectionHandler(dbConn)
 	searchHandler := handlers.NewSearchHandler(dbConn)
-	notificationHandler := handlers.NewNotificationHandler(dbConn)
+	notificationHandler := handlers.NewNotificationHandler(dbConn, pushService)
 	wsHandler := handlers.NewWebSocketHandler(redisConn)
 	linkHandler := handlers.NewLinkHandler()
+	pushHandler := handlers.NewPushHandler(dbConn, pushService)
 
 	// API routes
 	mux.HandleFunc("/api/v1/auth/register", authHandler.Register)
@@ -219,6 +222,20 @@ func main() {
 	// Notification routes (protected)
 	mux.Handle("/api/v1/notifications", middleware.RequireAuth(redisConn)(http.HandlerFunc(notificationHandler.GetNotifications)))
 	mux.Handle("/api/v1/notifications/", middleware.RequireAuth(redisConn)(http.HandlerFunc(notificationHandler.MarkNotificationRead)))
+
+	// Push routes (protected)
+	mux.Handle("/api/v1/push/vapid-key", middleware.RequireAuth(redisConn)(http.HandlerFunc(pushHandler.GetVAPIDKey)))
+	mux.Handle("/api/v1/push/subscribe", middleware.RequireAuth(redisConn)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			pushHandler.Subscribe(w, r)
+			return
+		}
+		if r.Method == http.MethodDelete {
+			pushHandler.Unsubscribe(w, r)
+			return
+		}
+		writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+	})))
 
 	// Admin routes (protected by RequireAdmin middleware)
 	mux.Handle("/api/v1/admin/users", middleware.RequireAdmin(redisConn)(http.HandlerFunc(adminHandler.ListPendingUsers)))

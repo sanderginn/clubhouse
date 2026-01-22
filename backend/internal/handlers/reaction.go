@@ -24,10 +24,10 @@ type ReactionHandler struct {
 }
 
 // NewReactionHandler creates a new reaction handler
-func NewReactionHandler(db *sql.DB, redisClient *redis.Client) *ReactionHandler {
+func NewReactionHandler(db *sql.DB, redisClient *redis.Client, pushService *services.PushService) *ReactionHandler {
 	return &ReactionHandler{
 		reactionService: services.NewReactionService(db),
-		notify:          services.NewNotificationService(db),
+		notify:          services.NewNotificationService(db, pushService),
 		redis:           redisClient,
 	}
 }

@@ -25,12 +25,12 @@ type CommentHandler struct {
 }
 
 // NewCommentHandler creates a new comment handler
-func NewCommentHandler(db *sql.DB, redisClient *redis.Client) *CommentHandler {
+func NewCommentHandler(db *sql.DB, redisClient *redis.Client, pushService *services.PushService) *CommentHandler {
 	return &CommentHandler{
 		commentService: services.NewCommentService(db),
 		userService:    services.NewUserService(db),
 		postService:    services.NewPostService(db),
-		notify:         services.NewNotificationService(db),
+		notify:         services.NewNotificationService(db, pushService),
 		redis:          redisClient,
 	}
 }
