@@ -89,7 +89,9 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	// Insert comment
 	query := `
@@ -547,7 +549,9 @@ func (s *CommentService) DeleteComment(ctx context.Context, commentID uuid.UUID,
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	query := `
 		UPDATE comments
@@ -713,7 +717,9 @@ func (s *CommentService) HardDeleteComment(ctx context.Context, commentID uuid.U
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	// Verify comment exists (include soft-deleted comments)
 	var exists bool
@@ -816,7 +822,9 @@ func (s *CommentService) AdminRestoreComment(ctx context.Context, commentID uuid
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	// Check if comment exists and is soft-deleted
 	var exists bool

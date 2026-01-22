@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/models"
+	"github.com/sanderginn/clubhouse/internal/observability"
 	"github.com/sanderginn/clubhouse/internal/services"
 )
 
@@ -81,7 +82,14 @@ func (h *NotificationHandler) GetNotifications(w http.ResponseWriter, r *http.Re
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode notifications response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }
 
 // MarkNotificationRead handles PATCH /api/v1/notifications/{id}.
@@ -129,5 +137,12 @@ func (h *NotificationHandler) MarkNotificationRead(w http.ResponseWriter, r *htt
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode update notification response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/models"
+	"github.com/sanderginn/clubhouse/internal/observability"
 	"github.com/sanderginn/clubhouse/internal/services"
 )
 
@@ -47,7 +48,14 @@ func (h *AdminHandler) ListPendingUsers(w http.ResponseWriter, r *http.Request) 
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(pendingUsers)
+	if err := json.NewEncoder(w).Encode(pendingUsers); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode pending users response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }
 
 // ApproveUser approves a pending user (sets approved_at timestamp)
@@ -92,7 +100,14 @@ func (h *AdminHandler) ApproveUser(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(approveResponse)
+	if err := json.NewEncoder(w).Encode(approveResponse); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode approve user response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }
 
 // RejectUser rejects a pending user (hard delete)
@@ -134,7 +149,14 @@ func (h *AdminHandler) RejectUser(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(rejectResponse)
+	if err := json.NewEncoder(w).Encode(rejectResponse); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode reject user response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }
 
 // HardDeletePost permanently deletes a post (admin only)
@@ -177,7 +199,14 @@ func (h *AdminHandler) HardDeletePost(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode hard delete post response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }
 
 // HardDeleteComment permanently deletes a comment (admin only)
@@ -220,7 +249,14 @@ func (h *AdminHandler) HardDeleteComment(w http.ResponseWriter, r *http.Request)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode hard delete comment response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }
 
 // AdminRestorePost restores a soft-deleted post (admin only)
@@ -265,7 +301,14 @@ func (h *AdminHandler) AdminRestorePost(w http.ResponseWriter, r *http.Request) 
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode restore comment response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }
 
 // AdminRestoreComment restores a soft-deleted comment (admin only)
@@ -310,7 +353,14 @@ func (h *AdminHandler) AdminRestoreComment(w http.ResponseWriter, r *http.Reques
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode audit logs response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }
 
 // UpdateConfigRequest represents the request body for updating config
@@ -335,7 +385,14 @@ func (h *AdminHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(ConfigResponse{Config: config})
+	if err := json.NewEncoder(w).Encode(ConfigResponse{Config: config}); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode config response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }
 
 // UpdateConfig updates the admin configuration
@@ -356,7 +413,14 @@ func (h *AdminHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(ConfigResponse{Config: config})
+	if err := json.NewEncoder(w).Encode(ConfigResponse{Config: config}); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode config response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }
 
 // GetAuditLogs returns audit logs with pagination
@@ -453,5 +517,12 @@ func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode audit logs response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }

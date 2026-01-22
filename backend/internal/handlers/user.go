@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/models"
+	"github.com/sanderginn/clubhouse/internal/observability"
 	"github.com/sanderginn/clubhouse/internal/services"
 )
 
@@ -59,7 +60,14 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(profile)
+	if err := json.NewEncoder(w).Encode(profile); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode profile response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }
 
 // GetUserPosts handles GET /api/v1/users/{id}/posts
@@ -114,7 +122,14 @@ func (h *UserHandler) GetUserPosts(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(feed)
+	if err := json.NewEncoder(w).Encode(feed); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode user posts response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }
 
 // GetUserComments handles GET /api/v1/users/{id}/comments
@@ -172,7 +187,14 @@ func (h *UserHandler) GetUserComments(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode user comments response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }
 
 // UpdateMe handles PATCH /api/v1/users/me
@@ -216,7 +238,14 @@ func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode update me response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }
 
 // GetMySectionSubscriptions handles GET /api/v1/users/me/section-subscriptions
@@ -244,7 +273,14 @@ func (h *UserHandler) GetMySectionSubscriptions(w http.ResponseWriter, r *http.R
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode update subscription response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }
 
 // UpdateMySectionSubscription handles PATCH /api/v1/users/me/section-subscriptions/{sectionId}
@@ -296,5 +332,12 @@ func (h *UserHandler) UpdateMySectionSubscription(w http.ResponseWriter, r *http
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode update subscriptions response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/sanderginn/clubhouse/internal/models"
+	"github.com/sanderginn/clubhouse/internal/observability"
 	"github.com/sanderginn/clubhouse/internal/services"
 )
 
@@ -75,7 +76,14 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode register response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusCreated,
+			Err:        err,
+		})
+	}
 }
 
 // Login handles user login
@@ -142,7 +150,14 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode login response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }
 
 // GetMe returns the current authenticated user
@@ -188,7 +203,14 @@ func (h *AuthHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode me response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }
 
 // Logout handles user logout
@@ -235,7 +257,14 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode logout response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }
 
 func isSecureRequest(r *http.Request) bool {

@@ -82,7 +82,9 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	// Insert post
 	query := `
@@ -619,7 +621,9 @@ func (s *PostService) HardDeletePost(ctx context.Context, postID uuid.UUID, admi
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	// Verify post exists (include soft-deleted posts)
 	var exists bool
@@ -716,7 +720,9 @@ func (s *PostService) AdminRestorePost(ctx context.Context, postID uuid.UUID, ad
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	// Check if post exists and is soft-deleted
 	var exists bool

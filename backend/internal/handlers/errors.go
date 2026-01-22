@@ -24,8 +24,16 @@ func writeError(ctx context.Context, w http.ResponseWriter, statusCode int, code
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(models.ErrorResponse{
+	if err := json.NewEncoder(w).Encode(models.ErrorResponse{
 		Error: message,
 		Code:  code,
-	})
+	}); err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to encode error response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: statusCode,
+			UserID:     userID,
+			Err:        err,
+		})
+	}
 }

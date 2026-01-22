@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/models"
+	"github.com/sanderginn/clubhouse/internal/observability"
 	"github.com/sanderginn/clubhouse/internal/services"
 )
 
@@ -39,7 +40,14 @@ func (h *SectionHandler) ListSections(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode list sections response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }
 
 func (h *SectionHandler) GetSection(w http.ResponseWriter, r *http.Request) {
@@ -77,5 +85,12 @@ func (h *SectionHandler) GetSection(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode get section response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }

@@ -3,7 +3,7 @@ run:
   modules-download-mode: readonly
 
 output:
-  format: colored-line-number
+  formats: colored-line-number
 
 linters:
   enable:

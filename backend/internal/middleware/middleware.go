@@ -30,6 +30,8 @@ const (
 	SessionIDContextKey ContextKey = "session_id"
 	// SectionIDContextKey is the key for storing the current section ID in context
 	SectionIDContextKey ContextKey = "section_id"
+	// RequestIDContextKey is the key for storing the request ID in context
+	RequestIDContextKey ContextKey = "request_id"
 )
 
 var uuidPattern = regexp.MustCompile(`[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}`)
@@ -50,7 +52,7 @@ func ChainMiddleware(handler http.Handler, middlewares ...Middleware) http.Handl
 func RequestID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestID := uuid.New().String()
-		ctx := context.WithValue(r.Context(), "request_id", requestID)
+		ctx := context.WithValue(r.Context(), RequestIDContextKey, requestID)
 		w.Header().Set("X-Request-ID", requestID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -202,8 +204,16 @@ func writeAuthError(ctx context.Context, w http.ResponseWriter, statusCode int, 
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(errorResponse{
+	if err := json.NewEncoder(w).Encode(errorResponse{
 		Error: message,
 		Code:  code,
-	})
+	}); err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to encode auth error response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: statusCode,
+			UserID:     userID,
+			Err:        err,
+		})
+	}
 }

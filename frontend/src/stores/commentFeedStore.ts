@@ -1,15 +1,7 @@
 import { get } from 'svelte/store';
 import { api } from '../services/api';
 import { commentStore } from './commentStore';
-import { mapApiComment, type ApiComment } from './commentMapper';
-
-interface ThreadResponse {
-  comments: ApiComment[];
-  meta?: {
-    cursor?: string | null;
-    has_more?: boolean;
-  };
-}
+import { mapApiComment } from './commentMapper';
 
 export async function loadThreadComments(postId: string): Promise<void> {
   commentStore.setLoading(postId, true);

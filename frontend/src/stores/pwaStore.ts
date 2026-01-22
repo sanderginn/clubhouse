@@ -1,4 +1,4 @@
-import { writable, derived, get } from 'svelte/store';
+import { writable, derived } from 'svelte/store';
 import { api } from '../services/api';
 
 interface PWAState {
@@ -27,7 +27,7 @@ const initialState: PWAState = {
 };
 
 function createPWAStore() {
-  const { subscribe, set, update } = writable<PWAState>(initialState);
+  const { subscribe, update } = writable<PWAState>(initialState);
 
   let deferredInstallPrompt: BeforeInstallPromptEvent | null = null;
   let serviceWorkerRegistration: ServiceWorkerRegistration | null = null;
@@ -39,7 +39,7 @@ function createPWAStore() {
       // Check if already installed (display-mode: standalone)
       const isInstalled =
         window.matchMedia('(display-mode: standalone)').matches ||
-        (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+        (window.navigator as (Navigator & { standalone?: boolean }) | undefined)?.standalone === true;
 
       // Check push notification support
       const isPushSupported = 'PushManager' in window && 'serviceWorker' in navigator;
