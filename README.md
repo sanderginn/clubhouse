@@ -125,13 +125,14 @@ The pipeline starts with a hosted selector step that checks for connected self-h
 
 Required Buildkite environment variables (set as secrets):
 - `DYNAMIC_PIPELINE_GRAPHQL_TOKEN` (Buildkite GraphQL API access token)
-- `BUILDKITE_ORG_SLUG`
 - `BUILDKITE_CLUSTER_ID`
 - `BUILDKITE_SELF_HOSTED_QUEUE_KEY` (default: `local-agents`)
-- `BUILDKITE_HOSTED_QUEUE_KEY` (default: `hosted`)
+- `BUILDKITE_HOSTED_QUEUE_KEY` (default: `default`)
 
 Optional:
 - `BUILDKITE_SELF_HOSTED_QUEUE_ID` (skip queue lookup if you already know the queue ID)
+
+Note: the selector step uses the built-in `BUILDKITE_ORGANIZATION_SLUG` and requires `python3` on the hosted agent image.
 
 ## Pre-commit Checks
 

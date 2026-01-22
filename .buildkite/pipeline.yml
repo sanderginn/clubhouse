@@ -1,5 +1,4 @@
 env:
-  BUILDKITE_ORG_SLUG: "sander-ginn"
   BUILDKITE_CLUSTER_ID: "fe4c54fc-dfe4-4dc8-bcbb-7962ee9a78b6"
   BUILDKITE_HOSTED_QUEUE_KEY: "default"
   BUILDKITE_SELF_HOSTED_QUEUE_KEY: "local-agents"

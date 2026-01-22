@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-org_slug="${BUILDKITE_ORG_SLUG:?BUILDKITE_ORG_SLUG is required}"
+org_slug="${BUILDKITE_ORGANIZATION_SLUG:?BUILDKITE_ORGANIZATION_SLUG is required}"
 cluster_id="${BUILDKITE_CLUSTER_ID:?BUILDKITE_CLUSTER_ID is required}"
 graphql_token="${DYNAMIC_PIPELINE_GRAPHQL_TOKEN:?DYNAMIC_PIPELINE_GRAPHQL_TOKEN is required}"
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "python3 is required for Buildkite queue selection. Install Python 3 or update the script to use a different JSON parser."
+  exit 1
+fi
 
 self_hosted_queue_key="${BUILDKITE_SELF_HOSTED_QUEUE_KEY:-local-agents}"
 hosted_queue_key="${BUILDKITE_HOSTED_QUEUE_KEY:-hosted}"
