@@ -44,16 +44,21 @@ func (s *UserService) RegisterUser(ctx context.Context, req *models.RegisterRequ
 
 	// Create user ID
 	userID := uuid.New()
+	emailValue := strings.TrimSpace(req.Email)
+	var email sql.NullString
+	if emailValue != "" {
+		email = sql.NullString{String: emailValue, Valid: true}
+	}
 
 	// Insert into database
 	query := `
 		INSERT INTO users (id, username, email, password_hash, is_admin, created_at)
 		VALUES ($1, $2, $3, $4, false, now())
-		RETURNING id, username, email, is_admin, created_at
+		RETURNING id, username, COALESCE(email, '') as email, is_admin, created_at
 	`
 
 	var user models.User
-	err = s.db.QueryRowContext(ctx, query, userID, req.Username, req.Email, string(passwordHash)).
+	err = s.db.QueryRowContext(ctx, query, userID, req.Username, email, string(passwordHash)).
 		Scan(&user.ID, &user.Username, &user.Email, &user.IsAdmin, &user.CreatedAt)
 
 	if err != nil {
@@ -75,7 +80,7 @@ func (s *UserService) RegisterUser(ctx context.Context, req *models.RegisterRequ
 // GetUserByID retrieves a user by ID
 func (s *UserService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	query := `
-		SELECT id, username, email, password_hash, profile_picture_url, bio, is_admin, approved_at, created_at, updated_at, deleted_at
+		SELECT id, username, COALESCE(email, '') as email, password_hash, profile_picture_url, bio, is_admin, approved_at, created_at, updated_at, deleted_at
 		FROM users
 		WHERE id = $1 AND deleted_at IS NULL
 	`
@@ -98,7 +103,7 @@ func (s *UserService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.Us
 // GetUserByUsername retrieves a user by username
 func (s *UserService) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
 	query := `
-		SELECT id, username, email, password_hash, profile_picture_url, bio, is_admin, approved_at, created_at, updated_at, deleted_at
+		SELECT id, username, COALESCE(email, '') as email, password_hash, profile_picture_url, bio, is_admin, approved_at, created_at, updated_at, deleted_at
 		FROM users
 		WHERE username = $1 AND deleted_at IS NULL
 	`
@@ -121,7 +126,7 @@ func (s *UserService) GetUserByUsername(ctx context.Context, username string) (*
 // GetUserByEmail retrieves a user by email
 func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	query := `
-		SELECT id, username, email, password_hash, profile_picture_url, bio, is_admin, approved_at, created_at, updated_at, deleted_at
+		SELECT id, username, COALESCE(email, '') as email, password_hash, profile_picture_url, bio, is_admin, approved_at, created_at, updated_at, deleted_at
 		FROM users
 		WHERE email = $1 AND deleted_at IS NULL
 	`
@@ -141,17 +146,17 @@ func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*models
 	return &user, nil
 }
 
-// LoginUser authenticates a user with email and password
+// LoginUser authenticates a user with username and password
 func (s *UserService) LoginUser(ctx context.Context, req *models.LoginRequest) (*models.User, error) {
 	// Validate input
 	if err := validateLoginInput(req); err != nil {
 		return nil, err
 	}
 
-	// Get user by email
-	user, err := s.GetUserByEmail(ctx, req.Email)
+	// Get user by username
+	user, err := s.GetUserByUsername(ctx, req.Username)
 	if err != nil {
-		return nil, fmt.Errorf("invalid email or password")
+		return nil, fmt.Errorf("invalid username or password")
 	}
 
 	// Check if user is approved
@@ -161,7 +166,7 @@ func (s *UserService) LoginUser(ctx context.Context, req *models.LoginRequest) (
 
 	// Verify password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-		return nil, fmt.Errorf("invalid email or password")
+		return nil, fmt.Errorf("invalid username or password")
 	}
 
 	return user, nil
@@ -169,12 +174,8 @@ func (s *UserService) LoginUser(ctx context.Context, req *models.LoginRequest) (
 
 // validateLoginInput validates login input
 func validateLoginInput(req *models.LoginRequest) error {
-	if strings.TrimSpace(req.Email) == "" {
-		return fmt.Errorf("email is required")
-	}
-
-	if !isValidEmail(req.Email) {
-		return fmt.Errorf("invalid email format")
+	if strings.TrimSpace(req.Username) == "" {
+		return fmt.Errorf("username is required")
 	}
 
 	if strings.TrimSpace(req.Password) == "" {
@@ -198,11 +199,8 @@ func validateRegisterInput(req *models.RegisterRequest) error {
 		return fmt.Errorf("username can only contain alphanumeric characters and underscores")
 	}
 
-	if strings.TrimSpace(req.Email) == "" {
-		return fmt.Errorf("email is required")
-	}
-
-	if !isValidEmail(req.Email) {
+	email := strings.TrimSpace(req.Email)
+	if email != "" && !isValidEmail(email) {
 		return fmt.Errorf("invalid email format")
 	}
 
@@ -263,7 +261,7 @@ func isStrongPassword(password string) bool {
 // GetPendingUsers retrieves all users pending admin approval
 func (s *UserService) GetPendingUsers(ctx context.Context) ([]*models.PendingUser, error) {
 	query := `
-		SELECT id, username, email, created_at
+		SELECT id, username, COALESCE(email, '') as email, created_at
 		FROM users
 		WHERE approved_at IS NULL AND deleted_at IS NULL
 		ORDER BY created_at ASC
@@ -303,7 +301,7 @@ func (s *UserService) ApproveUser(ctx context.Context, userID uuid.UUID, adminUs
 
 	// Get the user first to verify they exist and are pending
 	query := `
-		SELECT id, username, email, approved_at, deleted_at
+		SELECT id, username, COALESCE(email, '') as email, approved_at, deleted_at
 		FROM users
 		WHERE id = $1
 	`
@@ -334,7 +332,7 @@ func (s *UserService) ApproveUser(ctx context.Context, userID uuid.UUID, adminUs
 		UPDATE users
 		SET approved_at = now(), updated_at = now()
 		WHERE id = $1
-		RETURNING id, username, email
+		RETURNING id, username, COALESCE(email, '') as email
 	`
 
 	var approvedUser models.User
@@ -656,7 +654,7 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *
 		UPDATE users
 		SET %s
 		WHERE id = $%d AND deleted_at IS NULL
-		RETURNING id, username, email, profile_picture_url, bio, is_admin
+		RETURNING id, username, COALESCE(email, '') as email, profile_picture_url, bio, is_admin
 	`, strings.Join(setClauses, ", "), argIndex)
 
 	var response models.UpdateUserResponse

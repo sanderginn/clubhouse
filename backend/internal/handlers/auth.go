@@ -53,8 +53,6 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_USERNAME_LENGTH", err.Error())
 		case "username can only contain alphanumeric characters and underscores":
 			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_USERNAME_FORMAT", err.Error())
-		case "email is required":
-			writeError(r.Context(), w, http.StatusBadRequest, "EMAIL_REQUIRED", err.Error())
 		case "invalid email format":
 			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_EMAIL", err.Error())
 		case "password must be at least 8 characters":
@@ -111,13 +109,11 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// Determine appropriate error code and status
 		switch err.Error() {
-		case "email is required":
-			writeError(r.Context(), w, http.StatusBadRequest, "EMAIL_REQUIRED", err.Error())
-		case "invalid email format":
-			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_EMAIL", err.Error())
+		case "username is required":
+			writeError(r.Context(), w, http.StatusBadRequest, "USERNAME_REQUIRED", err.Error())
 		case "password is required":
 			writeError(r.Context(), w, http.StatusBadRequest, "PASSWORD_REQUIRED", err.Error())
-		case "invalid email or password":
+		case "invalid username or password":
 			writeError(r.Context(), w, http.StatusUnauthorized, "INVALID_CREDENTIALS", err.Error())
 		case "user not approved":
 			writeError(r.Context(), w, http.StatusForbidden, "USER_NOT_APPROVED", err.Error())
