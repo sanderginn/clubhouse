@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent, screen, cleanup } from '@testing-library/svelte';
+import { tick } from 'svelte';
 import { commentStore } from '../../../stores';
 import { afterEach } from 'vitest';
 
@@ -27,27 +28,30 @@ afterEach(() => {
 });
 
 describe('CommentThread', () => {
-  it('loads initial thread once', () => {
-    render(CommentThread, { postId: 'post-1' });
+  it('loads initial thread once when visible and comments exist', async () => {
+    render(CommentThread, { postId: 'post-1', commentCount: 2 });
+    const observer = (globalThis as { __lastObserver?: { trigger: (value: boolean) => void } }).__lastObserver;
+    observer?.trigger(true);
+    await tick();
     expect(loadThreadComments).toHaveBeenCalledTimes(1);
     expect(loadThreadComments).toHaveBeenCalledWith('post-1');
   });
 
   it('shows loading state', () => {
     commentStore.setLoading('post-1', true);
-    render(CommentThread, { postId: 'post-1' });
+    render(CommentThread, { postId: 'post-1', commentCount: 0 });
     expect(screen.getByText('Loading comments...')).toBeInTheDocument();
   });
 
   it('shows error state', () => {
     commentStore.setError('post-1', 'boom');
-    render(CommentThread, { postId: 'post-1' });
+    render(CommentThread, { postId: 'post-1', commentCount: 0 });
     expect(screen.getByText('boom')).toBeInTheDocument();
   });
 
   it('shows empty state', () => {
     commentStore.setThread('post-1', [], null, false);
-    render(CommentThread, { postId: 'post-1' });
+    render(CommentThread, { postId: 'post-1', commentCount: 0 });
     expect(screen.getByText('No comments yet. Start the conversation.')).toBeInTheDocument();
   });
 
@@ -64,7 +68,7 @@ describe('CommentThread', () => {
       },
     ], 'cursor-1', true);
 
-    render(CommentThread, { postId: 'post-1' });
+    render(CommentThread, { postId: 'post-1', commentCount: 1 });
 
     expect(screen.getByText('Load more comments')).toBeInTheDocument();
 

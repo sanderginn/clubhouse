@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import { commentStore, type CommentThreadState } from '../../stores/commentStore';
   import { loadThreadComments, loadMoreThreadComments } from '../../stores/commentFeedStore';
   import { api } from '../../services/api';
@@ -7,6 +8,7 @@
   import ReactionBar from '../reactions/ReactionBar.svelte';
 
   export let postId: string;
+  export let commentCount = 0;
 
   const emptyThread: CommentThreadState = {
     comments: [],
@@ -18,6 +20,9 @@
   };
 
   let openReplies = new Set<string>();
+  let rootEl: HTMLElement | null = null;
+  let observer: IntersectionObserver | null = null;
+  let isVisible = false;
 
   function getUserReactions(comment: { viewerReactions?: string[] }): Set<string> {
     return new Set(comment.viewerReactions ?? []);
@@ -58,6 +63,7 @@
   }
 
   $: thread = $commentStore[postId] ?? emptyThread;
+  $: shouldLoad = commentCount > 0;
 
   function toggleReply(commentId: string) {
     if (openReplies.has(commentId)) {
@@ -112,12 +118,43 @@
     }
   }
 
-  $: if (postId && !thread.loaded && !thread.isLoading && !thread.error) {
+  function ensureObserver() {
+    if (!rootEl || typeof window === 'undefined' || !shouldLoad) return;
+    if (!observer) {
+      observer = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          if (entry?.isIntersecting) {
+            isVisible = true;
+          }
+        },
+        {
+          root: null,
+          rootMargin: '120px',
+          threshold: 0,
+        }
+      );
+    }
+    if (observer) {
+      observer.disconnect();
+      observer.observe(rootEl);
+    }
+  }
+
+  onDestroy(() => {
+    observer?.disconnect();
+  });
+
+  $: if (rootEl) {
+    ensureObserver();
+  }
+
+  $: if (postId && shouldLoad && isVisible && !thread.loaded && !thread.isLoading && !thread.error) {
     loadThreadComments(postId);
   }
 </script>
 
-<div class="space-y-4">
+<div class="space-y-4" bind:this={rootEl}>
   <div class="border border-gray-200 rounded-lg p-3 bg-gray-50">
     <CommentForm {postId} />
   </div>

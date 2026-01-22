@@ -33,7 +33,10 @@ interface SectionState {
 }
 
 function isGeneralSection(section: { type?: SectionType; name?: string }): boolean {
-  return section.type === 'general' || section.name?.toLowerCase() === 'general';
+  if (section.type) {
+    return section.type === 'general';
+  }
+  return section.name?.toLowerCase() === 'general';
 }
 
 function orderSections<T extends { type?: SectionType; name?: string }>(sections: T[]): T[] {

@@ -173,7 +173,7 @@
       </div>
 
       <div class="mt-4 border-t border-gray-200 pt-4">
-        <CommentThread postId={post.id} />
+        <CommentThread postId={post.id} commentCount={post.commentCount ?? 0} />
       </div>
     </div>
   </div>
