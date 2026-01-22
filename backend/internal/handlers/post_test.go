@@ -23,7 +23,7 @@ func TestGetPostSuccess(t *testing.T) {
 	}
 	defer db.Close()
 
-	handler := NewPostHandler(db, nil)
+	handler := NewPostHandler(db, nil, nil)
 	postID := uuid.New()
 	userID := uuid.New()
 	sectionID := uuid.New()
@@ -103,7 +103,7 @@ func TestGetPostNotFound(t *testing.T) {
 	}
 	defer db.Close()
 
-	handler := NewPostHandler(db, nil)
+	handler := NewPostHandler(db, nil, nil)
 	postID := uuid.New()
 
 	// Mock no rows returned
@@ -143,7 +143,7 @@ func TestGetPostInvalidID(t *testing.T) {
 	}
 	defer db.Close()
 
-	handler := NewPostHandler(db, nil)
+	handler := NewPostHandler(db, nil, nil)
 
 	req, err := http.NewRequest("GET", "/api/v1/posts/not-a-uuid", nil)
 	if err != nil {
@@ -175,7 +175,7 @@ func TestGetPostMethodNotAllowed(t *testing.T) {
 	}
 	defer db.Close()
 
-	handler := NewPostHandler(db, nil)
+	handler := NewPostHandler(db, nil, nil)
 	postID := uuid.New()
 
 	req, err := http.NewRequest("POST", "/api/v1/posts/"+postID.String(), bytes.NewBufferString("{}"))
@@ -208,7 +208,7 @@ func TestGetFeedSuccess(t *testing.T) {
 	}
 	defer db.Close()
 
-	handler := NewPostHandler(db, nil)
+	handler := NewPostHandler(db, nil, nil)
 	sectionID := uuid.New()
 	post1ID := uuid.New()
 	post2ID := uuid.New()
@@ -287,7 +287,7 @@ func TestGetFeedWithCursor(t *testing.T) {
 	}
 	defer db.Close()
 
-	handler := NewPostHandler(db, nil)
+	handler := NewPostHandler(db, nil, nil)
 	sectionID := uuid.New()
 	postID := uuid.New()
 	userID := uuid.New()
@@ -352,7 +352,7 @@ func TestGetFeedInvalidSectionID(t *testing.T) {
 	}
 	defer db.Close()
 
-	handler := NewPostHandler(db, nil)
+	handler := NewPostHandler(db, nil, nil)
 
 	req, err := http.NewRequest("GET", "/api/v1/sections/not-a-uuid/feed", nil)
 	if err != nil {
@@ -384,7 +384,7 @@ func TestRestorePostSuccess(t *testing.T) {
 	}
 	defer db.Close()
 
-	handler := NewPostHandler(db, nil)
+	handler := NewPostHandler(db, nil, nil)
 	postID := uuid.New()
 	userID := uuid.New()
 	sectionID := uuid.New()
@@ -471,7 +471,7 @@ func TestRestorePostByAdmin(t *testing.T) {
 	}
 	defer db.Close()
 
-	handler := NewPostHandler(db, nil)
+	handler := NewPostHandler(db, nil, nil)
 	postID := uuid.New()
 	ownerID := uuid.New()
 	adminID := uuid.New()
@@ -546,7 +546,7 @@ func TestRestorePostUnauthorized(t *testing.T) {
 	}
 	defer db.Close()
 
-	handler := NewPostHandler(db, nil)
+	handler := NewPostHandler(db, nil, nil)
 	postID := uuid.New()
 	ownerID := uuid.New()
 	otherUserID := uuid.New()
@@ -606,7 +606,7 @@ func TestRestorePostPermanentlyDeleted(t *testing.T) {
 	}
 	defer db.Close()
 
-	handler := NewPostHandler(db, nil)
+	handler := NewPostHandler(db, nil, nil)
 	postID := uuid.New()
 	userID := uuid.New()
 	sectionID := uuid.New()

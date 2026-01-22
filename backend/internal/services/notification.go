@@ -5,12 +5,14 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/sanderginn/clubhouse/internal/models"
+	"github.com/sanderginn/clubhouse/internal/observability"
 )
 
 const (
@@ -22,12 +24,13 @@ const (
 
 // NotificationService handles notification creation.
 type NotificationService struct {
-	db *sql.DB
+	db   *sql.DB
+	push *PushService
 }
 
 // NewNotificationService creates a new notification service.
-func NewNotificationService(db *sql.DB) *NotificationService {
-	return &NotificationService{db: db}
+func NewNotificationService(db *sql.DB, pushService *PushService) *NotificationService {
+	return &NotificationService{db: db, push: pushService}
 }
 
 // CreateNotificationsForNewPost creates notifications for all subscribed users in a section.
@@ -49,6 +52,8 @@ func (s *NotificationService) CreateNotificationsForNewPost(ctx context.Context,
 	if err != nil {
 		return fmt.Errorf("failed to create new post notifications: %w", err)
 	}
+
+	s.sendPushToSection(ctx, notificationTypeNewPost, postID, nil, &authorID, sectionID, authorID)
 
 	return nil
 }
@@ -155,7 +160,116 @@ func (s *NotificationService) insertNotification(ctx context.Context, userID uui
 		return fmt.Errorf("failed to insert notification: %w", err)
 	}
 
+	s.sendPush(ctx, userID, notificationType, postID, commentID, relatedUserID)
+
 	return nil
+}
+
+func (s *NotificationService) sendPush(ctx context.Context, userID uuid.UUID, notificationType string, postID *uuid.UUID, commentID *uuid.UUID, relatedUserID *uuid.UUID) {
+	if s.push == nil {
+		return
+	}
+
+	payload := buildPushPayload(notificationType, postID, commentID, relatedUserID)
+	if err := s.push.SendNotification(ctx, userID, payload); err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to send push notification",
+			Code:       "PUSH_SEND_FAILED",
+			StatusCode: http.StatusInternalServerError,
+			UserID:     userID.String(),
+			Err:        err,
+		})
+	}
+}
+
+func (s *NotificationService) sendPushToSection(ctx context.Context, notificationType string, postID uuid.UUID, commentID *uuid.UUID, relatedUserID *uuid.UUID, sectionID uuid.UUID, authorID uuid.UUID) {
+	if s.push == nil {
+		return
+	}
+
+	userIDs, err := s.getSubscribedUserIDs(ctx, sectionID, authorID)
+	if err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to load push subscription users",
+			Code:       "PUSH_SUBSCRIPTION_FETCH_FAILED",
+			StatusCode: http.StatusInternalServerError,
+			Err:        err,
+		})
+		return
+	}
+	if len(userIDs) == 0 {
+		return
+	}
+
+	payload := buildPushPayload(notificationType, &postID, commentID, relatedUserID)
+	if err := s.push.SendNotificationToUsers(ctx, userIDs, payload); err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to send push notifications",
+			Code:       "PUSH_SEND_FAILED",
+			StatusCode: http.StatusInternalServerError,
+			Err:        err,
+		})
+	}
+}
+
+func (s *NotificationService) getSubscribedUserIDs(ctx context.Context, sectionID uuid.UUID, authorID uuid.UUID) ([]uuid.UUID, error) {
+	query := `
+		SELECT u.id
+		FROM users u
+		WHERE u.deleted_at IS NULL
+		  AND u.approved_at IS NOT NULL
+		  AND u.id <> $1
+		  AND NOT EXISTS (
+				SELECT 1 FROM section_subscriptions ss
+				WHERE ss.user_id = u.id AND ss.section_id = $2
+		  )
+	`
+
+	rows, err := s.db.QueryContext(ctx, query, authorID, sectionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	userIDs := make([]uuid.UUID, 0)
+	for rows.Next() {
+		var userID uuid.UUID
+		if err := rows.Scan(&userID); err != nil {
+			return nil, err
+		}
+		userIDs = append(userIDs, userID)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return userIDs, nil
+}
+
+func buildPushPayload(notificationType string, postID *uuid.UUID, commentID *uuid.UUID, relatedUserID *uuid.UUID) models.PushNotificationPayload {
+	payload := models.PushNotificationPayload{
+		Type:          notificationType,
+		PostID:        postID,
+		CommentID:     commentID,
+		RelatedUserID: relatedUserID,
+	}
+
+	switch notificationType {
+	case notificationTypeNewPost:
+		payload.Title = "New post"
+		payload.Body = "There is a new post in your community."
+	case notificationTypeNewComment:
+		payload.Title = "New comment"
+		payload.Body = "Someone commented on your post."
+	case notificationTypeMention:
+		payload.Title = "New mention"
+		payload.Body = "You were mentioned in a post or comment."
+	case notificationTypeReaction:
+		payload.Title = "New reaction"
+		payload.Body = "Someone reacted to your post or comment."
+	}
+
+	return payload
 }
 
 func (s *NotificationService) getPostOwnerAndSectionID(ctx context.Context, postID uuid.UUID) (uuid.UUID, uuid.UUID, error) {

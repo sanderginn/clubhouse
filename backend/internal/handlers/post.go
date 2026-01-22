@@ -24,11 +24,11 @@ type PostHandler struct {
 }
 
 // NewPostHandler creates a new post handler
-func NewPostHandler(db *sql.DB, redisClient *redis.Client) *PostHandler {
+func NewPostHandler(db *sql.DB, redisClient *redis.Client, pushService *services.PushService) *PostHandler {
 	return &PostHandler{
 		postService: services.NewPostService(db),
 		userService: services.NewUserService(db),
-		notify:      services.NewNotificationService(db),
+		notify:      services.NewNotificationService(db, pushService),
 		redis:       redisClient,
 	}
 }
