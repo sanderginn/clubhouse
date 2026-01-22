@@ -37,6 +37,22 @@ describe('CommentThread', () => {
     expect(loadThreadComments).toHaveBeenCalledWith('post-1');
   });
 
+  it('attaches observer when comment count flips from zero', async () => {
+    const observerRef = globalThis as { __lastObserver?: { trigger: (value: boolean) => void } };
+    observerRef.__lastObserver = undefined;
+    const { component } = render(CommentThread, { postId: 'post-1', commentCount: 0 });
+
+    component.$set({ commentCount: 1 });
+    await tick();
+
+    const observer = observerRef.__lastObserver;
+    observer?.trigger(true);
+    await tick();
+
+    expect(loadThreadComments).toHaveBeenCalledTimes(1);
+    expect(loadThreadComments).toHaveBeenCalledWith('post-1');
+  });
+
   it('shows loading state', () => {
     commentStore.setLoading('post-1', true);
     render(CommentThread, { postId: 'post-1', commentCount: 0 });

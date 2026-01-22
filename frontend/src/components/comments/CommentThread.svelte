@@ -145,7 +145,7 @@
     observer?.disconnect();
   });
 
-  $: if (rootEl) {
+  $: if (rootEl && shouldLoad) {
     ensureObserver();
   }
 
