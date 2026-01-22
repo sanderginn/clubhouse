@@ -91,7 +91,8 @@
     163,
     166,
     169,
-    170
+    170,
+    177
   ],
   "issues": [
     {
@@ -1630,7 +1631,7 @@
     {
       "issue_number": 177,
       "title": "Implement dynamic queue selection for self-hosted Buildkite agents",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769068689-72608",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769068689-72608",
       "dependencies": [],
@@ -1642,7 +1643,9 @@
         "buildkite"
       ],
       "branch": "feat/issue-177-implement-dynamic-queue-selection-for-se",
-      "claimed_at": "2026-01-22T07:58:09Z"
+      "claimed_at": "2026-01-22T07:58:09Z",
+      "pr_number": 178,
+      "completed_at": "2026-01-22T09:56:28Z"
     }
   ]
 }
