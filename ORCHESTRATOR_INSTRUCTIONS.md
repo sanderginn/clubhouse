@@ -57,6 +57,13 @@ When a PR comes in:
    ```
    - If checks haven’t finished, wait 60 seconds and retry `gh pr merge` until they pass.
 
+5. **Out-of-scope issues:** If you find issues outside the PR’s scope, open a new GitHub issue and update the work queue.
+   ```bash
+   gh issue create --title "Issue title" --body "Details..."
+   ./scripts/show-queue.sh --available
+   ```
+   - In-scope issues belong in PR comments for the author to address.
+
 ### 2. Handle Merge Conflicts
 
 **Do NOT resolve conflicts yourself.** Leave a comment asking the subagent to rebase:
