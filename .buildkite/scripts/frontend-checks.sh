@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-bash scripts/buildkite/frontend-checks.sh
+cd frontend
+
+npm ci
+npm run lint -- --resolve-plugins-relative-to .
+git diff --exit-code
+npm run check
+npm run test
