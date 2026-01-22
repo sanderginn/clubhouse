@@ -31,7 +31,7 @@ JSON
 
   queue_response=$(api_call "${queue_payload}")
 
-  self_hosted_queue_id=$(jq -r --arg key "${self_hosted_queue_key}" '.data.organization.cluster.queues.edges[].node | select(.key == $key) | .id' <<<"${queue_response}")
+  self_hosted_queue_id=$(jq -r --arg key "${self_hosted_queue_key}" '.data.organization.cluster.queues.edges // [] | .[].node | select(.key == $key) | .id' <<<"${queue_response}")
   if [[ -z "${self_hosted_queue_id}" || "${self_hosted_queue_id}" == "null" ]]; then
     echo "No queue found for key '${self_hosted_queue_key}'."
     exit 1
@@ -45,7 +45,7 @@ JSON
 
 agents_response=$(api_call "${agents_payload}")
 
-connected_count=$(jq '[.data.organization.agents.edges[].node | select(.connectionState == "connected")] | length' <<<"${agents_response}")
+connected_count=$(jq '[.data.organization.agents.edges // [] | .[].node | select(.connectionState == "connected")] | length' <<<"${agents_response}")
 
 if [[ "${connected_count}" -gt 0 ]]; then
   target_queue="${self_hosted_queue_key}"
