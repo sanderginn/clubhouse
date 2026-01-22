@@ -1,6 +1,9 @@
 env:
   CI: "true"
 
+agents:
+  queue: "local-agents"
+
 steps:
   - label: ":go: Backend format & lint"
     key: backend-lint
