@@ -73,6 +73,7 @@
     112,
     113,
     114,
+    135,
     136,
     137,
     138,
@@ -1240,7 +1241,7 @@
     {
       "issue_number": 135,
       "title": "Phase 6: Backend Web Push API endpoints",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769068627-71725",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769068627-71725",
       "dependencies": [],
@@ -1250,7 +1251,9 @@
       ],
       "priority": 1,
       "branch": "feat/issue-135-backend-web-push-api-endpoints",
-      "claimed_at": "2026-01-22T07:57:07Z"
+      "claimed_at": "2026-01-22T07:57:07Z",
+      "pr_number": 179,
+      "completed_at": "2026-01-22T11:10:03Z"
     },
     {
       "issue_number": 136,
