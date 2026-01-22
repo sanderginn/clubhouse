@@ -1,6 +1,7 @@
 steps:
   - label: ":go: Backend format & lint"
     key: backend-lint
+    checkout: true
     command: "bash -c 'if [ -f scripts/buildkite/backend-lint.sh ]; then bash scripts/buildkite/backend-lint.sh; elif [ -f .buildkite/scripts/backend-lint.sh ]; then bash .buildkite/scripts/backend-lint.sh; else echo \"Missing backend-lint script\"; ls -la; exit 1; fi'"
     plugins:
       - docker#v5.12.0:
@@ -10,6 +11,7 @@ steps:
 
   - label: ":go: Backend tests & build"
     key: backend-test
+    checkout: true
     command: "bash -c 'if [ -f scripts/buildkite/backend-test.sh ]; then bash scripts/buildkite/backend-test.sh; elif [ -f .buildkite/scripts/backend-test.sh ]; then bash .buildkite/scripts/backend-test.sh; else echo \"Missing backend-test script\"; ls -la; exit 1; fi'"
     plugins:
       - docker#v5.12.0:
@@ -19,6 +21,7 @@ steps:
 
   - label: ":node: Frontend lint, check & test"
     key: frontend
+    checkout: true
     command: "bash -c 'if [ -f scripts/buildkite/frontend-checks.sh ]; then bash scripts/buildkite/frontend-checks.sh; elif [ -f .buildkite/scripts/frontend-checks.sh ]; then bash .buildkite/scripts/frontend-checks.sh; else echo \"Missing frontend-checks script\"; ls -la; exit 1; fi'"
     plugins:
       - docker#v5.12.0:
