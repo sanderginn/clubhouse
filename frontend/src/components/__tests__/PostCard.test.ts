@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, fireEvent, screen, cleanup } from '@testing-library/svelte';
+import { render, screen, cleanup } from '@testing-library/svelte';
 import type { Post } from '../../stores/postStore';
 
 const loadThreadComments = vi.hoisted(() => vi.fn());
@@ -34,18 +34,10 @@ afterEach(() => {
 });
 
 describe('PostCard', () => {
-  it('toggles comment thread', async () => {
+  it('shows comment thread by default', () => {
     render(PostCard, { post: basePost });
 
-    expect(screen.queryByText('No comments yet. Start the conversation.')).not.toBeInTheDocument();
-
-    const toggle = screen.getByText('0');
-    await fireEvent.click(toggle);
-
     expect(screen.getByText('No comments yet. Start the conversation.')).toBeInTheDocument();
-
-    await fireEvent.click(toggle);
-    expect(screen.queryByText('No comments yet. Start the conversation.')).not.toBeInTheDocument();
   });
 
   it('renders rich link card when metadata present', () => {
