@@ -2,7 +2,7 @@
   import { api } from '../services/api';
   import { authStore, type User } from '../stores';
 
-  let email = '';
+  let username = '';
   let password = '';
   let error = '';
   let isLoading = false;
@@ -21,7 +21,7 @@
 
     try {
       const response = await api.post<LoginResponse>('/auth/login', {
-        email,
+        username,
         password,
       });
 
@@ -68,16 +68,16 @@
 
       <div class="rounded-md shadow-sm -space-y-px">
         <div>
-          <label for="email" class="sr-only">Email address</label>
+          <label for="username" class="sr-only">Username</label>
           <input
-            id="email"
-            name="email"
-            type="email"
-            autocomplete="email"
+            id="username"
+            name="username"
+            type="text"
+            autocomplete="username"
             required
-            bind:value={email}
+            bind:value={username}
             class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-            placeholder="Email address"
+            placeholder="Username"
           />
         </div>
         <div>
