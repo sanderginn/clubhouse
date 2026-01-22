@@ -121,6 +121,19 @@ Pull requests targeting `main` run in Buildkite and must pass all checks before 
 - Backend tests + build
 - Frontend lint + typecheck + tests
 
+The pipeline starts with a hosted selector step that checks for connected self-hosted agents and uploads the real pipeline to either the self-hosted or hosted queue.
+
+Required Buildkite environment variables (set as secrets):
+- `DYNAMIC_PIPELINE_GRAPHQL_TOKEN` (Buildkite GraphQL API access token)
+- `BUILDKITE_CLUSTER_ID`
+- `BUILDKITE_SELF_HOSTED_QUEUE_KEY` (default: `local-agents`)
+- `BUILDKITE_HOSTED_QUEUE_KEY` (default: `default`)
+
+Optional:
+- `BUILDKITE_SELF_HOSTED_QUEUE_ID` (skip queue lookup if you already know the queue ID)
+
+Note: the selector step uses the built-in `BUILDKITE_ORGANIZATION_SLUG` and requires `jq` on the hosted agent image.
+
 ## Pre-commit Checks
 
 Before committing and pushing, run:

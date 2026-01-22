@@ -1,33 +1,13 @@
 env:
-  CI: "true"
-
-agents:
-  queue: "local-agents"
+  BUILDKITE_CLUSTER_ID: "fe4c54fc-dfe4-4dc8-bcbb-7962ee9a78b6"
+  BUILDKITE_HOSTED_QUEUE_KEY: "default"
+  BUILDKITE_SELF_HOSTED_QUEUE_KEY: "local-agents"
 
 steps:
-  - label: ":go: Backend format & lint"
-    key: backend-lint
-    command: "bash .buildkite/scripts/backend-lint.sh"
-    plugins:
-      - docker#v5.12.0:
-          image: "golang:1.24"
-          mount-checkout: true
-          workdir: /workdir
-
-  - label: ":go: Backend tests & build"
-    key: backend-test
-    command: "bash .buildkite/scripts/backend-test.sh"
-    plugins:
-      - docker#v5.12.0:
-          image: "golang:1.24"
-          mount-checkout: true
-          workdir: /workdir
-
-  - label: ":node: Frontend lint, check & test"
-    key: frontend
-    command: "bash .buildkite/scripts/frontend-checks.sh"
-    plugins:
-      - docker#v5.12.0:
-          image: "node:20-bullseye"
-          mount-checkout: true
-          workdir: /workdir
+  - label: ":buildkite: Select agent queue"
+    key: select-queue
+    command: "bash .buildkite/scripts/select-queue.sh"
+    secrets:
+      DYNAMIC_PIPELINE_GRAPHQL_TOKEN: DYNAMIC_PIPELINE_GRAPHQL_TOKEN
+    agents:
+      queue: "${BUILDKITE_HOSTED_QUEUE_KEY}"
