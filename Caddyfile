@@ -1,0 +1,24 @@
+{
+  email {$ACME_EMAIL}
+}
+
+{$CLUBHOUSE_APP_DOMAIN} {
+  encode zstd gzip
+
+  @health path /health
+  reverse_proxy @health backend:8080 {
+    header_up X-Forwarded-Proto {scheme}
+  }
+
+  @api path /api* /api/* /api/v1/ws
+  reverse_proxy @api backend:8080 {
+    header_up X-Forwarded-Proto {scheme}
+  }
+
+  reverse_proxy frontend:80
+}
+
+{$CLUBHOUSE_GRAFANA_DOMAIN} {
+  encode zstd gzip
+  reverse_proxy grafana:3000
+}

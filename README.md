@@ -70,6 +70,10 @@ To also remove volumes:
 docker-compose down -v
 ```
 
+## Production Deployment
+
+See `docs/production-deployment.md` for the production checklist, TLS setup, backups, and rollback steps.
+
 ## Development
 
 ### Backend
