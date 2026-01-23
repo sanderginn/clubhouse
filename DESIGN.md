@@ -433,7 +433,7 @@ Response: { id, username, email, message }
 ```
 POST /auth/login
 Body: { username, password }
-Response: { id, username, email, isAdmin, message }
+Response: { id, username, email, is_admin, message }
 Headers: Set-Cookie: session_id=...; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000
 ```
 
