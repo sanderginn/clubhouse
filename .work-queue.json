@@ -106,6 +106,7 @@
     189,
     190,
     191,
+    192,
     199,
     200,
     201
@@ -1882,7 +1883,7 @@
     {
       "issue_number": 192,
       "title": "Auth: Reduce user enumeration in login/register",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769155469-35905",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769155469-35905",
       "dependencies": [
@@ -1895,7 +1896,9 @@
         "auth"
       ],
       "branch": "feat/issue-192-auth-reduce-user-enumeration-in-loginreg",
-      "claimed_at": "2026-01-23T08:04:29Z"
+      "claimed_at": "2026-01-23T08:04:29Z",
+      "pr_number": 223,
+      "completed_at": "2026-01-23T08:15:08Z"
     },
     {
       "issue_number": 193,
