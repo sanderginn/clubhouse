@@ -31,19 +31,37 @@ describe('Register', () => {
       target: { value: 'newuser' },
     });
     await fireEvent.input(screen.getByLabelText('Password'), {
-      target: { value: 'secret' },
+      target: { value: 'longpassword12' },
     });
     await fireEvent.input(screen.getByLabelText('Confirm Password'), {
-      target: { value: 'secret' },
+      target: { value: 'longpassword12' },
     });
     await fireEvent.click(screen.getByRole('button', { name: /create account/i }));
 
     await waitFor(() =>
       expect(apiPost).toHaveBeenCalledWith('/auth/register', {
         username: 'newuser',
-        password: 'secret',
+        password: 'longpassword12',
       })
     );
+  });
+
+  it('shows a validation message when password is too short', async () => {
+    render(Register, { onNavigate: vi.fn() });
+
+    await fireEvent.input(screen.getByLabelText('Username'), {
+      target: { value: 'newuser' },
+    });
+    await fireEvent.input(screen.getByLabelText('Password'), {
+      target: { value: 'short' },
+    });
+    await fireEvent.input(screen.getByLabelText('Confirm Password'), {
+      target: { value: 'short' },
+    });
+    await fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+
+    expect(screen.getByText('Password must be at least 12 characters')).toBeInTheDocument();
+    expect(apiPost).not.toHaveBeenCalled();
   });
 
   it('shows a validation message when passwords do not match', async () => {
@@ -53,7 +71,7 @@ describe('Register', () => {
       target: { value: 'newuser' },
     });
     await fireEvent.input(screen.getByLabelText('Password'), {
-      target: { value: 'secret' },
+      target: { value: 'longpassword12' },
     });
     await fireEvent.input(screen.getByLabelText('Confirm Password'), {
       target: { value: 'not-secret' },
