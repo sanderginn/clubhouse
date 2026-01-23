@@ -10,25 +10,32 @@
   interface LoginResponse {
     id: string;
     username: string;
-    email: string;
+    email?: string | null;
     is_admin: boolean;
     message: string;
   }
 
   async function handleSubmit() {
     error = '';
+    const trimmedUsername = username.trim();
+
+    if (!trimmedUsername || !password) {
+      error = 'Username and password are required';
+      return;
+    }
+
     isLoading = true;
 
     try {
       const response = await api.post<LoginResponse>('/auth/login', {
-        username,
+        username: trimmedUsername,
         password,
       });
 
       const user: User = {
         id: response.id,
         username: response.username,
-        email: response.email,
+        email: response.email ?? '',
         isAdmin: response.is_admin,
       };
 
@@ -59,7 +66,7 @@
       </p>
     </div>
 
-    <form class="mt-8 space-y-6" on:submit|preventDefault={handleSubmit}>
+    <form class="mt-8 space-y-6" novalidate on:submit|preventDefault={handleSubmit}>
       {#if error}
         <div class="rounded-md bg-red-50 p-4">
           <p class="text-sm text-red-700">{error}</p>

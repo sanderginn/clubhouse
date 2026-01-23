@@ -2,7 +2,6 @@
   import { api } from '../services/api';
 
   let username = '';
-  let email = '';
   let password = '';
   let confirmPassword = '';
   let error = '';
@@ -13,6 +12,23 @@
     error = '';
     success = '';
 
+    const trimmedUsername = username.trim();
+
+    if (!trimmedUsername) {
+      error = 'Username is required';
+      return;
+    }
+
+    if (!password) {
+      error = 'Password is required';
+      return;
+    }
+
+    if (!confirmPassword) {
+      error = 'Please confirm your password';
+      return;
+    }
+
     if (password !== confirmPassword) {
       error = 'Passwords do not match';
       return;
@@ -22,13 +38,11 @@
 
     try {
       const response = await api.post<{ message: string }>('/auth/register', {
-        username,
-        email,
+        username: trimmedUsername,
         password,
       });
       success = response.message;
       username = '';
-      email = '';
       password = '';
       confirmPassword = '';
     } catch (e) {
@@ -57,7 +71,7 @@
       </p>
     </div>
 
-    <form class="mt-8 space-y-6" on:submit|preventDefault={handleSubmit}>
+    <form class="mt-8 space-y-6" novalidate on:submit|preventDefault={handleSubmit}>
       {#if error}
         <div class="rounded-md bg-red-50 p-4">
           <p class="text-sm text-red-700">{error}</p>
@@ -77,22 +91,11 @@
             id="username"
             name="username"
             type="text"
+            autocomplete="username"
             required
             bind:value={username}
             class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
             placeholder="Username"
-          />
-        </div>
-        <div>
-          <label for="email" class="sr-only">Email address</label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            autocomplete="email"
-            bind:value={email}
-            class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-            placeholder="Email address (optional)"
           />
         </div>
         <div>
