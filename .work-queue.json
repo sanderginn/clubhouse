@@ -107,6 +107,7 @@
     190,
     191,
     192,
+    195,
     199,
     200,
     201,
@@ -1938,7 +1939,7 @@
     {
       "issue_number": 195,
       "title": "Auth: Track sessions per user + add logout-all endpoint",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769156480-45803",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769156480-45803",
       "dependencies": [
@@ -1952,7 +1953,9 @@
         "redis"
       ],
       "branch": "feat/issue-195-auth-track-sessions-per-user-add-logouta",
-      "claimed_at": "2026-01-23T08:21:20Z"
+      "claimed_at": "2026-01-23T08:21:20Z",
+      "pr_number": 226,
+      "completed_at": "2026-01-23T08:28:28Z"
     },
     {
       "issue_number": 196,
