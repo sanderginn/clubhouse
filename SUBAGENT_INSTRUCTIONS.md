@@ -195,6 +195,7 @@ The orchestrator will review your PR and either:
 9. **Minimize exploration** - see "What NOT to Explore" section
 10. **Start immediately** - once in the worktree, begin work without waiting for more user input; keep going until the PR is opened
 11. **No confirmation prompts** - never ask whether to run extra tests or whether to commit/create a PR; decide and proceed without asking
+12. **Worktree integrity checks** - after every change, verify you did not modify files outside your worktree. If you did, immediately move those changes into your worktree and undo the changes outside it.
 
 ## Troubleshooting
 
