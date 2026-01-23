@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -15,7 +16,12 @@ const (
 	SessionDuration = 30 * 24 * time.Hour
 	// SessionKeyPrefix is the Redis key prefix for sessions
 	SessionKeyPrefix = "session:"
+	// UserSessionSetPrefix is the Redis key prefix for user session sets
+	UserSessionSetPrefix = "user_sessions:"
 )
+
+// ErrSessionNotFound is returned when a session cannot be found in Redis.
+var ErrSessionNotFound = errors.New("session not found or expired")
 
 // Session represents a user session stored in Redis
 type Session struct {
@@ -60,7 +66,12 @@ func (s *SessionService) CreateSession(ctx context.Context, userID uuid.UUID, us
 
 	// Store in Redis with expiration
 	key := SessionKeyPrefix + sessionID
-	if err := s.redis.Set(ctx, key, sessionJSON, SessionDuration).Err(); err != nil {
+	userKey := UserSessionSetPrefix + userID.String()
+	pipe := s.redis.TxPipeline()
+	pipe.Set(ctx, key, sessionJSON, SessionDuration)
+	pipe.SAdd(ctx, userKey, sessionID)
+	pipe.Expire(ctx, userKey, SessionDuration)
+	if _, err := pipe.Exec(ctx); err != nil {
 		return nil, fmt.Errorf("failed to store session in Redis: %w", err)
 	}
 
@@ -73,7 +84,7 @@ func (s *SessionService) GetSession(ctx context.Context, sessionID string) (*Ses
 	sessionJSON, err := s.redis.Get(ctx, key).Result()
 	if err != nil {
 		if err == redis.Nil {
-			return nil, fmt.Errorf("session not found or expired")
+			return nil, ErrSessionNotFound
 		}
 		return nil, fmt.Errorf("failed to get session from Redis: %w", err)
 	}
@@ -89,8 +100,41 @@ func (s *SessionService) GetSession(ctx context.Context, sessionID string) (*Ses
 // DeleteSession removes a session from Redis
 func (s *SessionService) DeleteSession(ctx context.Context, sessionID string) error {
 	key := SessionKeyPrefix + sessionID
-	if err := s.redis.Del(ctx, key).Err(); err != nil {
+	session, err := s.GetSession(ctx, sessionID)
+	if err != nil {
+		if errors.Is(err, ErrSessionNotFound) {
+			return nil
+		}
+		return fmt.Errorf("failed to get session for deletion: %w", err)
+	}
+
+	userKey := UserSessionSetPrefix + session.UserID.String()
+	pipe := s.redis.TxPipeline()
+	pipe.SRem(ctx, userKey, sessionID)
+	pipe.Del(ctx, key)
+	if _, err := pipe.Exec(ctx); err != nil {
 		return fmt.Errorf("failed to delete session from Redis: %w", err)
 	}
+
+	return nil
+}
+
+// DeleteAllSessionsForUser removes all sessions for a user from Redis.
+func (s *SessionService) DeleteAllSessionsForUser(ctx context.Context, userID uuid.UUID) error {
+	userKey := UserSessionSetPrefix + userID.String()
+	sessionIDs, err := s.redis.SMembers(ctx, userKey).Result()
+	if err != nil {
+		return fmt.Errorf("failed to list user sessions: %w", err)
+	}
+
+	pipe := s.redis.TxPipeline()
+	for _, sessionID := range sessionIDs {
+		pipe.Del(ctx, SessionKeyPrefix+sessionID)
+	}
+	pipe.Del(ctx, userKey)
+	if _, err := pipe.Exec(ctx); err != nil {
+		return fmt.Errorf("failed to delete user sessions: %w", err)
+	}
+
 	return nil
 }
