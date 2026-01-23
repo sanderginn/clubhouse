@@ -13,6 +13,7 @@ import (
 	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/services"
+	"github.com/sanderginn/clubhouse/internal/testutil"
 )
 
 // createTestUserContext creates a context with user session for testing
@@ -27,14 +28,8 @@ func createTestUserContext(ctx context.Context, userID uuid.UUID, username strin
 
 // TestGetProfileSuccess tests successfully retrieving a user profile
 func TestGetProfileSuccess(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	userID := uuid.New()
 	testUsername := "profileuser"
@@ -45,7 +40,7 @@ func TestGetProfileSuccess(t *testing.T) {
 		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
 		VALUES ($1, $2, $3, $4, false, now(), now())
 	`
-	_, err = db.Exec(query, userID, testUsername, testEmail, testHash)
+	_, err := db.Exec(query, userID, testUsername, testEmail, testHash)
 	if err != nil {
 		t.Fatalf("failed to create test user: %v", err)
 	}
@@ -85,14 +80,8 @@ func TestGetProfileSuccess(t *testing.T) {
 
 // TestGetProfileNotFound tests 404 for non-existent user
 func TestGetProfileNotFound(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	handler := NewUserHandler(db)
 	randomID := uuid.New()
@@ -118,14 +107,8 @@ func TestGetProfileNotFound(t *testing.T) {
 
 // TestGetProfileInvalidID tests with invalid user ID format
 func TestGetProfileInvalidID(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	handler := NewUserHandler(db)
 
@@ -150,14 +133,8 @@ func TestGetProfileInvalidID(t *testing.T) {
 
 // TestGetProfileMethodNotAllowed tests with non-GET method
 func TestGetProfileMethodNotAllowed(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	handler := NewUserHandler(db)
 	userID := uuid.New()
@@ -183,14 +160,8 @@ func TestGetProfileMethodNotAllowed(t *testing.T) {
 
 // TestGetProfileSoftDeletedUser tests that soft-deleted users are hidden
 func TestGetProfileSoftDeletedUser(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	userID := uuid.New()
 	testUsername := "deleteduser"
@@ -201,7 +172,7 @@ func TestGetProfileSoftDeletedUser(t *testing.T) {
 		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at, deleted_at)
 		VALUES ($1, $2, $3, $4, false, now(), now(), now())
 	`
-	_, err = db.Exec(query, userID, testUsername, testEmail, testHash)
+	_, err := db.Exec(query, userID, testUsername, testEmail, testHash)
 	if err != nil {
 		t.Fatalf("failed to create test user: %v", err)
 	}
@@ -229,14 +200,8 @@ func TestGetProfileSoftDeletedUser(t *testing.T) {
 
 // TestGetProfileUnapprovedUser tests that unapproved users are hidden
 func TestGetProfileUnapprovedUser(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	userID := uuid.New()
 	testUsername := "unapproveduser"
@@ -247,7 +212,7 @@ func TestGetProfileUnapprovedUser(t *testing.T) {
 		INSERT INTO users (id, username, email, password_hash, is_admin, created_at)
 		VALUES ($1, $2, $3, $4, false, now())
 	`
-	_, err = db.Exec(query, userID, testUsername, testEmail, testHash)
+	_, err := db.Exec(query, userID, testUsername, testEmail, testHash)
 	if err != nil {
 		t.Fatalf("failed to create test user: %v", err)
 	}
@@ -266,14 +231,8 @@ func TestGetProfileUnapprovedUser(t *testing.T) {
 
 // TestGetUserPostsSuccess tests successfully retrieving a user's posts
 func TestGetUserPostsSuccess(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	// Create test user
 	userID := uuid.New()
@@ -285,7 +244,7 @@ func TestGetUserPostsSuccess(t *testing.T) {
 		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
 		VALUES ($1, $2, $3, $4, false, now(), now())
 	`
-	_, err = db.Exec(userQuery, userID, testUsername, testEmail, testHash)
+	_, err := db.Exec(userQuery, userID, testUsername, testEmail, testHash)
 	if err != nil {
 		t.Fatalf("failed to create test user: %v", err)
 	}
@@ -338,14 +297,8 @@ func TestGetUserPostsSuccess(t *testing.T) {
 
 // TestGetUserPostsEmptyResult tests that non-existent user returns empty posts list
 func TestGetUserPostsEmptyResult(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	handler := NewUserHandler(db)
 	randomID := uuid.New()
@@ -371,14 +324,8 @@ func TestGetUserPostsEmptyResult(t *testing.T) {
 
 // TestGetUserPostsInvalidID tests with invalid user ID format
 func TestGetUserPostsInvalidID(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	handler := NewUserHandler(db)
 
@@ -403,14 +350,8 @@ func TestGetUserPostsInvalidID(t *testing.T) {
 
 // TestGetUserPostsMethodNotAllowed tests with non-GET method
 func TestGetUserPostsMethodNotAllowed(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	handler := NewUserHandler(db)
 	userID := uuid.New()
@@ -436,14 +377,8 @@ func TestGetUserPostsMethodNotAllowed(t *testing.T) {
 
 // TestGetUserPostsExcludesSoftDeleted tests that soft-deleted posts are excluded
 func TestGetUserPostsExcludesSoftDeleted(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	// Create test user
 	userID := uuid.New()
@@ -455,7 +390,7 @@ func TestGetUserPostsExcludesSoftDeleted(t *testing.T) {
 		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
 		VALUES ($1, $2, $3, $4, false, now(), now())
 	`
-	_, err = db.Exec(userQuery, userID, testUsername, testEmail, testHash)
+	_, err := db.Exec(userQuery, userID, testUsername, testEmail, testHash)
 	if err != nil {
 		t.Fatalf("failed to create test user: %v", err)
 	}
@@ -512,14 +447,8 @@ func TestGetUserPostsExcludesSoftDeleted(t *testing.T) {
 
 // TestGetUserCommentsSuccess tests successfully retrieving user comments
 func TestGetUserCommentsSuccess(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	// Create test user
 	userID := uuid.New()
@@ -531,7 +460,7 @@ func TestGetUserCommentsSuccess(t *testing.T) {
 		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
 		VALUES ($1, $2, $3, $4, false, now(), now())
 	`
-	_, err = db.Exec(userQuery, userID, testUsername, testEmail, testHash)
+	_, err := db.Exec(userQuery, userID, testUsername, testEmail, testHash)
 	if err != nil {
 		t.Fatalf("failed to create test user: %v", err)
 	}
@@ -588,14 +517,8 @@ func TestGetUserCommentsSuccess(t *testing.T) {
 
 // TestGetUserCommentsNotFound tests 404 for non-existent user
 func TestGetUserCommentsNotFound(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	handler := NewUserHandler(db)
 	randomID := uuid.New()
@@ -621,14 +544,8 @@ func TestGetUserCommentsNotFound(t *testing.T) {
 
 // TestGetUserCommentsInvalidID tests with invalid user ID format
 func TestGetUserCommentsInvalidID(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	handler := NewUserHandler(db)
 
@@ -653,14 +570,8 @@ func TestGetUserCommentsInvalidID(t *testing.T) {
 
 // TestGetUserCommentsMethodNotAllowed tests with non-GET method
 func TestGetUserCommentsMethodNotAllowed(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	handler := NewUserHandler(db)
 	userID := uuid.New()
@@ -686,14 +597,8 @@ func TestGetUserCommentsMethodNotAllowed(t *testing.T) {
 
 // TestGetUserCommentsExcludesSoftDeleted tests that soft-deleted comments are excluded
 func TestGetUserCommentsExcludesSoftDeleted(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	// Create test user
 	userID := uuid.New()
@@ -705,7 +610,7 @@ func TestGetUserCommentsExcludesSoftDeleted(t *testing.T) {
 		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
 		VALUES ($1, $2, $3, $4, false, now(), now())
 	`
-	_, err = db.Exec(userQuery, userID, testUsername, testEmail, testHash)
+	_, err := db.Exec(userQuery, userID, testUsername, testEmail, testHash)
 	if err != nil {
 		t.Fatalf("failed to create test user: %v", err)
 	}
@@ -765,14 +670,8 @@ func TestGetUserCommentsExcludesSoftDeleted(t *testing.T) {
 
 // TestUpdateMeSuccess tests successfully updating user profile
 func TestUpdateMeSuccess(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	userID := uuid.New()
 	testUsername := "updatemeuser"
@@ -783,7 +682,7 @@ func TestUpdateMeSuccess(t *testing.T) {
 		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
 		VALUES ($1, $2, $3, $4, false, now(), now())
 	`
-	_, err = db.Exec(query, userID, testUsername, testEmail, testHash)
+	_, err := db.Exec(query, userID, testUsername, testEmail, testHash)
 	if err != nil {
 		t.Fatalf("failed to create test user: %v", err)
 	}
@@ -841,14 +740,8 @@ func TestUpdateMeSuccess(t *testing.T) {
 
 // TestUpdateMeBioOnly tests updating only the bio
 func TestUpdateMeBioOnly(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	userID := uuid.New()
 	testUsername := "bioonlyuser"
@@ -859,7 +752,7 @@ func TestUpdateMeBioOnly(t *testing.T) {
 		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
 		VALUES ($1, $2, $3, $4, false, now(), now())
 	`
-	_, err = db.Exec(query, userID, testUsername, testEmail, testHash)
+	_, err := db.Exec(query, userID, testUsername, testEmail, testHash)
 	if err != nil {
 		t.Fatalf("failed to create test user: %v", err)
 	}
@@ -892,14 +785,8 @@ func TestUpdateMeBioOnly(t *testing.T) {
 
 // TestUpdateMeInvalidURL tests updating with invalid profile picture URL
 func TestUpdateMeInvalidURL(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	userID := uuid.New()
 	testUsername := "invalidurluser"
@@ -910,7 +797,7 @@ func TestUpdateMeInvalidURL(t *testing.T) {
 		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
 		VALUES ($1, $2, $3, $4, false, now(), now())
 	`
-	_, err = db.Exec(query, userID, testUsername, testEmail, testHash)
+	_, err := db.Exec(query, userID, testUsername, testEmail, testHash)
 	if err != nil {
 		t.Fatalf("failed to create test user: %v", err)
 	}
@@ -943,14 +830,8 @@ func TestUpdateMeInvalidURL(t *testing.T) {
 
 // TestUpdateMeEmptyBody tests updating with empty request body
 func TestUpdateMeEmptyBody(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	userID := uuid.New()
 	testUsername := "emptybodyuser"
@@ -961,7 +842,7 @@ func TestUpdateMeEmptyBody(t *testing.T) {
 		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
 		VALUES ($1, $2, $3, $4, false, now(), now())
 	`
-	_, err = db.Exec(query, userID, testUsername, testEmail, testHash)
+	_, err := db.Exec(query, userID, testUsername, testEmail, testHash)
 	if err != nil {
 		t.Fatalf("failed to create test user: %v", err)
 	}
@@ -994,14 +875,8 @@ func TestUpdateMeEmptyBody(t *testing.T) {
 
 // TestUpdateMeMethodNotAllowed tests with non-PATCH method
 func TestUpdateMeMethodNotAllowed(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	userID := uuid.New()
 
@@ -1030,14 +905,8 @@ func TestUpdateMeMethodNotAllowed(t *testing.T) {
 
 // TestUpdateMeNoAuth tests UpdateMe without authentication
 func TestUpdateMeNoAuth(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	handler := NewUserHandler(db)
 
@@ -1064,19 +933,13 @@ func TestUpdateMeNoAuth(t *testing.T) {
 }
 
 func TestGetMySectionSubscriptionsSuccess(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	userID := uuid.New()
 	sectionID := uuid.New()
 
-	_, err = db.Exec(`
+	_, err := db.Exec(`
 		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
 		VALUES ($1, 'sectionuser', 'sectionuser@example.com', '$2a$12$test', false, now(), now())
 	`, userID)
@@ -1128,19 +991,13 @@ func TestGetMySectionSubscriptionsSuccess(t *testing.T) {
 }
 
 func TestUpdateMySectionSubscriptionOptOut(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	userID := uuid.New()
 	sectionID := uuid.New()
 
-	_, err = db.Exec(`
+	_, err := db.Exec(`
 		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
 		VALUES ($1, 'optoutuser', 'optoutuser@example.com', '$2a$12$test', false, now(), now())
 	`, userID)
@@ -1197,19 +1054,13 @@ func TestUpdateMySectionSubscriptionOptOut(t *testing.T) {
 }
 
 func TestUpdateMySectionSubscriptionOptIn(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	userID := uuid.New()
 	sectionID := uuid.New()
 
-	_, err = db.Exec(`
+	_, err := db.Exec(`
 		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
 		VALUES ($1, 'optinuser', 'optinuser@example.com', '$2a$12$test', false, now(), now())
 	`, userID)
@@ -1274,19 +1125,13 @@ func TestUpdateMySectionSubscriptionOptIn(t *testing.T) {
 }
 
 func TestUpdateMySectionSubscriptionMissingOptedOut(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	userID := uuid.New()
 	sectionID := uuid.New()
 
-	_, err = db.Exec(`
+	_, err := db.Exec(`
 		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
 		VALUES ($1, 'missingoptuser', 'missingoptuser@example.com', '$2a$12$test', false, now(), now())
 	`, userID)
