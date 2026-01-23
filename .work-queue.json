@@ -109,6 +109,7 @@
     192,
     193,
     195,
+    196,
     199,
     200,
     201,
@@ -1965,7 +1966,7 @@
     {
       "issue_number": 196,
       "title": "Auth: Admin generates one-time password reset links (backend)",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769156968-56041",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769156968-56041",
       "dependencies": [
@@ -1980,7 +1981,9 @@
         "admin"
       ],
       "branch": "feat/issue-196-auth-admin-generates-onetime-password-re",
-      "claimed_at": "2026-01-23T08:29:28Z"
+      "claimed_at": "2026-01-23T08:29:28Z",
+      "pr_number": 227,
+      "completed_at": "2026-01-23T09:07:48Z"
     },
     {
       "issue_number": 197,
