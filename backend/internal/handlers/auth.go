@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/observability"
@@ -25,9 +26,15 @@ type authFailureTracker interface {
 	Reset(ctx context.Context, ip string, identifiers []string) error
 }
 
+type authUserService interface {
+	RegisterUser(ctx context.Context, req *models.RegisterRequest) (*models.User, error)
+	LoginUser(ctx context.Context, req *models.LoginRequest) (*models.User, error)
+	GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error)
+}
+
 // AuthHandler handles authentication endpoints
 type AuthHandler struct {
-	userService    *services.UserService
+	userService    authUserService
 	sessionService *services.SessionService
 	rateLimiter    authRateLimiter
 	failureTracker authFailureTracker
@@ -83,9 +90,9 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		case "password must contain uppercase, lowercase, and numeric characters":
 			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_PASSWORD_STRENGTH", err.Error())
 		case "username already exists":
-			writeError(r.Context(), w, http.StatusConflict, "USERNAME_EXISTS", err.Error())
+			writeError(r.Context(), w, http.StatusConflict, "CONFLICT", "Registration conflict.")
 		case "email already exists":
-			writeError(r.Context(), w, http.StatusConflict, "EMAIL_EXISTS", err.Error())
+			writeError(r.Context(), w, http.StatusConflict, "CONFLICT", "Registration conflict.")
 		default:
 			writeError(r.Context(), w, http.StatusInternalServerError, "REGISTRATION_FAILED", "Failed to register user")
 		}
@@ -148,7 +155,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 			writeError(r.Context(), w, http.StatusBadRequest, "USERNAME_REQUIRED", err.Error())
 		case "password is required":
 			writeError(r.Context(), w, http.StatusBadRequest, "PASSWORD_REQUIRED", err.Error())
-		case "invalid username or password":
+		case "invalid username or password", "user not approved":
 			locked, retryAfter, lockErr := h.registerLoginFailure(r.Context(), clientIP, identifiers)
 			if lockErr != nil {
 				observability.LogError(r.Context(), observability.ErrorLog{
@@ -162,9 +169,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 				writeLockoutResponse(r.Context(), w, retryAfter)
 				return
 			}
-			writeError(r.Context(), w, http.StatusUnauthorized, "INVALID_CREDENTIALS", err.Error())
-		case "user not approved":
-			writeError(r.Context(), w, http.StatusForbidden, "USER_NOT_APPROVED", err.Error())
+			writeError(r.Context(), w, http.StatusUnauthorized, "INVALID_CREDENTIALS", "Invalid username or password")
 		default:
 			writeError(r.Context(), w, http.StatusInternalServerError, "LOGIN_FAILED", "Failed to login")
 		}
