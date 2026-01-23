@@ -44,9 +44,6 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	var req models.RegisterRequest
 	if err := decodeJSONBody(w, r, &req); err != nil {
-		if !h.checkRateLimit(r.Context(), w, clientIP, nil) {
-			return
-		}
 		if isRequestBodyTooLarge(err) {
 			writeError(r.Context(), w, http.StatusRequestEntityTooLarge, "REQUEST_TOO_LARGE", "Request body too large")
 			return
@@ -55,7 +52,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.checkRateLimit(r.Context(), w, clientIP, []string{req.Username, req.Email}) {
+	if !h.checkRateLimit(r.Context(), w, clientIP, filterIdentifiers(req.Username, req.Email)) {
 		return
 	}
 
@@ -115,9 +112,6 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	var req models.LoginRequest
 	if err := decodeJSONBody(w, r, &req); err != nil {
-		if !h.checkRateLimit(r.Context(), w, clientIP, nil) {
-			return
-		}
 		if isRequestBodyTooLarge(err) {
 			writeError(r.Context(), w, http.StatusRequestEntityTooLarge, "REQUEST_TOO_LARGE", "Request body too large")
 			return
@@ -126,7 +120,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.checkRateLimit(r.Context(), w, clientIP, []string{req.Username}) {
+	if !h.checkRateLimit(r.Context(), w, clientIP, filterIdentifiers(req.Username)) {
 		return
 	}
 
@@ -325,4 +319,20 @@ func (h *AuthHandler) checkRateLimit(ctx context.Context, w http.ResponseWriter,
 	}
 
 	return true
+}
+
+func filterIdentifiers(identifiers ...string) []string {
+	if len(identifiers) == 0 {
+		return nil
+	}
+
+	filtered := make([]string, 0, len(identifiers))
+	for _, identifier := range identifiers {
+		if strings.TrimSpace(identifier) == "" {
+			continue
+		}
+		filtered = append(filtered, identifier)
+	}
+
+	return filtered
 }
