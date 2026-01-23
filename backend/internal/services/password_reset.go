@@ -104,20 +104,28 @@ func (s *PasswordResetService) GetToken(ctx context.Context, token string) (*Pas
 // MarkTokenAsUsed marks a password reset token as used (single-use enforcement)
 // Uses Lua script for atomic check-and-set to prevent race conditions
 func (s *PasswordResetService) MarkTokenAsUsed(ctx context.Context, token string) error {
+	_, err := s.ClaimToken(ctx, token)
+	return err
+}
+
+// ClaimToken atomically marks a password reset token as used and returns the token data.
+// This prevents race conditions where concurrent requests could both read Used=false.
+// Uses Lua script for atomic check-and-set.
+func (s *PasswordResetService) ClaimToken(ctx context.Context, token string) (*PasswordResetToken, error) {
 	key := PasswordResetTokenPrefix + token
 
 	// Lua script for atomic check-and-set
-	// Returns: 1 if successfully marked as used, 0 if already used, -1 if not found
+	// Returns: JSON string of token data if successfully claimed, empty string if already used, nil if not found
 	script := `
 		local key = KEYS[1]
 		local tokenJSON = redis.call('GET', key)
 		if not tokenJSON then
-			return -1
+			return nil
 		end
 
 		local tokenData = cjson.decode(tokenJSON)
 		if tokenData.used then
-			return 0
+			return ""
 		end
 
 		tokenData.used = true
@@ -128,24 +136,32 @@ func (s *PasswordResetService) MarkTokenAsUsed(ctx context.Context, token string
 		else
 			redis.call('SET', key, newTokenJSON)
 		end
-		return 1
+		return tokenJSON
 	`
 
-	result, err := s.redis.Eval(ctx, script, []string{key}).Int()
+	result, err := s.redis.Eval(ctx, script, []string{key}).Result()
 	if err != nil {
-		return fmt.Errorf("failed to execute atomic mark-as-used script: %w", err)
+		if err == redis.Nil {
+			return nil, ErrPasswordResetTokenNotFound
+		}
+		return nil, fmt.Errorf("failed to execute atomic claim-token script: %w", err)
 	}
 
-	switch result {
-	case -1:
-		return ErrPasswordResetTokenNotFound
-	case 0:
-		return ErrPasswordResetTokenAlreadyUsed
-	case 1:
-		return nil
-	default:
-		return fmt.Errorf("unexpected script result: %d", result)
+	resultStr, ok := result.(string)
+	if !ok {
+		return nil, ErrPasswordResetTokenNotFound
 	}
+
+	if resultStr == "" {
+		return nil, ErrPasswordResetTokenAlreadyUsed
+	}
+
+	var resetToken PasswordResetToken
+	if err := json.Unmarshal([]byte(resultStr), &resetToken); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal password reset token: %w", err)
+	}
+
+	return &resetToken, nil
 }
 
 // DeleteToken removes a password reset token from Redis
