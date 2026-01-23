@@ -7,17 +7,12 @@ import (
 	"testing"
 
 	"github.com/sanderginn/clubhouse/internal/models"
+	"github.com/sanderginn/clubhouse/internal/testutil"
 )
 
 func TestListSectionsSuccess(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	handler := NewSectionHandler(db)
 
@@ -41,14 +36,8 @@ func TestListSectionsSuccess(t *testing.T) {
 }
 
 func TestListSectionsMethodNotAllowed(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	handler := NewSectionHandler(db)
 
@@ -72,20 +61,11 @@ func TestListSectionsMethodNotAllowed(t *testing.T) {
 }
 
 func TestGetSectionSuccess(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
-	var sectionID string
-	err = db.QueryRow(`SELECT id FROM sections LIMIT 1`).Scan(&sectionID)
-	if err != nil {
-		t.Skip("no sections in database")
-	}
+	// Create a test section
+	sectionID := testutil.CreateTestSection(t, db, "Test Section", "general")
 
 	handler := NewSectionHandler(db)
 
@@ -105,14 +85,8 @@ func TestGetSectionSuccess(t *testing.T) {
 }
 
 func TestGetSectionNotFound(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	handler := NewSectionHandler(db)
 
@@ -136,14 +110,8 @@ func TestGetSectionNotFound(t *testing.T) {
 }
 
 func TestGetSectionInvalidID(t *testing.T) {
-	db, err := getTestDB()
-	if err != nil {
-		t.Fatalf("failed to get test DB: %v", err)
-	}
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-	defer db.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	handler := NewSectionHandler(db)
 

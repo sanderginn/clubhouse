@@ -3,49 +3,25 @@ package handlers
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/redis/go-redis/v9"
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/services"
+	"github.com/sanderginn/clubhouse/internal/testutil"
 )
 
-func setupAuthPasswordResetTest(t *testing.T) (*sql.DB, *redis.Client, *AuthHandler) {
-	t.Helper()
+func TestRedeemPasswordResetToken(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
-	db := getTestDBForAuth(t)
-	if db == nil {
-		t.Skip("test database not configured")
-	}
-
-	redisClient := getTestRedisForAuth(t)
-	if redisClient == nil {
-		t.Skip("redis not configured for tests")
-	}
+	redisClient := testutil.GetTestRedis(t)
+	t.Cleanup(func() { testutil.CleanupRedis(t) })
 
 	handler := NewAuthHandler(db, redisClient)
-	return db, redisClient, handler
-}
-
-func getTestDBForAuth(t *testing.T) *sql.DB {
-	t.Helper()
-	return nil
-}
-
-func getTestRedisForAuth(t *testing.T) *redis.Client {
-	t.Helper()
-	return nil
-}
-
-func TestRedeemPasswordResetToken(t *testing.T) {
-	db, redisClient, handler := setupAuthPasswordResetTest(t)
-	defer db.Close()
-	defer redisClient.Close()
 
 	userID := uuid.New()
 	_, err := db.Exec(`
@@ -104,9 +80,13 @@ func TestRedeemPasswordResetToken(t *testing.T) {
 }
 
 func TestRedeemPasswordResetTokenInvalidToken(t *testing.T) {
-	db, redisClient, handler := setupAuthPasswordResetTest(t)
-	defer db.Close()
-	defer redisClient.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	redisClient := testutil.GetTestRedis(t)
+	t.Cleanup(func() { testutil.CleanupRedis(t) })
+
+	handler := NewAuthHandler(db, redisClient)
 
 	reqBody := models.RedeemPasswordResetTokenRequest{
 		Token:       "invalid-token",
@@ -126,9 +106,13 @@ func TestRedeemPasswordResetTokenInvalidToken(t *testing.T) {
 }
 
 func TestRedeemPasswordResetTokenAlreadyUsed(t *testing.T) {
-	db, redisClient, handler := setupAuthPasswordResetTest(t)
-	defer db.Close()
-	defer redisClient.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	redisClient := testutil.GetTestRedis(t)
+	t.Cleanup(func() { testutil.CleanupRedis(t) })
+
+	handler := NewAuthHandler(db, redisClient)
 
 	userID := uuid.New()
 	_, err := db.Exec(`
@@ -167,9 +151,13 @@ func TestRedeemPasswordResetTokenAlreadyUsed(t *testing.T) {
 }
 
 func TestRedeemPasswordResetTokenWeakPassword(t *testing.T) {
-	db, redisClient, handler := setupAuthPasswordResetTest(t)
-	defer db.Close()
-	defer redisClient.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	redisClient := testutil.GetTestRedis(t)
+	t.Cleanup(func() { testutil.CleanupRedis(t) })
+
+	handler := NewAuthHandler(db, redisClient)
 
 	userID := uuid.New()
 	_, err := db.Exec(`
@@ -204,8 +192,13 @@ func TestRedeemPasswordResetTokenWeakPassword(t *testing.T) {
 }
 
 func TestRedeemPasswordResetTokenMethodNotAllowed(t *testing.T) {
-	_, redisClient, handler := setupAuthPasswordResetTest(t)
-	defer redisClient.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	redisClient := testutil.GetTestRedis(t)
+	t.Cleanup(func() { testutil.CleanupRedis(t) })
+
+	handler := NewAuthHandler(db, redisClient)
 
 	req := httptest.NewRequest("GET", "/api/v1/auth/password-reset/redeem", nil)
 	w := httptest.NewRecorder()
@@ -218,9 +211,13 @@ func TestRedeemPasswordResetTokenMethodNotAllowed(t *testing.T) {
 }
 
 func TestRedeemPasswordResetTokenInvalidatesAllSessions(t *testing.T) {
-	db, redisClient, handler := setupAuthPasswordResetTest(t)
-	defer db.Close()
-	defer redisClient.Close()
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	redisClient := testutil.GetTestRedis(t)
+	t.Cleanup(func() { testutil.CleanupRedis(t) })
+
+	handler := NewAuthHandler(db, redisClient)
 
 	userID := uuid.New()
 	_, err := db.Exec(`

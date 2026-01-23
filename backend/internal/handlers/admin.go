@@ -468,8 +468,8 @@ func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 		FROM audit_logs a
 		JOIN users u ON a.admin_user_id = u.id
 		WHERE (
-			$1 IS NULL
-			OR ($2 IS NULL AND a.created_at < $1)
+			$1::timestamp IS NULL
+			OR ($2::uuid IS NULL AND a.created_at < $1)
 			OR ($2 IS NOT NULL AND (a.created_at, a.id) < ($1, $2))
 		)
 		ORDER BY a.created_at DESC, a.id DESC

@@ -1,22 +1,60 @@
 package services
 
 import (
+	"context"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/models"
+	"github.com/sanderginn/clubhouse/internal/testutil"
 )
 
 func TestCreateComment(t *testing.T) {
-	// This test requires a test database setup
-	// Skipping for now as it requires database fixtures
-	t.Skip("requires test database setup")
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	// Create test user and section
+	userID := testutil.CreateTestUser(t, db, "commentuser", "comment@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Test Section", "general")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Test post content")
+
+	service := NewCommentService(db)
+
+	req := &models.CreateCommentRequest{
+		PostID:  postID,
+		Content: "Test comment",
+	}
+
+	comment, err := service.CreateComment(context.Background(), req, uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("CreateComment failed: %v", err)
+	}
+
+	if comment.Content != "Test comment" {
+		t.Errorf("expected content 'Test comment', got %s", comment.Content)
+	}
 }
 
 func TestGetCommentByID(t *testing.T) {
-	// This test requires a test database setup
-	// Skipping for now as it requires database fixtures
-	t.Skip("requires test database setup")
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	// Create test data
+	userID := testutil.CreateTestUser(t, db, "getcommentuser", "getcomment@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Test Section", "general")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Test post")
+	commentID := testutil.CreateTestComment(t, db, userID, postID, "Test comment content")
+
+	service := NewCommentService(db)
+
+	comment, err := service.GetCommentByID(context.Background(), uuid.MustParse(commentID), uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("GetCommentByID failed: %v", err)
+	}
+
+	if comment.Content != "Test comment content" {
+		t.Errorf("expected content 'Test comment content', got %s", comment.Content)
+	}
 }
 
 func TestValidateCreateCommentInput(t *testing.T) {

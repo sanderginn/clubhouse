@@ -1,15 +1,55 @@
 package services
 
 import (
+	"context"
 	"testing"
+
+	"github.com/google/uuid"
+	"github.com/sanderginn/clubhouse/internal/testutil"
 )
 
 func TestAddReactionToPost(t *testing.T) {
-	t.Skip("requires test database setup")
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "reactionuser", "reaction@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Test Section", "general")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Test post")
+
+	service := NewReactionService(db)
+
+	_, err := service.AddReactionToPost(context.Background(), uuid.MustParse(postID), uuid.MustParse(userID), "👍")
+	if err != nil {
+		t.Fatalf("AddReactionToPost failed: %v", err)
+	}
+
+	// Adding same reaction again should not error (upsert)
+	_, err = service.AddReactionToPost(context.Background(), uuid.MustParse(postID), uuid.MustParse(userID), "👍")
+	if err != nil {
+		t.Fatalf("AddReactionToPost (duplicate) failed: %v", err)
+	}
 }
 
 func TestRemoveReaction(t *testing.T) {
-	t.Skip("requires test database setup")
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "removereactionuser", "removereaction@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Test Section", "general")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Test post")
+
+	service := NewReactionService(db)
+
+	// Add then remove
+	_, err := service.AddReactionToPost(context.Background(), uuid.MustParse(postID), uuid.MustParse(userID), "👍")
+	if err != nil {
+		t.Fatalf("AddReactionToPost failed: %v", err)
+	}
+
+	err = service.RemoveReactionFromPost(context.Background(), uuid.MustParse(postID), "👍", uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("RemoveReactionFromPost failed: %v", err)
+	}
 }
 
 func TestValidateEmoji(t *testing.T) {
