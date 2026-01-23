@@ -137,6 +137,7 @@ func main() {
 	mux.HandleFunc("/api/v1/auth/login", authHandler.Login)
 	mux.HandleFunc("/api/v1/auth/logout", authHandler.Logout)
 	mux.HandleFunc("/api/v1/auth/me", authHandler.GetMe)
+	mux.Handle("/api/v1/auth/logout-all", requireAuth(http.HandlerFunc(authHandler.LogoutAll)))
 	mux.Handle("/api/v1/sections", requireAuth(http.HandlerFunc(sectionHandler.ListSections)))
 	sectionRouteHandler := newSectionRouteHandler(requireAuth, sectionRouteDeps{
 		listSections: sectionHandler.ListSections,

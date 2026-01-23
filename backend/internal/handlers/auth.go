@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/observability"
 	"github.com/sanderginn/clubhouse/internal/services"
@@ -324,6 +325,54 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		observability.LogError(r.Context(), observability.ErrorLog{
 			Message:    "failed to encode logout response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}
+
+// LogoutAll handles user logout across all sessions
+func (h *AuthHandler) LogoutAll(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		return
+	}
+
+	session, err := middleware.GetUserFromContext(r.Context())
+	if err != nil {
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user session")
+		return
+	}
+
+	if err := h.sessionService.DeleteAllSessionsForUser(r.Context(), session.UserID); err != nil {
+		writeError(r.Context(), w, http.StatusInternalServerError, "LOGOUT_ALL_FAILED", "Failed to logout all sessions")
+		return
+	}
+
+	secureCookie := isSecureRequest(r)
+
+	// Clear session cookie by setting MaxAge to -1
+	cookie := &http.Cookie{
+		Name:     "session_id",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   secureCookie,
+		SameSite: http.SameSiteLaxMode,
+	}
+	http.SetCookie(w, cookie)
+
+	response := models.LogoutResponse{
+		Message: "Logout all sessions successful",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode logout-all response",
 			Code:       "ENCODE_FAILED",
 			StatusCode: http.StatusOK,
 			Err:        err,
