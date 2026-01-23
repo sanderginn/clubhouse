@@ -110,7 +110,8 @@
     199,
     200,
     201,
-    202
+    202,
+    203
   ],
   "issues": [
     {
@@ -2086,7 +2087,7 @@
     {
       "issue_number": 203,
       "title": "Auth: Update frontend password guidance to match new policy",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769156499-46102",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769156499-46102",
       "dependencies": [
@@ -2099,7 +2100,9 @@
         "auth"
       ],
       "branch": "feat/issue-203-auth-update-frontend-password-guidance-t",
-      "claimed_at": "2026-01-23T08:21:39Z"
+      "claimed_at": "2026-01-23T08:21:39Z",
+      "pr_number": 225,
+      "completed_at": "2026-01-23T08:27:19Z"
     },
     {
       "issue_number": 204,
