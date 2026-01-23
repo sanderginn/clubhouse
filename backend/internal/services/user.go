@@ -77,6 +77,83 @@ func (s *UserService) RegisterUser(ctx context.Context, req *models.RegisterRequ
 	return &user, nil
 }
 
+// AdminExists checks if there is at least one active admin user.
+func (s *UserService) AdminExists(ctx context.Context) (bool, error) {
+	query := `
+		SELECT EXISTS (
+			SELECT 1
+			FROM users
+			WHERE is_admin = true
+				AND deleted_at IS NULL
+		)
+	`
+
+	var exists bool
+	if err := s.db.QueryRowContext(ctx, query).Scan(&exists); err != nil {
+		return false, fmt.Errorf("failed to check admin existence: %w", err)
+	}
+
+	return exists, nil
+}
+
+// BootstrapAdmin creates the first admin user if none exist.
+// Returns created=false when an admin already exists.
+func (s *UserService) BootstrapAdmin(ctx context.Context, username, email, password string) (*models.User, bool, error) {
+	req := &models.RegisterRequest{
+		Username: username,
+		Email:    email,
+		Password: password,
+	}
+	if err := validateRegisterInput(req); err != nil {
+		return nil, false, err
+	}
+
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcryptCost)
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	userID := uuid.New()
+	emailValue := strings.TrimSpace(email)
+	var emailField sql.NullString
+	if emailValue != "" {
+		emailField = sql.NullString{String: emailValue, Valid: true}
+	}
+
+	query := `
+		WITH existing AS (
+			SELECT 1
+			FROM users
+			WHERE is_admin = true
+				AND deleted_at IS NULL
+		)
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		SELECT $1, $2, $3, $4, true, now(), now()
+		WHERE NOT EXISTS (SELECT 1 FROM existing)
+		RETURNING id, username, COALESCE(email, '') as email, is_admin, created_at
+	`
+
+	var user models.User
+	err = s.db.QueryRowContext(ctx, query, userID, username, emailField, string(passwordHash)).
+		Scan(&user.ID, &user.Username, &user.Email, &user.IsAdmin, &user.CreatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, false, nil
+		}
+		if strings.Contains(err.Error(), "duplicate key") {
+			if strings.Contains(err.Error(), "username") {
+				return nil, false, fmt.Errorf("username already exists")
+			}
+			if strings.Contains(err.Error(), "email") {
+				return nil, false, fmt.Errorf("email already exists")
+			}
+		}
+		return nil, false, fmt.Errorf("failed to create bootstrap admin: %w", err)
+	}
+
+	return &user, true, nil
+}
+
 // GetUserByID retrieves a user by ID
 func (s *UserService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	query := `

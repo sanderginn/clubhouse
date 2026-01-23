@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -32,6 +33,11 @@ func writeJSONBytes(ctx context.Context, w http.ResponseWriter, statusCode int, 
 }
 
 func main() {
+	bootstrapUsername := flag.String("bootstrap-admin-username", os.Getenv("CLUBHOUSE_BOOTSTRAP_ADMIN_USERNAME"), "username for initial admin bootstrap")
+	bootstrapEmail := flag.String("bootstrap-admin-email", os.Getenv("CLUBHOUSE_BOOTSTRAP_ADMIN_EMAIL"), "email for initial admin bootstrap")
+	bootstrapPassword := flag.String("bootstrap-admin-password", os.Getenv("CLUBHOUSE_BOOTSTRAP_ADMIN_PASSWORD"), "password for initial admin bootstrap")
+	flag.Parse()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -56,6 +62,40 @@ func main() {
 		os.Exit(1)
 	}
 	defer dbConn.Close()
+
+	userService := services.NewUserService(dbConn)
+	adminExists, err := userService.AdminExists(ctx)
+	if err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to check admin existence",
+			Code:       "ADMIN_CHECK_FAILED",
+			StatusCode: http.StatusInternalServerError,
+			Err:        err,
+		})
+		os.Exit(1)
+	}
+
+	if adminExists {
+		if *bootstrapUsername != "" || *bootstrapPassword != "" || *bootstrapEmail != "" {
+			observability.LogInfo(ctx, "admin already exists; bootstrap skipped")
+		}
+	} else if *bootstrapUsername == "" || *bootstrapPassword == "" {
+		observability.LogInfo(ctx, "no admin user exists; set CLUBHOUSE_BOOTSTRAP_ADMIN_USERNAME and CLUBHOUSE_BOOTSTRAP_ADMIN_PASSWORD (or CLI flags) to create the first admin")
+	} else {
+		user, created, err := userService.BootstrapAdmin(ctx, *bootstrapUsername, *bootstrapEmail, *bootstrapPassword)
+		if err != nil {
+			observability.LogError(ctx, observability.ErrorLog{
+				Message:    "failed to bootstrap admin user",
+				Code:       "ADMIN_BOOTSTRAP_FAILED",
+				StatusCode: http.StatusInternalServerError,
+				Err:        err,
+			})
+			os.Exit(1)
+		}
+		if created {
+			observability.LogInfo(ctx, "bootstrap admin created", "username", user.Username)
+		}
+	}
 
 	// Initialize Redis
 	redisConn, err := cache.Init(ctx)

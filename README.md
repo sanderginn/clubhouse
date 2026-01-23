@@ -34,7 +34,11 @@ A self-hosted, lightweight social platform for sharing links within small-to-med
 
    Look for `healthy` in the STATUS column for Postgres/Redis (and backend once it's started).
 
-5. **Access services:**
+5. **Bootstrap the first admin (first run only):**
+   - Set `CLUBHOUSE_BOOTSTRAP_ADMIN_USERNAME`, `CLUBHOUSE_BOOTSTRAP_ADMIN_PASSWORD`, and optional `CLUBHOUSE_BOOTSTRAP_ADMIN_EMAIL` in `.env`.
+   - Restart the stack (`docker compose up -d`) to create the admin, then remove the bootstrap values and restart.
+
+6. **Access services:**
    - Grafana (Observability): http://localhost:3000 (admin/admin)
    - Prometheus: http://localhost:9090
    - Loki: http://localhost:3100
