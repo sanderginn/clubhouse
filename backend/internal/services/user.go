@@ -19,6 +19,9 @@ const (
 	bcryptCost = 12
 )
 
+// dummyPasswordHash is a bcrypt hash for timing-equalized compares on unknown users.
+var dummyPasswordHash = []byte("$2a$12$ukjUkUX1cfSD88LBRMvNjuwNn2eWmisHaOuhtgo/napH/3VmLCtNK")
+
 // UserService handles user-related operations
 type UserService struct {
 	db *sql.DB
@@ -233,16 +236,17 @@ func (s *UserService) LoginUser(ctx context.Context, req *models.LoginRequest) (
 	// Get user by username
 	user, err := s.GetUserByUsername(ctx, req.Username)
 	if err != nil {
+		_ = bcrypt.CompareHashAndPassword(dummyPasswordHash, []byte(req.Password))
+		return nil, fmt.Errorf("invalid username or password")
+	}
+
+	// Verify password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
 		return nil, fmt.Errorf("invalid username or password")
 	}
 
 	// Check if user is approved
 	if user.ApprovedAt == nil {
-		return nil, fmt.Errorf("user not approved")
-	}
-
-	// Verify password
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
 		return nil, fmt.Errorf("invalid username or password")
 	}
 

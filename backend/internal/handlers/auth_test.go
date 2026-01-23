@@ -3,11 +3,13 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/models"
 )
 
@@ -24,6 +26,29 @@ func (s *stubAuthRateLimiter) Allow(_ context.Context, ip string, identifiers []
 	s.lastIP = ip
 	s.lastIDs = identifiers
 	return s.allowed, s.err
+}
+
+type stubAuthUserService struct {
+	registerErr error
+	loginErr    error
+}
+
+func (s *stubAuthUserService) RegisterUser(_ context.Context, _ *models.RegisterRequest) (*models.User, error) {
+	if s.registerErr != nil {
+		return nil, s.registerErr
+	}
+	return &models.User{ID: uuid.New()}, nil
+}
+
+func (s *stubAuthUserService) LoginUser(_ context.Context, _ *models.LoginRequest) (*models.User, error) {
+	if s.loginErr != nil {
+		return nil, s.loginErr
+	}
+	return &models.User{ID: uuid.New()}, nil
+}
+
+func (s *stubAuthUserService) GetUserByID(_ context.Context, _ uuid.UUID) (*models.User, error) {
+	return nil, errors.New("not implemented")
 }
 
 func TestLoginRateLimited(t *testing.T) {
@@ -49,6 +74,50 @@ func TestLoginRateLimited(t *testing.T) {
 	}
 }
 
+func TestLoginGenericErrorForInvalidCredentials(t *testing.T) {
+	tests := []struct {
+		name       string
+		loginError error
+	}{
+		{
+			name:       "invalid credentials",
+			loginError: errors.New("invalid username or password"),
+		},
+		{
+			name:       "unapproved user",
+			loginError: errors.New("user not approved"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := &AuthHandler{
+				userService: &stubAuthUserService{loginErr: tt.loginError},
+			}
+
+			req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(`{"username":"TestUser","password":"Password123"}`))
+			w := httptest.NewRecorder()
+
+			handler.Login(w, req)
+
+			if w.Code != http.StatusUnauthorized {
+				t.Fatalf("expected status 401, got %d", w.Code)
+			}
+
+			var resp models.ErrorResponse
+			if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+				t.Fatalf("failed to decode response: %v", err)
+			}
+			if resp.Code != "INVALID_CREDENTIALS" {
+				t.Fatalf("expected INVALID_CREDENTIALS code, got %s", resp.Code)
+			}
+			if resp.Error != "Invalid username or password" {
+				t.Fatalf("expected generic error message, got %s", resp.Error)
+			}
+		})
+	}
+}
+
 func TestRegisterRateLimited(t *testing.T) {
 	limiter := &stubAuthRateLimiter{allowed: false}
 	handler := &AuthHandler{rateLimiter: limiter}
@@ -69,5 +138,49 @@ func TestRegisterRateLimited(t *testing.T) {
 	}
 	if resp.Code != "RATE_LIMITED" {
 		t.Fatalf("expected RATE_LIMITED code, got %s", resp.Code)
+	}
+}
+
+func TestRegisterGenericConflictForExistingUser(t *testing.T) {
+	tests := []struct {
+		name        string
+		registerErr error
+	}{
+		{
+			name:        "username exists",
+			registerErr: errors.New("username already exists"),
+		},
+		{
+			name:        "email exists",
+			registerErr: errors.New("email already exists"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := &AuthHandler{
+				userService: &stubAuthUserService{registerErr: tt.registerErr},
+			}
+
+			req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", strings.NewReader(`{"username":"TestUser","email":"test@example.com","password":"Password123"}`))
+			w := httptest.NewRecorder()
+
+			handler.Register(w, req)
+
+			if w.Code != http.StatusConflict {
+				t.Fatalf("expected status 409, got %d", w.Code)
+			}
+
+			var resp models.ErrorResponse
+			if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+				t.Fatalf("failed to decode response: %v", err)
+			}
+			if resp.Code != "CONFLICT" {
+				t.Fatalf("expected CONFLICT code, got %s", resp.Code)
+			}
+			if resp.Error != "Registration conflict." {
+				t.Fatalf("expected generic error message, got %s", resp.Error)
+			}
+		})
 	}
 }
