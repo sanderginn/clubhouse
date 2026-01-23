@@ -285,12 +285,8 @@ func validateRegisterInput(req *models.RegisterRequest) error {
 		return fmt.Errorf("invalid email format")
 	}
 
-	if len(req.Password) < 8 {
-		return fmt.Errorf("password must be at least 8 characters")
-	}
-
-	if !isStrongPassword(req.Password) {
-		return fmt.Errorf("password must contain uppercase, lowercase, and numeric characters")
+	if len(req.Password) < 12 {
+		return fmt.Errorf("password must be at least 12 characters")
 	}
 
 	return nil
@@ -317,26 +313,6 @@ func isValidEmail(email string) bool {
 		return false
 	}
 	return true
-}
-
-// isStrongPassword checks for uppercase, lowercase, and numeric characters
-func isStrongPassword(password string) bool {
-	hasUpper := false
-	hasLower := false
-	hasDigit := false
-
-	for _, r := range password {
-		switch {
-		case unicode.IsUpper(r):
-			hasUpper = true
-		case unicode.IsLower(r):
-			hasLower = true
-		case unicode.IsDigit(r):
-			hasDigit = true
-		}
-	}
-
-	return hasUpper && hasLower && hasDigit
 }
 
 // GetPendingUsers retrieves all users pending admin approval
