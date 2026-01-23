@@ -109,7 +109,8 @@
     192,
     199,
     200,
-    201
+    201,
+    202
   ],
   "issues": [
     {
@@ -2063,7 +2064,7 @@
     {
       "issue_number": 202,
       "title": "Auth: Update password policy validation (backend)",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769156124-40485",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769156124-40485",
       "dependencies": [
@@ -2076,7 +2077,9 @@
         "auth"
       ],
       "branch": "feat/issue-202-auth-update-password-policy-validation-b",
-      "claimed_at": "2026-01-23T08:15:24Z"
+      "claimed_at": "2026-01-23T08:15:24Z",
+      "pr_number": 224,
+      "completed_at": "2026-01-23T08:21:04Z"
     },
     {
       "issue_number": 203,
