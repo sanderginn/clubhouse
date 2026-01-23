@@ -107,6 +107,7 @@
     190,
     191,
     192,
+    193,
     195,
     199,
     200,
@@ -1906,7 +1907,7 @@
     {
       "issue_number": 193,
       "title": "Auth: Add CSRF token issuance + verification (backend)",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769156951-54707",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769156951-54707",
       "dependencies": [
@@ -1920,7 +1921,9 @@
         "auth"
       ],
       "branch": "feat/issue-193-auth-add-csrf-token-issuance-verificatio",
-      "claimed_at": "2026-01-23T08:29:11Z"
+      "claimed_at": "2026-01-23T08:29:11Z",
+      "pr_number": 228,
+      "completed_at": "2026-01-23T08:48:28Z"
     },
     {
       "issue_number": 194,
