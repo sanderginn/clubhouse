@@ -5,7 +5,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/sanderginn/clubhouse/internal/models"
@@ -17,11 +19,18 @@ type authRateLimiter interface {
 	Allow(ctx context.Context, ip string, identifiers []string) (bool, error)
 }
 
+type authFailureTracker interface {
+	IsLocked(ctx context.Context, ip string, identifiers []string) (bool, time.Duration, error)
+	RegisterFailure(ctx context.Context, ip string, identifiers []string) (bool, time.Duration, error)
+	Reset(ctx context.Context, ip string, identifiers []string) error
+}
+
 // AuthHandler handles authentication endpoints
 type AuthHandler struct {
 	userService    *services.UserService
 	sessionService *services.SessionService
 	rateLimiter    authRateLimiter
+	failureTracker authFailureTracker
 }
 
 // NewAuthHandler creates a new auth handler
@@ -30,6 +39,7 @@ func NewAuthHandler(db *sql.DB, redis *redis.Client) *AuthHandler {
 		userService:    services.NewUserService(db),
 		sessionService: services.NewSessionService(redis),
 		rateLimiter:    services.NewAuthRateLimiter(redis),
+		failureTracker: services.NewAuthFailureTracker(redis),
 	}
 }
 
@@ -120,7 +130,13 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.checkRateLimit(r.Context(), w, clientIP, filterIdentifiers(req.Username)) {
+	identifiers := filterIdentifiers(req.Username)
+
+	if !h.checkRateLimit(r.Context(), w, clientIP, identifiers) {
+		return
+	}
+
+	if !h.checkLockout(r.Context(), w, clientIP, identifiers) {
 		return
 	}
 
@@ -133,6 +149,19 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		case "password is required":
 			writeError(r.Context(), w, http.StatusBadRequest, "PASSWORD_REQUIRED", err.Error())
 		case "invalid username or password":
+			locked, retryAfter, lockErr := h.registerLoginFailure(r.Context(), clientIP, identifiers)
+			if lockErr != nil {
+				observability.LogError(r.Context(), observability.ErrorLog{
+					Message:    "failed to register login failure",
+					Code:       "LOGIN_FAILURE_TRACK_FAILED",
+					StatusCode: http.StatusUnauthorized,
+					Err:        lockErr,
+				})
+			}
+			if locked {
+				writeLockoutResponse(r.Context(), w, retryAfter)
+				return
+			}
 			writeError(r.Context(), w, http.StatusUnauthorized, "INVALID_CREDENTIALS", err.Error())
 		case "user not approved":
 			writeError(r.Context(), w, http.StatusForbidden, "USER_NOT_APPROVED", err.Error())
@@ -140,6 +169,15 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 			writeError(r.Context(), w, http.StatusInternalServerError, "LOGIN_FAILED", "Failed to login")
 		}
 		return
+	}
+
+	if err := h.clearLoginFailures(r.Context(), clientIP, identifiers); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to reset login failures",
+			Code:       "LOGIN_FAILURE_RESET_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
 	}
 
 	// Create session
@@ -319,6 +357,53 @@ func (h *AuthHandler) checkRateLimit(ctx context.Context, w http.ResponseWriter,
 	}
 
 	return true
+}
+
+func (h *AuthHandler) checkLockout(ctx context.Context, w http.ResponseWriter, clientIP string, identifiers []string) bool {
+	if h.failureTracker == nil || len(identifiers) == 0 {
+		return true
+	}
+
+	locked, retryAfter, err := h.failureTracker.IsLocked(ctx, clientIP, identifiers)
+	if err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "auth lockout check failed",
+			Code:       "LOCKOUT_CHECK_FAILED",
+			StatusCode: http.StatusInternalServerError,
+			Err:        err,
+		})
+		return true
+	}
+
+	if locked {
+		writeLockoutResponse(ctx, w, retryAfter)
+		return false
+	}
+
+	return true
+}
+
+func (h *AuthHandler) registerLoginFailure(ctx context.Context, clientIP string, identifiers []string) (bool, time.Duration, error) {
+	if h.failureTracker == nil || len(identifiers) == 0 {
+		return false, 0, nil
+	}
+
+	return h.failureTracker.RegisterFailure(ctx, clientIP, identifiers)
+}
+
+func (h *AuthHandler) clearLoginFailures(ctx context.Context, clientIP string, identifiers []string) error {
+	if h.failureTracker == nil || len(identifiers) == 0 {
+		return nil
+	}
+
+	return h.failureTracker.Reset(ctx, clientIP, identifiers)
+}
+
+func writeLockoutResponse(ctx context.Context, w http.ResponseWriter, retryAfter time.Duration) {
+	if retryAfter > 0 {
+		w.Header().Set("Retry-After", strconv.Itoa(int(retryAfter.Seconds())))
+	}
+	writeError(ctx, w, http.StatusTooManyRequests, "LOGIN_LOCKED", "Too many failed attempts. Please try again later.")
 }
 
 func filterIdentifiers(identifiers ...string) []string {
