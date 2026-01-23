@@ -85,10 +85,8 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_USERNAME_FORMAT", err.Error())
 		case "invalid email format":
 			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_EMAIL", err.Error())
-		case "password must be at least 8 characters":
+		case "password must be at least 12 characters":
 			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_PASSWORD_LENGTH", err.Error())
-		case "password must contain uppercase, lowercase, and numeric characters":
-			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_PASSWORD_STRENGTH", err.Error())
 		case "username already exists":
 			writeError(r.Context(), w, http.StatusConflict, "CONFLICT", "Registration conflict.")
 		case "email already exists":

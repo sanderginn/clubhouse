@@ -18,7 +18,7 @@ func TestValidateRegisterInput(t *testing.T) {
 			req: &models.RegisterRequest{
 				Username: "testuser",
 				Email:    "test@example.com",
-				Password: "Password123",
+				Password: "LongPassword123",
 			},
 			wantErr: false,
 		},
@@ -27,7 +27,7 @@ func TestValidateRegisterInput(t *testing.T) {
 			req: &models.RegisterRequest{
 				Username: "",
 				Email:    "test@example.com",
-				Password: "Password123",
+				Password: "LongPassword123",
 			},
 			wantErr: true,
 			errMsg:  "username is required",
@@ -37,7 +37,7 @@ func TestValidateRegisterInput(t *testing.T) {
 			req: &models.RegisterRequest{
 				Username: "ab",
 				Email:    "test@example.com",
-				Password: "Password123",
+				Password: "LongPassword123",
 			},
 			wantErr: true,
 			errMsg:  "username must be between 3 and 50 characters",
@@ -47,7 +47,7 @@ func TestValidateRegisterInput(t *testing.T) {
 			req: &models.RegisterRequest{
 				Username: "test user",
 				Email:    "test@example.com",
-				Password: "Password123",
+				Password: "LongPassword123",
 			},
 			wantErr: true,
 			errMsg:  "username can only contain alphanumeric characters and underscores",
@@ -57,7 +57,7 @@ func TestValidateRegisterInput(t *testing.T) {
 			req: &models.RegisterRequest{
 				Username: "testuser",
 				Email:    "",
-				Password: "Password123",
+				Password: "LongPassword123",
 			},
 			wantErr: false,
 		},
@@ -66,7 +66,7 @@ func TestValidateRegisterInput(t *testing.T) {
 			req: &models.RegisterRequest{
 				Username: "testuser",
 				Email:    "notanemail",
-				Password: "Password123",
+				Password: "LongPassword123",
 			},
 			wantErr: true,
 			errMsg:  "invalid email format",
@@ -76,40 +76,10 @@ func TestValidateRegisterInput(t *testing.T) {
 			req: &models.RegisterRequest{
 				Username: "testuser",
 				Email:    "test@example.com",
-				Password: "Pass12",
+				Password: "ShortPass1",
 			},
 			wantErr: true,
-			errMsg:  "password must be at least 8 characters",
-		},
-		{
-			name: "weak password - no uppercase",
-			req: &models.RegisterRequest{
-				Username: "testuser",
-				Email:    "test@example.com",
-				Password: "password123",
-			},
-			wantErr: true,
-			errMsg:  "password must contain uppercase, lowercase, and numeric characters",
-		},
-		{
-			name: "weak password - no lowercase",
-			req: &models.RegisterRequest{
-				Username: "testuser",
-				Email:    "test@example.com",
-				Password: "PASSWORD123",
-			},
-			wantErr: true,
-			errMsg:  "password must contain uppercase, lowercase, and numeric characters",
-		},
-		{
-			name: "weak password - no digits",
-			req: &models.RegisterRequest{
-				Username: "testuser",
-				Email:    "test@example.com",
-				Password: "PasswordABC",
-			},
-			wantErr: true,
-			errMsg:  "password must contain uppercase, lowercase, and numeric characters",
+			errMsg:  "password must be at least 12 characters",
 		},
 	}
 
@@ -137,7 +107,7 @@ func TestValidateLoginInput(t *testing.T) {
 			name: "valid login",
 			req: &models.LoginRequest{
 				Username: "testuser",
-				Password: "Password123",
+				Password: "LongPassword123",
 			},
 			wantErr: false,
 		},
@@ -145,7 +115,7 @@ func TestValidateLoginInput(t *testing.T) {
 			name: "empty username",
 			req: &models.LoginRequest{
 				Username: "",
-				Password: "Password123",
+				Password: "LongPassword123",
 			},
 			wantErr: true,
 			errMsg:  "username is required",
@@ -215,28 +185,6 @@ func TestIsValidEmail(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := isValidEmail(tt.email); got != tt.want {
 				t.Errorf("isValidEmail(%s) = %v, want %v", tt.email, got, tt.want)
-			}
-		})
-	}
-}
-
-func TestIsStrongPassword(t *testing.T) {
-	tests := []struct {
-		name     string
-		password string
-		want     bool
-	}{
-		{"strong password", "Password123", true},
-		{"no uppercase", "password123", false},
-		{"no lowercase", "PASSWORD123", false},
-		{"no digit", "PasswordAbc", false},
-		{"all requirements met long", "StrongPass123", true},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := isStrongPassword(tt.password); got != tt.want {
-				t.Errorf("isStrongPassword(%s) = %v, want %v", tt.password, got, tt.want)
 			}
 		})
 	}
