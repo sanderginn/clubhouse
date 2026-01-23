@@ -105,6 +105,7 @@
     188,
     189,
     190,
+    191,
     199,
     200
   ],
@@ -1859,7 +1860,7 @@
     {
       "issue_number": 191,
       "title": "Auth: Failed login tracking + temporary lockout",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769155051-28940",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769155051-28940",
       "dependencies": [
@@ -1873,7 +1874,9 @@
         "redis"
       ],
       "branch": "feat/issue-191-auth-failed-login-tracking-temporary-loc",
-      "claimed_at": "2026-01-23T07:57:31Z"
+      "claimed_at": "2026-01-23T07:57:31Z",
+      "pr_number": 221,
+      "completed_at": "2026-01-23T08:04:03Z"
     },
     {
       "issue_number": 192,
