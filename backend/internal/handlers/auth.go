@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
@@ -12,10 +13,15 @@ import (
 	"github.com/sanderginn/clubhouse/internal/services"
 )
 
+type authRateLimiter interface {
+	Allow(ctx context.Context, ip string, identifiers []string) (bool, error)
+}
+
 // AuthHandler handles authentication endpoints
 type AuthHandler struct {
 	userService    *services.UserService
 	sessionService *services.SessionService
+	rateLimiter    authRateLimiter
 }
 
 // NewAuthHandler creates a new auth handler
@@ -23,6 +29,7 @@ func NewAuthHandler(db *sql.DB, redis *redis.Client) *AuthHandler {
 	return &AuthHandler{
 		userService:    services.NewUserService(db),
 		sessionService: services.NewSessionService(redis),
+		rateLimiter:    services.NewAuthRateLimiter(redis),
 	}
 }
 
@@ -33,13 +40,22 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	clientIP := getClientIP(r)
+
 	var req models.RegisterRequest
 	if err := decodeJSONBody(w, r, &req); err != nil {
+		if !h.checkRateLimit(r.Context(), w, clientIP, nil) {
+			return
+		}
 		if isRequestBodyTooLarge(err) {
 			writeError(r.Context(), w, http.StatusRequestEntityTooLarge, "REQUEST_TOO_LARGE", "Request body too large")
 			return
 		}
 		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		return
+	}
+
+	if !h.checkRateLimit(r.Context(), w, clientIP, []string{req.Username, req.Email}) {
 		return
 	}
 
@@ -95,13 +111,22 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	clientIP := getClientIP(r)
+
 	var req models.LoginRequest
 	if err := decodeJSONBody(w, r, &req); err != nil {
+		if !h.checkRateLimit(r.Context(), w, clientIP, nil) {
+			return
+		}
 		if isRequestBodyTooLarge(err) {
 			writeError(r.Context(), w, http.StatusRequestEntityTooLarge, "REQUEST_TOO_LARGE", "Request body too large")
 			return
 		}
 		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		return
+	}
+
+	if !h.checkRateLimit(r.Context(), w, clientIP, []string{req.Username}) {
 		return
 	}
 
@@ -276,4 +301,28 @@ func isSecureRequest(r *http.Request) bool {
 		return true
 	}
 	return strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https")
+}
+
+func (h *AuthHandler) checkRateLimit(ctx context.Context, w http.ResponseWriter, clientIP string, identifiers []string) bool {
+	if h.rateLimiter == nil {
+		return true
+	}
+
+	allowed, err := h.rateLimiter.Allow(ctx, clientIP, identifiers)
+	if err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "auth rate limit check failed",
+			Code:       "RATE_LIMIT_CHECK_FAILED",
+			StatusCode: http.StatusInternalServerError,
+			Err:        err,
+		})
+		return true
+	}
+
+	if !allowed {
+		writeError(ctx, w, http.StatusTooManyRequests, "RATE_LIMITED", "Too many attempts. Please try again later.")
+		return false
+	}
+
+	return true
 }
