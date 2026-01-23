@@ -56,6 +56,11 @@ type LogoutResponse struct {
 	Message string `json:"message"`
 }
 
+// CSRFTokenResponse represents the CSRF token response
+type CSRFTokenResponse struct {
+	Token string `json:"token"`
+}
+
 // ErrorResponse represents a standard error response
 type ErrorResponse struct {
 	Error string `json:"error"`

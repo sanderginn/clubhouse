@@ -732,6 +732,53 @@ Not used for client auth. Consider for:
 - **Own-content endpoints:** Owner or admin
 - **Admin endpoints:** `is_admin = true` only
 
+### CSRF Protection
+
+**Purpose:** Prevent Cross-Site Request Forgery attacks on state-changing operations.
+
+**Token Lifecycle:**
+1. Client calls `GET /api/v1/auth/csrf` (authenticated endpoint) to obtain a token
+2. Server generates a 256-bit cryptographically secure random token
+3. Token is stored in Redis with key `csrf:{token}` → value `{sessionID}:{userID}`
+4. Token has 1-hour TTL (auto-expires via Redis)
+5. Client includes token in `X-CSRF-Token` header for all state-changing requests
+
+**Validation:**
+- Middleware `RequireCSRF` validates tokens on POST/PUT/PATCH/DELETE requests
+- GET/HEAD/OPTIONS requests bypass CSRF validation (read-only operations)
+- Token must match the current session ID and user ID
+- Invalid or missing tokens return `403 Forbidden`
+
+**Token Format:**
+- 32 bytes (256 bits) of cryptographically secure random data
+- Base64-URL encoded for safe HTTP transport
+- Example: `a7b3c9d2e1f4g5h6i7j8k9l0m1n2o3p4q5r6s7t8u9v0w1x2y3z4a5b6c7d8e9f0`
+
+**Exempted Endpoints:**
+- `POST /api/v1/auth/register` - no session exists yet
+- `POST /api/v1/auth/login` - no session exists yet
+- `GET /api/v1/auth/csrf` - token issuance endpoint (read-only for token generation)
+- All GET/HEAD/OPTIONS requests - read-only operations
+
+**Token Refresh:**
+- Tokens are reusable within their 1-hour TTL
+- Clients should fetch a new token when receiving `403 INVALID_CSRF_TOKEN`
+- No automatic rotation on each request (reduces Redis load)
+
+**Error Responses:**
+```json
+{
+  "error": "CSRF token is required for this request",
+  "code": "CSRF_TOKEN_REQUIRED"
+}
+```
+```json
+{
+  "error": "Invalid or expired CSRF token",
+  "code": "INVALID_CSRF_TOKEN"
+}
+```
+
 ---
 
 ## Real-Time Communication

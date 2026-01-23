@@ -37,6 +37,7 @@ type authUserService interface {
 type AuthHandler struct {
 	userService    authUserService
 	sessionService *services.SessionService
+	csrfService    *services.CSRFService
 	rateLimiter    authRateLimiter
 	failureTracker authFailureTracker
 }
@@ -46,6 +47,7 @@ func NewAuthHandler(db *sql.DB, redis *redis.Client) *AuthHandler {
 	return &AuthHandler{
 		userService:    services.NewUserService(db),
 		sessionService: services.NewSessionService(redis),
+		csrfService:    services.NewCSRFService(redis),
 		rateLimiter:    services.NewAuthRateLimiter(redis),
 		failureTracker: services.NewAuthFailureTracker(redis),
 	}
@@ -472,4 +474,47 @@ func filterIdentifiers(identifiers ...string) []string {
 	}
 
 	return filtered
+}
+
+// GetCSRFToken generates and returns a new CSRF token for the authenticated user
+func (h *AuthHandler) GetCSRFToken(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		return
+	}
+
+	// Get session from context (injected by RequireAuth middleware)
+	session, err := middleware.GetUserFromContext(r.Context())
+	if err != nil {
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
+		return
+	}
+
+	sessionID, err := middleware.GetSessionIDFromContext(r.Context())
+	if err != nil {
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Session ID not found")
+		return
+	}
+
+	// Generate CSRF token
+	token, err := h.csrfService.GenerateToken(r.Context(), sessionID, session.UserID)
+	if err != nil {
+		writeError(r.Context(), w, http.StatusInternalServerError, "CSRF_TOKEN_GENERATION_FAILED", "Failed to generate CSRF token")
+		return
+	}
+
+	response := models.CSRFTokenResponse{
+		Token: token,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode CSRF token response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }
