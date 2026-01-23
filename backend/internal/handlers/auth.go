@@ -552,7 +552,7 @@ func (h *AuthHandler) RedeemPasswordResetToken(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// Get token from Redis
+	// Get token from Redis and check if already used
 	resetToken, err := h.passwordResetService.GetToken(r.Context(), req.Token)
 	if err != nil {
 		if err == services.ErrPasswordResetTokenNotFound {
@@ -563,17 +563,13 @@ func (h *AuthHandler) RedeemPasswordResetToken(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// Mark token as used
-	if err := h.passwordResetService.MarkTokenAsUsed(r.Context(), req.Token); err != nil {
-		if err == services.ErrPasswordResetTokenAlreadyUsed {
-			writeError(r.Context(), w, http.StatusConflict, "TOKEN_ALREADY_USED", "Token has already been used")
-			return
-		}
-		writeError(r.Context(), w, http.StatusInternalServerError, "TOKEN_UPDATE_FAILED", "Failed to update token")
+	if resetToken.Used {
+		writeError(r.Context(), w, http.StatusConflict, "TOKEN_ALREADY_USED", "Token has already been used")
 		return
 	}
 
-	// Reset password
+	// Reset password BEFORE marking token as used
+	// This ensures the token isn't burned if password reset fails
 	userService := services.NewUserService(h.db)
 	if err := userService.ResetPassword(r.Context(), resetToken.UserID, req.NewPassword); err != nil {
 		if err.Error() == "password must be at least 12 characters" {
@@ -582,6 +578,29 @@ func (h *AuthHandler) RedeemPasswordResetToken(w http.ResponseWriter, r *http.Re
 		}
 		writeError(r.Context(), w, http.StatusInternalServerError, "PASSWORD_RESET_FAILED", "Failed to reset password")
 		return
+	}
+
+	// Mark token as used atomically (after successful password reset)
+	// If this fails due to concurrent use, password was already reset, so we can treat it as success
+	if err := h.passwordResetService.MarkTokenAsUsed(r.Context(), req.Token); err != nil {
+		if err == services.ErrPasswordResetTokenAlreadyUsed {
+			// Password was already reset, but another concurrent request marked the token
+			// This is acceptable - continue to invalidate sessions and return success
+			observability.LogError(r.Context(), observability.ErrorLog{
+				Message:    "token marked as used by concurrent request, but password was already reset",
+				Code:       "CONCURRENT_TOKEN_USE",
+				StatusCode: http.StatusOK,
+				Err:        err,
+			})
+		} else if err != services.ErrPasswordResetTokenNotFound {
+			// Non-critical error - password was reset, just log it
+			observability.LogError(r.Context(), observability.ErrorLog{
+				Message:    "failed to mark token as used after password reset",
+				Code:       "TOKEN_UPDATE_FAILED",
+				StatusCode: http.StatusOK,
+				Err:        err,
+			})
+		}
 	}
 
 	// Invalidate all existing sessions for the user

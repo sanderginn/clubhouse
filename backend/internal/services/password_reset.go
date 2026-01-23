@@ -102,36 +102,50 @@ func (s *PasswordResetService) GetToken(ctx context.Context, token string) (*Pas
 }
 
 // MarkTokenAsUsed marks a password reset token as used (single-use enforcement)
+// Uses Lua script for atomic check-and-set to prevent race conditions
 func (s *PasswordResetService) MarkTokenAsUsed(ctx context.Context, token string) error {
-	resetToken, err := s.GetToken(ctx, token)
-	if err != nil {
-		return err
-	}
-
-	if resetToken.Used {
-		return ErrPasswordResetTokenAlreadyUsed
-	}
-
-	// Mark as used
-	resetToken.Used = true
-	tokenJSON, err := json.Marshal(resetToken)
-	if err != nil {
-		return fmt.Errorf("failed to marshal password reset token: %w", err)
-	}
-
-	// Update in Redis (keep original TTL)
 	key := PasswordResetTokenPrefix + token
-	ttl := time.Until(resetToken.ExpiresAt)
-	if ttl <= 0 {
-		// Token has already expired
+
+	// Lua script for atomic check-and-set
+	// Returns: 1 if successfully marked as used, 0 if already used, -1 if not found
+	script := `
+		local key = KEYS[1]
+		local tokenJSON = redis.call('GET', key)
+		if not tokenJSON then
+			return -1
+		end
+
+		local tokenData = cjson.decode(tokenJSON)
+		if tokenData.used then
+			return 0
+		end
+
+		tokenData.used = true
+		local newTokenJSON = cjson.encode(tokenData)
+		local ttl = redis.call('TTL', key)
+		if ttl > 0 then
+			redis.call('SETEX', key, ttl, newTokenJSON)
+		else
+			redis.call('SET', key, newTokenJSON)
+		end
+		return 1
+	`
+
+	result, err := s.redis.Eval(ctx, script, []string{key}).Int()
+	if err != nil {
+		return fmt.Errorf("failed to execute atomic mark-as-used script: %w", err)
+	}
+
+	switch result {
+	case -1:
 		return ErrPasswordResetTokenNotFound
+	case 0:
+		return ErrPasswordResetTokenAlreadyUsed
+	case 1:
+		return nil
+	default:
+		return fmt.Errorf("unexpected script result: %d", result)
 	}
-
-	if err := s.redis.Set(ctx, key, tokenJSON, ttl).Err(); err != nil {
-		return fmt.Errorf("failed to update password reset token in Redis: %w", err)
-	}
-
-	return nil
 }
 
 // DeleteToken removes a password reset token from Redis
