@@ -1881,9 +1881,9 @@
     {
       "issue_number": 192,
       "title": "Auth: Reduce user enumeration in login/register",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769155469-35905",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769155469-35905",
       "dependencies": [
         191
       ],
@@ -1892,7 +1892,9 @@
         "enhancement",
         "backend",
         "auth"
-      ]
+      ],
+      "branch": "feat/issue-192-auth-reduce-user-enumeration-in-loginreg",
+      "claimed_at": "2026-01-23T08:04:29Z"
     },
     {
       "issue_number": 193,
