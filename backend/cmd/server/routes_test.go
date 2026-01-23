@@ -43,7 +43,7 @@ func TestPostRouteHandlerDeletePost(t *testing.T) {
 		},
 	}
 
-	handler := newPostRouteHandler(requireAuth, deps)
+	handler := newPostRouteHandler(requireAuth, requireAuth, deps)
 	postID := uuid.New()
 	req := httptest.NewRequest(http.MethodDelete, "/api/v1/posts/"+postID.String(), nil)
 	rr := httptest.NewRecorder()
@@ -89,7 +89,7 @@ func TestPostRouteHandlerMethodNotAllowed(t *testing.T) {
 		},
 	}
 
-	handler := newPostRouteHandler(requireAuth, deps)
+	handler := newPostRouteHandler(requireAuth, requireAuth, deps)
 	postID := uuid.New()
 	req := httptest.NewRequest(http.MethodPatch, "/api/v1/posts/"+postID.String(), nil)
 	rr := httptest.NewRecorder()
@@ -143,7 +143,7 @@ func TestPostRouteHandlerDeletePostReactionsMissingEmoji(t *testing.T) {
 		},
 	}
 
-	handler := newPostRouteHandler(requireAuth, deps)
+	handler := newPostRouteHandler(requireAuth, requireAuth, deps)
 	postID := uuid.New()
 	req := httptest.NewRequest(http.MethodDelete, "/api/v1/posts/"+postID.String()+"/reactions", nil)
 	rr := httptest.NewRecorder()
@@ -196,7 +196,7 @@ func TestPostRouteHandlerDeletePostCommentsPath(t *testing.T) {
 		},
 	}
 
-	handler := newPostRouteHandler(requireAuth, deps)
+	handler := newPostRouteHandler(requireAuth, requireAuth, deps)
 	postID := uuid.New()
 	req := httptest.NewRequest(http.MethodDelete, "/api/v1/posts/"+postID.String()+"/comments", nil)
 	rr := httptest.NewRecorder()
@@ -247,7 +247,7 @@ func TestPostRouteHandlerGetThreadRequiresAuth(t *testing.T) {
 		},
 	}
 
-	handler := newPostRouteHandler(requireAuth, deps)
+	handler := newPostRouteHandler(requireAuth, requireAuth, deps)
 	postID := uuid.New()
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/posts/"+postID.String()+"/comments", nil)
 	rr := httptest.NewRecorder()

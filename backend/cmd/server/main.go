@@ -131,13 +131,22 @@ func main() {
 	linkHandler := handlers.NewLinkHandler()
 	pushHandler := handlers.NewPushHandler(dbConn, pushService)
 	requireAuth := middleware.RequireAuth(redisConn)
+	requireCSRF := middleware.RequireCSRF(redisConn)
+	requireAuthCSRF := func(h http.Handler) http.Handler {
+		return requireAuth(requireCSRF(h))
+	}
+	requireAdmin := middleware.RequireAdmin(redisConn)
+	requireAdminCSRF := func(h http.Handler) http.Handler {
+		return requireAdmin(requireCSRF(h))
+	}
 
 	// API routes
 	mux.HandleFunc("/api/v1/auth/register", authHandler.Register)
 	mux.HandleFunc("/api/v1/auth/login", authHandler.Login)
-	mux.HandleFunc("/api/v1/auth/logout", authHandler.Logout)
+	mux.Handle("/api/v1/auth/logout", requireAuthCSRF(http.HandlerFunc(authHandler.Logout)))
 	mux.HandleFunc("/api/v1/auth/me", authHandler.GetMe)
-	mux.Handle("/api/v1/auth/logout-all", requireAuth(http.HandlerFunc(authHandler.LogoutAll)))
+	mux.Handle("/api/v1/auth/csrf", requireAuth(http.HandlerFunc(authHandler.GetCSRFToken)))
+	mux.Handle("/api/v1/auth/logout-all", requireAuthCSRF(http.HandlerFunc(authHandler.LogoutAll)))
 	mux.Handle("/api/v1/sections", requireAuth(http.HandlerFunc(sectionHandler.ListSections)))
 	sectionRouteHandler := newSectionRouteHandler(requireAuth, sectionRouteDeps{
 		listSections: sectionHandler.ListSections,
@@ -149,13 +158,12 @@ func main() {
 	// User routes (protected - requires auth)
 	userRouteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/api/v1/users/me/section-subscriptions") {
-			sectionSubHandler := middleware.RequireAuth(redisConn)
 			if r.Method == http.MethodGet && r.URL.Path == "/api/v1/users/me/section-subscriptions" {
-				sectionSubHandler(http.HandlerFunc(userHandler.GetMySectionSubscriptions)).ServeHTTP(w, r)
+				requireAuth(http.HandlerFunc(userHandler.GetMySectionSubscriptions)).ServeHTTP(w, r)
 				return
 			}
 			if r.Method == http.MethodPatch {
-				sectionSubHandler(http.HandlerFunc(userHandler.UpdateMySectionSubscription)).ServeHTTP(w, r)
+				requireAuthCSRF(http.HandlerFunc(userHandler.UpdateMySectionSubscription)).ServeHTTP(w, r)
 				return
 			}
 			writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
@@ -164,7 +172,7 @@ func main() {
 		// Check if this is the /api/v1/users/me endpoint
 		if r.URL.Path == "/api/v1/users/me" {
 			if r.Method == http.MethodPatch {
-				updateMeHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(userHandler.UpdateMe))
+				updateMeHandler := requireAuthCSRF(http.HandlerFunc(userHandler.UpdateMe))
 				updateMeHandler.ServeHTTP(w, r)
 				return
 			}
@@ -192,20 +200,20 @@ func main() {
 	// Comment routes - route to appropriate handler based on method
 	commentRouteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/restore") {
-			restoreHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(commentHandler.RestoreComment))
+			restoreHandler := requireAuthCSRF(http.HandlerFunc(commentHandler.RestoreComment))
 			restoreHandler.ServeHTTP(w, r)
 		} else if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/reactions") {
 			// POST /api/v1/comments/{id}/reactions
-			reactionAuthHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(reactionHandler.AddReactionToComment))
+			reactionAuthHandler := requireAuthCSRF(http.HandlerFunc(reactionHandler.AddReactionToComment))
 			reactionAuthHandler.ServeHTTP(w, r)
 		} else if r.Method == http.MethodDelete && strings.Contains(r.URL.Path, "/reactions/") {
 			// DELETE /api/v1/comments/{id}/reactions/{emoji}
-			reactionAuthHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(reactionHandler.RemoveReactionFromComment))
+			reactionAuthHandler := requireAuthCSRF(http.HandlerFunc(reactionHandler.RemoveReactionFromComment))
 			reactionAuthHandler.ServeHTTP(w, r)
 		} else if r.Method == http.MethodGet {
 			requireAuth(http.HandlerFunc(commentHandler.GetComment)).ServeHTTP(w, r)
 		} else if r.Method == http.MethodDelete {
-			deleteHandler := requireAuth(http.HandlerFunc(commentHandler.DeleteComment))
+			deleteHandler := requireAuthCSRF(http.HandlerFunc(commentHandler.DeleteComment))
 			deleteHandler.ServeHTTP(w, r)
 		} else {
 			writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
@@ -214,7 +222,7 @@ func main() {
 	mux.Handle("/api/v1/comments/", commentRouteHandler)
 
 	// Post routes - route to appropriate handler
-	postRouteHandler := newPostRouteHandler(requireAuth, postRouteDeps{
+	postRouteHandler := newPostRouteHandler(requireAuth, requireAuthCSRF, postRouteDeps{
 		getThread:              commentHandler.GetThread,
 		restorePost:            postHandler.RestorePost,
 		addReactionToPost:      reactionHandler.AddReactionToPost,
@@ -225,13 +233,13 @@ func main() {
 	mux.Handle("/api/v1/posts/", postRouteHandler)
 
 	// Protected post create route
-	postCreateHandler := requireAuth(
+	postCreateHandler := requireAuthCSRF(
 		http.HandlerFunc(postHandler.CreatePost),
 	)
 	mux.Handle("/api/v1/posts", postCreateHandler)
 
 	// Protected comment routes
-	commentCreateHandler := requireAuth(
+	commentCreateHandler := requireAuthCSRF(
 		http.HandlerFunc(commentHandler.CreateComment),
 	)
 	mux.Handle("/api/v1/comments", commentCreateHandler)
@@ -244,11 +252,11 @@ func main() {
 
 	// Notification routes (protected)
 	mux.Handle("/api/v1/notifications", requireAuth(http.HandlerFunc(notificationHandler.GetNotifications)))
-	mux.Handle("/api/v1/notifications/", requireAuth(http.HandlerFunc(notificationHandler.MarkNotificationRead)))
+	mux.Handle("/api/v1/notifications/", requireAuthCSRF(http.HandlerFunc(notificationHandler.MarkNotificationRead)))
 
 	// Push routes (protected)
 	mux.Handle("/api/v1/push/vapid-key", requireAuth(http.HandlerFunc(pushHandler.GetVAPIDKey)))
-	mux.Handle("/api/v1/push/subscribe", requireAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/api/v1/push/subscribe", requireAuthCSRF(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			pushHandler.Subscribe(w, r)
 			return
@@ -261,8 +269,8 @@ func main() {
 	})))
 
 	// Admin routes (protected by RequireAdmin middleware)
-	mux.Handle("/api/v1/admin/users", middleware.RequireAdmin(redisConn)(http.HandlerFunc(adminHandler.ListPendingUsers)))
-	mux.Handle("/api/v1/admin/users/", middleware.RequireAdmin(redisConn)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/api/v1/admin/users", requireAdmin(http.HandlerFunc(adminHandler.ListPendingUsers)))
+	mux.Handle("/api/v1/admin/users/", requireAdminCSRF(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.URL.Path, "/approve") {
 			adminHandler.ApproveUser(w, r)
 		} else {
@@ -271,7 +279,7 @@ func main() {
 	})))
 
 	// Admin post routes (hard delete and restore)
-	mux.Handle("/api/v1/admin/posts/", middleware.RequireAdmin(redisConn)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/api/v1/admin/posts/", requireAdminCSRF(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/restore") {
 			adminHandler.AdminRestorePost(w, r)
 		} else if r.Method == http.MethodDelete {
@@ -282,7 +290,7 @@ func main() {
 	})))
 
 	// Admin comment routes (hard delete and restore)
-	mux.Handle("/api/v1/admin/comments/", middleware.RequireAdmin(redisConn)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/api/v1/admin/comments/", requireAdminCSRF(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/restore") {
 			adminHandler.AdminRestoreComment(w, r)
 		} else if r.Method == http.MethodDelete {
@@ -293,18 +301,18 @@ func main() {
 	})))
 
 	// Admin config route
-	mux.Handle("/api/v1/admin/config", middleware.RequireAdmin(redisConn)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/api/v1/admin/config", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
-			adminHandler.GetConfig(w, r)
+			requireAdmin(http.HandlerFunc(adminHandler.GetConfig)).ServeHTTP(w, r)
 		} else if r.Method == http.MethodPatch {
-			adminHandler.UpdateConfig(w, r)
+			requireAdminCSRF(http.HandlerFunc(adminHandler.UpdateConfig)).ServeHTTP(w, r)
 		} else {
 			writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
 		}
-	})))
+	}))
 
 	// Admin audit logs route
-	mux.Handle("/api/v1/admin/audit-logs", middleware.RequireAdmin(redisConn)(http.HandlerFunc(adminHandler.GetAuditLogs)))
+	mux.Handle("/api/v1/admin/audit-logs", requireAdmin(http.HandlerFunc(adminHandler.GetAuditLogs)))
 
 	// WebSocket route (protected)
 	mux.Handle("/api/v1/ws", requireAuth(http.HandlerFunc(wsHandler.HandleWS)))
