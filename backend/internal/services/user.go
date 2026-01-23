@@ -820,3 +820,40 @@ func (s *UserService) UpdateSectionSubscription(ctx context.Context, userID uuid
 		OptedOut:  false,
 	}, nil
 }
+
+// ResetPassword resets a user's password (called after token verification)
+func (s *UserService) ResetPassword(ctx context.Context, userID uuid.UUID, newPassword string) error {
+	// Validate password
+	if len(newPassword) < 12 {
+		return fmt.Errorf("password must be at least 12 characters")
+	}
+
+	// Hash password
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcryptCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	// Update password in database
+	query := `
+		UPDATE users
+		SET password_hash = $1, updated_at = now()
+		WHERE id = $2 AND deleted_at IS NULL
+	`
+
+	result, err := s.db.ExecContext(ctx, query, string(passwordHash), userID)
+	if err != nil {
+		return fmt.Errorf("failed to reset password: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to check rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("user not found")
+	}
+
+	return nil
+}

@@ -121,7 +121,7 @@ func main() {
 	pushService := services.NewPushService(dbConn)
 	postHandler := handlers.NewPostHandler(dbConn, redisConn, pushService)
 	commentHandler := handlers.NewCommentHandler(dbConn, redisConn, pushService)
-	adminHandler := handlers.NewAdminHandler(dbConn)
+	adminHandler := handlers.NewAdminHandler(dbConn, redisConn)
 	reactionHandler := handlers.NewReactionHandler(dbConn, redisConn, pushService)
 	userHandler := handlers.NewUserHandler(dbConn)
 	sectionHandler := handlers.NewSectionHandler(dbConn)
@@ -147,6 +147,7 @@ func main() {
 	mux.HandleFunc("/api/v1/auth/me", authHandler.GetMe)
 	mux.Handle("/api/v1/auth/csrf", requireAuth(http.HandlerFunc(authHandler.GetCSRFToken)))
 	mux.Handle("/api/v1/auth/logout-all", requireAuthCSRF(http.HandlerFunc(authHandler.LogoutAll)))
+	mux.HandleFunc("/api/v1/auth/password-reset/redeem", authHandler.RedeemPasswordResetToken)
 	mux.Handle("/api/v1/sections", requireAuth(http.HandlerFunc(sectionHandler.ListSections)))
 	sectionRouteHandler := newSectionRouteHandler(requireAuth, sectionRouteDeps{
 		listSections: sectionHandler.ListSections,
@@ -313,6 +314,9 @@ func main() {
 
 	// Admin audit logs route
 	mux.Handle("/api/v1/admin/audit-logs", requireAdmin(http.HandlerFunc(adminHandler.GetAuditLogs)))
+
+	// Admin password reset route
+	mux.Handle("/api/v1/admin/password-reset/generate", requireAdminCSRF(http.HandlerFunc(adminHandler.GeneratePasswordResetToken)))
 
 	// WebSocket route (protected)
 	mux.Handle("/api/v1/ws", requireAuth(http.HandlerFunc(wsHandler.HandleWS)))

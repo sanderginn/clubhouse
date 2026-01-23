@@ -1,0 +1,266 @@
+package handlers
+
+import (
+	"bytes"
+	"context"
+	"database/sql"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
+	"github.com/sanderginn/clubhouse/internal/models"
+	"github.com/sanderginn/clubhouse/internal/services"
+)
+
+func setupAuthPasswordResetTest(t *testing.T) (*sql.DB, *redis.Client, *AuthHandler) {
+	t.Helper()
+
+	db := getTestDBForAuth(t)
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+
+	redisClient := getTestRedisForAuth(t)
+	if redisClient == nil {
+		t.Skip("redis not configured for tests")
+	}
+
+	handler := NewAuthHandler(db, redisClient)
+	return db, redisClient, handler
+}
+
+func getTestDBForAuth(t *testing.T) *sql.DB {
+	t.Helper()
+	return nil
+}
+
+func getTestRedisForAuth(t *testing.T) *redis.Client {
+	t.Helper()
+	return nil
+}
+
+func TestRedeemPasswordResetToken(t *testing.T) {
+	db, redisClient, handler := setupAuthPasswordResetTest(t)
+	defer db.Close()
+	defer redisClient.Close()
+
+	userID := uuid.New()
+	_, err := db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'testuser', 'test@example.com', '$2a$12$oldpasswordhash', false, now(), now())
+	`, userID)
+	if err != nil {
+		t.Fatalf("failed to create test user: %v", err)
+	}
+
+	passwordResetService := services.NewPasswordResetService(redisClient)
+	token, err := passwordResetService.GenerateToken(context.Background(), userID)
+	if err != nil {
+		t.Fatalf("failed to generate token: %v", err)
+	}
+
+	reqBody := models.RedeemPasswordResetTokenRequest{
+		Token:       token.Token,
+		NewPassword: "newsecurepassword123",
+	}
+	bodyBytes, _ := json.Marshal(reqBody)
+
+	req := httptest.NewRequest("POST", "/api/v1/auth/password-reset/redeem", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.RedeemPasswordResetToken(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response models.RedeemPasswordResetTokenResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if response.Message != "Password reset successful" {
+		t.Errorf("expected success message, got %s", response.Message)
+	}
+
+	var passwordHash string
+	err = db.QueryRow("SELECT password_hash FROM users WHERE id = $1", userID).Scan(&passwordHash)
+	if err != nil {
+		t.Fatalf("failed to get updated password hash: %v", err)
+	}
+
+	if passwordHash == "$2a$12$oldpasswordhash" {
+		t.Error("expected password hash to be updated")
+	}
+
+	_, err = passwordResetService.GetToken(context.Background(), token.Token)
+	if err != services.ErrPasswordResetTokenNotFound {
+		t.Errorf("expected token to be deleted, got %v", err)
+	}
+}
+
+func TestRedeemPasswordResetTokenInvalidToken(t *testing.T) {
+	db, redisClient, handler := setupAuthPasswordResetTest(t)
+	defer db.Close()
+	defer redisClient.Close()
+
+	reqBody := models.RedeemPasswordResetTokenRequest{
+		Token:       "invalid-token",
+		NewPassword: "newsecurepassword123",
+	}
+	bodyBytes, _ := json.Marshal(reqBody)
+
+	req := httptest.NewRequest("POST", "/api/v1/auth/password-reset/redeem", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.RedeemPasswordResetToken(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusNotFound, w.Code, w.Body.String())
+	}
+}
+
+func TestRedeemPasswordResetTokenAlreadyUsed(t *testing.T) {
+	db, redisClient, handler := setupAuthPasswordResetTest(t)
+	defer db.Close()
+	defer redisClient.Close()
+
+	userID := uuid.New()
+	_, err := db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'testuser2', 'test2@example.com', '$2a$12$oldpasswordhash', false, now(), now())
+	`, userID)
+	if err != nil {
+		t.Fatalf("failed to create test user: %v", err)
+	}
+
+	passwordResetService := services.NewPasswordResetService(redisClient)
+	token, err := passwordResetService.GenerateToken(context.Background(), userID)
+	if err != nil {
+		t.Fatalf("failed to generate token: %v", err)
+	}
+
+	if err := passwordResetService.MarkTokenAsUsed(context.Background(), token.Token); err != nil {
+		t.Fatalf("failed to mark token as used: %v", err)
+	}
+
+	reqBody := models.RedeemPasswordResetTokenRequest{
+		Token:       token.Token,
+		NewPassword: "newsecurepassword123",
+	}
+	bodyBytes, _ := json.Marshal(reqBody)
+
+	req := httptest.NewRequest("POST", "/api/v1/auth/password-reset/redeem", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.RedeemPasswordResetToken(w, req)
+
+	if w.Code != http.StatusConflict {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusConflict, w.Code, w.Body.String())
+	}
+}
+
+func TestRedeemPasswordResetTokenWeakPassword(t *testing.T) {
+	db, redisClient, handler := setupAuthPasswordResetTest(t)
+	defer db.Close()
+	defer redisClient.Close()
+
+	userID := uuid.New()
+	_, err := db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'testuser3', 'test3@example.com', '$2a$12$oldpasswordhash', false, now(), now())
+	`, userID)
+	if err != nil {
+		t.Fatalf("failed to create test user: %v", err)
+	}
+
+	passwordResetService := services.NewPasswordResetService(redisClient)
+	token, err := passwordResetService.GenerateToken(context.Background(), userID)
+	if err != nil {
+		t.Fatalf("failed to generate token: %v", err)
+	}
+
+	reqBody := models.RedeemPasswordResetTokenRequest{
+		Token:       token.Token,
+		NewPassword: "weak",
+	}
+	bodyBytes, _ := json.Marshal(reqBody)
+
+	req := httptest.NewRequest("POST", "/api/v1/auth/password-reset/redeem", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.RedeemPasswordResetToken(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+	}
+}
+
+func TestRedeemPasswordResetTokenMethodNotAllowed(t *testing.T) {
+	_, redisClient, handler := setupAuthPasswordResetTest(t)
+	defer redisClient.Close()
+
+	req := httptest.NewRequest("GET", "/api/v1/auth/password-reset/redeem", nil)
+	w := httptest.NewRecorder()
+
+	handler.RedeemPasswordResetToken(w, req)
+
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Errorf("expected status %d, got %d", http.StatusMethodNotAllowed, w.Code)
+	}
+}
+
+func TestRedeemPasswordResetTokenInvalidatesAllSessions(t *testing.T) {
+	db, redisClient, handler := setupAuthPasswordResetTest(t)
+	defer db.Close()
+	defer redisClient.Close()
+
+	userID := uuid.New()
+	_, err := db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'testuser4', 'test4@example.com', '$2a$12$oldpasswordhash', false, now(), now())
+	`, userID)
+	if err != nil {
+		t.Fatalf("failed to create test user: %v", err)
+	}
+
+	sessionService := services.NewSessionService(redisClient)
+	session, err := sessionService.CreateSession(context.Background(), userID, "testuser4", false)
+	if err != nil {
+		t.Fatalf("failed to create session: %v", err)
+	}
+
+	passwordResetService := services.NewPasswordResetService(redisClient)
+	token, err := passwordResetService.GenerateToken(context.Background(), userID)
+	if err != nil {
+		t.Fatalf("failed to generate token: %v", err)
+	}
+
+	reqBody := models.RedeemPasswordResetTokenRequest{
+		Token:       token.Token,
+		NewPassword: "newsecurepassword123",
+	}
+	bodyBytes, _ := json.Marshal(reqBody)
+
+	req := httptest.NewRequest("POST", "/api/v1/auth/password-reset/redeem", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.RedeemPasswordResetToken(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	_, err = sessionService.GetSession(context.Background(), session.ID)
+	if err != services.ErrSessionNotFound {
+		t.Errorf("expected session to be invalidated, got %v", err)
+	}
+}

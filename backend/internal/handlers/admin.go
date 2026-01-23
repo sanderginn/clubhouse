@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/observability"
@@ -17,19 +18,21 @@ import (
 
 // AdminHandler handles admin-specific endpoints
 type AdminHandler struct {
-	db             *sql.DB
-	userService    *services.UserService
-	postService    *services.PostService
-	commentService *services.CommentService
+	db                   *sql.DB
+	userService          *services.UserService
+	postService          *services.PostService
+	commentService       *services.CommentService
+	passwordResetService *services.PasswordResetService
 }
 
 // NewAdminHandler creates a new admin handler
-func NewAdminHandler(db *sql.DB) *AdminHandler {
+func NewAdminHandler(db *sql.DB, redis *redis.Client) *AdminHandler {
 	return &AdminHandler{
-		db:             db,
-		userService:    services.NewUserService(db),
-		postService:    services.NewPostService(db),
-		commentService: services.NewCommentService(db),
+		db:                   db,
+		userService:          services.NewUserService(db),
+		postService:          services.NewPostService(db),
+		commentService:       services.NewCommentService(db),
+		passwordResetService: services.NewPasswordResetService(redis),
 	}
 }
 
@@ -524,6 +527,64 @@ func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		observability.LogError(r.Context(), observability.ErrorLog{
 			Message:    "failed to encode audit logs response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}
+
+// GeneratePasswordResetToken generates a one-time password reset token for a user (admin only)
+func (h *AdminHandler) GeneratePasswordResetToken(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		return
+	}
+
+	var req models.GeneratePasswordResetTokenRequest
+	if err := decodeJSONBody(w, r, &req); err != nil {
+		if isRequestBodyTooLarge(err) {
+			writeError(r.Context(), w, http.StatusRequestEntityTooLarge, "REQUEST_TOO_LARGE", "Request body too large")
+			return
+		}
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		return
+	}
+
+	// Verify user exists and is approved
+	user, err := h.userService.GetUserByID(r.Context(), req.UserID)
+	if err != nil {
+		if err.Error() == "user not found" {
+			writeError(r.Context(), w, http.StatusNotFound, "USER_NOT_FOUND", "User not found")
+			return
+		}
+		writeError(r.Context(), w, http.StatusInternalServerError, "USER_LOOKUP_FAILED", "Failed to lookup user")
+		return
+	}
+
+	if user.ApprovedAt == nil {
+		writeError(r.Context(), w, http.StatusBadRequest, "USER_NOT_APPROVED", "User is not approved")
+		return
+	}
+
+	// Generate token
+	token, err := h.passwordResetService.GenerateToken(r.Context(), req.UserID)
+	if err != nil {
+		writeError(r.Context(), w, http.StatusInternalServerError, "TOKEN_GENERATION_FAILED", "Failed to generate password reset token")
+		return
+	}
+
+	response := models.GeneratePasswordResetTokenResponse{
+		Token:     token.Token,
+		UserID:    token.UserID,
+		ExpiresAt: token.ExpiresAt,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode generate password reset token response",
 			Code:       "ENCODE_FAILED",
 			StatusCode: http.StatusOK,
 			Err:        err,
