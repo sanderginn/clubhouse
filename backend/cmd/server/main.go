@@ -247,8 +247,8 @@ func main() {
 	// Search routes (protected)
 	mux.Handle("/api/v1/search", requireAuth(http.HandlerFunc(searchHandler.Search)))
 
-	// Link preview route (protected)
-	mux.Handle("/api/v1/links/preview", requireAuth(http.HandlerFunc(linkHandler.PreviewLink)))
+	// Link preview route (protected with CSRF - POST only, prevents SSRF)
+	mux.Handle("/api/v1/links/preview", requireAuthCSRF(http.HandlerFunc(linkHandler.PreviewLink)))
 
 	// Notification routes (protected)
 	mux.Handle("/api/v1/notifications", requireAuth(http.HandlerFunc(notificationHandler.GetNotifications)))
