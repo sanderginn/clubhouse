@@ -107,6 +107,10 @@ npm run dev
 
 See [DESIGN.md](DESIGN.md) for complete system design.
 
+## Authentication
+
+Auth is username-based. Registration requires a username and password, with email optional. Login uses `username` + `password` and sets an httpOnly session cookie.
+
 ## Development Guidelines
 
 See [AGENTS.md](AGENTS.md) for AI agent development guidelines.

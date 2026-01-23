@@ -48,7 +48,7 @@ Clubhouse is a self-hosted, lightweight social platform for sharing links (music
 ### Core Features
 
 #### User Management
-- [x] User registration (email + password)
+- [x] User registration (username + password, email optional)
 - [x] Admin approval required for registration
 - [x] User profiles (bio, profile picture)
 - [x] Session-based authentication (30-day duration)
@@ -180,7 +180,7 @@ PostgreSQL        Redis          OTel
 CREATE TABLE users (
   id UUID PRIMARY KEY,
   username VARCHAR(255) UNIQUE NOT NULL,
-  email VARCHAR(255) UNIQUE NOT NULL,
+  email VARCHAR(255) UNIQUE, -- optional
   password_hash VARCHAR(255) NOT NULL,
   profile_picture_url TEXT,
   bio TEXT,
@@ -425,16 +425,16 @@ CREATE INDEX idx_notifications_user_read ON notifications(user_id, read_at);
 **Register User**
 ```
 POST /auth/register
-Body: { username, email, password }
-Response: { user: { id, username, email }, requiresApproval: true }
+Body: { username, password, email? }
+Response: { id, username, email, message }
 ```
 
 **Login**
 ```
 POST /auth/login
-Body: { email, password }
-Response: { user: { id, username, email, isAdmin }, sessionToken: "..." }
-Headers: Set-Cookie: session=...; HttpOnly; Secure; SameSite=Strict; Max-Age=2592000
+Body: { username, password }
+Response: { id, username, email, isAdmin, message }
+Headers: Set-Cookie: session_id=...; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000
 ```
 
 **Logout**
@@ -709,10 +709,12 @@ Response: {
 
 1. **User registers** → Account created, marked `approved_at = NULL`
 2. **Admin approves** → Sets `approved_at = NOW()`
-3. **User logs in** → Session created in Redis, httpOnly cookie set
+3. **User logs in (username + password)** → Session created in Redis, httpOnly cookie set
 4. **Cookie stored** → Automatically sent with all requests
 5. **Middleware validates** → Checks Redis session, extracts `user_id`
 6. **Session expires** → 30 days, auto-deleted by Redis TTL
+
+**Email policy:** Email is optional at registration. If provided, it must be valid and unique.
 
 ### JWT (if needed internally)
 Not used for client auth. Consider for:
