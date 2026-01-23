@@ -107,7 +107,8 @@
     190,
     191,
     199,
-    200
+    200,
+    201
   ],
   "issues": [
     {
@@ -2039,7 +2040,7 @@
     {
       "issue_number": 201,
       "title": "Docs: Update auth docs for username-based login",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769155307-32114",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769155307-32114",
       "dependencies": [
@@ -2052,7 +2053,9 @@
         "auth"
       ],
       "branch": "feat/issue-201-docs-update-auth-docs-for-usernamebased-",
-      "claimed_at": "2026-01-23T08:01:47Z"
+      "claimed_at": "2026-01-23T08:01:47Z",
+      "pr_number": 222,
+      "completed_at": "2026-01-23T08:07:32Z"
     },
     {
       "issue_number": 202,
