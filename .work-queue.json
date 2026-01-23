@@ -103,6 +103,7 @@
     186,
     187,
     188,
+    190,
     199
   ],
   "issues": [
@@ -1833,7 +1834,7 @@
     {
       "issue_number": 190,
       "title": "Auth: Add rate limiting for login/register",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769086717-7034",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769086717-7034",
       "dependencies": [
@@ -1847,7 +1848,9 @@
         "redis"
       ],
       "branch": "feat/issue-190-auth-add-rate-limiting-for-loginregister",
-      "claimed_at": "2026-01-22T12:58:37Z"
+      "claimed_at": "2026-01-22T12:58:37Z",
+      "pr_number": 218,
+      "completed_at": "2026-01-23T07:53:40Z"
     },
     {
       "issue_number": 191,
