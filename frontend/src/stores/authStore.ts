@@ -18,7 +18,7 @@ interface AuthState {
 interface MeResponse {
   id: string;
   username: string;
-  email: string;
+  email?: string | null;
   profile_picture_url?: string;
   bio?: string;
   is_admin: boolean;
@@ -49,7 +49,7 @@ function createAuthStore() {
         const user: User = {
           id: response.id,
           username: response.username,
-          email: response.email,
+          email: response.email ?? '',
           profilePictureUrl: response.profile_picture_url,
           bio: response.bio,
           isAdmin: response.is_admin,
