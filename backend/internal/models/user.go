@@ -153,3 +153,26 @@ type UpdateSectionSubscriptionResponse struct {
 	OptedOut   bool       `json:"opted_out"`
 	OptedOutAt *time.Time `json:"opted_out_at,omitempty"`
 }
+
+// GeneratePasswordResetTokenRequest represents the request to generate a password reset token
+type GeneratePasswordResetTokenRequest struct {
+	UserID uuid.UUID `json:"user_id"`
+}
+
+// GeneratePasswordResetTokenResponse represents the response from generating a password reset token
+type GeneratePasswordResetTokenResponse struct {
+	Token     string    `json:"token"`
+	UserID    uuid.UUID `json:"user_id"`
+	ExpiresAt time.Time `json:"expires_at"`
+}
+
+// RedeemPasswordResetTokenRequest represents the request to redeem a password reset token
+type RedeemPasswordResetTokenRequest struct {
+	Token       string `json:"token"`
+	NewPassword string `json:"new_password"`
+}
+
+// RedeemPasswordResetTokenResponse represents the response from redeeming a password reset token
+type RedeemPasswordResetTokenResponse struct {
+	Message string `json:"message"`
+}

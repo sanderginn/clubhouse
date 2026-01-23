@@ -35,21 +35,25 @@ type authUserService interface {
 
 // AuthHandler handles authentication endpoints
 type AuthHandler struct {
-	userService    authUserService
-	sessionService *services.SessionService
-	csrfService    *services.CSRFService
-	rateLimiter    authRateLimiter
-	failureTracker authFailureTracker
+	userService          authUserService
+	sessionService       *services.SessionService
+	csrfService          *services.CSRFService
+	rateLimiter          authRateLimiter
+	failureTracker       authFailureTracker
+	passwordResetService *services.PasswordResetService
+	db                   *sql.DB
 }
 
 // NewAuthHandler creates a new auth handler
 func NewAuthHandler(db *sql.DB, redis *redis.Client) *AuthHandler {
 	return &AuthHandler{
-		userService:    services.NewUserService(db),
-		sessionService: services.NewSessionService(redis),
-		csrfService:    services.NewCSRFService(redis),
-		rateLimiter:    services.NewAuthRateLimiter(redis),
-		failureTracker: services.NewAuthFailureTracker(redis),
+		userService:          services.NewUserService(db),
+		sessionService:       services.NewSessionService(redis),
+		csrfService:          services.NewCSRFService(redis),
+		rateLimiter:          services.NewAuthRateLimiter(redis),
+		failureTracker:       services.NewAuthFailureTracker(redis),
+		passwordResetService: services.NewPasswordResetService(redis),
+		db:                   db,
 	}
 }
 
@@ -512,6 +516,103 @@ func (h *AuthHandler) GetCSRFToken(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		observability.LogError(r.Context(), observability.ErrorLog{
 			Message:    "failed to encode CSRF token response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}
+
+// RedeemPasswordResetToken redeems a password reset token and sets a new password
+func (h *AuthHandler) RedeemPasswordResetToken(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		return
+	}
+
+	var req models.RedeemPasswordResetTokenRequest
+	if err := decodeJSONBody(w, r, &req); err != nil {
+		if isRequestBodyTooLarge(err) {
+			writeError(r.Context(), w, http.StatusRequestEntityTooLarge, "REQUEST_TOO_LARGE", "Request body too large")
+			return
+		}
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		return
+	}
+
+	// Validate token is not empty
+	if strings.TrimSpace(req.Token) == "" {
+		writeError(r.Context(), w, http.StatusBadRequest, "TOKEN_REQUIRED", "Token is required")
+		return
+	}
+
+	// Validate new password
+	if len(req.NewPassword) < 12 {
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_PASSWORD_LENGTH", "Password must be at least 12 characters")
+		return
+	}
+
+	// Get token from Redis
+	resetToken, err := h.passwordResetService.GetToken(r.Context(), req.Token)
+	if err != nil {
+		if err == services.ErrPasswordResetTokenNotFound {
+			writeError(r.Context(), w, http.StatusNotFound, "INVALID_TOKEN", "Token not found or expired")
+			return
+		}
+		writeError(r.Context(), w, http.StatusInternalServerError, "TOKEN_LOOKUP_FAILED", "Failed to lookup token")
+		return
+	}
+
+	// Mark token as used
+	if err := h.passwordResetService.MarkTokenAsUsed(r.Context(), req.Token); err != nil {
+		if err == services.ErrPasswordResetTokenAlreadyUsed {
+			writeError(r.Context(), w, http.StatusConflict, "TOKEN_ALREADY_USED", "Token has already been used")
+			return
+		}
+		writeError(r.Context(), w, http.StatusInternalServerError, "TOKEN_UPDATE_FAILED", "Failed to update token")
+		return
+	}
+
+	// Reset password
+	userService := services.NewUserService(h.db)
+	if err := userService.ResetPassword(r.Context(), resetToken.UserID, req.NewPassword); err != nil {
+		if err.Error() == "password must be at least 12 characters" {
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_PASSWORD_LENGTH", err.Error())
+			return
+		}
+		writeError(r.Context(), w, http.StatusInternalServerError, "PASSWORD_RESET_FAILED", "Failed to reset password")
+		return
+	}
+
+	// Invalidate all existing sessions for the user
+	if err := h.sessionService.DeleteAllSessionsForUser(r.Context(), resetToken.UserID); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to invalidate sessions after password reset",
+			Code:       "SESSION_INVALIDATION_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+
+	// Delete the token
+	if err := h.passwordResetService.DeleteToken(r.Context(), req.Token); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to delete password reset token",
+			Code:       "TOKEN_DELETE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+
+	response := models.RedeemPasswordResetTokenResponse{
+		Message: "Password reset successful",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode redeem password reset token response",
 			Code:       "ENCODE_FAILED",
 			StatusCode: http.StatusOK,
 			Err:        err,

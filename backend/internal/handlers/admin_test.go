@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"github.com/sanderginn/clubhouse/internal/models"
 )
 
@@ -23,7 +24,7 @@ func TestListPendingUsers(t *testing.T) {
 	}
 	defer db.Close()
 
-	handler := NewAdminHandler(db)
+	handler := NewAdminHandler(db, nil)
 
 	req := httptest.NewRequest("GET", "/api/v1/admin/users", nil)
 	w := httptest.NewRecorder()
@@ -80,7 +81,7 @@ func TestApproveUser(t *testing.T) {
 		t.Fatalf("failed to create test user: %v", err)
 	}
 
-	handler := NewAdminHandler(db)
+	handler := NewAdminHandler(db, nil)
 
 	// Test approve request
 	req := httptest.NewRequest("PATCH", "/api/v1/admin/users/"+userID.String()+"/approve", nil)
@@ -161,7 +162,7 @@ func TestRejectUser(t *testing.T) {
 		t.Fatalf("failed to create test user: %v", err)
 	}
 
-	handler := NewAdminHandler(db)
+	handler := NewAdminHandler(db, nil)
 
 	// Test reject request
 	req := httptest.NewRequest("DELETE", "/api/v1/admin/users/"+userID.String(), nil)
@@ -242,7 +243,7 @@ func TestApproveAlreadyApprovedUser(t *testing.T) {
 		t.Fatalf("failed to create test user: %v", err)
 	}
 
-	handler := NewAdminHandler(db)
+	handler := NewAdminHandler(db, nil)
 
 	// Test approve request on already approved user
 	req := httptest.NewRequest("PATCH", "/api/v1/admin/users/"+userID.String()+"/approve", nil)
@@ -297,7 +298,7 @@ func TestHardDeletePost(t *testing.T) {
 		t.Fatalf("failed to create test post: %v", err)
 	}
 
-	handler := NewAdminHandler(db)
+	handler := NewAdminHandler(db, nil)
 
 	// Test hard delete request
 	req := httptest.NewRequest("DELETE", "/api/v1/admin/posts/"+postID.String(), nil)
@@ -393,7 +394,7 @@ func TestHardDeleteComment(t *testing.T) {
 		t.Fatalf("failed to create test comment: %v", err)
 	}
 
-	handler := NewAdminHandler(db)
+	handler := NewAdminHandler(db, nil)
 
 	// Test hard delete request
 	req := httptest.NewRequest("DELETE", "/api/v1/admin/comments/"+commentID.String(), nil)
@@ -459,7 +460,7 @@ func TestHardDeletePostNotFound(t *testing.T) {
 		t.Fatalf("failed to create admin user: %v", err)
 	}
 
-	handler := NewAdminHandler(db)
+	handler := NewAdminHandler(db, nil)
 
 	// Test hard delete with non-existent post
 	nonExistentID := uuid.New()
@@ -495,7 +496,7 @@ func TestHardDeleteCommentNotFound(t *testing.T) {
 		t.Fatalf("failed to create admin user: %v", err)
 	}
 
-	handler := NewAdminHandler(db)
+	handler := NewAdminHandler(db, nil)
 
 	// Test hard delete with non-existent comment
 	nonExistentID := uuid.New()
@@ -551,7 +552,7 @@ func TestAdminRestorePost(t *testing.T) {
 		t.Fatalf("failed to create test post: %v", err)
 	}
 
-	handler := NewAdminHandler(db)
+	handler := NewAdminHandler(db, nil)
 
 	// Test restore request
 	req := httptest.NewRequest("POST", "/api/v1/admin/posts/"+postID.String()+"/restore", nil)
@@ -638,7 +639,7 @@ func TestAdminRestoreComment(t *testing.T) {
 		t.Fatalf("failed to create test comment: %v", err)
 	}
 
-	handler := NewAdminHandler(db)
+	handler := NewAdminHandler(db, nil)
 
 	// Test restore request
 	req := httptest.NewRequest("POST", "/api/v1/admin/comments/"+commentID.String()+"/restore", nil)
@@ -715,7 +716,7 @@ func TestAdminRestorePostNotDeleted(t *testing.T) {
 		t.Fatalf("failed to create test post: %v", err)
 	}
 
-	handler := NewAdminHandler(db)
+	handler := NewAdminHandler(db, nil)
 
 	// Test restore request on non-deleted post
 	req := httptest.NewRequest("POST", "/api/v1/admin/posts/"+postID.String()+"/restore", nil)
@@ -750,7 +751,7 @@ func TestAdminRestorePostNotFound(t *testing.T) {
 		t.Fatalf("failed to create admin user: %v", err)
 	}
 
-	handler := NewAdminHandler(db)
+	handler := NewAdminHandler(db, nil)
 
 	// Test restore request on non-existent post
 	nonExistentID := uuid.New()
@@ -772,9 +773,16 @@ func getTestDB() (*sql.DB, error) {
 	return nil, nil
 }
 
+func getTestRedis(t *testing.T) *redis.Client {
+	t.Helper()
+	// This would need proper Redis setup for tests
+	// For now, return nil to indicate test setup needed
+	return nil
+}
+
 // TestGetConfig tests getting the current config
 func TestGetConfig(t *testing.T) {
-	handler := NewAdminHandler(nil) // No DB needed for config
+	handler := NewAdminHandler(nil, nil) // No DB needed for config
 
 	req := httptest.NewRequest("GET", "/api/v1/admin/config", nil)
 	w := httptest.NewRecorder()
@@ -802,7 +810,7 @@ func TestGetConfig(t *testing.T) {
 
 // TestUpdateConfig tests updating the config
 func TestUpdateConfig(t *testing.T) {
-	handler := NewAdminHandler(nil) // No DB needed for config
+	handler := NewAdminHandler(nil, nil) // No DB needed for config
 
 	// Test disabling link metadata
 	body := `{"linkMetadataEnabled": false}`
@@ -865,7 +873,7 @@ func TestUpdateConfig(t *testing.T) {
 
 // TestUpdateConfigMethodNotAllowed tests that GET to UpdateConfig is rejected
 func TestUpdateConfigMethodNotAllowed(t *testing.T) {
-	handler := NewAdminHandler(nil)
+	handler := NewAdminHandler(nil, nil)
 
 	req := httptest.NewRequest("GET", "/api/v1/admin/config", nil)
 	w := httptest.NewRecorder()
@@ -879,7 +887,7 @@ func TestUpdateConfigMethodNotAllowed(t *testing.T) {
 
 // TestGetConfigMethodNotAllowed tests that PATCH to GetConfig is rejected
 func TestGetConfigMethodNotAllowed(t *testing.T) {
-	handler := NewAdminHandler(nil)
+	handler := NewAdminHandler(nil, nil)
 
 	req := httptest.NewRequest("PATCH", "/api/v1/admin/config", nil)
 	w := httptest.NewRecorder()
@@ -893,7 +901,7 @@ func TestGetConfigMethodNotAllowed(t *testing.T) {
 
 // TestUpdateConfigInvalidJSON tests that invalid JSON is rejected
 func TestUpdateConfigInvalidJSON(t *testing.T) {
-	handler := NewAdminHandler(nil)
+	handler := NewAdminHandler(nil, nil)
 
 	body := `{invalid json}`
 	req := httptest.NewRequest("PATCH", "/api/v1/admin/config", strings.NewReader(body))
@@ -945,7 +953,7 @@ func TestGetAuditLogs(t *testing.T) {
 		t.Fatalf("failed to create audit log 2: %v", err)
 	}
 
-	handler := NewAdminHandler(db)
+	handler := NewAdminHandler(db, nil)
 
 	req := httptest.NewRequest("GET", "/api/v1/admin/audit-logs", nil)
 	w := httptest.NewRecorder()
@@ -980,7 +988,7 @@ func TestGetAuditLogs(t *testing.T) {
 
 // TestGetAuditLogsMethodNotAllowed tests that POST to GetAuditLogs is rejected
 func TestGetAuditLogsMethodNotAllowed(t *testing.T) {
-	handler := NewAdminHandler(nil)
+	handler := NewAdminHandler(nil, nil)
 
 	req := httptest.NewRequest("POST", "/api/v1/admin/audit-logs", nil)
 	w := httptest.NewRecorder()
@@ -994,7 +1002,7 @@ func TestGetAuditLogsMethodNotAllowed(t *testing.T) {
 
 // TestGetAuditLogsInvalidCursor tests that invalid cursor formats are rejected
 func TestGetAuditLogsInvalidCursor(t *testing.T) {
-	handler := NewAdminHandler(nil)
+	handler := NewAdminHandler(nil, nil)
 
 	req := httptest.NewRequest("GET", "/api/v1/admin/audit-logs?cursor=not-a-timestamp", nil)
 	w := httptest.NewRecorder()
@@ -1003,5 +1011,148 @@ func TestGetAuditLogsInvalidCursor(t *testing.T) {
 
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+	}
+}
+
+// TestGeneratePasswordResetToken tests generating a password reset token for a user
+func TestGeneratePasswordResetToken(t *testing.T) {
+	db, err := getTestDB()
+	if err != nil {
+		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+	defer db.Close()
+
+	userID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'resetuser', 'reset@example.com', '$2a$12$test', false, now(), now())
+	`, userID)
+	if err != nil {
+		t.Fatalf("failed to create test user: %v", err)
+	}
+
+	redisClient := getTestRedis(t)
+	if redisClient == nil {
+		t.Skip("redis not configured for tests")
+	}
+	defer redisClient.Close()
+
+	handler := NewAdminHandler(db, redisClient)
+
+	reqBody := `{"user_id":"` + userID.String() + `"}`
+	req := httptest.NewRequest("POST", "/api/v1/admin/password-reset/generate", strings.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.GeneratePasswordResetToken(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response models.GeneratePasswordResetTokenResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if response.Token == "" {
+		t.Error("expected non-empty token")
+	}
+
+	if response.UserID != userID {
+		t.Errorf("expected user ID %v, got %v", userID, response.UserID)
+	}
+
+	if response.ExpiresAt.IsZero() {
+		t.Error("expected non-zero expiration time")
+	}
+}
+
+// TestGeneratePasswordResetTokenUserNotFound tests generating token for non-existent user
+func TestGeneratePasswordResetTokenUserNotFound(t *testing.T) {
+	db, err := getTestDB()
+	if err != nil {
+		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+	defer db.Close()
+
+	redisClient := getTestRedis(t)
+	if redisClient == nil {
+		t.Skip("redis not configured for tests")
+	}
+	defer redisClient.Close()
+
+	handler := NewAdminHandler(db, redisClient)
+
+	nonExistentID := uuid.New()
+	reqBody := `{"user_id":"` + nonExistentID.String() + `"}`
+	req := httptest.NewRequest("POST", "/api/v1/admin/password-reset/generate", strings.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.GeneratePasswordResetToken(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusNotFound, w.Code, w.Body.String())
+	}
+}
+
+// TestGeneratePasswordResetTokenUserNotApproved tests generating token for unapproved user
+func TestGeneratePasswordResetTokenUserNotApproved(t *testing.T) {
+	db, err := getTestDB()
+	if err != nil {
+		t.Fatalf("failed to get test DB: %v", err)
+	}
+	if db == nil {
+		t.Skip("test database not configured")
+	}
+	defer db.Close()
+
+	userID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, created_at)
+		VALUES ($1, 'unapproveduser', 'unapproved@example.com', '$2a$12$test', false, now())
+	`, userID)
+	if err != nil {
+		t.Fatalf("failed to create test user: %v", err)
+	}
+
+	redisClient := getTestRedis(t)
+	if redisClient == nil {
+		t.Skip("redis not configured for tests")
+	}
+	defer redisClient.Close()
+
+	handler := NewAdminHandler(db, redisClient)
+
+	reqBody := `{"user_id":"` + userID.String() + `"}`
+	req := httptest.NewRequest("POST", "/api/v1/admin/password-reset/generate", strings.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.GeneratePasswordResetToken(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+	}
+}
+
+// TestGeneratePasswordResetTokenMethodNotAllowed tests invalid methods
+func TestGeneratePasswordResetTokenMethodNotAllowed(t *testing.T) {
+	handler := NewAdminHandler(nil, nil)
+
+	req := httptest.NewRequest("GET", "/api/v1/admin/password-reset/generate", nil)
+	w := httptest.NewRecorder()
+
+	handler.GeneratePasswordResetToken(w, req)
+
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Errorf("expected status %d, got %d", http.StatusMethodNotAllowed, w.Code)
 	}
 }
