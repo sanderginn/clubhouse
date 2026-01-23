@@ -88,25 +88,25 @@ func GetTestRedis(t *testing.T) *redis.Client {
 func CleanupTables(t *testing.T, db *sql.DB) {
 	t.Helper()
 
-	tables := []string{
-		"audit_logs",
-		"push_subscriptions",
-		"notifications",
-		"mentions",
-		"reactions",
-		"links",
-		"comments",
-		"posts",
-		"section_subscriptions",
-		"sections",
-		"users",
-	}
-
-	for _, table := range tables {
-		_, err := db.Exec(fmt.Sprintf("TRUNCATE TABLE %s CASCADE", table))
-		if err != nil {
-			t.Fatalf("failed to truncate table %s: %v", table, err)
-		}
+	// Use a single TRUNCATE statement with all tables to avoid deadlocks
+	// The order matters due to foreign key constraints - CASCADE handles this
+	_, err := db.Exec(`
+		TRUNCATE TABLE
+			audit_logs,
+			push_subscriptions,
+			notifications,
+			mentions,
+			reactions,
+			links,
+			comments,
+			posts,
+			section_subscriptions,
+			sections,
+			users
+		CASCADE
+	`)
+	if err != nil {
+		t.Fatalf("failed to truncate tables: %v", err)
 	}
 }
 

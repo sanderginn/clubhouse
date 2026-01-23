@@ -22,7 +22,8 @@ if [[ -n "${CLUBHOUSE_TEST_DATABASE_URL:-}" ]]; then
     echo "Note: Some migrations may have already been applied or psql not available"
   }
 
-  go test -v ./...
+  # Run tests sequentially (-p 1) to avoid deadlocks from parallel table truncation
+  go test -v -p 1 ./...
 else
   echo "Running tests without database (DB-backed tests will be skipped)..."
   go test ./...
