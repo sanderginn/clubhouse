@@ -119,6 +119,7 @@
     203,
     204,
     232,
+    233,
     234
   ],
   "issues": [
@@ -2211,7 +2212,7 @@
     {
       "issue_number": 233,
       "title": "Observability: Add missing business metrics (reactions, deletes, notifications, link fetch)",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769457307-83061",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769457307-83061",
       "dependencies": [],
@@ -2221,7 +2222,8 @@
         "backend"
       ],
       "branch": "feat/issue-233-observability-add-missing-business-metri",
-      "claimed_at": "2026-01-26T19:55:07Z"
+      "claimed_at": "2026-01-26T19:55:07Z",
+      "completed_at": "2026-01-26T20:02:47Z"
     },
     {
       "issue_number": 234,
