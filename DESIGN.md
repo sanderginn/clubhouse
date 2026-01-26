@@ -376,13 +376,16 @@ CREATE INDEX idx_notifications_user_read ON notifications(user_id, read_at);
 
 ### Standard Response Format
 
-**Success (2xx):**
+**Success (2xx):** returns the response payload defined by the endpoint (no envelope).
 ```json
 {
-  "data": { ... },
-  "meta": {
-    "timestamp": "2026-01-16T10:00:00Z",
-    "request_id": "req-uuid"
+  "post": {
+    "id": "uuid",
+    "user_id": "uuid",
+    "section_id": "uuid",
+    "content": "Hello world",
+    "comment_count": 0,
+    "created_at": "2026-01-16T10:00:00Z"
   }
 }
 ```
@@ -391,11 +394,7 @@ CREATE INDEX idx_notifications_user_read ON notifications(user_id, read_at);
 ```json
 {
   "error": "Human-readable message",
-  "code": "ERROR_CODE",
-  "meta": {
-    "timestamp": "2026-01-16T10:00:00Z",
-    "request_id": "req-uuid"
-  }
+  "code": "ERROR_CODE"
 }
 ```
 
