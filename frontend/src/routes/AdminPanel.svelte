@@ -3,8 +3,9 @@
   import PendingUsers from '../components/admin/PendingUsers.svelte';
   import AuditLogs from '../components/admin/AuditLogs.svelte';
   import UserResetLinks from '../components/admin/UserResetLinks.svelte';
+  import AdminTotpSetup from '../components/admin/AdminTotpSetup.svelte';
 
-  type AdminTab = 'pending' | 'users' | 'audit';
+  type AdminTab = 'pending' | 'users' | 'audit' | 'security';
 
   const tabs: { id: AdminTab; label: string; description: string }[] = [
     {
@@ -21,6 +22,11 @@
       id: 'audit',
       label: 'Audit Logs',
       description: 'Track admin actions and system changes.',
+    },
+    {
+      id: 'security',
+      label: 'Security',
+      description: 'Enroll multi-factor authentication for admin access.',
     },
   ];
 
@@ -93,9 +99,13 @@
         <div transition:fade>
           <UserResetLinks />
         </div>
-      {:else}
+      {:else if activeTab === 'audit'}
         <div transition:fade>
           <AuditLogs />
+        </div>
+      {:else}
+        <div transition:fade>
+          <AdminTotpSetup />
         </div>
       {/if}
     </div>

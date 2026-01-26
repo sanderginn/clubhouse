@@ -13,6 +13,7 @@ export interface User {
 interface AuthState {
   user: User | null;
   isLoading: boolean;
+  mfaChallenge: MfaChallenge | null;
 }
 
 interface MeResponse {
@@ -24,15 +25,24 @@ interface MeResponse {
   is_admin: boolean;
 }
 
+export interface MfaChallenge {
+  username: string;
+  challengeId?: string;
+}
+
 function createAuthStore() {
   const { subscribe, set, update } = writable<AuthState>({
     user: null,
     isLoading: true,
+    mfaChallenge: null,
   });
 
   return {
     subscribe,
-    setUser: (user: User | null) => update((state) => ({ ...state, user, isLoading: false })),
+    setUser: (user: User | null) =>
+      update((state) => ({ ...state, user, isLoading: false, mfaChallenge: null })),
+    setMfaChallenge: (challenge: MfaChallenge | null) =>
+      update((state) => ({ ...state, mfaChallenge: challenge, isLoading: false })),
     setLoading: (isLoading: boolean) => update((state) => ({ ...state, isLoading })),
     logout: async () => {
       try {
@@ -41,7 +51,7 @@ function createAuthStore() {
         // Ignore errors - we're logging out anyway
       }
       api.clearCsrfToken();
-      set({ user: null, isLoading: false });
+      set({ user: null, isLoading: false, mfaChallenge: null });
     },
     checkSession: async () => {
       update((state) => ({ ...state, isLoading: true }));
@@ -55,12 +65,12 @@ function createAuthStore() {
           bio: response.bio,
           isAdmin: response.is_admin,
         };
-        set({ user, isLoading: false });
+        set({ user, isLoading: false, mfaChallenge: null });
         void api.prefetchCsrfToken();
         return true;
       } catch {
         api.clearCsrfToken();
-        set({ user: null, isLoading: false });
+        set({ user: null, isLoading: false, mfaChallenge: null });
         return false;
       }
     },
@@ -74,3 +84,7 @@ export const isAuthenticated = derived(authStore, ($authStore) => $authStore.use
 export const currentUser = derived(authStore, ($authStore) => $authStore.user);
 
 export const isAdmin = derived(authStore, ($authStore) => $authStore.user?.isAdmin ?? false);
+
+export const mfaChallenge = derived(authStore, ($authStore) => $authStore.mfaChallenge);
+
+export const isMfaRequired = derived(authStore, ($authStore) => $authStore.mfaChallenge !== null);

@@ -133,8 +133,11 @@ class ApiClient {
         return this.request<T>(endpoint, options, false);
       }
 
-      const errorMessage = errorData?.error ?? 'An unexpected error occurred';
-      throw new Error(errorMessage);
+      const error = new Error(errorData?.error ?? 'An unexpected error occurred') as Error & {
+        code?: string;
+      };
+      error.code = errorData?.code ?? 'UNKNOWN_ERROR';
+      throw error;
     }
 
     if (response.status === 204) {
