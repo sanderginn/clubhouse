@@ -321,6 +321,10 @@ func main() {
 	// Admin password reset route
 	mux.Handle("/api/v1/admin/password-reset/generate", requireAdminCSRF(http.HandlerFunc(adminHandler.GeneratePasswordResetToken)))
 
+	// Admin TOTP routes
+	mux.Handle("/api/v1/admin/totp/enroll", requireAdminCSRF(http.HandlerFunc(adminHandler.EnrollTOTP)))
+	mux.Handle("/api/v1/admin/totp/verify", requireAdminCSRF(http.HandlerFunc(adminHandler.VerifyTOTP)))
+
 	// WebSocket route (protected)
 	mux.Handle("/api/v1/ws", requireAuth(http.HandlerFunc(wsHandler.HandleWS)))
 

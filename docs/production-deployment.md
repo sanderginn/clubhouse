@@ -31,6 +31,7 @@ Bootstrap (first run only):
 Optional environment values (override defaults or enable features):
 
 - `OTEL_SERVICE_NAME`, `OTEL_SERVICE_VERSION` (defaults set in `docker-compose.prod.yml`)
+- `CLUBHOUSE_TOTP_ENCRYPTION_KEY` (base64-encoded 32-byte key for admin TOTP)
 - `BACKUP_DIR`, `BACKUP_RETENTION_DAYS` (only needed if you run `scripts/backup-postgres.sh`)
 
 Required secrets to generate (do not use defaults):

@@ -8,17 +8,19 @@ import (
 
 // User represents a user in the system
 type User struct {
-	ID                uuid.UUID  `json:"id"`
-	Username          string     `json:"username"`
-	Email             string     `json:"email"`
-	PasswordHash      string     `json:"-"` // Never expose
-	ProfilePictureURL *string    `json:"profile_picture_url,omitempty"`
-	Bio               *string    `json:"bio,omitempty"`
-	IsAdmin           bool       `json:"is_admin"`
-	ApprovedAt        *time.Time `json:"approved_at,omitempty"`
-	CreatedAt         time.Time  `json:"created_at"`
-	UpdatedAt         *time.Time `json:"updated_at,omitempty"`
-	DeletedAt         *time.Time `json:"deleted_at,omitempty"`
+	ID                  uuid.UUID  `json:"id"`
+	Username            string     `json:"username"`
+	Email               string     `json:"email"`
+	PasswordHash        string     `json:"-"` // Never expose
+	ProfilePictureURL   *string    `json:"profile_picture_url,omitempty"`
+	Bio                 *string    `json:"bio,omitempty"`
+	IsAdmin             bool       `json:"is_admin"`
+	TotpEnabled         bool       `json:"-"`
+	TotpSecretEncrypted []byte     `json:"-"`
+	ApprovedAt          *time.Time `json:"approved_at,omitempty"`
+	CreatedAt           time.Time  `json:"created_at"`
+	UpdatedAt           *time.Time `json:"updated_at,omitempty"`
+	DeletedAt           *time.Time `json:"deleted_at,omitempty"`
 }
 
 // RegisterRequest represents the registration request body
@@ -40,6 +42,7 @@ type RegisterResponse struct {
 type LoginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+	TOTPCode string `json:"totp_code,omitempty"`
 }
 
 // LoginResponse represents the login response
