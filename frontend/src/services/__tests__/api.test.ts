@@ -10,7 +10,8 @@ beforeEach(() => {
 });
 
 describe('api client', () => {
-  const findCall = (path: string) => fetchMock.mock.calls.find(([url]) => (url as string).includes(path));
+  const findCall = (path: string) =>
+    fetchMock.mock.calls.find(([url]) => (url as string).includes(path));
 
   it('returns parsed JSON on success', async () => {
     fetchMock.mockResolvedValue({
@@ -24,11 +25,17 @@ describe('api client', () => {
   });
 
   it('returns empty object on 204', async () => {
-    fetchMock.mockResolvedValue({
-      ok: true,
-      status: 204,
-      json: vi.fn(),
-    });
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue({ token: 'csrf-token' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 204,
+        json: vi.fn(),
+      });
 
     const response = await api.delete('/noop');
     expect(response).toEqual({});

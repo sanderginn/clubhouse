@@ -121,22 +121,22 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      const errorData: ApiError = await response.json().catch(() => ({
-        error: 'An unexpected error occurred',
-        code: 'UNKNOWN_ERROR',
-      }));
-
+      const errorData: ApiError | null = await response.json().catch(() => null);
       if (
         retry &&
         this.shouldAttachCsrf(method, endpoint) &&
-        (response.status === 403 || response.status === 419 || CSRF_ERROR_CODES.has(errorData.code))
+        (response.status === 403 ||
+          response.status === 419 ||
+          (errorData?.code ? CSRF_ERROR_CODES.has(errorData.code) : false))
       ) {
         await this.refreshCsrfToken();
         return this.request<T>(endpoint, options, false);
       }
 
-      const error = new Error(errorData.error) as Error & { code?: string };
-      error.code = errorData.code;
+      const error = new Error(errorData?.error ?? 'An unexpected error occurred') as Error & {
+        code?: string;
+      };
+      error.code = errorData?.code ?? 'UNKNOWN_ERROR';
       throw error;
     }
 
