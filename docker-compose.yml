@@ -51,7 +51,7 @@ services:
 
   # Prometheus (Metrics)
   prometheus:
-    image: prom/prometheus:2.54.1
+    image: prom/prometheus:v2.54.1
     container_name: clubhouse-prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -110,6 +110,8 @@ services:
     build:
       context: ./backend
     container_name: clubhouse-backend
+    env_file:
+      - .env
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_PORT: "5432"
