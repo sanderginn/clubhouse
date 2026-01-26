@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import './styles/globals.css';
   import { Layout, PostForm, SectionFeed, SearchBar, SearchResults, InstallPrompt } from './components';
-  import { Login, Register, AdminPanel } from './routes';
+  import { Login, Register, AdminPanel, PasswordReset } from './routes';
   import {
     authStore,
     isAuthenticated,
@@ -15,21 +15,40 @@
     pwaStore,
   } from './stores';
 
-  let authPage: 'login' | 'register' = 'login';
+  let unauthRoute: 'login' | 'register' | 'reset' = 'login';
+  let resetToken: string | null = null;
 
   onMount(() => {
     authStore.checkSession();
     sectionStore.loadSections();
     websocketStore.init();
     pwaStore.init();
+    syncRouteFromLocation();
   });
 
   onDestroy(() => {
     websocketStore.cleanup();
   });
 
+  function syncRouteFromLocation() {
+    if (typeof window === 'undefined') return;
+    const path = window.location.pathname;
+    if (path === '/reset' || path.startsWith('/reset/')) {
+      unauthRoute = 'reset';
+      const url = new URL(window.location.href);
+      resetToken = url.searchParams.get('token');
+      return;
+    }
+    resetToken = null;
+    unauthRoute = 'login';
+  }
+
   function handleNavigate(page: 'login' | 'register') {
-    authPage = page;
+    unauthRoute = page;
+    resetToken = null;
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', '/');
+    }
   }
 </script>
 
@@ -54,7 +73,9 @@
     </div>
   </div>
 {:else if !$isAuthenticated}
-  {#if authPage === 'login'}
+  {#if unauthRoute === 'reset'}
+    <PasswordReset token={resetToken} onNavigate={handleNavigate} />
+  {:else if unauthRoute === 'login'}
     <Login onNavigate={handleNavigate} />
   {:else}
     <Register onNavigate={handleNavigate} />
