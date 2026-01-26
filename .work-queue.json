@@ -2260,16 +2260,18 @@
     {
       "issue_number": 236,
       "title": "Tests: Add PostService unit coverage (create/delete/restore)",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769457703-95233",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769457703-95233",
       "dependencies": [],
       "phase": "feature",
       "labels": [
         "enhancement",
         "backend",
         "posts"
-      ]
+      ],
+      "branch": "feat/issue-236-tests-add-postservice-unit-coverage-crea",
+      "claimed_at": "2026-01-26T20:01:43Z"
     },
     {
       "issue_number": 237,
