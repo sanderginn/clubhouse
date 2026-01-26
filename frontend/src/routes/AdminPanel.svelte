@@ -2,14 +2,20 @@
   import { fade, fly } from 'svelte/transition';
   import PendingUsers from '../components/admin/PendingUsers.svelte';
   import AuditLogs from '../components/admin/AuditLogs.svelte';
+  import UserResetLinks from '../components/admin/UserResetLinks.svelte';
 
-  type AdminTab = 'pending' | 'audit';
+  type AdminTab = 'pending' | 'users' | 'audit';
 
   const tabs: { id: AdminTab; label: string; description: string }[] = [
     {
       id: 'pending',
       label: 'Pending Users',
       description: 'Approve or reject new member requests.',
+    },
+    {
+      id: 'users',
+      label: 'Members',
+      description: 'Manage approved users and generate reset links.',
     },
     {
       id: 'audit',
@@ -82,6 +88,10 @@
       {#if activeTab === 'pending'}
         <div transition:fade>
           <PendingUsers />
+        </div>
+      {:else if activeTab === 'users'}
+        <div transition:fade>
+          <UserResetLinks />
         </div>
       {:else}
         <div transition:fade>
