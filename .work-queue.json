@@ -2292,16 +2292,18 @@
     {
       "issue_number": 238,
       "title": "Docs: Add password reset flow + endpoints to DESIGN.md/README",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769457943-7335",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769457943-7335",
       "dependencies": [],
       "phase": "feature",
       "labels": [
         "documentation",
         "auth",
         "admin"
-      ]
+      ],
+      "branch": "feat/issue-238-docs-add-password-reset-flow-endpoints-t",
+      "claimed_at": "2026-01-26T20:05:43Z"
     },
     {
       "issue_number": 239,
