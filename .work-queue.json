@@ -2183,9 +2183,9 @@
     {
       "issue_number": 206,
       "title": "Auth: Admin TOTP UI + login challenge (frontend)",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769458248-19105",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769458248-19105",
       "dependencies": [
         205
       ],
@@ -2195,7 +2195,9 @@
         "frontend",
         "auth",
         "admin"
-      ]
+      ],
+      "branch": "feat/issue-206-auth-admin-totp-ui-login-challenge-front",
+      "claimed_at": "2026-01-26T20:10:48Z"
     },
     {
       "issue_number": 232,
