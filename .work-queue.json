@@ -2170,6 +2170,130 @@
         "auth",
         "admin"
       ]
+    },
+    {
+      "issue_number": 232,
+      "title": "Observability: Trace WebSocket messages + add message/subscription metrics",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "phase6",
+      "labels": [
+        "enhancement",
+        "backend",
+        "websocket"
+      ]
+    },
+    {
+      "issue_number": 233,
+      "title": "Observability: Add missing business metrics (reactions, deletes, notifications, link fetch)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "phase6",
+      "labels": [
+        "enhancement",
+        "backend"
+      ]
+    },
+    {
+      "issue_number": 234,
+      "title": "Tests: Add handler coverage for notification endpoints",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "backend",
+        "notifications"
+      ]
+    },
+    {
+      "issue_number": 235,
+      "title": "Tests: Add WebSocket handler coverage (origin + subscribe + dispatch)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "backend",
+        "websocket"
+      ]
+    },
+    {
+      "issue_number": 236,
+      "title": "Tests: Add PostService unit coverage (create/delete/restore)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "backend",
+        "posts"
+      ]
+    },
+    {
+      "issue_number": 237,
+      "title": "Docs: Align API response format in DESIGN.md with implementation",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "documentation"
+      ]
+    },
+    {
+      "issue_number": 238,
+      "title": "Docs: Add password reset flow + endpoints to DESIGN.md/README",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "documentation",
+        "auth",
+        "admin"
+      ]
+    },
+    {
+      "issue_number": 239,
+      "title": "Security: Add rate limiting for content creation/write endpoints",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "backend",
+        "posts",
+        "comments"
+      ]
+    },
+    {
+      "issue_number": 240,
+      "title": "Security: Harden WebSocket origin validation (no Host header trust)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "backend",
+        "websocket"
+      ]
     }
   ]
 }
