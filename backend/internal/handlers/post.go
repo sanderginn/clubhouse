@@ -21,6 +21,7 @@ type PostHandler struct {
 	userService *services.UserService
 	notify      *services.NotificationService
 	redis       *redis.Client
+	rateLimiter contentRateLimiter
 }
 
 // NewPostHandler creates a new post handler
@@ -30,6 +31,7 @@ func NewPostHandler(db *sql.DB, redisClient *redis.Client, pushService *services
 		userService: services.NewUserService(db),
 		notify:      services.NewNotificationService(db, pushService),
 		redis:       redisClient,
+		rateLimiter: services.NewPostRateLimiter(redisClient),
 	}
 }
 
@@ -44,6 +46,10 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	userID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil {
 		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
+		return
+	}
+
+	if !checkContentRateLimit(r.Context(), w, h.rateLimiter, userID.String()) {
 		return
 	}
 
