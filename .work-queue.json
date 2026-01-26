@@ -116,7 +116,8 @@
     201,
     202,
     203,
-    204
+    204,
+    232
   ],
   "issues": [
     {
@@ -2188,7 +2189,7 @@
     {
       "issue_number": 232,
       "title": "Observability: Trace WebSocket messages + add message/subscription metrics",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769457078-77265",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769457078-77265",
       "dependencies": [],
@@ -2199,7 +2200,9 @@
         "websocket"
       ],
       "branch": "feat/issue-232-observability-trace-websocket-messages-a",
-      "claimed_at": "2026-01-26T19:51:18Z"
+      "claimed_at": "2026-01-26T19:51:18Z",
+      "pr_number": 244,
+      "completed_at": "2026-01-26T19:58:43Z"
     },
     {
       "issue_number": 233,
