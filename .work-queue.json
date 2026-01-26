@@ -118,7 +118,8 @@
     202,
     203,
     204,
-    232
+    232,
+    234
   ],
   "issues": [
     {
@@ -2225,7 +2226,7 @@
     {
       "issue_number": 234,
       "title": "Tests: Add handler coverage for notification endpoints",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769457326-85109",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769457326-85109",
       "dependencies": [],
@@ -2236,7 +2237,8 @@
         "notifications"
       ],
       "branch": "feat/issue-234-tests-add-handler-coverage-for-notificat",
-      "claimed_at": "2026-01-26T19:55:26Z"
+      "claimed_at": "2026-01-26T19:55:26Z",
+      "completed_at": "2026-01-26T19:59:52Z"
     },
     {
       "issue_number": 235,
