@@ -40,6 +40,7 @@ function createAuthStore() {
       } catch {
         // Ignore errors - we're logging out anyway
       }
+      api.clearCsrfToken();
       set({ user: null, isLoading: false });
     },
     checkSession: async () => {
@@ -55,8 +56,10 @@ function createAuthStore() {
           isAdmin: response.is_admin,
         };
         set({ user, isLoading: false });
+        void api.prefetchCsrfToken();
         return true;
       } catch {
+        api.clearCsrfToken();
         set({ user: null, isLoading: false });
         return false;
       }

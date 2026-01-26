@@ -4,6 +4,10 @@ import type { ApiComment } from '../stores/commentMapper';
 import { mapApiPost, type ApiPost } from '../stores/postMapper';
 
 const API_BASE = '/api/v1';
+const CSRF_ENDPOINT = '/auth/csrf';
+const CSRF_HEADER = 'X-CSRF-Token';
+const CSRF_EXEMPT_ENDPOINTS = new Set(['/auth/login', '/auth/register']);
+const CSRF_ERROR_CODES = new Set(['CSRF_TOKEN_REQUIRED', 'INVALID_CSRF_TOKEN']);
 
 interface ApiError {
   error: string;
@@ -19,23 +23,114 @@ interface ApiResponse<T> {
 }
 
 class ApiClient {
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  private csrfToken: string | null = null;
+  private csrfTokenPromise: Promise<string | null> | null = null;
+
+  private isMutation(method: string): boolean {
+    return ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
+  }
+
+  private shouldAttachCsrf(method: string, endpoint: string): boolean {
+    return this.isMutation(method) && !CSRF_EXEMPT_ENDPOINTS.has(endpoint);
+  }
+
+  private async fetchCsrfToken(): Promise<string | null> {
+    try {
+      const response = await fetch(`${API_BASE}${CSRF_ENDPOINT}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const data: { token?: string; csrf_token?: string; csrfToken?: string } | null =
+        await response.json().catch(() => null);
+      const token = data?.token ?? data?.csrf_token ?? data?.csrfToken ?? null;
+      if (typeof token === 'string' && token.length > 0) {
+        this.csrfToken = token;
+        return token;
+      }
+    } catch {
+      return null;
+    }
+
+    return null;
+  }
+
+  private async ensureCsrfToken(): Promise<string | null> {
+    if (this.csrfToken) {
+      return this.csrfToken;
+    }
+
+    if (this.csrfTokenPromise) {
+      return this.csrfTokenPromise;
+    }
+
+    this.csrfTokenPromise = this.fetchCsrfToken().finally(() => {
+      this.csrfTokenPromise = null;
+    });
+    return this.csrfTokenPromise;
+  }
+
+  private async refreshCsrfToken(): Promise<string | null> {
+    this.csrfToken = null;
+    this.csrfTokenPromise = null;
+    return this.ensureCsrfToken();
+  }
+
+  clearCsrfToken(): void {
+    this.csrfToken = null;
+    this.csrfTokenPromise = null;
+  }
+
+  async prefetchCsrfToken(): Promise<void> {
+    await this.ensureCsrfToken();
+  }
+
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {},
+    retry = true
+  ): Promise<T> {
     const url = `${API_BASE}${endpoint}`;
+    const method = (options.method ?? 'GET').toUpperCase();
+    const headers = new Headers(options.headers ?? {});
+    headers.set('Content-Type', 'application/json');
+
+    if (this.shouldAttachCsrf(method, endpoint)) {
+      const csrfToken = await this.ensureCsrfToken();
+      if (csrfToken) {
+        headers.set(CSRF_HEADER, csrfToken);
+      }
+    }
+
     const response = await fetch(url, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
+      method,
+      headers,
       credentials: 'include',
     });
 
     if (!response.ok) {
-      const errorData: ApiError = await response.json().catch(() => ({
-        error: 'An unexpected error occurred',
-        code: 'UNKNOWN_ERROR',
-      }));
-      throw new Error(errorData.error);
+      const errorData: ApiError | null = await response.json().catch(() => null);
+      if (
+        retry &&
+        this.shouldAttachCsrf(method, endpoint) &&
+        (response.status === 403 ||
+          response.status === 419 ||
+          (errorData?.code ? CSRF_ERROR_CODES.has(errorData.code) : false))
+      ) {
+        await this.refreshCsrfToken();
+        return this.request<T>(endpoint, options, false);
+      }
+
+      const errorMessage = errorData?.error ?? 'An unexpected error occurred';
+      throw new Error(errorMessage);
     }
 
     if (response.status === 204) {

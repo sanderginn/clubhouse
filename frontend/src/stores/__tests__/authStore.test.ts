@@ -3,11 +3,15 @@ import { get } from 'svelte/store';
 
 const apiGet = vi.hoisted(() => vi.fn());
 const apiPost = vi.hoisted(() => vi.fn());
+const apiPrefetchCsrfToken = vi.hoisted(() => vi.fn());
+const apiClearCsrfToken = vi.hoisted(() => vi.fn());
 
 vi.mock('../../services/api', () => ({
   api: {
     get: apiGet,
     post: apiPost,
+    prefetchCsrfToken: apiPrefetchCsrfToken,
+    clearCsrfToken: apiClearCsrfToken,
   },
 }));
 
@@ -16,6 +20,8 @@ const { authStore, isAuthenticated, isAdmin, currentUser } = await import('../au
 beforeEach(() => {
   apiGet.mockReset();
   apiPost.mockReset();
+  apiPrefetchCsrfToken.mockReset();
+  apiClearCsrfToken.mockReset();
   authStore.setUser(null);
 });
 
@@ -43,6 +49,7 @@ describe('authStore', () => {
       bio: 'hello',
       isAdmin: true,
     });
+    expect(apiPrefetchCsrfToken).toHaveBeenCalledTimes(1);
   });
 
   it('checkSession failure clears user and returns false', async () => {
@@ -60,6 +67,7 @@ describe('authStore', () => {
     expect(result).toBe(false);
     expect(state.user).toBeNull();
     expect(state.isLoading).toBe(false);
+    expect(apiClearCsrfToken).toHaveBeenCalledTimes(1);
   });
 
   it('logout success clears user', async () => {
@@ -76,6 +84,7 @@ describe('authStore', () => {
     const state = get(authStore);
     expect(state.user).toBeNull();
     expect(state.isLoading).toBe(false);
+    expect(apiClearCsrfToken).toHaveBeenCalledTimes(1);
   });
 
   it('logout failure still clears user', async () => {
@@ -92,6 +101,7 @@ describe('authStore', () => {
     const state = get(authStore);
     expect(state.user).toBeNull();
     expect(state.isLoading).toBe(false);
+    expect(apiClearCsrfToken).toHaveBeenCalledTimes(1);
   });
 
   it('derived stores reflect auth state', () => {
