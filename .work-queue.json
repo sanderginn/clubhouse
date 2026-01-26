@@ -126,6 +126,7 @@
     236,
     237,
     238,
+    240,
     245
   ],
   "issues": [
@@ -2344,7 +2345,7 @@
     {
       "issue_number": 240,
       "title": "Security: Harden WebSocket origin validation (no Host header trust)",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769458271-21200",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769458271-21200",
       "dependencies": [],
@@ -2355,7 +2356,9 @@
         "websocket"
       ],
       "branch": "feat/issue-240-security-harden-websocket-origin-validat",
-      "claimed_at": "2026-01-26T20:11:11Z"
+      "claimed_at": "2026-01-26T20:11:11Z",
+      "pr_number": 255,
+      "completed_at": "2026-01-26T20:26:01Z"
     },
     {
       "issue_number": 245,
