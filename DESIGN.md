@@ -444,6 +444,13 @@ Response: {}
 Headers: Set-Cookie: session=; Max-Age=0
 ```
 
+**Redeem Password Reset Token**
+```
+POST /api/v1/auth/password-reset/redeem
+Body: { token, new_password }
+Response: { message }
+```
+
 #### Posts
 
 **Create Post**
@@ -691,6 +698,14 @@ Body: { linkMetadataEnabled: true }
 Response: { config: { linkMetadataEnabled: true } }
 ```
 
+**Generate Password Reset Token**
+```
+POST /api/v1/admin/password-reset/generate
+Auth: Required, Admin only
+Body: { user_id: "uuid" }
+Response: { token, user_id, expires_at }
+```
+
 **View Audit Logs**
 ```
 GET /admin/audit-logs?limit=100&cursor=log-id
@@ -715,6 +730,13 @@ Response: {
 6. **Session expires** → 30 days, auto-deleted by Redis TTL
 
 **Email policy:** Email is optional at registration. If provided, it must be valid and unique.
+
+### Password Reset (Admin Generated)
+
+1. **Admin generates token** → `POST /api/v1/admin/password-reset/generate` for an approved user.
+2. **Token TTL** → 1 hour, single-use (stored in Redis).
+3. **User redeems token** → `POST /api/v1/auth/password-reset/redeem` with `token` + `new_password`.
+4. **Logout-all** → All existing sessions for the user are invalidated after a successful reset.
 
 ### JWT (if needed internally)
 Not used for client auth. Consider for:

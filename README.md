@@ -113,7 +113,7 @@ See [DESIGN.md](DESIGN.md) for complete system design.
 
 ## Authentication
 
-Auth is username-based. Registration requires a username and password, with email optional. Login uses `username` + `password` and sets an httpOnly session cookie.
+Auth is username-based. Registration requires a username and password, with email optional. Login uses `username` + `password` and sets an httpOnly session cookie. Admins can generate one-time password reset tokens (`/api/v1/admin/password-reset/generate`) that users redeem via `/api/v1/auth/password-reset/redeem`, which invalidates all existing sessions.
 
 ## Development Guidelines
 
