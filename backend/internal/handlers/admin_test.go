@@ -42,6 +42,56 @@ func TestListPendingUsers(t *testing.T) {
 	// At minimum, confirm the response decoded successfully (test passed if we got here)
 }
 
+// TestListApprovedUsers tests listing approved users
+func TestListApprovedUsers(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	approvedID := uuid.New()
+	_, err := db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'approveduser', 'approved@example.com', '$2a$12$test', false, now(), now())
+	`, approvedID)
+	if err != nil {
+		t.Fatalf("failed to create approved user: %v", err)
+	}
+
+	_, err = db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, created_at)
+		VALUES ($1, 'pendinguser', 'pending@example.com', '$2a$12$test', false, now())
+	`, uuid.New())
+	if err != nil {
+		t.Fatalf("failed to create pending user: %v", err)
+	}
+
+	handler := NewAdminHandler(db, nil)
+
+	req := httptest.NewRequest("GET", "/api/v1/admin/users/approved", nil)
+	w := httptest.NewRecorder()
+
+	handler.ListApprovedUsers(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+	}
+
+	var approvedUsers []*models.ApprovedUser
+	if err := json.NewDecoder(w.Body).Decode(&approvedUsers); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if len(approvedUsers) != 1 {
+		t.Fatalf("expected 1 approved user, got %d", len(approvedUsers))
+	}
+
+	if approvedUsers[0].ID != approvedID {
+		t.Errorf("expected user ID %s, got %s", approvedID, approvedUsers[0].ID)
+	}
+	if approvedUsers[0].ApprovedAt.IsZero() {
+		t.Errorf("expected approved_at to be set")
+	}
+}
+
 // TestApproveUser tests approving a pending user
 func TestApproveUser(t *testing.T) {
 	db := testutil.RequireTestDB(t)

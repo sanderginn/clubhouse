@@ -271,6 +271,7 @@ func main() {
 
 	// Admin routes (protected by RequireAdmin middleware)
 	mux.Handle("/api/v1/admin/users", requireAdmin(http.HandlerFunc(adminHandler.ListPendingUsers)))
+	mux.Handle("/api/v1/admin/users/approved", requireAdmin(http.HandlerFunc(adminHandler.ListApprovedUsers)))
 	mux.Handle("/api/v1/admin/users/", requireAdminCSRF(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.URL.Path, "/approve") {
 			adminHandler.ApproveUser(w, r)
