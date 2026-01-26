@@ -135,6 +135,86 @@ func TestGetPostNotFound(t *testing.T) {
 	}
 }
 
+func TestCreatePostHandlerRateLimited(t *testing.T) {
+	limiter := &stubContentRateLimiter{allowed: false}
+	handler := &PostHandler{rateLimiter: limiter}
+
+	reqBody := models.CreatePostRequest{
+		SectionID: uuid.New().String(),
+		Content:   "Test post",
+	}
+
+	body, err := json.Marshal(reqBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	userID := uuid.New()
+	req, err := http.NewRequest("POST", "/api/v1/posts", bytes.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req = req.WithContext(createTestUserContext(req.Context(), userID, "testuser", false))
+
+	rr := httptest.NewRecorder()
+	handler.CreatePost(rr, req)
+
+	if status := rr.Code; status != http.StatusTooManyRequests {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusTooManyRequests)
+	}
+
+	if !limiter.called {
+		t.Fatalf("expected rate limiter to be called")
+	}
+	if limiter.key != userID.String() {
+		t.Fatalf("expected rate limiter key %s, got %s", userID.String(), limiter.key)
+	}
+
+	var errResp models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&errResp); err != nil {
+		t.Fatal(err)
+	}
+
+	if errResp.Code != "RATE_LIMITED" {
+		t.Errorf("handler returned wrong error code: got %v want RATE_LIMITED", errResp.Code)
+	}
+}
+
+func TestCreatePostHandlerRateLimitAllowsInvalidBody(t *testing.T) {
+	limiter := &stubContentRateLimiter{allowed: true}
+	handler := &PostHandler{rateLimiter: limiter}
+
+	userID := uuid.New()
+	req, err := http.NewRequest("POST", "/api/v1/posts", bytes.NewReader([]byte("{")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req = req.WithContext(createTestUserContext(req.Context(), userID, "testuser", false))
+
+	rr := httptest.NewRecorder()
+	handler.CreatePost(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+	}
+
+	if !limiter.called {
+		t.Fatalf("expected rate limiter to be called")
+	}
+	if limiter.key != userID.String() {
+		t.Fatalf("expected rate limiter key %s, got %s", userID.String(), limiter.key)
+	}
+
+	var errResp models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&errResp); err != nil {
+		t.Fatal(err)
+	}
+
+	if errResp.Code != "INVALID_REQUEST" {
+		t.Errorf("handler returned wrong error code: got %v want INVALID_REQUEST", errResp.Code)
+	}
+}
+
 // TestGetPostInvalidID tests with invalid post ID format
 func TestGetPostInvalidID(t *testing.T) {
 	db, _, err := setupMockDB(t)

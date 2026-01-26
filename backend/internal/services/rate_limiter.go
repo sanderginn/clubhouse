@@ -15,14 +15,21 @@ const (
 	authRateLimitIPWindowEnv         = "AUTH_RATE_LIMIT_IP_WINDOW"
 	authRateLimitIdentifierMaxEnv    = "AUTH_RATE_LIMIT_IDENTIFIER_MAX"
 	authRateLimitIdentifierWindowEnv = "AUTH_RATE_LIMIT_IDENTIFIER_WINDOW"
+	contentRateLimitPostMaxEnv       = "CONTENT_RATE_LIMIT_POST_MAX"
+	contentRateLimitPostWindowEnv    = "CONTENT_RATE_LIMIT_POST_WINDOW"
+	contentRateLimitCommentMaxEnv    = "CONTENT_RATE_LIMIT_COMMENT_MAX"
+	contentRateLimitCommentWindowEnv = "CONTENT_RATE_LIMIT_COMMENT_WINDOW"
 )
 
 const (
 	defaultAuthRateLimitIPMax         = 5
 	defaultAuthRateLimitIdentifierMax = 10
+	defaultContentRateLimitPostMax    = 5
+	defaultContentRateLimitCommentMax = 20
 )
 
 var defaultAuthRateLimitWindow = time.Minute
+var defaultContentRateLimitWindow = time.Minute
 
 // RateLimitConfig defines a simple fixed-window limit.
 type RateLimitConfig struct {
@@ -34,6 +41,12 @@ type RateLimitConfig struct {
 type AuthRateLimitConfig struct {
 	IP         RateLimitConfig
 	Identifier RateLimitConfig
+}
+
+// ContentRateLimitConfig defines limits for content creation endpoints.
+type ContentRateLimitConfig struct {
+	Post    RateLimitConfig
+	Comment RateLimitConfig
 }
 
 // RateLimiter uses Redis to enforce a fixed-window rate limit.
@@ -96,6 +109,24 @@ func NewAuthRateLimiter(redis *redis.Client) *AuthRateLimiter {
 	}
 }
 
+// NewPostRateLimiter creates a rate limiter for post creation.
+func NewPostRateLimiter(redis *redis.Client) *RateLimiter {
+	if redis == nil {
+		return nil
+	}
+	config := loadContentRateLimitConfig()
+	return NewRateLimiter(redis, "rate:content:post:", config.Post)
+}
+
+// NewCommentRateLimiter creates a rate limiter for comment creation.
+func NewCommentRateLimiter(redis *redis.Client) *RateLimiter {
+	if redis == nil {
+		return nil
+	}
+	config := loadContentRateLimitConfig()
+	return NewRateLimiter(redis, "rate:content:comment:", config.Comment)
+}
+
 // Allow checks the IP and identifier rate limits.
 func (l *AuthRateLimiter) Allow(ctx context.Context, ip string, identifiers []string) (bool, error) {
 	if l == nil {
@@ -133,6 +164,19 @@ func loadAuthRateLimitConfig() AuthRateLimitConfig {
 		Identifier: RateLimitConfig{
 			Limit:  readIntEnv(authRateLimitIdentifierMaxEnv, defaultAuthRateLimitIdentifierMax),
 			Window: readDurationEnv(authRateLimitIdentifierWindowEnv, defaultAuthRateLimitWindow),
+		},
+	}
+}
+
+func loadContentRateLimitConfig() ContentRateLimitConfig {
+	return ContentRateLimitConfig{
+		Post: RateLimitConfig{
+			Limit:  readIntEnv(contentRateLimitPostMaxEnv, defaultContentRateLimitPostMax),
+			Window: readDurationEnv(contentRateLimitPostWindowEnv, defaultContentRateLimitWindow),
+		},
+		Comment: RateLimitConfig{
+			Limit:  readIntEnv(contentRateLimitCommentMaxEnv, defaultContentRateLimitCommentMax),
+			Window: readDurationEnv(contentRateLimitCommentWindowEnv, defaultContentRateLimitWindow),
 		},
 	}
 }

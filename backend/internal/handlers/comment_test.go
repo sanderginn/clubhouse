@@ -107,6 +107,86 @@ func TestCreateCommentHandlerMissingUserID(t *testing.T) {
 	}
 }
 
+func TestCreateCommentHandlerRateLimited(t *testing.T) {
+	limiter := &stubContentRateLimiter{allowed: false}
+	handler := &CommentHandler{rateLimiter: limiter}
+
+	reqBody := models.CreateCommentRequest{
+		PostID:  uuid.New().String(),
+		Content: "Test comment",
+	}
+
+	body, err := json.Marshal(reqBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	userID := uuid.New()
+	req, err := http.NewRequest("POST", "/api/v1/comments", bytes.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req = req.WithContext(createTestUserContext(req.Context(), userID, "testuser", false))
+
+	rr := httptest.NewRecorder()
+	handler.CreateComment(rr, req)
+
+	if status := rr.Code; status != http.StatusTooManyRequests {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusTooManyRequests)
+	}
+
+	if !limiter.called {
+		t.Fatalf("expected rate limiter to be called")
+	}
+	if limiter.key != userID.String() {
+		t.Fatalf("expected rate limiter key %s, got %s", userID.String(), limiter.key)
+	}
+
+	var errResp models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&errResp); err != nil {
+		t.Fatal(err)
+	}
+
+	if errResp.Code != "RATE_LIMITED" {
+		t.Errorf("handler returned wrong error code: got %v want RATE_LIMITED", errResp.Code)
+	}
+}
+
+func TestCreateCommentHandlerRateLimitAllowsInvalidBody(t *testing.T) {
+	limiter := &stubContentRateLimiter{allowed: true}
+	handler := &CommentHandler{rateLimiter: limiter}
+
+	userID := uuid.New()
+	req, err := http.NewRequest("POST", "/api/v1/comments", bytes.NewReader([]byte("{")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req = req.WithContext(createTestUserContext(req.Context(), userID, "testuser", false))
+
+	rr := httptest.NewRecorder()
+	handler.CreateComment(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+	}
+
+	if !limiter.called {
+		t.Fatalf("expected rate limiter to be called")
+	}
+	if limiter.key != userID.String() {
+		t.Fatalf("expected rate limiter key %s, got %s", userID.String(), limiter.key)
+	}
+
+	var errResp models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&errResp); err != nil {
+		t.Fatal(err)
+	}
+
+	if errResp.Code != "INVALID_REQUEST" {
+		t.Errorf("handler returned wrong error code: got %v want INVALID_REQUEST", errResp.Code)
+	}
+}
+
 func TestCreateCommentHandlerRequestTooLarge(t *testing.T) {
 	handler := &CommentHandler{}
 
