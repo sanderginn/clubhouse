@@ -118,6 +118,7 @@
     202,
     203,
     204,
+    205,
     232,
     233,
     234,
@@ -2161,7 +2162,7 @@
     {
       "issue_number": 205,
       "title": "Auth: Add admin TOTP enrollment + verification (backend)",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769457368-87124",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769457368-87124",
       "dependencies": [
@@ -2176,7 +2177,8 @@
         "admin"
       ],
       "branch": "feat/issue-205-auth-add-admin-totp-enrollment-verificat",
-      "claimed_at": "2026-01-26T19:56:08Z"
+      "claimed_at": "2026-01-26T19:56:08Z",
+      "completed_at": "2026-01-26T20:08:56Z"
     },
     {
       "issue_number": 206,
