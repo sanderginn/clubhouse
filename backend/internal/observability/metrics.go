@@ -19,6 +19,18 @@ type metrics struct {
 	websocketDisconnectsTotal metric.Int64Counter
 	postsCreated              metric.Int64Counter
 	commentsCreated           metric.Int64Counter
+	reactionsAdded            metric.Int64Counter
+	reactionsRemoved          metric.Int64Counter
+	postsDeleted              metric.Int64Counter
+	postsRestored             metric.Int64Counter
+	commentsDeleted           metric.Int64Counter
+	commentsRestored          metric.Int64Counter
+	notificationsCreated      metric.Int64Counter
+	notificationsDelivered    metric.Int64Counter
+	notificationsFailed       metric.Int64Counter
+	linkMetadataFetchAttempts metric.Int64Counter
+	linkMetadataFetchSuccess  metric.Int64Counter
+	linkMetadataFetchFailures metric.Int64Counter
 }
 
 var (
@@ -96,6 +108,114 @@ func initMetrics() error {
 			return
 		}
 
+		reactionsAdded, err := meter.Int64Counter(
+			"clubhouse.reactions.added",
+			metric.WithDescription("Number of reactions added"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		reactionsRemoved, err := meter.Int64Counter(
+			"clubhouse.reactions.removed",
+			metric.WithDescription("Number of reactions removed"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		postsDeleted, err := meter.Int64Counter(
+			"clubhouse.posts.deleted",
+			metric.WithDescription("Number of posts deleted"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		postsRestored, err := meter.Int64Counter(
+			"clubhouse.posts.restored",
+			metric.WithDescription("Number of posts restored"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		commentsDeleted, err := meter.Int64Counter(
+			"clubhouse.comments.deleted",
+			metric.WithDescription("Number of comments deleted"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		commentsRestored, err := meter.Int64Counter(
+			"clubhouse.comments.restored",
+			metric.WithDescription("Number of comments restored"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		notificationsCreated, err := meter.Int64Counter(
+			"clubhouse.notifications.created",
+			metric.WithDescription("Number of notifications created"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		notificationsDelivered, err := meter.Int64Counter(
+			"clubhouse.notifications.delivered",
+			metric.WithDescription("Number of notifications delivered"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		notificationsFailed, err := meter.Int64Counter(
+			"clubhouse.notifications.delivery_failed",
+			metric.WithDescription("Number of notification delivery failures"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		linkMetadataFetchAttempts, err := meter.Int64Counter(
+			"clubhouse.links.metadata.fetch.attempts",
+			metric.WithDescription("Number of link metadata fetch attempts"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		linkMetadataFetchSuccess, err := meter.Int64Counter(
+			"clubhouse.links.metadata.fetch.success",
+			metric.WithDescription("Number of successful link metadata fetches"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		linkMetadataFetchFailures, err := meter.Int64Counter(
+			"clubhouse.links.metadata.fetch.failures",
+			metric.WithDescription("Number of failed link metadata fetches"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
 		metricsInstance = &metrics{
 			httpRequestCount:          httpRequestCount,
 			httpRequestDuration:       httpRequestDuration,
@@ -104,6 +224,18 @@ func initMetrics() error {
 			websocketDisconnectsTotal: websocketDisconnectsTotal,
 			postsCreated:              postsCreated,
 			commentsCreated:           commentsCreated,
+			reactionsAdded:            reactionsAdded,
+			reactionsRemoved:          reactionsRemoved,
+			postsDeleted:              postsDeleted,
+			postsRestored:             postsRestored,
+			commentsDeleted:           commentsDeleted,
+			commentsRestored:          commentsRestored,
+			notificationsCreated:      notificationsCreated,
+			notificationsDelivered:    notificationsDelivered,
+			notificationsFailed:       notificationsFailed,
+			linkMetadataFetchAttempts: linkMetadataFetchAttempts,
+			linkMetadataFetchSuccess:  linkMetadataFetchSuccess,
+			linkMetadataFetchFailures: linkMetadataFetchFailures,
 		}
 	})
 
@@ -167,4 +299,130 @@ func RecordCommentCreated(ctx context.Context) {
 		return
 	}
 	m.commentsCreated.Add(ctx, 1)
+}
+
+// RecordReactionAdded increments the reaction added counter.
+func RecordReactionAdded(ctx context.Context, target string) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.reactionsAdded.Add(ctx, 1, metric.WithAttributes(attribute.String("target", target)))
+}
+
+// RecordReactionRemoved increments the reaction removed counter.
+func RecordReactionRemoved(ctx context.Context, target string) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.reactionsRemoved.Add(ctx, 1, metric.WithAttributes(attribute.String("target", target)))
+}
+
+// RecordPostDeleted increments the post deleted counter.
+func RecordPostDeleted(ctx context.Context) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.postsDeleted.Add(ctx, 1)
+}
+
+// RecordPostRestored increments the post restored counter.
+func RecordPostRestored(ctx context.Context) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.postsRestored.Add(ctx, 1)
+}
+
+// RecordCommentDeleted increments the comment deleted counter.
+func RecordCommentDeleted(ctx context.Context) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.commentsDeleted.Add(ctx, 1)
+}
+
+// RecordCommentRestored increments the comment restored counter.
+func RecordCommentRestored(ctx context.Context) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.commentsRestored.Add(ctx, 1)
+}
+
+// RecordNotificationsCreated increments the notification created counter.
+func RecordNotificationsCreated(ctx context.Context, notificationType string, count int64) {
+	if count <= 0 {
+		return
+	}
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.notificationsCreated.Add(ctx, count, metric.WithAttributes(attribute.String("type", notificationType)))
+}
+
+// RecordNotificationDelivered increments the notification delivered counter.
+func RecordNotificationDelivered(ctx context.Context, channel string, count int64) {
+	if count <= 0 {
+		return
+	}
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.notificationsDelivered.Add(ctx, count, metric.WithAttributes(attribute.String("channel", channel)))
+}
+
+// RecordNotificationDeliveryFailed increments the notification delivery failure counter.
+func RecordNotificationDeliveryFailed(ctx context.Context, channel string, count int64) {
+	if count <= 0 {
+		return
+	}
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.notificationsFailed.Add(ctx, count, metric.WithAttributes(attribute.String("channel", channel)))
+}
+
+// RecordLinkMetadataFetchAttempt increments the link metadata fetch attempt counter.
+func RecordLinkMetadataFetchAttempt(ctx context.Context, count int64) {
+	if count <= 0 {
+		return
+	}
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.linkMetadataFetchAttempts.Add(ctx, count)
+}
+
+// RecordLinkMetadataFetchSuccess increments the link metadata fetch success counter.
+func RecordLinkMetadataFetchSuccess(ctx context.Context, count int64) {
+	if count <= 0 {
+		return
+	}
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.linkMetadataFetchSuccess.Add(ctx, count)
+}
+
+// RecordLinkMetadataFetchFailure increments the link metadata fetch failure counter.
+func RecordLinkMetadataFetchFailure(ctx context.Context, count int64) {
+	if count <= 0 {
+		return
+	}
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.linkMetadataFetchFailures.Add(ctx, count)
 }

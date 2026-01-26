@@ -194,6 +194,10 @@ func (h *WebSocketHandler) writeLoop(ctx context.Context, wsConn *wsConnection) 
 			return
 		}
 
+		if strings.HasSuffix(msg.Channel, ":notifications") {
+			observability.RecordNotificationDelivered(ctx, "websocket", 1)
+		}
+
 		payload := []byte(msg.Payload)
 		if !json.Valid(payload) {
 			payload = h.wrapPayload(msg.Payload)
