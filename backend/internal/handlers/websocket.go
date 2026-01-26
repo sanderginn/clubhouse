@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -22,16 +23,17 @@ import (
 )
 
 const (
-	wsReadLimit   = 64 * 1024
-	wsPongWait    = 60 * time.Second
-	wsPingPeriod  = 50 * time.Second
-	wsWriteWait   = 10 * time.Second
-	wsSubscribe   = "subscribe"
-	wsUnsubscribe = "unsubscribe"
-	wsPing        = "ping"
-	userMentions  = "user:%s:mentions"
-	userNotify    = "user:%s:notifications"
-	sectionPrefix = "section:%s"
+	wsReadLimit          = 64 * 1024
+	wsPongWait           = 60 * time.Second
+	wsPingPeriod         = 50 * time.Second
+	wsWriteWait          = 10 * time.Second
+	wsSubscribe          = "subscribe"
+	wsUnsubscribe        = "unsubscribe"
+	wsPing               = "ping"
+	userMentions         = "user:%s:mentions"
+	userNotify           = "user:%s:notifications"
+	sectionPrefix        = "section:%s"
+	wsOriginAllowlistEnv = "WS_ORIGIN_ALLOWLIST"
 )
 
 // WebSocket spans:
@@ -372,45 +374,101 @@ func (h *WebSocketHandler) startMessageSpan(ctx context.Context, wsConn *wsConne
 }
 
 func sameOrigin(r *http.Request) bool {
-	origin := r.Header.Get("Origin")
+	origin := strings.TrimSpace(r.Header.Get("Origin"))
 	ctx := r.Context()
+	sanitized := sanitizeOrigin(origin)
 
 	observability.LogInfo(ctx, "WebSocket origin check",
-		"origin", origin,
-		"host", r.Host)
+		"origin", sanitized)
 
 	if origin == "" {
-		observability.LogInfo(ctx, "WebSocket origin check failed: empty origin")
+		observability.LogInfo(ctx, "WebSocket origin denied: empty origin")
 		return false
 	}
 	u, err := url.Parse(origin)
-	if err != nil {
-		observability.LogInfo(ctx, "WebSocket origin check failed: parse error", "error", err.Error())
+	if err != nil || u.Host == "" || u.Scheme == "" {
+		observability.LogInfo(ctx, "WebSocket origin denied: parse error", "origin", sanitized)
 		return false
 	}
 
-	// Allow same origin
-	if strings.EqualFold(u.Host, r.Host) {
-		observability.LogInfo(ctx, "WebSocket origin check passed: same origin")
+	originHost := strings.ToLower(u.Host)
+	if allowedOrigin(originHost) {
+		observability.LogInfo(ctx, "WebSocket origin allowed", "origin", sanitized, "origin_host", originHost)
 		return true
 	}
 
-	// Allow localhost:5173 in development (Vite dev server)
-	// This covers both local development and Docker Compose frontend
-	if strings.HasPrefix(u.Host, "localhost:5173") || u.Host == "127.0.0.1:5173" {
-		observability.LogInfo(ctx, "WebSocket origin check passed: localhost:5173")
-		return true
-	}
-
-	// Allow any origin in development when Host is backend:8080 (Docker Compose)
-	// This is safe because in production, the backend won't be accessible at "backend:8080"
-	if strings.Contains(r.Host, "backend:8080") || strings.Contains(r.Host, "localhost:8080") || strings.Contains(r.Host, "127.0.0.1:8080") {
-		observability.LogInfo(ctx, "WebSocket origin check passed: development backend host")
-		return true
-	}
-
-	observability.LogInfo(ctx, "WebSocket origin check failed: origin not allowed", "origin_host", u.Host)
+	observability.LogInfo(ctx, "WebSocket origin denied", "origin", sanitized, "origin_host", originHost)
 	return false
+}
+
+func allowedOrigin(originHost string) bool {
+	allowlist := websocketOriginAllowlist()
+	_, ok := allowlist[originHost]
+	return ok
+}
+
+func websocketOriginAllowlist() map[string]struct{} {
+	raw := strings.TrimSpace(os.Getenv(wsOriginAllowlistEnv))
+	var entries []string
+	if raw == "" {
+		entries = []string{"localhost:5173", "127.0.0.1:5173", "frontend:5173"}
+	} else {
+		entries = strings.Split(raw, ",")
+	}
+
+	allowlist := make(map[string]struct{}, len(entries))
+	for _, entry := range entries {
+		host := normalizeOriginHost(entry)
+		if host == "" {
+			continue
+		}
+		allowlist[host] = struct{}{}
+	}
+	return allowlist
+}
+
+func normalizeOriginHost(entry string) string {
+	entry = strings.TrimSpace(entry)
+	if entry == "" {
+		return ""
+	}
+	if strings.Contains(entry, "://") {
+		parsed, err := url.Parse(entry)
+		if err != nil || parsed.Host == "" {
+			return ""
+		}
+		return strings.ToLower(parsed.Host)
+	}
+
+	if slash := strings.Index(entry, "/"); slash >= 0 {
+		entry = entry[:slash]
+	}
+	if entry == "" {
+		return ""
+	}
+	return strings.ToLower(entry)
+}
+
+func sanitizeOrigin(origin string) string {
+	origin = strings.TrimSpace(origin)
+	if origin == "" {
+		return ""
+	}
+	parsed, err := url.Parse(origin)
+	if err != nil || parsed.Host == "" {
+		return truncateString(origin, 200)
+	}
+	if parsed.Scheme == "" {
+		return parsed.Host
+	}
+	return parsed.Scheme + "://" + parsed.Host
+}
+
+func truncateString(value string, max int) string {
+	if max <= 0 || len(value) <= max {
+		return value
+	}
+	return value[:max]
 }
 
 type wsMessage struct {
