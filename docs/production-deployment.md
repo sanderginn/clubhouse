@@ -185,6 +185,7 @@ The backup/restore scripts source `.env.production` automatically when present.
 - Traces: OTLP gRPC -> Tempo (`OTEL_EXPORTER_OTLP_ENDPOINT=tempo:4317`)
 - Logs: OTLP HTTP -> Loki (`OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://loki:3100/otlp/v1/logs`)
 - Metrics: `/metrics` scraped by Prometheus
+- Retention: 7 days of traces (`tempo.yml`), 14 days of logs (`loki.yml`), and 30 days of metrics (`--storage.tsdb.retention.time=30d`)
 
 Grafana dashboards are provisioned from `grafana/dashboards`.
 

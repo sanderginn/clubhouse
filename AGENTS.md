@@ -115,7 +115,7 @@ clubhouse/
 - **All three OTel signals**: traces, metrics, logs
 - **Trace every request** (no sampling for small scale)
 - **Direct OTLP export** to Grafana Stack
-- **Retention** follows service configs (see `tempo.yml`, `prometheus.yml`, and Loki defaults)
+- **Retention** follows service configs (see `tempo.yml`, `prometheus.yml`, and `loki.yml`)
 
 ## Common Tasks
 
