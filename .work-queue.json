@@ -2309,7 +2309,8 @@
       ],
       "branch": "feat/issue-238-docs-add-password-reset-flow-endpoints-t",
       "claimed_at": "2026-01-26T20:05:43Z",
-      "completed_at": "2026-01-26T20:07:18Z"
+      "completed_at": "2026-01-26T20:08:37Z",
+      "pr_number": 251
     },
     {
       "issue_number": 239,
