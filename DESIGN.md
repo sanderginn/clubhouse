@@ -1056,9 +1056,9 @@ If disabled:
 - **Exporters:** OTLP to Grafana Loki
 
 ### Retention & Storage
-- **Traces:** Tempo local config uses `compacted_block_retention: 10m` (see `tempo.yml`)
-- **Metrics:** Prometheus uses default retention unless overridden (scrape interval: 15s in `prometheus.yml`)
-- **Logs:** Loki uses its default local config unless overridden
+- **Traces:** 7 days (Tempo `compacted_block_retention: 168h` in `tempo.yml`) to keep recent incident context without growing trace storage too fast.
+- **Metrics:** 30 days (Prometheus `--storage.tsdb.retention.time=30d` in `docker-compose*.yml`) for short-term trends and capacity checks.
+- **Logs:** 14 days (Loki `limits_config.retention_period: 336h` in `loki.yml`) to cover typical debugging windows while keeping disk bounded.
 
 ### Local Development
 ```yaml

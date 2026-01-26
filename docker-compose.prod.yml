@@ -109,8 +109,9 @@ services:
     image: grafana/loki:3.0.1
     container_name: clubhouse-loki
     restart: unless-stopped
-    command: -config.file=/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/loki.yml
     volumes:
+      - ./loki.yml:/etc/loki/loki.yml:ro
       - loki_data:/loki
     networks:
       - clubhouse
@@ -122,6 +123,7 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
