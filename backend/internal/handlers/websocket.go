@@ -15,6 +15,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/observability"
@@ -27,9 +28,18 @@ const (
 	wsWriteWait   = 10 * time.Second
 	wsSubscribe   = "subscribe"
 	wsUnsubscribe = "unsubscribe"
+	wsPing        = "ping"
 	userMentions  = "user:%s:mentions"
 	userNotify    = "user:%s:notifications"
 	sectionPrefix = "section:%s"
+)
+
+// WebSocket spans:
+// - websocket.message.receive (attrs: user_id, message_type)
+// - websocket.message.send (attrs: user_id, message_type, channel)
+const (
+	wsSpanMessageReceive = "websocket.message.receive"
+	wsSpanMessageSend    = "websocket.message.send"
 )
 
 type wsConnection struct {
@@ -38,6 +48,7 @@ type wsConnection struct {
 	subscriptions map[string]struct{}
 	writeMu       sync.Mutex
 	cancel        context.CancelFunc
+	userID        uuid.UUID
 }
 
 // WebSocketHandler manages WebSocket connections.
@@ -93,6 +104,7 @@ func (h *WebSocketHandler) HandleWS(w http.ResponseWriter, r *http.Request) {
 		conn:          conn,
 		subscriptions: make(map[string]struct{}),
 		cancel:        cancel,
+		userID:        userID,
 	}
 
 	h.registerConnection(r.Context(), userID, wsConn)
@@ -163,24 +175,46 @@ func (h *WebSocketHandler) readLoop(ctx context.Context, wsConn *wsConnection) {
 
 		var msg wsMessage
 		if err := json.Unmarshal(payload, &msg); err != nil {
+			spanCtx, span := h.startMessageSpan(ctx, wsConn, wsSpanMessageReceive, "invalid")
+			span.RecordError(err)
+			span.End()
+			observability.RecordWebsocketMessageReceived(spanCtx, "invalid")
+			observability.RecordWebsocketError(spanCtx, "invalid_message", "invalid")
 			continue
 		}
+
+		messageType := msg.Type
+		if messageType == "" {
+			messageType = "unknown"
+		}
+
+		spanCtx, span := h.startMessageSpan(ctx, wsConn, wsSpanMessageReceive, messageType)
+		observability.RecordWebsocketMessageReceived(spanCtx, messageType)
 		switch msg.Type {
 		case wsSubscribe:
 			var data subscribePayload
 			if err := json.Unmarshal(msg.Data, &data); err != nil {
+				span.RecordError(err)
+				observability.RecordWebsocketError(spanCtx, "invalid_payload", messageType)
+				span.End()
 				continue
 			}
-			h.addSubscriptions(ctx, wsConn, data.SectionIDs)
+			h.addSubscriptions(spanCtx, wsConn, data.SectionIDs, messageType)
 		case wsUnsubscribe:
 			var data subscribePayload
 			if err := json.Unmarshal(msg.Data, &data); err != nil {
+				span.RecordError(err)
+				observability.RecordWebsocketError(spanCtx, "invalid_payload", messageType)
+				span.End()
 				continue
 			}
-			h.removeSubscriptions(ctx, wsConn, data.SectionIDs)
+			h.removeSubscriptions(spanCtx, wsConn, data.SectionIDs, messageType)
+		case wsPing:
+			// Ping messages are no-ops but still traced/metriced.
 		default:
-			continue
+			// Custom event types are traced and counted; no handler yet.
 		}
+		span.End()
 	}
 }
 
@@ -195,10 +229,25 @@ func (h *WebSocketHandler) writeLoop(ctx context.Context, wsConn *wsConnection) 
 		}
 
 		payload := []byte(msg.Payload)
+		messageType := "message"
+		if json.Valid(payload) {
+			var event wsEvent
+			if err := json.Unmarshal(payload, &event); err == nil && event.Type != "" {
+				messageType = event.Type
+			} else if err != nil {
+				messageType = "unknown"
+			}
+		}
 		if !json.Valid(payload) {
 			payload = h.wrapPayload(msg.Payload)
+			messageType = "message"
 		}
+
+		spanCtx, span := h.startMessageSpan(ctx, wsConn, wsSpanMessageSend, messageType)
+		span.SetAttributes(attribute.String("channel", msg.Channel))
+		observability.RecordWebsocketMessageSent(spanCtx, messageType)
 		h.sendMessage(wsConn, payload)
+		span.End()
 	}
 }
 
@@ -253,7 +302,7 @@ func (h *WebSocketHandler) subscribeChannels(ctx context.Context, wsConn *wsConn
 	}
 }
 
-func (h *WebSocketHandler) addSubscriptions(ctx context.Context, wsConn *wsConnection, sectionIDs []string) {
+func (h *WebSocketHandler) addSubscriptions(ctx context.Context, wsConn *wsConnection, sectionIDs []string, messageType string) {
 	channels := sectionChannels(sectionIDs)
 	if len(channels) == 0 {
 		return
@@ -273,9 +322,10 @@ func (h *WebSocketHandler) addSubscriptions(ctx context.Context, wsConn *wsConne
 	for _, ch := range toSubscribe {
 		wsConn.subscriptions[ch] = struct{}{}
 	}
+	observability.RecordWebsocketSubscriptionAdded(ctx, messageType, len(toSubscribe))
 }
 
-func (h *WebSocketHandler) removeSubscriptions(ctx context.Context, wsConn *wsConnection, sectionIDs []string) {
+func (h *WebSocketHandler) removeSubscriptions(ctx context.Context, wsConn *wsConnection, sectionIDs []string, messageType string) {
 	channels := sectionChannels(sectionIDs)
 	if len(channels) == 0 {
 		return
@@ -297,6 +347,7 @@ func (h *WebSocketHandler) removeSubscriptions(ctx context.Context, wsConn *wsCo
 	for _, ch := range toUnsubscribe {
 		delete(wsConn.subscriptions, ch)
 	}
+	observability.RecordWebsocketSubscriptionRemoved(ctx, messageType, len(toUnsubscribe))
 }
 
 func (h *WebSocketHandler) addEvent(ctx context.Context, userID uuid.UUID, event string) {
@@ -304,6 +355,16 @@ func (h *WebSocketHandler) addEvent(ctx context.Context, userID uuid.UUID, event
 	_, span := tracer.Start(ctx, event)
 	span.SetAttributes(attribute.String("user_id", userID.String()))
 	span.End()
+}
+
+func (h *WebSocketHandler) startMessageSpan(ctx context.Context, wsConn *wsConnection, spanName, messageType string) (context.Context, trace.Span) {
+	tracer := otel.Tracer("clubhouse.websocket")
+	spanCtx, span := tracer.Start(ctx, spanName)
+	span.SetAttributes(
+		attribute.String("user_id", wsConn.userID.String()),
+		attribute.String("message_type", messageType),
+	)
+	return spanCtx, span
 }
 
 func sameOrigin(r *http.Request) bool {
