@@ -120,7 +120,8 @@
     204,
     232,
     233,
-    234
+    234,
+    236
   ],
   "issues": [
     {
@@ -2263,7 +2264,7 @@
     {
       "issue_number": 236,
       "title": "Tests: Add PostService unit coverage (create/delete/restore)",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769457703-95233",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769457703-95233",
       "dependencies": [],
@@ -2274,7 +2275,8 @@
         "posts"
       ],
       "branch": "feat/issue-236-tests-add-postservice-unit-coverage-crea",
-      "claimed_at": "2026-01-26T20:01:43Z"
+      "claimed_at": "2026-01-26T20:01:43Z",
+      "completed_at": "2026-01-26T20:06:47Z"
     },
     {
       "issue_number": 237,
