@@ -2223,7 +2223,8 @@
       ],
       "branch": "feat/issue-233-observability-add-missing-business-metri",
       "claimed_at": "2026-01-26T19:55:07Z",
-      "completed_at": "2026-01-26T20:02:47Z"
+      "completed_at": "2026-01-26T20:06:26Z",
+      "pr_number": 247
     },
     {
       "issue_number": 234,
