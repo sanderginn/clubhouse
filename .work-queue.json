@@ -121,6 +121,7 @@
     232,
     233,
     234,
+    235,
     236,
     238,
     245
@@ -2250,7 +2251,7 @@
     {
       "issue_number": 235,
       "title": "Tests: Add WebSocket handler coverage (origin + subscribe + dispatch)",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769457624-91679",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769457624-91679",
       "dependencies": [],
@@ -2261,7 +2262,9 @@
         "websocket"
       ],
       "branch": "feat/issue-235-tests-add-websocket-handler-coverage-ori",
-      "claimed_at": "2026-01-26T20:00:24Z"
+      "claimed_at": "2026-01-26T20:00:24Z",
+      "pr_number": 249,
+      "completed_at": "2026-01-26T20:08:47Z"
     },
     {
       "issue_number": 236,
