@@ -77,6 +77,15 @@ func TestRedeemPasswordResetToken(t *testing.T) {
 	if err != services.ErrPasswordResetTokenNotFound {
 		t.Errorf("expected token to be deleted, got %v", err)
 	}
+
+	var count int
+	err = db.QueryRow("SELECT COUNT(*) FROM auth_events WHERE event_type = 'password_reset' AND user_id = $1", userID).Scan(&count)
+	if err != nil {
+		t.Fatalf("failed to query auth event count: %v", err)
+	}
+	if count != 1 {
+		t.Errorf("expected 1 password_reset auth event, got %d", count)
+	}
 }
 
 func TestRedeemPasswordResetTokenInvalidToken(t *testing.T) {

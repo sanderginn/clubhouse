@@ -534,6 +534,139 @@ func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetAuthEvents returns auth events with pagination
+func (h *AdminHandler) GetAuthEvents(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		return
+	}
+
+	limit := 50
+	cursor := r.URL.Query().Get("cursor")
+	var cursorTimestamp *time.Time
+	var cursorID *uuid.UUID
+	if cursor != "" {
+		parts := strings.SplitN(cursor, "|", 2)
+		parsedTime, err := time.Parse(time.RFC3339Nano, parts[0])
+		if err != nil {
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid cursor format")
+			return
+		}
+		cursorTimestamp = &parsedTime
+		if len(parts) == 2 {
+			parsedID, err := uuid.Parse(parts[1])
+			if err != nil {
+				writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid cursor format")
+				return
+			}
+			cursorID = &parsedID
+		}
+	}
+
+	query := `
+		SELECT
+			e.id, e.user_id, u.username, e.identifier, e.event_type,
+			e.ip_address, e.user_agent, e.created_at
+		FROM auth_events e
+		LEFT JOIN users u ON e.user_id = u.id
+		WHERE (
+			$1::timestamp IS NULL
+			OR ($2::uuid IS NULL AND e.created_at < $1)
+			OR ($2 IS NOT NULL AND (e.created_at, e.id) < ($1, $2))
+		)
+		ORDER BY e.created_at DESC, e.id DESC
+		LIMIT $3
+	`
+
+	rows, err := h.db.QueryContext(r.Context(), query, cursorTimestamp, cursorID, limit+1)
+	if err != nil {
+		writeError(r.Context(), w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to fetch auth events")
+		return
+	}
+	defer rows.Close()
+
+	var events []*models.AuthEvent
+	for rows.Next() {
+		var event models.AuthEvent
+		var userID sql.NullString
+		var username sql.NullString
+		var identifier sql.NullString
+		var ipAddress sql.NullString
+		var userAgent sql.NullString
+		if err := rows.Scan(
+			&event.ID,
+			&userID,
+			&username,
+			&identifier,
+			&event.EventType,
+			&ipAddress,
+			&userAgent,
+			&event.CreatedAt,
+		); err != nil {
+			writeError(r.Context(), w, http.StatusInternalServerError, "SCAN_FAILED", "Failed to parse auth event")
+			return
+		}
+
+		if userID.Valid {
+			parsed, err := uuid.Parse(userID.String)
+			if err != nil {
+				writeError(r.Context(), w, http.StatusInternalServerError, "SCAN_FAILED", "Failed to parse auth event")
+				return
+			}
+			event.UserID = &parsed
+		}
+		if username.Valid {
+			name := username.String
+			event.Username = &name
+		}
+		if identifier.Valid {
+			event.Identifier = identifier.String
+		}
+		if ipAddress.Valid {
+			event.IPAddress = ipAddress.String
+		}
+		if userAgent.Valid {
+			event.UserAgent = userAgent.String
+		}
+
+		events = append(events, &event)
+	}
+
+	if err := rows.Err(); err != nil {
+		writeError(r.Context(), w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to fetch auth events")
+		return
+	}
+
+	hasMore := len(events) > limit
+	if hasMore {
+		events = events[:limit]
+	}
+
+	var nextCursor *string
+	if hasMore && len(events) > 0 {
+		lastEvent := events[len(events)-1]
+		cursorStr := lastEvent.CreatedAt.Format(time.RFC3339Nano) + "|" + lastEvent.ID.String()
+		nextCursor = &cursorStr
+	}
+
+	response := models.AuthEventLogsResponse{
+		Events:     events,
+		HasMore:    hasMore,
+		NextCursor: nextCursor,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode auth events response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}
+
 // GeneratePasswordResetToken generates a one-time password reset token for a user (admin only)
 func (h *AdminHandler) GeneratePasswordResetToken(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {

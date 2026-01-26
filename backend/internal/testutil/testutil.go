@@ -92,6 +92,7 @@ func CleanupTables(t *testing.T, db *sql.DB) {
 	// The order matters due to foreign key constraints - CASCADE handles this
 	_, err := db.Exec(`
 		TRUNCATE TABLE
+			auth_events,
 			audit_logs,
 			push_subscriptions,
 			notifications,
