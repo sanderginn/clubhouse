@@ -33,6 +33,10 @@ type authUserService interface {
 	GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error)
 }
 
+type authEventLogger interface {
+	LogEvent(ctx context.Context, event *models.AuthEventCreate) error
+}
+
 // AuthHandler handles authentication endpoints
 type AuthHandler struct {
 	userService          authUserService
@@ -41,6 +45,7 @@ type AuthHandler struct {
 	rateLimiter          authRateLimiter
 	failureTracker       authFailureTracker
 	passwordResetService *services.PasswordResetService
+	authEventService     authEventLogger
 	db                   *sql.DB
 }
 
@@ -53,6 +58,7 @@ func NewAuthHandler(db *sql.DB, redis *redis.Client) *AuthHandler {
 		rateLimiter:          services.NewAuthRateLimiter(redis),
 		failureTracker:       services.NewAuthFailureTracker(redis),
 		passwordResetService: services.NewPasswordResetService(redis),
+		authEventService:     services.NewAuthEventService(db),
 		db:                   db,
 	}
 }
@@ -161,6 +167,12 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		case "password is required":
 			writeError(r.Context(), w, http.StatusBadRequest, "PASSWORD_REQUIRED", err.Error())
 		case "invalid username or password", "user not approved":
+			h.logAuthEvent(r.Context(), &models.AuthEventCreate{
+				Identifier: req.Username,
+				EventType:  "login_failure",
+				IPAddress:  clientIP,
+				UserAgent:  r.UserAgent(),
+			})
 			locked, retryAfter, lockErr := h.registerLoginFailure(r.Context(), clientIP, identifiers)
 			if lockErr != nil {
 				observability.LogError(r.Context(), observability.ErrorLog{
@@ -218,6 +230,15 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		IsAdmin:  user.IsAdmin,
 		Message:  "Login successful",
 	}
+
+	userID := user.ID
+	h.logAuthEvent(r.Context(), &models.AuthEventCreate{
+		UserID:     &userID,
+		Identifier: user.Username,
+		EventType:  "login_success",
+		IPAddress:  clientIP,
+		UserAgent:  r.UserAgent(),
+	})
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -303,6 +324,13 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Delete session from Redis
+	var sessionUserID *uuid.UUID
+	var sessionUsername string
+	if session, err := h.sessionService.GetSession(r.Context(), cookie.Value); err == nil {
+		sessionUserID = &session.UserID
+		sessionUsername = session.Username
+	}
+
 	if err := h.sessionService.DeleteSession(r.Context(), cookie.Value); err != nil {
 		writeError(r.Context(), w, http.StatusInternalServerError, "LOGOUT_FAILED", "Failed to logout")
 		return
@@ -324,6 +352,16 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 
 	response := models.LogoutResponse{
 		Message: "Logout successful",
+	}
+
+	if sessionUserID != nil {
+		h.logAuthEvent(r.Context(), &models.AuthEventCreate{
+			UserID:     sessionUserID,
+			Identifier: sessionUsername,
+			EventType:  "logout",
+			IPAddress:  getClientIP(r),
+			UserAgent:  r.UserAgent(),
+		})
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -373,6 +411,15 @@ func (h *AuthHandler) LogoutAll(w http.ResponseWriter, r *http.Request) {
 	response := models.LogoutResponse{
 		Message: "Logout all sessions successful",
 	}
+
+	userID := session.UserID
+	h.logAuthEvent(r.Context(), &models.AuthEventCreate{
+		UserID:     &userID,
+		Identifier: session.Username,
+		EventType:  "logout_all",
+		IPAddress:  getClientIP(r),
+		UserAgent:  r.UserAgent(),
+	})
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -478,6 +525,21 @@ func filterIdentifiers(identifiers ...string) []string {
 	}
 
 	return filtered
+}
+
+func (h *AuthHandler) logAuthEvent(ctx context.Context, event *models.AuthEventCreate) {
+	if h.authEventService == nil || event == nil {
+		return
+	}
+
+	if err := h.authEventService.LogEvent(ctx, event); err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to log auth event",
+			Code:       "AUTH_EVENT_LOG_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
 }
 
 // GetCSRFToken generates and returns a new CSRF token for the authenticated user
@@ -602,6 +664,14 @@ func (h *AuthHandler) RedeemPasswordResetToken(w http.ResponseWriter, r *http.Re
 	response := models.RedeemPasswordResetTokenResponse{
 		Message: "Password reset successful",
 	}
+
+	resetUserID := resetToken.UserID
+	h.logAuthEvent(r.Context(), &models.AuthEventCreate{
+		UserID:    &resetUserID,
+		EventType: "password_reset",
+		IPAddress: getClientIP(r),
+		UserAgent: r.UserAgent(),
+	})
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

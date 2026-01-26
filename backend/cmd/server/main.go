@@ -314,6 +314,8 @@ func main() {
 
 	// Admin audit logs route
 	mux.Handle("/api/v1/admin/audit-logs", requireAdmin(http.HandlerFunc(adminHandler.GetAuditLogs)))
+	// Admin auth events route
+	mux.Handle("/api/v1/admin/auth-events", requireAdmin(http.HandlerFunc(adminHandler.GetAuthEvents)))
 
 	// Admin password reset route
 	mux.Handle("/api/v1/admin/password-reset/generate", requireAdminCSRF(http.HandlerFunc(adminHandler.GeneratePasswordResetToken)))
