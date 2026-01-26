@@ -2238,7 +2238,8 @@
       ],
       "branch": "feat/issue-234-tests-add-handler-coverage-for-notificat",
       "claimed_at": "2026-01-26T19:55:26Z",
-      "completed_at": "2026-01-26T19:59:52Z"
+      "completed_at": "2026-01-26T20:01:15Z",
+      "pr_number": 246
     },
     {
       "issue_number": 235,
