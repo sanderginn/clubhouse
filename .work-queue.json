@@ -121,7 +121,9 @@
     232,
     233,
     234,
-    236
+    236,
+    238,
+    245
   ],
   "issues": [
     {
@@ -2295,7 +2297,7 @@
     {
       "issue_number": 238,
       "title": "Docs: Add password reset flow + endpoints to DESIGN.md/README",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769457943-7335",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769457943-7335",
       "dependencies": [],
@@ -2306,7 +2308,8 @@
         "admin"
       ],
       "branch": "feat/issue-238-docs-add-password-reset-flow-endpoints-t",
-      "claimed_at": "2026-01-26T20:05:43Z"
+      "claimed_at": "2026-01-26T20:05:43Z",
+      "completed_at": "2026-01-26T20:07:18Z"
     },
     {
       "issue_number": 239,
@@ -2336,6 +2339,27 @@
         "backend",
         "websocket"
       ]
+    },
+    {
+      "issue_number": 245,
+      "title": "Fix admin approved users endpoint for reset links",
+      "status": "completed",
+      "assigned_to": "agent-1769455667-61502",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769455667-61502",
+      "dependencies": [
+        197
+      ],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "backend",
+        "admin",
+        "auth"
+      ],
+      "branch": "fix/issue-245-admin-approved-users-endpoint",
+      "claimed_at": "2026-01-26T20:02:41Z",
+      "pr_number": 248,
+      "completed_at": "2026-01-26T20:08:00Z"
     }
   ]
 }
