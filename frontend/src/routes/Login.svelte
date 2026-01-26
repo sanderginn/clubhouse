@@ -8,7 +8,6 @@
   let error = '';
   let isLoading = false;
   let needsTotp = false;
-  let challengeId: string | undefined = undefined;
 
   interface LoginResponse {
     id: string;
@@ -24,14 +23,6 @@
     message: string;
   }
 
-  interface TotpVerifyResponse {
-    id: string;
-    username: string;
-    email?: string | null;
-    is_admin: boolean;
-    message: string;
-  }
-
   const isTotpChallenge = (
     value: LoginResponse | TotpChallengeResponse
   ): value is TotpChallengeResponse => {
@@ -41,9 +32,15 @@
   async function handleSubmit() {
     error = '';
     const trimmedUsername = username.trim();
+    const trimmedTotp = totpCode.replace(/\s+/g, '');
 
     if (!trimmedUsername || !password) {
       error = 'Username and password are required';
+      return;
+    }
+
+    if (needsTotp && !trimmedTotp) {
+      error = 'Authentication code is required';
       return;
     }
 
@@ -53,11 +50,11 @@
       const response = await api.post<LoginResponse | TotpChallengeResponse>('/auth/login', {
         username: trimmedUsername,
         password,
+        totp_code: needsTotp ? trimmedTotp : undefined,
       });
 
       if (isTotpChallenge(response)) {
         needsTotp = true;
-        challengeId = response.challenge_id;
         authStore.setMfaChallenge({
           username: trimmedUsername,
           challengeId: response.challenge_id,
@@ -72,47 +69,14 @@
         authStore.setUser(user);
       }
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Login failed';
-    } finally {
-      isLoading = false;
-    }
-  }
-
-  async function handleTotpVerify() {
-    error = '';
-    const trimmedUsername = username.trim();
-    const trimmedCode = totpCode.replace(/\s+/g, '');
-
-    if (!trimmedCode) {
-      error = 'Authentication code is required';
-      return;
-    }
-
-    isLoading = true;
-
-    try {
-      const payload: { username: string; code: string; challenge_id?: string } = {
-        username: trimmedUsername,
-        code: trimmedCode,
-      };
-      if (challengeId) {
-        payload.challenge_id = challengeId;
+      const errorWithCode = e as Error & { code?: string };
+      if (errorWithCode.code === 'TOTP_REQUIRED') {
+        needsTotp = true;
+        authStore.setMfaChallenge({ username: trimmedUsername });
+        error = 'Authentication code is required';
+      } else {
+        error = e instanceof Error ? e.message : 'Login failed';
       }
-      const response = await api.post<TotpVerifyResponse>('/auth/login/totp', payload);
-
-      const user: User = {
-        id: response.id,
-        username: response.username,
-        email: response.email ?? '',
-        isAdmin: response.is_admin,
-      };
-
-      authStore.setUser(user);
-      needsTotp = false;
-      totpCode = '';
-      challengeId = undefined;
-    } catch (e) {
-      error = e instanceof Error ? e.message : 'Verification failed';
     } finally {
       isLoading = false;
     }
@@ -137,11 +101,7 @@
       </p>
     </div>
 
-    <form
-      class="mt-8 space-y-6"
-      novalidate
-      on:submit|preventDefault={needsTotp ? handleTotpVerify : handleSubmit}
-    >
+    <form class="mt-8 space-y-6" novalidate on:submit|preventDefault={handleSubmit}>
       {#if error}
         <div class="rounded-md bg-red-50 p-4">
           <p class="text-sm text-red-700">{error}</p>

@@ -21,6 +21,7 @@
   let code = '';
   let qrCode = '';
   let manualKey = '';
+  let otpauthUrl = '';
 
   const normalizeQr = (response: TotpEnrollResponse) => {
     const raw = response.qr_code ?? response.qr_code_data_url ?? response.qr_code_svg ?? '';
@@ -41,6 +42,7 @@
       const response = await api.post<TotpEnrollResponse>('/admin/totp/enroll');
       qrCode = normalizeQr(response);
       manualKey = response.manual_entry_key ?? response.secret ?? '';
+      otpauthUrl = response.otpauth_url ?? '';
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : 'Failed to start enrollment.';
     } finally {
@@ -71,6 +73,7 @@
   const resetEnrollment = () => {
     qrCode = '';
     manualKey = '';
+    otpauthUrl = '';
     code = '';
     errorMessage = '';
     successMessage = '';
@@ -108,10 +111,16 @@
     </div>
   {/if}
 
-  {#if qrCode}
+  {#if qrCode || manualKey || otpauthUrl}
     <div class="mt-6 grid gap-6 rounded-2xl border border-slate-100 bg-slate-50/70 p-6 md:grid-cols-[180px,1fr]">
       <div class="flex items-center justify-center rounded-xl border border-slate-200 bg-white p-4">
-        <img src={qrCode} alt="TOTP QR code" class="h-40 w-40 object-contain" />
+        {#if qrCode}
+          <img src={qrCode} alt="TOTP QR code" class="h-40 w-40 object-contain" />
+        {:else}
+          <p class="text-xs text-slate-500 text-center">
+            QR code unavailable. Use the manual key to add this account.
+          </p>
+        {/if}
       </div>
       <div class="space-y-4">
         <div>
@@ -125,6 +134,12 @@
           <div class="rounded-xl border border-slate-200 bg-white p-4">
             <p class="text-xs font-mono uppercase tracking-widest text-slate-400">Manual entry key</p>
             <p class="mt-2 break-all text-sm font-semibold text-slate-900">{manualKey}</p>
+          </div>
+        {/if}
+        {#if otpauthUrl}
+          <div class="rounded-xl border border-slate-200 bg-white p-4">
+            <p class="text-xs font-mono uppercase tracking-widest text-slate-400">Authenticator URL</p>
+            <p class="mt-2 break-all text-xs text-slate-600">{otpauthUrl}</p>
           </div>
         {/if}
         <div class="rounded-xl border border-slate-200 bg-white p-4">

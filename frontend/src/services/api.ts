@@ -121,20 +121,23 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      const errorData: ApiError | null = await response.json().catch(() => null);
+      const errorData: ApiError = await response.json().catch(() => ({
+        error: 'An unexpected error occurred',
+        code: 'UNKNOWN_ERROR',
+      }));
+
       if (
         retry &&
         this.shouldAttachCsrf(method, endpoint) &&
-        (response.status === 403 ||
-          response.status === 419 ||
-          (errorData?.code ? CSRF_ERROR_CODES.has(errorData.code) : false))
+        (response.status === 403 || response.status === 419 || CSRF_ERROR_CODES.has(errorData.code))
       ) {
         await this.refreshCsrfToken();
         return this.request<T>(endpoint, options, false);
       }
 
-      const errorMessage = errorData?.error ?? 'An unexpected error occurred';
-      throw new Error(errorMessage);
+      const error = new Error(errorData.error) as Error & { code?: string };
+      error.code = errorData.code;
+      throw error;
     }
 
     if (response.status === 204) {

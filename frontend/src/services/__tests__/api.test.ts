@@ -41,7 +41,16 @@ describe('api client', () => {
       json: vi.fn().mockResolvedValue({ error: 'Bad', code: 'BAD' }),
     });
 
-    await expect(api.get('/bad')).rejects.toThrow('Bad');
+    let caught: unknown = null;
+    try {
+      await api.get('/bad');
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(Error);
+    expect((caught as Error).message).toBe('Bad');
+    expect((caught as Error & { code?: string }).code).toBe('BAD');
   });
 
   it('throws default error when JSON parse fails', async () => {

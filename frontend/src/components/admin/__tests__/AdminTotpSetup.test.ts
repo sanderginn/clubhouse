@@ -47,4 +47,22 @@ describe('AdminTotpSetup', () => {
     expect(apiPost).toHaveBeenLastCalledWith('/admin/totp/verify', { code: '123456' });
     expect(await screen.findByText('Enabled')).toBeInTheDocument();
   });
+
+  it('shows manual enrollment when QR code is missing', async () => {
+    apiPost.mockResolvedValueOnce({
+      secret: 'SECRET-ONLY',
+      otpauth_url: 'otpauth://totp/Clubhouse:admin?secret=SECRET-ONLY',
+    });
+
+    render(AdminTotpSetup);
+
+    await fireEvent.click(screen.getByText('Start enrollment'));
+    await tick();
+
+    expect(apiPost).toHaveBeenCalledWith('/admin/totp/enroll');
+    expect(await screen.findByText('Manual entry key')).toBeInTheDocument();
+    expect(screen.getByText('SECRET-ONLY')).toBeInTheDocument();
+    expect(screen.getByText(/otpauth:\/\/totp\/Clubhouse/)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('123 456')).toBeInTheDocument();
+  });
 });

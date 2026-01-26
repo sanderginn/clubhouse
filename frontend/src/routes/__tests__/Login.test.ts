@@ -70,12 +70,11 @@ describe('Login', () => {
   });
 
   it('prompts for TOTP when MFA is required', async () => {
+    const totpError = new Error('TOTP required') as Error & { code?: string };
+    totpError.code = 'TOTP_REQUIRED';
+
     apiPost
-      .mockResolvedValueOnce({
-        mfa_required: true,
-        challenge_id: 'challenge-1',
-        message: 'MFA required',
-      })
+      .mockRejectedValueOnce(totpError)
       .mockResolvedValueOnce({
         id: 'user-1',
         username: 'sander',
@@ -111,10 +110,10 @@ describe('Login', () => {
     await fireEvent.click(screen.getByRole('button', { name: /verify code/i }));
 
     await waitFor(() =>
-      expect(apiPost).toHaveBeenLastCalledWith('/auth/login/totp', {
+      expect(apiPost).toHaveBeenLastCalledWith('/auth/login', {
         username: 'sander',
-        code: '123456',
-        challenge_id: 'challenge-1',
+        password: 'secret',
+        totp_code: '123456',
       })
     );
 
