@@ -124,6 +124,7 @@
     234,
     235,
     236,
+    237,
     238,
     245
   ],
@@ -2291,7 +2292,7 @@
     {
       "issue_number": 237,
       "title": "Docs: Align API response format in DESIGN.md with implementation",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769457920-5481",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769457920-5481",
       "dependencies": [],
@@ -2300,7 +2301,9 @@
         "documentation"
       ],
       "branch": "feat/issue-237-docs-align-api-response-format-in-design",
-      "claimed_at": "2026-01-26T20:05:20Z"
+      "claimed_at": "2026-01-26T20:05:20Z",
+      "pr_number": 252,
+      "completed_at": "2026-01-26T20:12:41Z"
     },
     {
       "issue_number": 238,
