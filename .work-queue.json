@@ -115,7 +115,8 @@
     200,
     201,
     202,
-    203
+    203,
+    204
   ],
   "issues": [
     {
@@ -2129,7 +2130,7 @@
     {
       "issue_number": 204,
       "title": "Auth: Add auth event logging (backend)",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769455716-63887",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769455716-63887",
       "dependencies": [
@@ -2143,7 +2144,9 @@
         "auth"
       ],
       "branch": "feat/issue-204-auth-add-auth-event-logging-backend",
-      "claimed_at": "2026-01-26T19:28:36Z"
+      "claimed_at": "2026-01-26T19:28:36Z",
+      "pr_number": 242,
+      "completed_at": "2026-01-26T19:56:05Z"
     },
     {
       "issue_number": 205,
