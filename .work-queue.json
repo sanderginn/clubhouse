@@ -2009,9 +2009,9 @@
     {
       "issue_number": 198,
       "title": "Auth: Password reset page (frontend)",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769455693-62616",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769455693-62616",
       "dependencies": [
         196
       ],
@@ -2020,7 +2020,9 @@
         "enhancement",
         "frontend",
         "auth"
-      ]
+      ],
+      "branch": "feat/issue-198-auth-password-reset-page-frontend",
+      "claimed_at": "2026-01-26T19:28:13Z"
     },
     {
       "issue_number": 199,
