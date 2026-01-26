@@ -15,7 +15,7 @@ vi.mock('../../services/api', () => ({
   },
 }));
 
-const { authStore, isAuthenticated, isAdmin, currentUser } = await import('../authStore');
+const { authStore, isAuthenticated, isAdmin, currentUser, isMfaRequired } = await import('../authStore');
 
 beforeEach(() => {
   apiGet.mockReset();
@@ -109,6 +109,7 @@ describe('authStore', () => {
     expect(get(isAuthenticated)).toBe(false);
     expect(get(isAdmin)).toBe(false);
     expect(get(currentUser)).toBeNull();
+    expect(get(isMfaRequired)).toBe(false);
 
     authStore.setUser({
       id: 'user-3',
@@ -120,5 +121,21 @@ describe('authStore', () => {
     expect(get(isAuthenticated)).toBe(true);
     expect(get(isAdmin)).toBe(true);
     expect(get(currentUser)?.username).toBe('admin');
+    expect(get(isMfaRequired)).toBe(false);
+  });
+
+  it('tracks MFA challenge state', () => {
+    authStore.setMfaChallenge({ username: 'admin', challengeId: 'challenge-1' });
+
+    expect(get(isMfaRequired)).toBe(true);
+
+    authStore.setUser({
+      id: 'user-4',
+      username: 'admin',
+      email: 'admin@example.com',
+      isAdmin: true,
+    });
+
+    expect(get(isMfaRequired)).toBe(false);
   });
 });

@@ -68,4 +68,63 @@ describe('Login', () => {
     expect(screen.getByText('Username and password are required')).toBeInTheDocument();
     expect(apiPost).not.toHaveBeenCalled();
   });
+
+  it('prompts for TOTP when MFA is required', async () => {
+    apiPost
+      .mockResolvedValueOnce({
+        mfa_required: true,
+        challenge_id: 'challenge-1',
+        message: 'MFA required',
+      })
+      .mockResolvedValueOnce({
+        id: 'user-1',
+        username: 'sander',
+        email: 'sander@example.com',
+        is_admin: true,
+        message: 'ok',
+      });
+
+    const setUserSpy = vi.spyOn(authStore, 'setUser');
+
+    render(Login, { onNavigate: vi.fn() });
+
+    await fireEvent.input(screen.getByLabelText('Username'), {
+      target: { value: 'sander' },
+    });
+    await fireEvent.input(screen.getByLabelText('Password'), {
+      target: { value: 'secret' },
+    });
+    await fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+    await waitFor(() =>
+      expect(apiPost).toHaveBeenCalledWith('/auth/login', {
+        username: 'sander',
+        password: 'secret',
+      })
+    );
+
+    expect(await screen.findByPlaceholderText('6-digit authentication code')).toBeInTheDocument();
+
+    await fireEvent.input(screen.getByPlaceholderText('6-digit authentication code'), {
+      target: { value: '123456' },
+    });
+    await fireEvent.click(screen.getByRole('button', { name: /verify code/i }));
+
+    await waitFor(() =>
+      expect(apiPost).toHaveBeenLastCalledWith('/auth/login/totp', {
+        username: 'sander',
+        code: '123456',
+        challenge_id: 'challenge-1',
+      })
+    );
+
+    await waitFor(() =>
+      expect(setUserSpy).toHaveBeenCalledWith({
+        id: 'user-1',
+        username: 'sander',
+        email: 'sander@example.com',
+        isAdmin: true,
+      })
+    );
+  });
 });
