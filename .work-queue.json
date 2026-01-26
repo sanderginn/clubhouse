@@ -1943,9 +1943,9 @@
     {
       "issue_number": 194,
       "title": "Auth: Add CSRF token handling in frontend client",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769460363-55881",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769460363-55881",
       "dependencies": [
         193
       ],
@@ -1955,8 +1955,8 @@
         "frontend",
         "auth"
       ],
-      "branch": null,
-      "claimed_at": null
+      "branch": "feat/issue-194-auth-add-csrf-token-handling-in-frontend",
+      "claimed_at": "2026-01-26T20:46:03Z"
     },
     {
       "issue_number": 195,
