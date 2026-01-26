@@ -2179,7 +2179,8 @@
       ],
       "branch": "feat/issue-205-auth-add-admin-totp-enrollment-verificat",
       "claimed_at": "2026-01-26T19:56:08Z",
-      "completed_at": "2026-01-26T20:08:56Z"
+      "completed_at": "2026-01-26T20:15:28Z",
+      "pr_number": 253
     },
     {
       "issue_number": 206,
