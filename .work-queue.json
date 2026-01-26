@@ -2278,7 +2278,8 @@
       ],
       "branch": "feat/issue-236-tests-add-postservice-unit-coverage-crea",
       "claimed_at": "2026-01-26T20:01:43Z",
-      "completed_at": "2026-01-26T20:06:47Z"
+      "completed_at": "2026-01-26T20:08:42Z",
+      "pr_number": 250
     },
     {
       "issue_number": 237,
