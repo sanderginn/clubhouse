@@ -427,6 +427,7 @@ func (s *PostService) DeletePost(ctx context.Context, postID uuid.UUID, userID u
 	updatedPost.Links = post.Links
 	updatedPost.ReactionCounts = post.ReactionCounts
 	updatedPost.ViewerReactions = post.ViewerReactions
+	observability.RecordPostDeleted(ctx)
 
 	return &updatedPost, nil
 }
@@ -512,6 +513,7 @@ func (s *PostService) RestorePost(ctx context.Context, postID uuid.UUID, userID 
 	}
 	post.ReactionCounts = counts
 	post.ViewerReactions = viewerReactions
+	observability.RecordPostRestored(ctx)
 
 	return &post, nil
 }
@@ -711,6 +713,8 @@ func (s *PostService) HardDeletePost(ctx context.Context, postID uuid.UUID, admi
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
+	observability.RecordPostDeleted(ctx)
+
 	return nil
 }
 
@@ -774,6 +778,7 @@ func (s *PostService) AdminRestorePost(ctx context.Context, postID uuid.UUID, ad
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch restored post: %w", err)
 	}
+	observability.RecordPostRestored(ctx)
 
 	return fullPost, nil
 }

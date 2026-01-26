@@ -48,9 +48,12 @@ func (s *NotificationService) CreateNotificationsForNewPost(ctx context.Context,
 		  )
 	`
 
-	_, err := s.db.ExecContext(ctx, query, notificationTypeNewPost, postID, authorID, sectionID)
+	result, err := s.db.ExecContext(ctx, query, notificationTypeNewPost, postID, authorID, sectionID)
 	if err != nil {
 		return fmt.Errorf("failed to create new post notifications: %w", err)
+	}
+	if rows, err := result.RowsAffected(); err == nil {
+		observability.RecordNotificationsCreated(ctx, notificationTypeNewPost, rows)
 	}
 
 	s.sendPushToSection(ctx, notificationTypeNewPost, postID, nil, &authorID, sectionID, authorID)
@@ -160,6 +163,7 @@ func (s *NotificationService) insertNotification(ctx context.Context, userID uui
 		return fmt.Errorf("failed to insert notification: %w", err)
 	}
 
+	observability.RecordNotificationsCreated(ctx, notificationType, 1)
 	s.sendPush(ctx, userID, notificationType, postID, commentID, relatedUserID)
 
 	return nil
@@ -172,6 +176,7 @@ func (s *NotificationService) sendPush(ctx context.Context, userID uuid.UUID, no
 
 	payload := buildPushPayload(notificationType, postID, commentID, relatedUserID)
 	if err := s.push.SendNotification(ctx, userID, payload); err != nil {
+		observability.RecordNotificationDeliveryFailed(ctx, "push", 1)
 		observability.LogError(ctx, observability.ErrorLog{
 			Message:    "failed to send push notification",
 			Code:       "PUSH_SEND_FAILED",
@@ -179,7 +184,9 @@ func (s *NotificationService) sendPush(ctx context.Context, userID uuid.UUID, no
 			UserID:     userID.String(),
 			Err:        err,
 		})
+		return
 	}
+	observability.RecordNotificationDelivered(ctx, "push", 1)
 }
 
 func (s *NotificationService) sendPushToSection(ctx context.Context, notificationType string, postID uuid.UUID, commentID *uuid.UUID, relatedUserID *uuid.UUID, sectionID uuid.UUID, authorID uuid.UUID) {
@@ -203,13 +210,16 @@ func (s *NotificationService) sendPushToSection(ctx context.Context, notificatio
 
 	payload := buildPushPayload(notificationType, &postID, commentID, relatedUserID)
 	if err := s.push.SendNotificationToUsers(ctx, userIDs, payload); err != nil {
+		observability.RecordNotificationDeliveryFailed(ctx, "push", int64(len(userIDs)))
 		observability.LogError(ctx, observability.ErrorLog{
 			Message:    "failed to send push notifications",
 			Code:       "PUSH_SEND_FAILED",
 			StatusCode: http.StatusInternalServerError,
 			Err:        err,
 		})
+		return
 	}
+	observability.RecordNotificationDelivered(ctx, "push", int64(len(userIDs)))
 }
 
 func (s *NotificationService) getSubscribedUserIDs(ctx context.Context, sectionID uuid.UUID, authorID uuid.UUID) ([]uuid.UUID, error) {

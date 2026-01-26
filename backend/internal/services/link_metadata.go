@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sanderginn/clubhouse/internal/models"
+	"github.com/sanderginn/clubhouse/internal/observability"
 	linkmeta "github.com/sanderginn/clubhouse/internal/services/links"
 )
 
@@ -19,10 +20,13 @@ func fetchLinkMetadata(ctx context.Context, links []models.LinkRequest) []models
 
 	metadata := make([]models.JSONMap, len(links))
 	for i, link := range links {
+		observability.RecordLinkMetadataFetchAttempt(ctx, 1)
 		meta, err := linkmeta.FetchMetadata(ctx, link.URL)
 		if err != nil || len(meta) == 0 {
+			observability.RecordLinkMetadataFetchFailure(ctx, 1)
 			continue
 		}
+		observability.RecordLinkMetadataFetchSuccess(ctx, 1)
 		metadata[i] = models.JSONMap(meta)
 	}
 

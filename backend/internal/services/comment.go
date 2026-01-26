@@ -599,6 +599,7 @@ func (s *CommentService) DeleteComment(ctx context.Context, commentID uuid.UUID,
 	updatedComment.Links = comment.Links
 	updatedComment.ReactionCounts = comment.ReactionCounts
 	updatedComment.ViewerReactions = comment.ViewerReactions
+	observability.RecordCommentDeleted(ctx)
 
 	return &updatedComment, nil
 }
@@ -707,6 +708,7 @@ func (s *CommentService) RestoreComment(ctx context.Context, commentID uuid.UUID
 	}
 	restoredComment.ReactionCounts = counts
 	restoredComment.ViewerReactions = viewerReactions
+	observability.RecordCommentRestored(ctx)
 
 	return &restoredComment, nil
 }
@@ -813,6 +815,8 @@ func (s *CommentService) HardDeleteComment(ctx context.Context, commentID uuid.U
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
+	observability.RecordCommentDeleted(ctx)
+
 	return nil
 }
 
@@ -908,6 +912,7 @@ func (s *CommentService) AdminRestoreComment(ctx context.Context, commentID uuid
 	}
 	comment.ReactionCounts = counts
 	comment.ViewerReactions = viewerReactions
+	observability.RecordCommentRestored(ctx)
 
 	return &comment, nil
 }

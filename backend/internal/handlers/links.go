@@ -52,10 +52,17 @@ func (h *LinkHandler) PreviewLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	observability.RecordLinkMetadataFetchAttempt(r.Context(), 1)
 	metadata, err := linkmeta.FetchMetadata(r.Context(), trimmedURL)
 	if err != nil {
+		observability.RecordLinkMetadataFetchFailure(r.Context(), 1)
 		writeError(r.Context(), w, http.StatusBadGateway, "LINK_METADATA_FETCH_FAILED", "Failed to fetch link metadata")
 		return
+	}
+	if len(metadata) == 0 {
+		observability.RecordLinkMetadataFetchFailure(r.Context(), 1)
+	} else {
+		observability.RecordLinkMetadataFetchSuccess(r.Context(), 1)
 	}
 
 	if metadata == nil {

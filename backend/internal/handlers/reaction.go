@@ -87,6 +87,7 @@ func (h *ReactionHandler) AddReactionToPost(w http.ResponseWriter, r *http.Reque
 		UserID: reaction.UserID,
 		Emoji:  reaction.Emoji,
 	})
+	observability.RecordReactionAdded(publishCtx, "post")
 	cancel()
 
 	w.Header().Set("Content-Type", "application/json")
@@ -155,6 +156,7 @@ func (h *ReactionHandler) RemoveReactionFromPost(w http.ResponseWriter, r *http.
 		UserID: userID,
 		Emoji:  emoji,
 	})
+	observability.RecordReactionRemoved(publishCtx, "post")
 	cancel()
 
 	w.WriteHeader(http.StatusNoContent)
@@ -215,6 +217,7 @@ func (h *ReactionHandler) AddReactionToComment(w http.ResponseWriter, r *http.Re
 		UserID:    reaction.UserID,
 		Emoji:     reaction.Emoji,
 	})
+	observability.RecordReactionAdded(publishCtx, "comment")
 	cancel()
 
 	w.Header().Set("Content-Type", "application/json")
@@ -283,6 +286,7 @@ func (h *ReactionHandler) RemoveReactionFromComment(w http.ResponseWriter, r *ht
 		UserID:    userID,
 		Emoji:     emoji,
 	})
+	observability.RecordReactionRemoved(publishCtx, "comment")
 	cancel()
 
 	w.WriteHeader(http.StatusNoContent)
