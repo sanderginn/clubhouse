@@ -2,13 +2,16 @@ package handlers
 
 import (
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/pquerna/otp/totp"
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/testutil"
 )
@@ -1088,5 +1091,79 @@ func TestGeneratePasswordResetTokenMethodNotAllowed(t *testing.T) {
 
 	if w.Code != http.StatusMethodNotAllowed {
 		t.Errorf("expected status %d, got %d", http.StatusMethodNotAllowed, w.Code)
+	}
+}
+
+func TestAdminTOTPEnrollAndVerify(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	keyBytes := make([]byte, 32)
+	for i := range keyBytes {
+		keyBytes[i] = byte(i + 1)
+	}
+	t.Setenv("CLUBHOUSE_TOTP_ENCRYPTION_KEY", base64.StdEncoding.EncodeToString(keyBytes))
+
+	adminID := uuid.New()
+	_, err := db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'totpadmin', 'totpadmin@example.com', '$2a$12$test', true, now(), now())
+	`, adminID)
+	if err != nil {
+		t.Fatalf("failed to create admin user: %v", err)
+	}
+
+	handler := NewAdminHandler(db, nil)
+
+	enrollReq := httptest.NewRequest(http.MethodPost, "/api/v1/admin/totp/enroll", nil)
+	enrollReq = enrollReq.WithContext(createTestUserContext(enrollReq.Context(), adminID, "totpadmin", true))
+	enrollRes := httptest.NewRecorder()
+
+	handler.EnrollTOTP(enrollRes, enrollReq)
+
+	if enrollRes.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusOK, enrollRes.Code, enrollRes.Body.String())
+	}
+
+	var enrollBody models.TOTPEnrollResponse
+	if err := json.NewDecoder(enrollRes.Body).Decode(&enrollBody); err != nil {
+		t.Fatalf("failed to decode enroll response: %v", err)
+	}
+
+	if enrollBody.Secret == "" || enrollBody.OtpAuthURL == "" {
+		t.Fatalf("expected secret and otpauth url to be set")
+	}
+
+	code, err := totp.GenerateCode(enrollBody.Secret, time.Now().UTC())
+	if err != nil {
+		t.Fatalf("failed to generate totp code: %v", err)
+	}
+
+	verifyPayload, err := json.Marshal(models.TOTPVerifyRequest{Code: code})
+	if err != nil {
+		t.Fatalf("failed to marshal verify payload: %v", err)
+	}
+
+	verifyReq := httptest.NewRequest(http.MethodPost, "/api/v1/admin/totp/verify", strings.NewReader(string(verifyPayload)))
+	verifyReq = verifyReq.WithContext(createTestUserContext(verifyReq.Context(), adminID, "totpadmin", true))
+	verifyRes := httptest.NewRecorder()
+
+	handler.VerifyTOTP(verifyRes, verifyReq)
+
+	if verifyRes.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusOK, verifyRes.Code, verifyRes.Body.String())
+	}
+
+	var enabled bool
+	var secret []byte
+	if err := db.QueryRow("SELECT totp_enabled, totp_secret_encrypted FROM users WHERE id = $1", adminID).Scan(&enabled, &secret); err != nil {
+		t.Fatalf("failed to query totp settings: %v", err)
+	}
+
+	if !enabled {
+		t.Fatalf("expected totp_enabled to be true")
+	}
+	if len(secret) == 0 {
+		t.Fatalf("expected encrypted secret to be stored")
 	}
 }

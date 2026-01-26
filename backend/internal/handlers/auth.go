@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -46,6 +47,7 @@ type AuthHandler struct {
 	failureTracker       authFailureTracker
 	passwordResetService *services.PasswordResetService
 	authEventService     authEventLogger
+	totpService          *services.TOTPService
 	db                   *sql.DB
 }
 
@@ -59,6 +61,7 @@ func NewAuthHandler(db *sql.DB, redis *redis.Client) *AuthHandler {
 		failureTracker:       services.NewAuthFailureTracker(redis),
 		passwordResetService: services.NewPasswordResetService(redis),
 		authEventService:     services.NewAuthEventService(db),
+		totpService:          services.NewTOTPService(db),
 		db:                   db,
 	}
 }
@@ -191,6 +194,36 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 			writeError(r.Context(), w, http.StatusInternalServerError, "LOGIN_FAILED", "Failed to login")
 		}
 		return
+	}
+
+	if user.IsAdmin {
+		if h.totpService == nil {
+			writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_UNAVAILABLE", "TOTP service unavailable")
+			return
+		}
+
+		if err := h.totpService.VerifyLogin(r.Context(), user.ID, req.TOTPCode); err != nil {
+			h.logAuthEvent(r.Context(), &models.AuthEventCreate{
+				UserID:     &user.ID,
+				Identifier: user.Username,
+				EventType:  "totp_failure",
+				IPAddress:  clientIP,
+				UserAgent:  r.UserAgent(),
+			})
+			switch {
+			case errors.Is(err, services.ErrTOTPRequired):
+				writeError(r.Context(), w, http.StatusUnauthorized, "TOTP_REQUIRED", "TOTP code required")
+			case errors.Is(err, services.ErrTOTPInvalid):
+				writeError(r.Context(), w, http.StatusUnauthorized, "INVALID_TOTP", "Invalid TOTP code")
+			case errors.Is(err, services.ErrTOTPNotEnrolled):
+				writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_CONFIG_INVALID", "TOTP is enabled but not enrolled")
+			case errors.Is(err, services.ErrTOTPKeyMissing), errors.Is(err, services.ErrTOTPKeyInvalid):
+				writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_CONFIG_MISSING", "TOTP configuration missing")
+			default:
+				writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_VERIFY_FAILED", "Failed to verify TOTP")
+			}
+			return
+		}
 	}
 
 	if err := h.clearLoginFailures(r.Context(), clientIP, identifiers); err != nil {

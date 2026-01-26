@@ -160,7 +160,7 @@ func (s *UserService) BootstrapAdmin(ctx context.Context, username, email, passw
 // GetUserByID retrieves a user by ID
 func (s *UserService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	query := `
-		SELECT id, username, COALESCE(email, '') as email, password_hash, profile_picture_url, bio, is_admin, approved_at, created_at, updated_at, deleted_at
+		SELECT id, username, COALESCE(email, '') as email, password_hash, profile_picture_url, bio, is_admin, totp_enabled, totp_secret_encrypted, approved_at, created_at, updated_at, deleted_at
 		FROM users
 		WHERE id = $1 AND deleted_at IS NULL
 	`
@@ -168,7 +168,7 @@ func (s *UserService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.Us
 	var user models.User
 	err := s.db.QueryRowContext(ctx, query, id).
 		Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.ProfilePictureURL,
-			&user.Bio, &user.IsAdmin, &user.ApprovedAt, &user.CreatedAt, &user.UpdatedAt, &user.DeletedAt)
+			&user.Bio, &user.IsAdmin, &user.TotpEnabled, &user.TotpSecretEncrypted, &user.ApprovedAt, &user.CreatedAt, &user.UpdatedAt, &user.DeletedAt)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -183,7 +183,7 @@ func (s *UserService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.Us
 // GetUserByUsername retrieves a user by username
 func (s *UserService) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
 	query := `
-		SELECT id, username, COALESCE(email, '') as email, password_hash, profile_picture_url, bio, is_admin, approved_at, created_at, updated_at, deleted_at
+		SELECT id, username, COALESCE(email, '') as email, password_hash, profile_picture_url, bio, is_admin, totp_enabled, totp_secret_encrypted, approved_at, created_at, updated_at, deleted_at
 		FROM users
 		WHERE username = $1 AND deleted_at IS NULL
 	`
@@ -191,7 +191,7 @@ func (s *UserService) GetUserByUsername(ctx context.Context, username string) (*
 	var user models.User
 	err := s.db.QueryRowContext(ctx, query, username).
 		Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.ProfilePictureURL,
-			&user.Bio, &user.IsAdmin, &user.ApprovedAt, &user.CreatedAt, &user.UpdatedAt, &user.DeletedAt)
+			&user.Bio, &user.IsAdmin, &user.TotpEnabled, &user.TotpSecretEncrypted, &user.ApprovedAt, &user.CreatedAt, &user.UpdatedAt, &user.DeletedAt)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -206,7 +206,7 @@ func (s *UserService) GetUserByUsername(ctx context.Context, username string) (*
 // GetUserByEmail retrieves a user by email
 func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	query := `
-		SELECT id, username, COALESCE(email, '') as email, password_hash, profile_picture_url, bio, is_admin, approved_at, created_at, updated_at, deleted_at
+		SELECT id, username, COALESCE(email, '') as email, password_hash, profile_picture_url, bio, is_admin, totp_enabled, totp_secret_encrypted, approved_at, created_at, updated_at, deleted_at
 		FROM users
 		WHERE email = $1 AND deleted_at IS NULL
 	`
@@ -214,7 +214,7 @@ func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*models
 	var user models.User
 	err := s.db.QueryRowContext(ctx, query, email).
 		Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.ProfilePictureURL,
-			&user.Bio, &user.IsAdmin, &user.ApprovedAt, &user.CreatedAt, &user.UpdatedAt, &user.DeletedAt)
+			&user.Bio, &user.IsAdmin, &user.TotpEnabled, &user.TotpSecretEncrypted, &user.ApprovedAt, &user.CreatedAt, &user.UpdatedAt, &user.DeletedAt)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

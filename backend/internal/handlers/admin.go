@@ -23,6 +23,7 @@ type AdminHandler struct {
 	postService          *services.PostService
 	commentService       *services.CommentService
 	passwordResetService *services.PasswordResetService
+	totpService          *services.TOTPService
 }
 
 // NewAdminHandler creates a new admin handler
@@ -33,6 +34,7 @@ func NewAdminHandler(db *sql.DB, redis *redis.Client) *AdminHandler {
 		postService:          services.NewPostService(db),
 		commentService:       services.NewCommentService(db),
 		passwordResetService: services.NewPasswordResetService(redis),
+		totpService:          services.NewTOTPService(db),
 	}
 }
 
@@ -180,6 +182,123 @@ func (h *AdminHandler) RejectUser(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(rejectResponse); err != nil {
 		observability.LogError(r.Context(), observability.ErrorLog{
 			Message:    "failed to encode reject user response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}
+
+// EnrollTOTP generates a TOTP secret for the admin user.
+func (h *AdminHandler) EnrollTOTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		return
+	}
+
+	if h.totpService == nil {
+		writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_UNAVAILABLE", "TOTP service unavailable")
+		return
+	}
+
+	session, err := middleware.GetUserFromContext(r.Context())
+	if err != nil {
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
+		return
+	}
+
+	enrollment, err := h.totpService.EnrollAdmin(r.Context(), session.UserID, session.Username)
+	if err != nil {
+		switch {
+		case errors.Is(err, services.ErrTOTPKeyMissing), errors.Is(err, services.ErrTOTPKeyInvalid):
+			writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_CONFIG_MISSING", "TOTP configuration missing")
+		case errors.Is(err, services.ErrTOTPAlreadyEnabled):
+			writeError(r.Context(), w, http.StatusConflict, "TOTP_ALREADY_ENABLED", "TOTP already enabled")
+		case errors.Is(err, services.ErrTOTPUserNotFound):
+			writeError(r.Context(), w, http.StatusNotFound, "USER_NOT_FOUND", "User not found")
+		case errors.Is(err, services.ErrTOTPAdminRequired):
+			writeError(r.Context(), w, http.StatusForbidden, "ADMIN_REQUIRED", "Admin access required")
+		default:
+			writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_ENROLL_FAILED", "Failed to enroll TOTP")
+		}
+		return
+	}
+
+	response := models.TOTPEnrollResponse{
+		Secret:     enrollment.Secret,
+		OtpAuthURL: enrollment.URL,
+		Message:    "TOTP enrollment created",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode totp enroll response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}
+
+// VerifyTOTP verifies a TOTP code and enables MFA for the admin user.
+func (h *AdminHandler) VerifyTOTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		return
+	}
+
+	if h.totpService == nil {
+		writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_UNAVAILABLE", "TOTP service unavailable")
+		return
+	}
+
+	session, err := middleware.GetUserFromContext(r.Context())
+	if err != nil {
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
+		return
+	}
+
+	var req models.TOTPVerifyRequest
+	if err := decodeJSONBody(w, r, &req); err != nil {
+		if isRequestBodyTooLarge(err) {
+			writeError(r.Context(), w, http.StatusRequestEntityTooLarge, "REQUEST_TOO_LARGE", "Request body too large")
+			return
+		}
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		return
+	}
+
+	if err := h.totpService.VerifyAdmin(r.Context(), session.UserID, req.Code); err != nil {
+		switch {
+		case errors.Is(err, services.ErrTOTPRequired):
+			writeError(r.Context(), w, http.StatusBadRequest, "TOTP_REQUIRED", "TOTP code required")
+		case errors.Is(err, services.ErrTOTPInvalid):
+			writeError(r.Context(), w, http.StatusUnauthorized, "INVALID_TOTP", "Invalid TOTP code")
+		case errors.Is(err, services.ErrTOTPNotEnrolled):
+			writeError(r.Context(), w, http.StatusConflict, "TOTP_NOT_ENROLLED", "TOTP enrollment required")
+		case errors.Is(err, services.ErrTOTPAlreadyEnabled):
+			writeError(r.Context(), w, http.StatusConflict, "TOTP_ALREADY_ENABLED", "TOTP already enabled")
+		case errors.Is(err, services.ErrTOTPUserNotFound):
+			writeError(r.Context(), w, http.StatusNotFound, "USER_NOT_FOUND", "User not found")
+		case errors.Is(err, services.ErrTOTPKeyMissing), errors.Is(err, services.ErrTOTPKeyInvalid):
+			writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_CONFIG_MISSING", "TOTP configuration missing")
+		default:
+			writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_VERIFY_FAILED", "Failed to verify TOTP")
+		}
+		return
+	}
+
+	response := models.TOTPVerifyResponse{
+		Message: "TOTP enabled",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode totp verify response",
 			Code:       "ENCODE_FAILED",
 			StatusCode: http.StatusOK,
 			Err:        err,
