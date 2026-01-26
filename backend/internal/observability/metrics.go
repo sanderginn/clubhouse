@@ -17,6 +17,11 @@ type metrics struct {
 	websocketConnections      metric.Int64UpDownCounter
 	websocketConnectsTotal    metric.Int64Counter
 	websocketDisconnectsTotal metric.Int64Counter
+	websocketMessagesReceived metric.Int64Counter
+	websocketMessagesSent     metric.Int64Counter
+	websocketSubscriptionsAdd metric.Int64Counter
+	websocketSubscriptionsRem metric.Int64Counter
+	websocketErrors           metric.Int64Counter
 	postsCreated              metric.Int64Counter
 	commentsCreated           metric.Int64Counter
 }
@@ -78,6 +83,57 @@ func initMetrics() error {
 			return
 		}
 
+		// WebSocket message/subscribe/error metrics:
+		// - clubhouse.websocket.messages.received (attrs: message_type)
+		// - clubhouse.websocket.messages.sent (attrs: message_type)
+		// - clubhouse.websocket.subscriptions.added (attrs: message_type)
+		// - clubhouse.websocket.subscriptions.removed (attrs: message_type)
+		// - clubhouse.websocket.errors (attrs: message_type, error_type)
+		websocketMessagesReceived, err := meter.Int64Counter(
+			"clubhouse.websocket.messages.received",
+			metric.WithDescription("Count of websocket messages received"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		websocketMessagesSent, err := meter.Int64Counter(
+			"clubhouse.websocket.messages.sent",
+			metric.WithDescription("Count of websocket messages sent"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		websocketSubscriptionsAdd, err := meter.Int64Counter(
+			"clubhouse.websocket.subscriptions.added",
+			metric.WithDescription("Count of websocket subscriptions added"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		websocketSubscriptionsRem, err := meter.Int64Counter(
+			"clubhouse.websocket.subscriptions.removed",
+			metric.WithDescription("Count of websocket subscriptions removed"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		websocketErrors, err := meter.Int64Counter(
+			"clubhouse.websocket.errors",
+			metric.WithDescription("Count of websocket message handling errors"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
 		postsCreated, err := meter.Int64Counter(
 			"clubhouse.posts.created",
 			metric.WithDescription("Number of posts created"),
@@ -102,6 +158,11 @@ func initMetrics() error {
 			websocketConnections:      websocketConnections,
 			websocketConnectsTotal:    websocketConnectsTotal,
 			websocketDisconnectsTotal: websocketDisconnectsTotal,
+			websocketMessagesReceived: websocketMessagesReceived,
+			websocketMessagesSent:     websocketMessagesSent,
+			websocketSubscriptionsAdd: websocketSubscriptionsAdd,
+			websocketSubscriptionsRem: websocketSubscriptionsRem,
+			websocketErrors:           websocketErrors,
 			postsCreated:              postsCreated,
 			commentsCreated:           commentsCreated,
 		}
@@ -149,6 +210,61 @@ func RecordWebsocketDisconnect(ctx context.Context) {
 	}
 	m.websocketConnections.Add(ctx, -1)
 	m.websocketDisconnectsTotal.Add(ctx, 1)
+}
+
+// RecordWebsocketMessageReceived increments the received message counter.
+func RecordWebsocketMessageReceived(ctx context.Context, messageType string) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.websocketMessagesReceived.Add(ctx, 1, metric.WithAttributes(attribute.String("message_type", messageType)))
+}
+
+// RecordWebsocketMessageSent increments the sent message counter.
+func RecordWebsocketMessageSent(ctx context.Context, messageType string) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.websocketMessagesSent.Add(ctx, 1, metric.WithAttributes(attribute.String("message_type", messageType)))
+}
+
+// RecordWebsocketSubscriptionAdded increments the subscription added counter.
+func RecordWebsocketSubscriptionAdded(ctx context.Context, messageType string, count int) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	if count <= 0 {
+		return
+	}
+	m.websocketSubscriptionsAdd.Add(ctx, int64(count), metric.WithAttributes(attribute.String("message_type", messageType)))
+}
+
+// RecordWebsocketSubscriptionRemoved increments the subscription removed counter.
+func RecordWebsocketSubscriptionRemoved(ctx context.Context, messageType string, count int) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	if count <= 0 {
+		return
+	}
+	m.websocketSubscriptionsRem.Add(ctx, int64(count), metric.WithAttributes(attribute.String("message_type", messageType)))
+}
+
+// RecordWebsocketError increments the websocket error counter.
+func RecordWebsocketError(ctx context.Context, errorType, messageType string) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	attrs := []attribute.KeyValue{
+		attribute.String("error_type", errorType),
+		attribute.String("message_type", messageType),
+	}
+	m.websocketErrors.Add(ctx, 1, metric.WithAttributes(attrs...))
 }
 
 // RecordPostCreated increments the post created counter.

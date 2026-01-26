@@ -11,6 +11,7 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/sanderginn/clubhouse/internal/models"
+	"github.com/sanderginn/clubhouse/internal/observability"
 	"github.com/sanderginn/clubhouse/internal/services"
 )
 
@@ -61,7 +62,11 @@ func publishEvent(ctx context.Context, redisClient *redis.Client, channel string
 		return fmt.Errorf("failed to marshal event: %w", err)
 	}
 
-	return publishWithRetry(ctx, redisClient, channel, payload)
+	if err := publishWithRetry(ctx, redisClient, channel, payload); err != nil {
+		observability.RecordWebsocketError(ctx, "publish_failed", eventType)
+		return err
+	}
+	return nil
 }
 
 func publishWithRetry(ctx context.Context, redisClient *redis.Client, channel string, payload []byte) error {
