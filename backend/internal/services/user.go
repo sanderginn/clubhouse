@@ -346,6 +346,37 @@ func (s *UserService) GetPendingUsers(ctx context.Context) ([]*models.PendingUse
 	return pendingUsers, nil
 }
 
+// GetApprovedUsers retrieves all approved users for admin listings
+func (s *UserService) GetApprovedUsers(ctx context.Context) ([]*models.ApprovedUser, error) {
+	query := `
+		SELECT id, username, COALESCE(email, '') as email, is_admin, approved_at, created_at
+		FROM users
+		WHERE approved_at IS NOT NULL AND deleted_at IS NULL
+		ORDER BY approved_at DESC
+	`
+
+	rows, err := s.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get approved users: %w", err)
+	}
+	defer rows.Close()
+
+	var approvedUsers []*models.ApprovedUser
+	for rows.Next() {
+		var user models.ApprovedUser
+		if err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.IsAdmin, &user.ApprovedAt, &user.CreatedAt); err != nil {
+			return nil, fmt.Errorf("failed to scan approved user: %w", err)
+		}
+		approvedUsers = append(approvedUsers, &user)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating approved users: %w", err)
+	}
+
+	return approvedUsers, nil
+}
+
 // ApproveUser marks a user as approved by setting approved_at timestamp
 func (s *UserService) ApproveUser(ctx context.Context, userID uuid.UUID, adminUserID uuid.UUID) (*models.ApproveUserResponse, error) {
 	tx, err := s.db.BeginTx(ctx, nil)

@@ -61,6 +61,31 @@ func (h *AdminHandler) ListPendingUsers(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+// ListApprovedUsers returns all approved users (admin only)
+func (h *AdminHandler) ListApprovedUsers(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		return
+	}
+
+	approvedUsers, err := h.userService.GetApprovedUsers(r.Context())
+	if err != nil {
+		writeError(r.Context(), w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to fetch approved users")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(approvedUsers); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode approved users response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}
+
 // ApproveUser approves a pending user (sets approved_at timestamp)
 func (h *AdminHandler) ApproveUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {

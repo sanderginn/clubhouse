@@ -75,6 +75,16 @@ type PendingUser struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+// ApprovedUser represents an approved user for admin listings
+type ApprovedUser struct {
+	ID         uuid.UUID `json:"id"`
+	Username   string    `json:"username"`
+	Email      string    `json:"email"`
+	IsAdmin    bool      `json:"is_admin"`
+	ApprovedAt time.Time `json:"approved_at"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
 // ApproveUserResponse represents the response from approving a user
 type ApproveUserResponse struct {
 	ID       uuid.UUID `json:"id"`
