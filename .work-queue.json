@@ -120,6 +120,7 @@
     203,
     204,
     205,
+    206,
     207,
     232,
     233,
@@ -2191,7 +2192,7 @@
     {
       "issue_number": 206,
       "title": "Auth: Admin TOTP UI + login challenge (frontend)",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769458248-19105",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769458248-19105",
       "dependencies": [
@@ -2205,7 +2206,9 @@
         "admin"
       ],
       "branch": "feat/issue-206-auth-admin-totp-ui-login-challenge-front",
-      "claimed_at": "2026-01-26T20:10:48Z"
+      "claimed_at": "2026-01-26T20:10:48Z",
+      "pr_number": 256,
+      "completed_at": "2026-01-26T21:28:00Z"
     },
     {
       "issue_number": 207,
