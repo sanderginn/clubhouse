@@ -24,7 +24,8 @@ func checkContentRateLimit(ctx context.Context, w http.ResponseWriter, limiter c
 			StatusCode: http.StatusInternalServerError,
 			Err:        err,
 		})
-		return true
+		writeError(ctx, w, http.StatusInternalServerError, "RATE_LIMIT_CHECK_FAILED", "Failed to check rate limit")
+		return false
 	}
 
 	if !allowed {
