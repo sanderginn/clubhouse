@@ -223,4 +223,16 @@ describe('api client', () => {
     expect(firstHeaders.get('X-CSRF-Token')).toBe('csrf-1');
     expect(secondHeaders.get('X-CSRF-Token')).toBe('csrf-2');
   });
+
+  it('skips csrf for public auth endpoints', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({ message: 'ok' }),
+    });
+
+    await api.post('/auth/password-reset/redeem', { token: 't', password: 'p' });
+
+    expect(findCall('/auth/csrf')).toBeUndefined();
+  });
 });

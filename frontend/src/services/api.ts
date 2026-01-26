@@ -6,7 +6,11 @@ import { mapApiPost, type ApiPost } from '../stores/postMapper';
 const API_BASE = '/api/v1';
 const CSRF_ENDPOINT = '/auth/csrf';
 const CSRF_HEADER = 'X-CSRF-Token';
-const CSRF_EXEMPT_ENDPOINTS = new Set(['/auth/login', '/auth/register']);
+const CSRF_EXEMPT_ENDPOINTS = new Set([
+  '/auth/login',
+  '/auth/register',
+  '/auth/password-reset/redeem',
+]);
 const CSRF_ERROR_CODES = new Set(['CSRF_TOKEN_REQUIRED', 'INVALID_CSRF_TOKEN']);
 
 interface ApiError {
