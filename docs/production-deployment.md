@@ -19,6 +19,7 @@ cp .env.production.example .env.production
 Required environment values:
 
 - `CLUBHOUSE_APP_DOMAIN`, `CLUBHOUSE_GRAFANA_DOMAIN`, `ACME_EMAIL`
+- `WS_ORIGIN_ALLOWLIST` (set to your frontend origin, e.g. `https://clubhouse.example.com`)
 - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
 - `REDIS_PASSWORD`
 - `GF_SECURITY_ADMIN_USER`, `GF_SECURITY_ADMIN_PASSWORD`, `GF_SERVER_ROOT_URL`

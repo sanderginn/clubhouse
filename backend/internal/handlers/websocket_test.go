@@ -18,7 +18,9 @@ import (
 	"github.com/sanderginn/clubhouse/internal/testutil"
 )
 
-func TestSameOriginMatrix(t *testing.T) {
+func TestSameOriginAllowlist(t *testing.T) {
+	t.Setenv("WS_ORIGIN_ALLOWLIST", "https://example.com, foo.test:8443, http://admin.internal:9000")
+
 	tests := []struct {
 		name   string
 		host   string
@@ -26,38 +28,32 @@ func TestSameOriginMatrix(t *testing.T) {
 		want   bool
 	}{
 		{
-			name:   "same origin",
-			host:   "example.com",
+			name:   "allowed origin in allowlist",
+			host:   "api.local",
 			origin: "https://example.com",
 			want:   true,
 		},
 		{
-			name:   "dev frontend",
-			host:   "127.0.0.1:8080",
-			origin: "http://localhost:5173",
+			name:   "allowed origin with port",
+			host:   "api.local",
+			origin: "http://foo.test:8443",
 			want:   true,
 		},
 		{
-			name:   "dev backend host",
-			host:   "backend:8080",
-			origin: "https://evil.example.com",
-			want:   true,
-		},
-		{
-			name:   "invalid origin",
-			host:   "example.com",
+			name:   "denied origin not in allowlist",
+			host:   "api.local",
 			origin: "https://evil.example.com",
 			want:   false,
 		},
 		{
 			name:   "empty origin",
-			host:   "example.com",
+			host:   "api.local",
 			origin: "",
 			want:   false,
 		},
 		{
 			name:   "malformed origin",
-			host:   "example.com",
+			host:   "api.local",
 			origin: "://bad",
 			want:   false,
 		},
@@ -73,6 +69,17 @@ func TestSameOriginMatrix(t *testing.T) {
 				t.Fatalf("expected %v, got %v", test.want, got)
 			}
 		})
+	}
+}
+
+func TestSameOriginDefaultAllowlist(t *testing.T) {
+	t.Setenv("WS_ORIGIN_ALLOWLIST", "")
+
+	req := httptest.NewRequest(http.MethodGet, "http://api.local/api/v1/ws", nil)
+	req.Header.Set("Origin", "http://localhost:5173")
+
+	if got := sameOrigin(req); !got {
+		t.Fatalf("expected default allowlist to allow localhost:5173")
 	}
 }
 
@@ -94,6 +101,7 @@ func TestWebSocketSubscribeDispatchAndUnsubscribe(t *testing.T) {
 
 	wsURL := "ws" + strings.TrimPrefix(server.URL, "http")
 	origin := server.URL
+	t.Setenv("WS_ORIGIN_ALLOWLIST", origin)
 	conn, _, err := websocket.DefaultDialer.Dial(wsURL, http.Header{"Origin": []string{origin}})
 	if err != nil {
 		t.Fatalf("failed to dial websocket: %v", err)
