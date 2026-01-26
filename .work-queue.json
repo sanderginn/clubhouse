@@ -1990,9 +1990,9 @@
     {
       "issue_number": 197,
       "title": "Auth: Admin UI to generate password reset links",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769455667-61502",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769455667-61502",
       "dependencies": [
         196
       ],
@@ -2002,7 +2002,9 @@
         "frontend",
         "auth",
         "admin"
-      ]
+      ],
+      "branch": "feat/issue-197-auth-admin-ui-to-generate-password-reset",
+      "claimed_at": "2026-01-26T19:27:47Z"
     },
     {
       "issue_number": 198,
