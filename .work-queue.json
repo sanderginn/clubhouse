@@ -133,6 +133,7 @@
     240,
     245,
     259,
+    260,
     263,
     264,
     269,
@@ -2436,7 +2437,7 @@
     {
       "issue_number": 260,
       "title": "Bug: Incorrect comment count and load-more UI with single comment",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769497175-10606",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769497175-10606",
       "dependencies": [],
@@ -2448,7 +2449,9 @@
         "ui"
       ],
       "branch": "fix/issue-260-incorrect-comment-count-and-loadmore-ui-",
-      "claimed_at": "2026-01-27T06:59:35Z"
+      "claimed_at": "2026-01-27T06:59:35Z",
+      "pr_number": 276,
+      "completed_at": "2026-01-27T07:42:43Z"
     },
     {
       "issue_number": 261,
