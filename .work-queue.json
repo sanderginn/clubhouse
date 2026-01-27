@@ -2548,16 +2548,17 @@
     {
       "issue_number": 267,
       "title": "Bug: Frontend dev container reports npm audit moderate vulnerability",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769498744-40673",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769498744-40673",
       "dependencies": [],
       "phase": "bug",
       "labels": [
         "bug",
         "frontend"
       ],
-      "branch": "fix/issue-267-frontend-npm-audit-vulnerability"
+      "branch": "fix/issue-267-frontend-dev-container-reports-npm-audit",
+      "claimed_at": "2026-01-27T07:25:44Z"
     },
     {
       "issue_number": 268,
