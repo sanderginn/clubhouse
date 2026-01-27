@@ -115,6 +115,23 @@ describe('searchStore', () => {
     expect(state.lastSearched).toBe('');
   });
 
+  it('clears section search when active section changes', async () => {
+    activeSection.set({ id: 'section-1', name: 'General', type: 'general', icon: '💬' });
+    searchStore.setQuery('hello');
+    apiGet.mockResolvedValue({ results: [] });
+
+    await searchStore.search();
+
+    activeSection.set({ id: 'section-2', name: 'Music', type: 'music', icon: '🎵' });
+
+    const state = get(searchStore);
+    expect(state.query).toBe('');
+    expect(state.results).toHaveLength(0);
+    expect(state.lastSearched).toBe('');
+    expect(state.error).toBeNull();
+    expect(state.isLoading).toBe(false);
+  });
+
   it('stores errors when the API fails', async () => {
     searchStore.setQuery('fail');
     searchStore.setScope('global');

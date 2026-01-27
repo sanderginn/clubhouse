@@ -159,6 +159,37 @@ function createSearchStore() {
     lastSearched: '',
   });
   const { subscribe, update, set } = store;
+  let requestToken = 0;
+  let currentSectionId: string | null = null;
+
+  activeSection.subscribe((section) => {
+    const nextSectionId = section?.id ?? null;
+    if (currentSectionId === null) {
+      currentSectionId = nextSectionId;
+      return;
+    }
+
+    if (nextSectionId !== currentSectionId) {
+      currentSectionId = nextSectionId;
+      update((state) => {
+        if (state.scope !== 'section') {
+          return state;
+        }
+        requestToken += 1;
+        if (!state.query && state.results.length === 0 && !state.error && !state.lastSearched && !state.isLoading) {
+          return state;
+        }
+        return {
+          ...state,
+          query: '',
+          results: [],
+          isLoading: false,
+          error: null,
+          lastSearched: '',
+        };
+      });
+    }
+  });
 
   return {
     subscribe,
@@ -172,7 +203,8 @@ function createSearchStore() {
         ...state,
         scope,
       })),
-    clear: () =>
+    clear: () => {
+      requestToken += 1;
       set({
         query: '',
         scope: 'section',
@@ -180,8 +212,11 @@ function createSearchStore() {
         isLoading: false,
         error: null,
         lastSearched: '',
-      }),
+      });
+    },
     search: async () => {
+      const currentToken = requestToken + 1;
+      requestToken = currentToken;
       const state = get(store);
       const query = state.query.trim();
       if (!query) {
@@ -222,6 +257,9 @@ function createSearchStore() {
         }
 
         const response = await api.get<SearchResponse>(`/search?${params.toString()}`);
+        if (currentToken !== requestToken) {
+          return;
+        }
 
         const results = (response.results || []).map((result) => {
           if (result.type === 'post' && result.post) {
@@ -249,6 +287,9 @@ function createSearchStore() {
           lastSearched: query,
         }));
       } catch (err) {
+        if (currentToken !== requestToken) {
+          return;
+        }
         update((prev) => ({
           ...prev,
           isLoading: false,
