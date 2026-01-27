@@ -141,6 +141,7 @@
     267,
     268,
     269,
+    270,
     278
   ],
   "issues": [
@@ -2617,7 +2618,7 @@
     {
       "issue_number": 270,
       "title": "Bug: No sections listed after fresh setup, leaving UI with no navigable content",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769499646-55079",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769499646-55079",
       "dependencies": [],
@@ -2629,7 +2630,9 @@
         "ui"
       ],
       "branch": "fix/issue-270-no-sections-listed-after-fresh-setup-lea",
-      "claimed_at": "2026-01-27T07:40:46Z"
+      "claimed_at": "2026-01-27T07:40:46Z",
+      "pr_number": 286,
+      "completed_at": "2026-01-27T07:49:30Z"
     },
     {
       "issue_number": 271,
