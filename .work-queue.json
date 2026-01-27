@@ -136,6 +136,7 @@
     260,
     263,
     264,
+    265,
     266,
     267,
     269,
@@ -2527,7 +2528,7 @@
     {
       "issue_number": 265,
       "title": "Bug: Grafana logs show xychart plugin already registered on startup",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769498638-35291",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769498638-35291",
       "dependencies": [],
@@ -2538,7 +2539,9 @@
         "devops"
       ],
       "branch": "fix/issue-265-grafana-logs-show-xychart-plugin-already",
-      "claimed_at": "2026-01-27T07:23:58Z"
+      "claimed_at": "2026-01-27T07:23:58Z",
+      "pr_number": 284,
+      "completed_at": "2026-01-27T07:48:51Z"
     },
     {
       "issue_number": 266,
