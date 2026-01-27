@@ -80,6 +80,61 @@ func TestCreatePostWithLinks(t *testing.T) {
 	}
 }
 
+func TestCreatePostWithLinksNoContent(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	disableLinkMetadata(t)
+
+	userID := testutil.CreateTestUser(t, db, "postlinknocontent", "postlinknocontent@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Links Only Section", "general")
+
+	service := NewPostService(db)
+	req := &models.CreatePostRequest{
+		SectionID: sectionID,
+		Content:   "",
+		Links: []models.LinkRequest{
+			{URL: "https://example.com"},
+		},
+	}
+
+	post, err := service.CreatePost(context.Background(), req, uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("CreatePost failed: %v", err)
+	}
+
+	if post.Content != "" {
+		t.Errorf("expected empty content, got %q", post.Content)
+	}
+	if len(post.Links) != 1 {
+		t.Fatalf("expected 1 link, got %d", len(post.Links))
+	}
+}
+
+func TestCreatePostRequiresContentOrLinks(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	disableLinkMetadata(t)
+
+	userID := testutil.CreateTestUser(t, db, "postempty", "postempty@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Empty Section", "general")
+
+	service := NewPostService(db)
+	req := &models.CreatePostRequest{
+		SectionID: sectionID,
+		Content:   "   ",
+	}
+
+	_, err := service.CreatePost(context.Background(), req, uuid.MustParse(userID))
+	if err == nil {
+		t.Fatalf("expected error for empty content without links")
+	}
+	if err.Error() != "content is required" {
+		t.Fatalf("expected error %q, got %q", "content is required", err.Error())
+	}
+}
+
 func TestDeletePostOwner(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })

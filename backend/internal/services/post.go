@@ -789,7 +789,7 @@ func validateCreatePostInput(req *models.CreatePostRequest) error {
 		return fmt.Errorf("section_id is required")
 	}
 
-	if strings.TrimSpace(req.Content) == "" {
+	if strings.TrimSpace(req.Content) == "" && len(req.Links) == 0 {
 		return fmt.Errorf("content is required")
 	}
 
