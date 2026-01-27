@@ -57,6 +57,8 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=30d'
+      - '--log.level=warn'
+      - '--log.format=json'
     ports:
       - "9090:9090"
     volumes:
@@ -93,6 +95,9 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: admin
       # Optional plugin preinstall list (e.g. "grafana-piechart-panel")
       GF_PLUGINS_PREINSTALL: ${GF_PLUGINS_PREINSTALL:-}
+      GF_LOG_LEVEL: warn
+      GF_LOG_CONSOLE_FORMAT: json
+      GF_LOG_FILE_FORMAT: json
     ports:
       - "3000:3000"
     volumes:
@@ -127,6 +132,7 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-debug}
       OTEL_EXPORTER_OTLP_ENDPOINT: tempo:4317
       OTEL_EXPORTER_OTLP_INSECURE: true
+      CLUBHOUSE_TOTP_ENCRYPTION_KEY: ${CLUBHOUSE_TOTP_ENCRYPTION_KEY-}
     ports:
       - "8080:8080"
     depends_on:
