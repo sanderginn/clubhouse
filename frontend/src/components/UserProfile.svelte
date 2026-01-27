@@ -56,6 +56,10 @@
 
   let activeTab: 'posts' | 'comments' = 'posts';
   let currentController: AbortController | null = null;
+  let postsController: AbortController | null = null;
+  let commentsController: AbortController | null = null;
+  let postsRequestId = 0;
+  let commentsRequestId = 0;
   let pendingCommentReactions = new Set<string>();
 
   $: if (userId) {
@@ -69,6 +73,12 @@
   }
 
   function resetProfile() {
+    currentController?.abort();
+    postsController?.abort();
+    commentsController?.abort();
+    postsRequestId += 1;
+    commentsRequestId += 1;
+    pendingCommentReactions = new Set();
     profile = null;
     stats = null;
     profileError = null;
@@ -100,7 +110,7 @@
         { signal: controller.signal }
       );
 
-      if (currentController !== controller) return;
+      if (currentController !== controller || id !== userId) return;
 
       const apiUser = response.user;
       profile = {
@@ -117,7 +127,7 @@
         commentCount: apiStats.commentCount ?? apiStats.comment_count ?? 0,
       };
     } catch (error) {
-      if (currentController !== controller) return;
+      if (currentController !== controller || id !== userId) return;
       profileError = error instanceof Error ? error.message : 'Failed to load profile.';
     } finally {
       if (currentController === controller) {
@@ -130,6 +140,10 @@
     if (postsLoading) return;
     if (!postsHasMore && !reset) return;
 
+    postsController?.abort();
+    const controller = new AbortController();
+    postsController = controller;
+    const requestId = (postsRequestId += 1);
     postsLoading = true;
     postsError = null;
 
@@ -143,7 +157,11 @@
         meta?: { cursor?: string; hasMore?: boolean; has_more?: boolean };
         next_cursor?: string;
         has_more?: boolean;
-      }>(`/users/${id}/posts?${params.toString()}`);
+      }>(`/users/${id}/posts?${params.toString()}`, { signal: controller.signal });
+
+      if (requestId !== postsRequestId || id !== userId) {
+        return;
+      }
 
       const nextPosts = (response.posts ?? []).map(mapApiPost);
       const meta = response.meta ?? {};
@@ -154,9 +172,14 @@
       postsCursor = nextCursor;
       postsHasMore = nextHasMore;
     } catch (error) {
+      if (requestId !== postsRequestId || id !== userId) {
+        return;
+      }
       postsError = error instanceof Error ? error.message : 'Failed to load posts.';
     } finally {
-      postsLoading = false;
+      if (requestId === postsRequestId) {
+        postsLoading = false;
+      }
     }
   }
 
@@ -164,6 +187,10 @@
     if (commentsLoading) return;
     if (!commentsHasMore && !reset) return;
 
+    commentsController?.abort();
+    const controller = new AbortController();
+    commentsController = controller;
+    const requestId = (commentsRequestId += 1);
     commentsLoading = true;
     commentsError = null;
 
@@ -177,7 +204,11 @@
         meta?: { cursor?: string; hasMore?: boolean; has_more?: boolean };
         next_cursor?: string;
         has_more?: boolean;
-      }>(`/users/${id}/comments?${params.toString()}`);
+      }>(`/users/${id}/comments?${params.toString()}`, { signal: controller.signal });
+
+      if (requestId !== commentsRequestId || id !== userId) {
+        return;
+      }
 
       const nextComments = (response.comments ?? []).map(mapApiComment);
       const meta = response.meta ?? {};
@@ -189,9 +220,14 @@
       commentsHasMore = nextHasMore;
       commentsLoaded = true;
     } catch (error) {
+      if (requestId !== commentsRequestId || id !== userId) {
+        return;
+      }
       commentsError = error instanceof Error ? error.message : 'Failed to load comments.';
     } finally {
-      commentsLoading = false;
+      if (requestId === commentsRequestId) {
+        commentsLoading = false;
+      }
     }
   }
 
@@ -248,6 +284,7 @@
         [emoji]: (comment.reactionCounts?.[emoji] ?? 0) + 1,
       };
     }
+    comments = [...comments];
 
     try {
       if (hasReacted) {
@@ -271,6 +308,7 @@
           }
         }
       }
+      comments = [...comments];
     } finally {
       pendingCommentReactions.delete(key);
     }
@@ -278,6 +316,8 @@
 
   onDestroy(() => {
     currentController?.abort();
+    postsController?.abort();
+    commentsController?.abort();
   });
 </script>
 
