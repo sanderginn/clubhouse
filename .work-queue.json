@@ -2707,9 +2707,9 @@
     {
       "issue_number": 277,
       "title": "Bug: Comment input label/placeholder duplicates 'Add a comment' text",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769500828-68580",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769500828-68580",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -2718,7 +2718,8 @@
         "comments",
         "ui"
       ],
-      "branch": "fix/issue-277-duplicate-comment-placeholder"
+      "branch": "fix/issue-277-comment-input-labelplaceholder-duplicate",
+      "claimed_at": "2026-01-27T08:00:28Z"
     },
     {
       "issue_number": 278,
