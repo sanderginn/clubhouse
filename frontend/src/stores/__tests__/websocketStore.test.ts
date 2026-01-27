@@ -54,6 +54,7 @@ const storeRefs = {
     subscribe: ReturnType<typeof writable>['subscribe'];
     addComment: ReturnType<typeof vi.fn>;
     addReply: ReturnType<typeof vi.fn>;
+    markSeenComment: ReturnType<typeof vi.fn>;
     setState: (value: Record<string, { comments: Array<{ id: string; replies?: any[] }> }>) => void;
   },
   api: {
@@ -67,6 +68,7 @@ storeRefs.commentStore = {
   subscribe: storeRefs.commentState.subscribe,
   addComment: vi.fn(),
   addReply: vi.fn(),
+  markSeenComment: vi.fn(),
   setState: (value: Record<string, { comments: Array<{ id: string; replies?: any[] }> }>) =>
     storeRefs.commentState.set(value),
 };
@@ -108,6 +110,7 @@ beforeEach(() => {
   storeRefs.postStore.updateReactionCount.mockReset();
   storeRefs.commentStore.addComment.mockReset();
   storeRefs.commentStore.addReply.mockReset();
+  storeRefs.commentStore.markSeenComment.mockReset();
   storeRefs.api.getComment.mockReset();
   storeRefs.mapApiComment.mockReset();
   storeRefs.mapApiPost.mockReset();
@@ -226,11 +229,13 @@ describe('websocketStore', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(storeRefs.postStore.incrementCommentCount).toHaveBeenCalledWith('post-1', 1);
+    expect(storeRefs.commentStore.markSeenComment).toHaveBeenCalledWith('post-1', 'comment-1');
     expect(storeRefs.api.getComment).toHaveBeenCalledWith('comment-1');
     expect(storeRefs.commentStore.addComment).toHaveBeenCalled();
 
     storeRefs.postStore.incrementCommentCount.mockClear();
     storeRefs.api.getComment.mockClear();
+    storeRefs.commentStore.markSeenComment.mockClear();
 
     storeRefs.commentStore.setState({ 'post-1': { comments: [{ id: 'comment-1' }] } } as any);
 
@@ -243,6 +248,7 @@ describe('websocketStore', () => {
     });
 
     expect(storeRefs.postStore.incrementCommentCount).not.toHaveBeenCalled();
+    expect(storeRefs.commentStore.markSeenComment).not.toHaveBeenCalled();
     expect(storeRefs.api.getComment).not.toHaveBeenCalled();
   });
 

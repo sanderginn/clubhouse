@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent, screen, cleanup } from '@testing-library/svelte';
-import { commentStore, postStore } from '../../../stores';
 import { afterEach } from 'vitest';
 
 const createComment = vi.hoisted(() => vi.fn());
@@ -16,6 +15,7 @@ vi.mock('../../../stores/commentMapper', () => ({
   mapApiComment: (comment: unknown) => mapApiComment(comment),
 }));
 
+const { commentStore, postStore } = await import('../../../stores');
 const { default: CommentForm } = await import('../CommentForm.svelte');
 
 beforeEach(() => {
@@ -58,6 +58,30 @@ describe('CommentForm', () => {
     expect(addCommentSpy).toHaveBeenCalled();
     expect(incrementSpy).toHaveBeenCalledWith('post-1', 1);
     expect((textarea as HTMLTextAreaElement).value).toBe('');
+  });
+
+  it('skips comment count increment when websocket already counted', async () => {
+    const incrementSpy = vi.spyOn(postStore, 'incrementCommentCount');
+
+    mapApiComment.mockReturnValue({
+      id: 'comment-1',
+      postId: 'post-1',
+      userId: 'user-1',
+      content: 'Nice',
+      createdAt: 'now',
+    });
+    createComment.mockResolvedValue({ comment: { id: 'comment-1' } });
+    commentStore.markSeenComment('post-1', 'comment-1');
+
+    const { container } = render(CommentForm, { postId: 'post-1' });
+    const textarea = screen.getByPlaceholderText('Write a comment...');
+
+    await fireEvent.input(textarea, { target: { value: 'Nice' } });
+    const form = container.querySelector('form');
+    if (!form) throw new Error('form not found');
+    await fireEvent.submit(form);
+
+    expect(incrementSpy).not.toHaveBeenCalled();
   });
 
   it('shows error on failure', async () => {

@@ -71,7 +71,7 @@ describe('CommentThread', () => {
     expect(screen.getByText('No comments yet. Start the conversation.')).toBeInTheDocument();
   });
 
-  it('renders replies and load more button', async () => {
+  it('hides load more button when all comments are loaded', async () => {
     commentStore.setThread('post-1', [
       {
         id: 'comment-1',
@@ -85,6 +85,24 @@ describe('CommentThread', () => {
     ], 'cursor-1', true);
 
     render(CommentThread, { postId: 'post-1', commentCount: 1 });
+
+    expect(screen.queryByText('Load more comments')).not.toBeInTheDocument();
+  });
+
+  it('renders replies and load more button when more comments exist', async () => {
+    commentStore.setThread('post-1', [
+      {
+        id: 'comment-1',
+        postId: 'post-1',
+        userId: 'user-1',
+        content: 'Hello',
+        createdAt: 'now',
+        user: { id: 'user-1', username: 'Sander' },
+        replies: [],
+      },
+    ], 'cursor-1', true);
+
+    render(CommentThread, { postId: 'post-1', commentCount: 2 });
 
     expect(screen.getByText('Load more comments')).toBeInTheDocument();
 

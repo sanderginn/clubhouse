@@ -17,6 +17,7 @@
     cursor: null,
     hasMore: true,
     loaded: false,
+    seenCommentIds: new Set(),
   };
 
   let openReplies = new Set<string>();
@@ -356,7 +357,7 @@
         </article>
       {/each}
 
-      {#if thread.hasMore}
+      {#if thread.hasMore && commentCount > thread.comments.length}
         <div class="flex justify-center">
           <button
             type="button"

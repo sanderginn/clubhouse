@@ -28,8 +28,11 @@
         content: content.trim(),
       });
       const comment = mapApiComment(response.comment);
+      const skipIncrement = commentStore.consumeSeenComment(postId, comment.id);
       commentStore.addComment(postId, comment);
-      postStore.incrementCommentCount(postId, 1);
+      if (!skipIncrement) {
+        postStore.incrementCommentCount(postId, 1);
+      }
       content = '';
       dispatch('submit', comment);
     } catch (err) {
