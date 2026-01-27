@@ -45,7 +45,12 @@
   function syncRouteFromLocation() {
     if (typeof window === 'undefined') return;
     const path = window.location.pathname;
-    if (path === '/reset' || path.startsWith('/reset/')) {
+    if (
+      path === '/reset' ||
+      path.startsWith('/reset/') ||
+      path === '/reset-password' ||
+      path.startsWith('/reset-password/')
+    ) {
       unauthRoute = 'reset';
       const url = new URL(window.location.href);
       resetToken = url.searchParams.get('token');
