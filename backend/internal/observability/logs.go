@@ -27,6 +27,9 @@ type ErrorLog struct {
 var stderrLogger = stdlog.New(os.Stderr, "", 0)
 
 func LogError(ctx context.Context, entry ErrorLog) {
+	if !ShouldLog(LevelError) {
+		return
+	}
 	logger := global.Logger("clubhouse")
 
 	var record log.Record
@@ -63,6 +66,9 @@ func LogError(ctx context.Context, entry ErrorLog) {
 
 // LogInfo logs an informational message with optional key-value pairs
 func LogInfo(ctx context.Context, message string, kvPairs ...string) {
+	if !ShouldLog(LevelInfo) {
+		return
+	}
 	logger := global.Logger("clubhouse")
 
 	var record log.Record
@@ -88,6 +94,72 @@ func LogInfo(ctx context.Context, message string, kvPairs ...string) {
 	record.AddAttributes(attrs...)
 	logger.Emit(ctx, record)
 	emitStderr("INFO", message, attrs)
+}
+
+// LogDebug logs a debug message with optional key-value pairs.
+// Debug messages are only emitted when LOG_LEVEL is set to "debug".
+func LogDebug(ctx context.Context, message string, kvPairs ...string) {
+	if !ShouldLog(LevelDebug) {
+		return
+	}
+	logger := global.Logger("clubhouse")
+
+	var record log.Record
+	record.SetTimestamp(time.Now())
+	record.SetSeverity(log.SeverityDebug)
+	record.SetSeverityText("DEBUG")
+	record.SetBody(log.StringValue(message))
+
+	attrs := make([]log.KeyValue, 0)
+
+	// Convert key-value pairs to attributes
+	for i := 0; i < len(kvPairs)-1; i += 2 {
+		attrs = append(attrs, log.String(kvPairs[i], kvPairs[i+1]))
+	}
+
+	if spanCtx := trace.SpanContextFromContext(ctx); spanCtx.IsValid() {
+		attrs = append(attrs,
+			log.String("trace_id", spanCtx.TraceID().String()),
+			log.String("span_id", spanCtx.SpanID().String()),
+		)
+	}
+
+	record.AddAttributes(attrs...)
+	logger.Emit(ctx, record)
+	emitStderr("DEBUG", message, attrs)
+}
+
+// LogWarn logs a warning message with optional key-value pairs.
+// Warnings indicate potential issues that don't prevent operation.
+func LogWarn(ctx context.Context, message string, kvPairs ...string) {
+	if !ShouldLog(LevelWarn) {
+		return
+	}
+	logger := global.Logger("clubhouse")
+
+	var record log.Record
+	record.SetTimestamp(time.Now())
+	record.SetSeverity(log.SeverityWarn)
+	record.SetSeverityText("WARN")
+	record.SetBody(log.StringValue(message))
+
+	attrs := make([]log.KeyValue, 0)
+
+	// Convert key-value pairs to attributes
+	for i := 0; i < len(kvPairs)-1; i += 2 {
+		attrs = append(attrs, log.String(kvPairs[i], kvPairs[i+1]))
+	}
+
+	if spanCtx := trace.SpanContextFromContext(ctx); spanCtx.IsValid() {
+		attrs = append(attrs,
+			log.String("trace_id", spanCtx.TraceID().String()),
+			log.String("span_id", spanCtx.SpanID().String()),
+		)
+	}
+
+	record.AddAttributes(attrs...)
+	logger.Emit(ctx, record)
+	emitStderr("WARN", message, attrs)
 }
 
 type stderrLog struct {

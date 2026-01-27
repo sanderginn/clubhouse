@@ -1,7 +1,7 @@
 # Clubhouse - Design Document
 
-**Version:** 1.1
-**Date:** January 22, 2026
+**Version:** 1.2
+**Date:** January 27, 2026
 **Status:** Implementation In Progress
 
 ---
@@ -1053,7 +1053,32 @@ If disabled:
 #### 3. Logs
 - **Structured logging:** JSON format via OpenTelemetry logs API
 - **Fields:** timestamp, level, message, trace_id, span_id, user_id, error stack
-- **Exporters:** OTLP to Grafana Loki
+- **Exporters:** OTLP to Grafana Loki + stderr (JSON)
+- **Log levels:** Configurable via `LOG_LEVEL` environment variable
+
+**Log Level Configuration:**
+
+| Level | Description | When to use |
+|-------|-------------|-------------|
+| `debug` | All messages | Development, troubleshooting production issues |
+| `info` | Info, warn, error | Recommended for production (default) |
+| `warn` | Warn, error | Quieter production, focus on issues |
+| `error` | Errors only | Minimal logging, alerts-focused |
+
+**Available logging functions (`internal/observability`):**
+- `LogDebug(ctx, message, kvPairs...)` — Verbose debugging info
+- `LogInfo(ctx, message, kvPairs...)` — Operational messages
+- `LogWarn(ctx, message, kvPairs...)` — Potential issues
+- `LogError(ctx, ErrorLog{...})` — Failures with error details
+
+**Configuration:**
+```bash
+# Development (docker-compose.yml)
+LOG_LEVEL=debug
+
+# Production (docker-compose.prod.yml or .env)
+LOG_LEVEL=info
+```
 
 ### Retention & Storage
 - **Traces:** 7 days (Tempo `compacted_block_retention: 168h` in `tempo.yml`) to keep recent incident context without growing trace storage too fast.

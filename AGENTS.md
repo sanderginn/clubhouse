@@ -172,9 +172,49 @@ Examples:
 ### Go
 - **Package structure**: `internal/` for private code, `cmd/` for entry points
 - **Error handling**: Wrap errors with context, don't ignore
-- **Logging**: Use OpenTelemetry logs (structured, not fmt.Println)
+- **Logging**: Use the observability package functions (see below)
 - **Database queries**: Use parameterized queries (prevent SQL injection)
 - **Middleware**: Chain via `http.Handler` wrapper pattern
+
+### Logging
+
+Use the structured logging functions in `internal/observability/`. Never use `fmt.Println` or the standard `log` package.
+
+**Available functions:**
+```go
+import "github.com/sanderginn/clubhouse/internal/observability"
+
+// Debug - verbose information for development/troubleshooting
+// Only emitted when LOG_LEVEL=debug
+observability.LogDebug(ctx, "processing request", "user_id", userID, "action", "create_post")
+
+// Info - general operational messages
+// Emitted when LOG_LEVEL=debug or LOG_LEVEL=info
+observability.LogInfo(ctx, "post created", "post_id", postID, "section_id", sectionID)
+
+// Warn - potential issues that don't prevent operation
+// Emitted when LOG_LEVEL=debug, info, or warn
+observability.LogWarn(ctx, "rate limit approaching", "user_id", userID, "remaining", "5")
+
+// Error - failures requiring attention
+// Always emitted regardless of LOG_LEVEL
+observability.LogError(ctx, observability.ErrorLog{
+    Message:    "failed to create post",
+    Code:       "POST_CREATE_FAILED",
+    StatusCode: http.StatusInternalServerError,
+    UserID:     userID,
+    Err:        err,
+})
+```
+
+**When to use each level:**
+- **Debug**: Request/response details, SQL queries, cache hits/misses, detailed flow tracing
+- **Info**: Successful operations worth noting (user actions, service startup, config changes)
+- **Warn**: Recoverable issues, deprecated usage, approaching limits
+- **Error**: Failures, exceptions, things requiring investigation
+
+**Log level configuration:**
+Set via `LOG_LEVEL` environment variable: `debug`, `info`, `warn`, `error` (defaults to `info`)
 
 ### Svelte
 - **Component naming**: PascalCase (PostCard.svelte)
@@ -311,5 +351,5 @@ Always check `backend/migrations/` for the actual schema before writing queries.
 
 ---
 
-**Last Updated**: January 22, 2026
-**Version**: 1.1
+**Last Updated**: January 27, 2026
+**Version**: 1.2
