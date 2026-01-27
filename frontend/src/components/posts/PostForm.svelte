@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, tick } from 'svelte';
   import { api } from '../../services/api';
   import { activeSection, postStore, currentUser } from '../../stores';
   import type { Link, LinkMetadata } from '../../stores/postStore';
@@ -17,6 +17,10 @@
   let linkMetadata: LinkMetadata | null = null;
   let isLoadingPreview = false;
   let previewError: string | null = null;
+  let isLinkInputVisible = false;
+  let linkInputValue = '';
+  let linkInputError: string | null = null;
+  let linkInputRef: HTMLInputElement | null = null;
 
   let fileInput: HTMLInputElement;
   let selectedFiles: File[] = [];
@@ -30,7 +34,7 @@
 
   async function handleContentChange() {
     const urls = extractUrls(content);
-    if (urls.length > 0 && !linkMetadata && !linkUrl) {
+    if (urls.length > 0 && !linkMetadata && !linkUrl && !isLinkInputVisible && !linkInputValue) {
       linkUrl = urls[0];
       await fetchLinkPreview();
     }
@@ -60,6 +64,65 @@
     linkUrl = '';
     linkMetadata = null;
     previewError = null;
+    linkInputValue = '';
+    linkInputError = null;
+    isLinkInputVisible = false;
+  }
+
+  function isValidUrl(value: string): boolean {
+    try {
+      const parsed = new URL(value);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }
+
+  async function openLinkInput() {
+    if (isSubmitting || linkMetadata || linkUrl) {
+      return;
+    }
+    isLinkInputVisible = true;
+    linkInputError = null;
+    await tick();
+    linkInputRef?.focus();
+    linkInputRef?.select();
+  }
+
+  function closeLinkInput() {
+    isLinkInputVisible = false;
+    linkInputError = null;
+    linkInputValue = '';
+  }
+
+  async function submitLinkInput() {
+    let value = linkInputValue.trim();
+    if (!value) {
+      linkInputError = 'Enter a link URL.';
+      return;
+    }
+
+    if (!/^https?:\/\//i.test(value)) {
+      value = `https://${value}`;
+    }
+
+    if (!isValidUrl(value)) {
+      linkInputError = 'Enter a valid http(s) URL.';
+      return;
+    }
+
+    linkInputError = null;
+    linkUrl = value;
+    linkInputValue = value;
+    isLinkInputVisible = false;
+    await fetchLinkPreview();
+  }
+
+  function handleLinkInputKeydown(event: KeyboardEvent) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      submitLinkInput();
+    }
   }
 
   function handleFileSelect(event: Event) {
@@ -109,6 +172,9 @@
       content = '';
       linkUrl = '';
       linkMetadata = null;
+      linkInputValue = '';
+      linkInputError = null;
+      isLinkInputVisible = false;
       selectedFiles = [];
 
       dispatch('submit');
@@ -183,6 +249,47 @@
       >
         Dismiss
       </button>
+    </div>
+  {/if}
+
+  {#if isLinkInputVisible && !linkMetadata}
+    <div class="space-y-2">
+      <div class="flex flex-col sm:flex-row gap-2">
+        <div class="flex-1">
+          <label for="post-link" class="sr-only">Link URL</label>
+          <input
+            id="post-link"
+            type="url"
+            bind:this={linkInputRef}
+            bind:value={linkInputValue}
+            on:keydown={handleLinkInputKeydown}
+            placeholder="Paste a link (https://...)"
+            disabled={isSubmitting || isLoadingPreview}
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:bg-gray-100"
+          />
+        </div>
+        <button
+          type="button"
+          on:click={submitLinkInput}
+          disabled={isSubmitting || isLoadingPreview}
+          class="px-3 py-2 bg-primary text-white font-medium rounded-lg hover:bg-secondary transition-colors disabled:opacity-50"
+        >
+          Add link
+        </button>
+        <button
+          type="button"
+          on:click={closeLinkInput}
+          disabled={isSubmitting || isLoadingPreview}
+          class="px-3 py-2 border border-gray-200 text-gray-600 font-medium rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+        >
+          Cancel
+        </button>
+      </div>
+      {#if linkInputError}
+        <p class="text-xs text-red-600">{linkInputError}</p>
+      {:else}
+        <p class="text-xs text-gray-500">We’ll fetch a preview after you add the link.</p>
+      {/if}
     </div>
   {/if}
 
@@ -265,14 +372,8 @@
       </button>
       <button
         type="button"
-        on:click={() => {
-          const url = prompt('Enter a link URL:');
-          if (url) {
-            linkUrl = url;
-            fetchLinkPreview();
-          }
-        }}
-        disabled={isSubmitting || !!linkMetadata}
+        on:click={openLinkInput}
+        disabled={isSubmitting || isLoadingPreview || !!linkMetadata || !!linkUrl}
         class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
         aria-label="Add link"
       >
