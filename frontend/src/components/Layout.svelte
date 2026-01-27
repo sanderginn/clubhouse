@@ -34,7 +34,7 @@
 <div class="min-h-screen bg-gray-50">
   <Header />
 
-  <div class="flex">
+  <div class="flex pt-16">
     <Sidebar />
 
     <main class="flex-1 lg:ml-64">
