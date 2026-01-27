@@ -134,6 +134,7 @@
     245,
     259,
     260,
+    261,
     263,
     264,
     265,
@@ -2463,7 +2464,7 @@
     {
       "issue_number": 261,
       "title": "Enhancement: Replace link prompt with inline input",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769500838-69635",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769500838-69635",
       "dependencies": [],
@@ -2475,7 +2476,9 @@
         "ui"
       ],
       "branch": "feat/issue-261-enhancement-replace-link-prompt-with-inl",
-      "claimed_at": "2026-01-27T08:00:38Z"
+      "claimed_at": "2026-01-27T08:00:38Z",
+      "pr_number": 289,
+      "completed_at": "2026-01-27T08:05:37Z"
     },
     {
       "issue_number": 262,
