@@ -1,7 +1,7 @@
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16
     container_name: clubhouse-postgres
     environment:
       POSTGRES_USER: clubhouse

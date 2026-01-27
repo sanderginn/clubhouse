@@ -1,7 +1,7 @@
 services:
   # Test PostgreSQL Database
   postgres-test:
-    image: postgres:16-alpine
+    image: postgres:16
     container_name: clubhouse-postgres-test
     environment:
       POSTGRES_USER: clubhouse_test
