@@ -2768,6 +2768,280 @@
         "ui"
       ],
       "branch": "chore/issue-279-uat-manual-prompts"
+    },
+    {
+      "issue_number": 280,
+      "title": "Bug: Login for unapproved users shows invalid credentials instead of awaiting approval",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "auth",
+        "frontend",
+        "backend"
+      ],
+      "branch": "fix/issue-280-bug--login-for-unapproved-users-shows-invalid-credentials-instead-of-awaiting-approval"
+    },
+    {
+      "issue_number": 281,
+      "title": "Bug: Password reset link routes to login instead of reset screen",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "auth",
+        "frontend"
+      ],
+      "branch": "fix/issue-281-bug--password-reset-link-routes-to-login-instead-of-reset-screen"
+    },
+    {
+      "issue_number": 282,
+      "title": "Bug: Admin MFA one-time code prompt appears as error state",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "auth",
+        "admin",
+        "frontend",
+        "ui"
+      ],
+      "branch": "fix/issue-282-bug--admin-mfa-one-time-code-prompt-appears-as-error-state"
+    },
+    {
+      "issue_number": 283,
+      "title": "Bug: Post creation rejects URL-only posts",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "posts",
+        "links",
+        "frontend",
+        "backend"
+      ],
+      "branch": "fix/issue-283-bug--post-creation-rejects-url-only-posts"
+    },
+    {
+      "issue_number": 284,
+      "title": "Bug: Link previews missing after page reload",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "links",
+        "frontend",
+        "ui"
+      ],
+      "branch": "fix/issue-284-bug--link-previews-missing-after-page-reload"
+    },
+    {
+      "issue_number": 285,
+      "title": "Bug: Photo upload succeeds but image not displayed",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "posts",
+        "ui"
+      ],
+      "branch": "fix/issue-285-bug--photo-upload-succeeds-but-image-not-displayed"
+    },
+    {
+      "issue_number": 286,
+      "title": "Bug: Nested comment replies increment comment count by 2",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "comments",
+        "frontend",
+        "ui"
+      ],
+      "branch": "fix/issue-286-bug--nested-comment-replies-increment-comment-count-by-2"
+    },
+    {
+      "issue_number": 287,
+      "title": "Bug: Feed pagination/infinite scroll does not limit or load more posts",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "feed",
+        "frontend",
+        "ui"
+      ],
+      "branch": "fix/issue-287-bug--feed-pagination-infinite-scroll-does-not-limit-or-load-more-posts"
+    },
+    {
+      "issue_number": 288,
+      "title": "Enhancement: Show section name on search results",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "search",
+        "frontend",
+        "ui"
+      ],
+      "branch": "feat/issue-288-enhancement--show-section-name-on-search-results"
+    },
+    {
+      "issue_number": 289,
+      "title": "Enhancement: Include parent post context for comment search results",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "search",
+        "frontend",
+        "ui"
+      ],
+      "branch": "feat/issue-289-enhancement--include-parent-post-context-for-comment-search-results"
+    },
+    {
+      "issue_number": 290,
+      "title": "Enhancement: Highlight matched comment in search results",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "search",
+        "frontend",
+        "ui"
+      ],
+      "branch": "feat/issue-290-enhancement--highlight-matched-comment-in-search-results"
+    },
+    {
+      "issue_number": 291,
+      "title": "Bug: WebSocket section updates not delivered between clients",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "backend",
+        "websocket",
+        "redis"
+      ],
+      "branch": "fix/issue-291-bug--websocket-section-updates-not-delivered-between-clients"
+    },
+    {
+      "issue_number": 292,
+      "title": "Bug: Duplicate error message when notifications permission denied",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "pwa",
+        "ui"
+      ],
+      "branch": "fix/issue-292-bug--duplicate-error-message-when-notifications-permission-denied"
+    },
+    {
+      "issue_number": 293,
+      "title": "Enhancement: Linkify URLs in posts and comments",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "frontend",
+        "posts",
+        "comments",
+        "ui"
+      ],
+      "branch": "feat/issue-293-enhancement--linkify-urls-in-posts-and-comments"
+    },
+    {
+      "issue_number": 294,
+      "title": "Enhancement: Add reaction tooltips listing reacting users",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "frontend",
+        "reactions",
+        "ui"
+      ],
+      "branch": "feat/issue-294-enhancement--add-reaction-tooltips-listing-reacting-users"
+    },
+    {
+      "issue_number": 295,
+      "title": "UI: Align admin moderation toolkit transitions with app",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "frontend",
+        "admin",
+        "ui"
+      ],
+      "branch": "feat/issue-295-ui--align-admin-moderation-toolkit-transitions-with-app"
+    },
+    {
+      "issue_number": 296,
+      "title": "Bug: Navigation does not update URL, causing refresh to reset view",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "ui",
+        "routing"
+      ],
+      "branch": "fix/issue-296-bug--navigation-does-not-update-url--causing-refresh-to-reset-view"
     }
   ]
 }
