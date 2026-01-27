@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import './styles/globals.css';
   import { Layout, PostForm, SectionFeed, SearchBar, SearchResults, InstallPrompt } from './components';
+  import UserProfile from './components/UserProfile.svelte';
   import { Login, Register, AdminPanel, PasswordReset } from './routes';
   import {
     authStore,
@@ -13,21 +14,32 @@
     activeView,
     isAdmin,
     pwaStore,
+    activeProfileUserId,
+    uiStore,
   } from './stores';
+  import { parseProfileUserId } from './services/profileNavigation';
 
   let unauthRoute: 'login' | 'register' | 'reset' = 'login';
   let resetToken: string | null = null;
   let sectionsLoadedForSession = false;
+  let popstateHandler: (() => void) | null = null;
 
   onMount(() => {
     authStore.checkSession();
     websocketStore.init();
     pwaStore.init();
     syncRouteFromLocation();
+
+    if (typeof window !== 'undefined') {
+      const handler = () => syncRouteFromLocation();
+      window.addEventListener('popstate', handler);
+      popstateHandler = () => window.removeEventListener('popstate', handler);
+    }
   });
 
   onDestroy(() => {
     websocketStore.cleanup();
+    popstateHandler?.();
   });
 
   function syncRouteFromLocation() {
@@ -38,6 +50,12 @@
       const url = new URL(window.location.href);
       resetToken = url.searchParams.get('token');
       return;
+    }
+    const profileUserId = parseProfileUserId(path);
+    if (profileUserId) {
+      uiStore.openProfile(profileUserId);
+    } else {
+      uiStore.setActiveView('feed');
     }
     resetToken = null;
     unauthRoute = 'login';
@@ -95,6 +113,15 @@
     <div class="space-y-6">
       {#if $activeView === 'admin' && $isAdmin}
         <AdminPanel />
+      {:else if $activeView === 'profile'}
+        {#if $activeProfileUserId}
+          <UserProfile userId={$activeProfileUserId} />
+        {:else}
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h1 class="text-xl font-semibold text-gray-900 mb-2">User not found</h1>
+            <p class="text-gray-600">We couldn’t load that profile. Try selecting a user again.</p>
+          </div>
+        {/if}
       {:else if $activeSection}
         <div class="flex items-center gap-3">
           <span class="text-3xl">{$activeSection.icon}</span>

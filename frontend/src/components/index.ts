@@ -9,3 +9,4 @@ export { default as SectionFeed } from './SectionFeed.svelte';
 export * from './search';
 export { default as InstallPrompt } from './InstallPrompt.svelte';
 export { default as NotificationSettings } from './NotificationSettings.svelte';
+export { default as UserProfile } from './UserProfile.svelte';

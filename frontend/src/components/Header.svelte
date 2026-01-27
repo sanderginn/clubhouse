@@ -1,5 +1,6 @@
 <script lang="ts">
   import { uiStore, currentUser, isAuthenticated, authStore } from '../stores';
+  import { buildProfileHref, handleProfileNavigation } from '../services/profileNavigation';
 
   function toggleSidebar() {
     uiStore.toggleSidebar();
@@ -37,22 +38,33 @@
     <div class="flex items-center gap-4">
       {#if $isAuthenticated && $currentUser}
         <div class="flex items-center gap-3">
-          <span class="text-sm text-gray-700 hidden sm:block">
+          <a
+            href={buildProfileHref($currentUser.id)}
+            class="text-sm text-gray-700 hidden sm:block hover:underline"
+            on:click={(event) => handleProfileNavigation(event, $currentUser.id)}
+          >
             {$currentUser.username}
-          </span>
-          {#if $currentUser.profilePictureUrl}
-            <img
-              src={$currentUser.profilePictureUrl}
-              alt={$currentUser.username}
-              class="w-8 h-8 rounded-full object-cover"
-            />
-          {:else}
-            <div
-              class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-medium"
-            >
-              {$currentUser.username.charAt(0).toUpperCase()}
-            </div>
-          {/if}
+          </a>
+          <a
+            href={buildProfileHref($currentUser.id)}
+            class="flex items-center"
+            on:click={(event) => handleProfileNavigation(event, $currentUser.id)}
+            aria-label="View profile"
+          >
+            {#if $currentUser.profilePictureUrl}
+              <img
+                src={$currentUser.profilePictureUrl}
+                alt={$currentUser.username}
+                class="w-8 h-8 rounded-full object-cover"
+              />
+            {:else}
+              <div
+                class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-medium"
+              >
+                {$currentUser.username.charAt(0).toUpperCase()}
+              </div>
+            {/if}
+          </a>
           <button
             on:click={handleLogout}
             class="text-sm font-medium text-gray-600 hover:text-gray-900 ml-2"

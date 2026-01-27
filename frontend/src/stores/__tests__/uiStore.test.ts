@@ -32,4 +32,19 @@ describe('uiStore', () => {
     uiStore.setActiveView('admin');
     expect(get(uiStore).activeView).toBe('admin');
   });
+
+  it('openProfile sets profile view and active user', () => {
+    uiStore.openProfile('user-42');
+    const state = get(uiStore);
+    expect(state.activeView).toBe('profile');
+    expect(state.activeProfileUserId).toBe('user-42');
+  });
+
+  it('setActiveView clears active profile when leaving profile view', () => {
+    uiStore.openProfile('user-42');
+    uiStore.setActiveView('feed');
+    const state = get(uiStore);
+    expect(state.activeView).toBe('feed');
+    expect(state.activeProfileUserId).toBeNull();
+  });
 });
