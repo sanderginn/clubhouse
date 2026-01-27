@@ -2673,9 +2673,9 @@
     {
       "issue_number": 273,
       "title": "Bug: Notifications toggle cannot be disabled after enabling",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769500791-66304",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769500791-66304",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -2684,7 +2684,8 @@
         "pwa",
         "ui"
       ],
-      "branch": "fix/issue-273-notifications-toggle-disable"
+      "branch": "fix/issue-273-notifications-toggle-cannot-be-disabled-",
+      "claimed_at": "2026-01-27T07:59:51Z"
     },
     {
       "issue_number": 275,
