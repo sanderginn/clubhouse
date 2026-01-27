@@ -142,6 +142,7 @@
     268,
     269,
     270,
+    271,
     278
   ],
   "issues": [
@@ -2637,7 +2638,7 @@
     {
       "issue_number": 271,
       "title": "Bug: Admin MFA enrollment fails with 'TOTP configuration missing' in default dev setup",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769499663-56156",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769499663-56156",
       "dependencies": [],
@@ -2649,7 +2650,9 @@
         "admin"
       ],
       "branch": "fix/issue-271-admin-mfa-enrollment-fails-with-totp-con",
-      "claimed_at": "2026-01-27T07:41:03Z"
+      "claimed_at": "2026-01-27T07:41:03Z",
+      "pr_number": 287,
+      "completed_at": "2026-01-27T07:50:03Z"
     },
     {
       "issue_number": 272,
