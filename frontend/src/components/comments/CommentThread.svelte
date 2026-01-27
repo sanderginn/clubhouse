@@ -17,6 +17,7 @@
     cursor: null,
     hasMore: true,
     loaded: false,
+    seenCommentIds: new Set(),
   };
 
   let openReplies = new Set<string>();

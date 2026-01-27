@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import type { Link } from './postStore';
 
 export interface Comment {
@@ -34,6 +34,7 @@ export interface CommentThreadState {
   cursor: string | null;
   hasMore: boolean;
   loaded: boolean;
+  seenCommentIds: Set<string>;
 }
 
 export type CommentStoreState = Record<string, CommentThreadState>;
@@ -45,6 +46,7 @@ const defaultThreadState = (): CommentThreadState => ({
   cursor: null,
   hasMore: true,
   loaded: false,
+  seenCommentIds: new Set(),
 });
 
 function createCommentStore() {
@@ -142,6 +144,16 @@ function createCommentStore() {
     }));
   }
 
+  function pruneSeenIds(comments: Comment[], seenIds: Set<string>): Set<string> {
+    const next = new Set(seenIds);
+    for (const id of next) {
+      if (hasComment(comments, id)) {
+        next.delete(id);
+      }
+    }
+    return next;
+  }
+
   return {
     subscribe,
     setThread: (postId: string, comments: Comment[], cursor: string | null, hasMore: boolean) =>
@@ -153,6 +165,7 @@ function createCommentStore() {
         isLoading: false,
         error: null,
         loaded: true,
+        seenCommentIds: pruneSeenIds(comments, thread.seenCommentIds),
       })),
     appendThread: (postId: string, comments: Comment[], cursor: string | null, hasMore: boolean) =>
       updateThread(postId, (thread) => ({
@@ -165,6 +178,10 @@ function createCommentStore() {
         hasMore,
         isLoading: false,
         loaded: true,
+        seenCommentIds: pruneSeenIds(
+          [...thread.comments, ...comments],
+          thread.seenCommentIds
+        ),
       })),
     addComment: (postId: string, comment: Comment) =>
       updateThread(postId, (thread) => {
@@ -177,6 +194,31 @@ function createCommentStore() {
           loaded: true,
         };
       }),
+    markSeenComment: (postId: string, commentId: string) =>
+      updateThread(postId, (thread) => {
+        const seenCommentIds = new Set(thread.seenCommentIds);
+        seenCommentIds.add(commentId);
+        return {
+          ...thread,
+          seenCommentIds,
+        };
+      }),
+    consumeSeenComment: (postId: string, commentId: string): boolean => {
+      const state = get({ subscribe });
+      const thread = state[postId];
+      if (!thread?.seenCommentIds?.has(commentId)) {
+        return false;
+      }
+      updateThread(postId, (current) => {
+        const seenCommentIds = new Set(current.seenCommentIds);
+        seenCommentIds.delete(commentId);
+        return {
+          ...current,
+          seenCommentIds,
+        };
+      });
+      return true;
+    },
     addReply: (postId: string, parentCommentId: string, reply: Comment) =>
       updateThread(postId, (thread) => ({
         ...thread,

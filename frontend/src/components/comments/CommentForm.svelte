@@ -3,7 +3,6 @@
   import { api } from '../../services/api';
   import { commentStore } from '../../stores/commentStore';
   import { postStore } from '../../stores/postStore';
-  import { websocketStatus } from '../../stores/websocketStore';
   import { mapApiComment } from '../../stores/commentMapper';
   import type { Comment } from '../../stores/commentStore';
 
@@ -30,7 +29,8 @@
       });
       const comment = mapApiComment(response.comment);
       commentStore.addComment(postId, comment);
-      if ($websocketStatus !== 'connected') {
+      const skipIncrement = commentStore.consumeSeenComment(postId, comment.id);
+      if (!skipIncrement) {
         postStore.incrementCommentCount(postId, 1);
       }
       content = '';

@@ -196,6 +196,7 @@ function connect() {
           const exists = thread ? hasComment(thread.comments, commentId) : false;
 
           if (!exists) {
+            commentStore.markSeenComment(postId, commentId);
             postStore.incrementCommentCount(postId, 1);
           }
 
