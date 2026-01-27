@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { get } from 'svelte/store';
+import { api } from '../../services/api';
 
 // Mock the api module
 vi.mock('../../services/api', () => ({
@@ -84,8 +85,9 @@ describe('pwaStore', () => {
     });
 
     // Mock Notification on global as well
-    (global as unknown as { Notification: { permission: string } }).Notification = {
+    (global as unknown as { Notification: { permission: string; requestPermission: () => Promise<string> } }).Notification = {
       permission: 'default',
+      requestPermission: vi.fn().mockResolvedValue('granted'),
     };
 
     // Re-import to get fresh store
@@ -167,6 +169,27 @@ describe('pwaStore', () => {
     it('should return false if no install prompt is deferred', async () => {
       const result = await pwaStore.promptInstall();
       expect(result).toBe(false);
+    });
+  });
+
+  describe('push subscriptions', () => {
+    it('should set isPushSubscribed to false after unsubscribe', async () => {
+      (api.get as ReturnType<typeof vi.fn>).mockResolvedValue({ publicKey: 'dGVzdC1rZXk=' });
+      (api.post as ReturnType<typeof vi.fn>).mockResolvedValue({});
+      (api.delete as ReturnType<typeof vi.fn>).mockResolvedValue({});
+
+      await pwaStore.init();
+
+      const subscribed = await pwaStore.subscribeToPush();
+      expect(subscribed).toBe(true);
+      expect(get(pwaStore).isPushSubscribed).toBe(true);
+
+      mockPushManager.getSubscription.mockResolvedValueOnce(mockPushSubscription);
+
+      const unsubscribed = await pwaStore.unsubscribeFromPush();
+      expect(unsubscribed).toBe(true);
+      expect(get(pwaStore).isPushSubscribed).toBe(false);
+      expect(api.delete).toHaveBeenCalledWith('/push/subscribe');
     });
   });
 
