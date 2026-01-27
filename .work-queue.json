@@ -135,6 +135,7 @@
     259,
     260,
     261,
+    262,
     263,
     264,
     265,
@@ -2486,7 +2487,7 @@
     {
       "issue_number": 262,
       "title": "Enhancement: Add UI navigation to user profiles",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769500859-71940",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769500859-71940",
       "dependencies": [],
@@ -2498,7 +2499,8 @@
         "ui"
       ],
       "branch": "feat/issue-262-enhancement-add-ui-navigation-to-user-pr",
-      "claimed_at": "2026-01-27T08:00:59Z"
+      "claimed_at": "2026-01-27T08:00:59Z",
+      "completed_at": "2026-01-27T08:18:48Z"
     },
     {
       "issue_number": 263,
