@@ -2690,9 +2690,9 @@
     {
       "issue_number": 275,
       "title": "Bug: Search query/results persist across section changes and show mismatched posts",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769500816-67560",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769500816-67560",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -2701,7 +2701,8 @@
         "search",
         "ui"
       ],
-      "branch": "fix/issue-275-search-state-persists-across-sections"
+      "branch": "fix/issue-275-search-queryresults-persist-across-secti",
+      "claimed_at": "2026-01-27T08:00:16Z"
     },
     {
       "issue_number": 277,
