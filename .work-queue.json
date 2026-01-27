@@ -2805,9 +2805,9 @@
     {
       "issue_number": 296,
       "title": "Bug: Admin MFA one-time code prompt appears as error state",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769558152-31208",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769558152-31208",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -2817,7 +2817,8 @@
         "admin",
         "ui"
       ],
-      "branch": "fix/issue-296-bug--admin-mfa-one-time-code-prompt-appears-as-error-state"
+      "branch": "fix/issue-296-admin-mfa-onetime-code-prompt-appears-as",
+      "claimed_at": "2026-01-27T23:55:52Z"
     },
     {
       "issue_number": 297,
