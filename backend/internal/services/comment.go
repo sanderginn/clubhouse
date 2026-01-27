@@ -148,6 +148,18 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
+	var user models.User
+	err = s.db.QueryRowContext(ctx, `
+		SELECT id, username, COALESCE(email, '') as email, profile_picture_url, bio, is_admin, created_at
+		FROM users WHERE id = $1
+	`, userID).Scan(
+		&user.ID, &user.Username, &user.Email, &user.ProfilePictureURL, &user.Bio, &user.IsAdmin, &user.CreatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch comment user: %w", err)
+	}
+	comment.User = &user
+
 	observability.RecordCommentCreated(ctx)
 	return &comment, nil
 }

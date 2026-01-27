@@ -33,6 +33,12 @@ func TestCreateComment(t *testing.T) {
 	if comment.Content != "Test comment" {
 		t.Errorf("expected content 'Test comment', got %s", comment.Content)
 	}
+	if comment.User == nil {
+		t.Fatalf("expected comment user to be populated")
+	}
+	if comment.User.Username != "commentuser" {
+		t.Errorf("expected username 'commentuser', got %s", comment.User.Username)
+	}
 }
 
 func TestGetCommentByID(t *testing.T) {
