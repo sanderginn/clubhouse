@@ -136,6 +136,7 @@
     260,
     263,
     264,
+    266,
     269,
     278
   ],
@@ -2541,7 +2542,7 @@
     {
       "issue_number": 266,
       "title": "Bug: Postgres init logs warn about missing locales on Alpine",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769498700-37891",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769498700-37891",
       "dependencies": [],
@@ -2552,7 +2553,9 @@
         "devops"
       ],
       "branch": "fix/issue-266-postgres-init-logs-warn-about-missing-lo",
-      "claimed_at": "2026-01-27T07:25:00Z"
+      "claimed_at": "2026-01-27T07:25:00Z",
+      "pr_number": 282,
+      "completed_at": "2026-01-27T07:48:17Z"
     },
     {
       "issue_number": 267,
