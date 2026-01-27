@@ -184,16 +184,23 @@ function createPWAStore() {
 
       try {
         const subscription = await serviceWorkerRegistration.pushManager.getSubscription();
+        let unsubscribed = true;
+
         if (subscription) {
           // Unsubscribe locally
-          await subscription.unsubscribe();
+          unsubscribed = await subscription.unsubscribe();
+        }
 
+        if (unsubscribed) {
+          update((state) => ({ ...state, isPushSubscribed: false }));
+        }
+
+        if (subscription && unsubscribed) {
           // Notify server
           await api.delete('/push/subscribe');
         }
 
-        update((state) => ({ ...state, isPushSubscribed: false }));
-        return true;
+        return unsubscribed;
       } catch (error) {
         console.error('Failed to unsubscribe from push notifications:', error);
         return false;
