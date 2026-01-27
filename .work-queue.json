@@ -145,6 +145,7 @@
     270,
     271,
     272,
+    273,
     275,
     278
   ],
@@ -2682,7 +2683,7 @@
     {
       "issue_number": 273,
       "title": "Bug: Notifications toggle cannot be disabled after enabling",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769500791-66304",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769500791-66304",
       "dependencies": [],
@@ -2694,7 +2695,8 @@
         "ui"
       ],
       "branch": "fix/issue-273-notifications-toggle-cannot-be-disabled-",
-      "claimed_at": "2026-01-27T07:59:51Z"
+      "claimed_at": "2026-01-27T07:59:51Z",
+      "completed_at": "2026-01-27T08:06:21Z"
     },
     {
       "issue_number": 275,
