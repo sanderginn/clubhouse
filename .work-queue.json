@@ -2532,9 +2532,9 @@
     {
       "issue_number": 266,
       "title": "Bug: Postgres init logs warn about missing locales on Alpine",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769498700-37891",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769498700-37891",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -2542,7 +2542,8 @@
         "db",
         "devops"
       ],
-      "branch": "fix/issue-266-postgres-missing-locales-warning"
+      "branch": "fix/issue-266-postgres-init-logs-warn-about-missing-lo",
+      "claimed_at": "2026-01-27T07:25:00Z"
     },
     {
       "issue_number": 267,
