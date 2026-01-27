@@ -75,46 +75,54 @@ func TestLoginRateLimited(t *testing.T) {
 }
 
 func TestLoginGenericErrorForInvalidCredentials(t *testing.T) {
-	tests := []struct {
-		name       string
-		loginError error
-	}{
-		{
-			name:       "invalid credentials",
-			loginError: errors.New("invalid username or password"),
-		},
-		{
-			name:       "unapproved user",
-			loginError: errors.New("user not approved"),
-		},
+	handler := &AuthHandler{
+		userService: &stubAuthUserService{loginErr: errors.New("invalid username or password")},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			handler := &AuthHandler{
-				userService: &stubAuthUserService{loginErr: tt.loginError},
-			}
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(`{"username":"TestUser","password":"Password123"}`))
+	w := httptest.NewRecorder()
 
-			req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(`{"username":"TestUser","password":"Password123"}`))
-			w := httptest.NewRecorder()
+	handler.Login(w, req)
 
-			handler.Login(w, req)
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status 401, got %d", w.Code)
+	}
 
-			if w.Code != http.StatusUnauthorized {
-				t.Fatalf("expected status 401, got %d", w.Code)
-			}
+	var resp models.ErrorResponse
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if resp.Code != "INVALID_CREDENTIALS" {
+		t.Fatalf("expected INVALID_CREDENTIALS code, got %s", resp.Code)
+	}
+	if resp.Error != "Invalid username or password" {
+		t.Fatalf("expected generic error message, got %s", resp.Error)
+	}
+}
 
-			var resp models.ErrorResponse
-			if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
-				t.Fatalf("failed to decode response: %v", err)
-			}
-			if resp.Code != "INVALID_CREDENTIALS" {
-				t.Fatalf("expected INVALID_CREDENTIALS code, got %s", resp.Code)
-			}
-			if resp.Error != "Invalid username or password" {
-				t.Fatalf("expected generic error message, got %s", resp.Error)
-			}
-		})
+func TestLoginUnapprovedUser(t *testing.T) {
+	handler := &AuthHandler{
+		userService: &stubAuthUserService{loginErr: errors.New("user not approved")},
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(`{"username":"TestUser","password":"Password123"}`))
+	w := httptest.NewRecorder()
+
+	handler.Login(w, req)
+
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected status 403, got %d", w.Code)
+	}
+
+	var resp models.ErrorResponse
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if resp.Code != "USER_NOT_APPROVED" {
+		t.Fatalf("expected USER_NOT_APPROVED code, got %s", resp.Code)
+	}
+	if resp.Error != "Your account is awaiting admin approval." {
+		t.Fatalf("expected approval message, got %s", resp.Error)
 	}
 }
 

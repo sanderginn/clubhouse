@@ -140,4 +140,25 @@ describe('Login', () => {
       })
     );
   });
+
+  it('shows approval pending message when user is not approved', async () => {
+    const approvalError = new Error('Your account is awaiting admin approval.') as Error & {
+      code?: string;
+    };
+    approvalError.code = 'USER_NOT_APPROVED';
+
+    apiPost.mockRejectedValueOnce(approvalError);
+
+    render(Login, { onNavigate: vi.fn() });
+
+    await fireEvent.input(screen.getByLabelText('Username'), {
+      target: { value: 'sander' },
+    });
+    await fireEvent.input(screen.getByLabelText('Password'), {
+      target: { value: 'secret' },
+    });
+    await fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+    expect(await screen.findByText('Your account is awaiting admin approval.')).toBeInTheDocument();
+  });
 });

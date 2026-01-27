@@ -169,7 +169,15 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 			writeError(r.Context(), w, http.StatusBadRequest, "USERNAME_REQUIRED", err.Error())
 		case "password is required":
 			writeError(r.Context(), w, http.StatusBadRequest, "PASSWORD_REQUIRED", err.Error())
-		case "invalid username or password", "user not approved":
+		case "user not approved":
+			h.logAuthEvent(r.Context(), &models.AuthEventCreate{
+				Identifier: req.Username,
+				EventType:  "login_pending_approval",
+				IPAddress:  clientIP,
+				UserAgent:  r.UserAgent(),
+			})
+			writeError(r.Context(), w, http.StatusForbidden, "USER_NOT_APPROVED", "Your account is awaiting admin approval.")
+		case "invalid username or password":
 			h.logAuthEvent(r.Context(), &models.AuthEventCreate{
 				Identifier: req.Username,
 				EventType:  "login_failure",

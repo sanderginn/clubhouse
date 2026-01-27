@@ -247,7 +247,7 @@ func (s *UserService) LoginUser(ctx context.Context, req *models.LoginRequest) (
 
 	// Check if user is approved
 	if user.ApprovedAt == nil {
-		return nil, fmt.Errorf("invalid username or password")
+		return nil, fmt.Errorf("user not approved")
 	}
 
 	return user, nil
