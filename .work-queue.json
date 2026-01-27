@@ -2696,7 +2696,8 @@
       ],
       "branch": "fix/issue-273-notifications-toggle-cannot-be-disabled-",
       "claimed_at": "2026-01-27T07:59:51Z",
-      "completed_at": "2026-01-27T08:06:21Z"
+      "completed_at": "2026-01-27T08:08:34Z",
+      "pr_number": 291
     },
     {
       "issue_number": 275,
