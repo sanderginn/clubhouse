@@ -3,6 +3,7 @@
   import { commentStore, type CommentThreadState } from '../../stores/commentStore';
   import { loadThreadComments, loadMoreThreadComments } from '../../stores/commentFeedStore';
   import { api } from '../../services/api';
+  import { buildProfileHref, handleProfileNavigation } from '../../services/profileNavigation';
   import CommentForm from './CommentForm.svelte';
   import ReplyForm from './ReplyForm.svelte';
   import ReactionBar from '../reactions/ReactionBar.svelte';
@@ -194,25 +195,58 @@
       {#each thread.comments as comment (comment.id)}
         <article class="bg-white border border-gray-200 rounded-lg p-3">
           <div class="flex items-start gap-3">
-            {#if comment.user?.profilePictureUrl}
-              <img
-                src={comment.user.profilePictureUrl}
-                alt={comment.user.username}
-                class="w-8 h-8 rounded-full object-cover flex-shrink-0"
-              />
+            {#if comment.user?.id}
+              <a
+                href={buildProfileHref(comment.user.id)}
+                class="flex-shrink-0"
+                on:click={(event) => handleProfileNavigation(event, comment.user?.id)}
+                aria-label={`View ${(comment.user?.username ?? 'user')}'s profile`}
+              >
+                {#if comment.user?.profilePictureUrl}
+                  <img
+                    src={comment.user.profilePictureUrl}
+                    alt={comment.user.username}
+                    class="w-8 h-8 rounded-full object-cover"
+                  />
+                {:else}
+                  <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                    <span class="text-gray-500 text-xs font-medium">
+                      {comment.user?.username?.charAt(0).toUpperCase() || '?'}
+                    </span>
+                  </div>
+                {/if}
+              </a>
             {:else}
-              <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                <span class="text-gray-500 text-xs font-medium">
-                  {comment.user?.username?.charAt(0).toUpperCase() || '?'}
-                </span>
-              </div>
+              {#if comment.user?.profilePictureUrl}
+                <img
+                  src={comment.user.profilePictureUrl}
+                  alt={comment.user.username}
+                  class="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                />
+              {:else}
+                <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                  <span class="text-gray-500 text-xs font-medium">
+                    {comment.user?.username?.charAt(0).toUpperCase() || '?'}
+                  </span>
+                </div>
+              {/if}
             {/if}
 
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-1">
-                <span class="font-medium text-gray-900 text-sm truncate">
-                  {comment.user?.username || 'Unknown'}
-                </span>
+                {#if comment.user?.id}
+                  <a
+                    href={buildProfileHref(comment.user.id)}
+                    class="font-medium text-gray-900 text-sm truncate hover:underline"
+                    on:click={(event) => handleProfileNavigation(event, comment.user?.id)}
+                  >
+                    {comment.user?.username || 'Unknown'}
+                  </a>
+                {:else}
+                  <span class="font-medium text-gray-900 text-sm truncate">
+                    {comment.user?.username || 'Unknown'}
+                  </span>
+                {/if}
                 <span class="text-gray-400 text-xs">·</span>
                 <time class="text-gray-500 text-xs" datetime={comment.createdAt}>
                   {formatDate(comment.createdAt)}
@@ -313,25 +347,58 @@
                 <div class="mt-4 space-y-3 border-l border-gray-200 pl-4">
                   {#each comment.replies as reply (reply.id)}
                     <div class="flex items-start gap-2">
-                      {#if reply.user?.profilePictureUrl}
-                        <img
-                          src={reply.user.profilePictureUrl}
-                          alt={reply.user.username}
-                          class="w-7 h-7 rounded-full object-cover flex-shrink-0"
-                        />
+                      {#if reply.user?.id}
+                        <a
+                          href={buildProfileHref(reply.user.id)}
+                          class="flex-shrink-0"
+                          on:click={(event) => handleProfileNavigation(event, reply.user?.id)}
+                          aria-label={`View ${(reply.user?.username ?? 'user')}'s profile`}
+                        >
+                          {#if reply.user?.profilePictureUrl}
+                            <img
+                              src={reply.user.profilePictureUrl}
+                              alt={reply.user.username}
+                              class="w-7 h-7 rounded-full object-cover"
+                            />
+                          {:else}
+                            <div class="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center">
+                              <span class="text-gray-500 text-xs font-medium">
+                                {reply.user?.username?.charAt(0).toUpperCase() || '?'}
+                              </span>
+                            </div>
+                          {/if}
+                        </a>
                       {:else}
-                        <div class="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                          <span class="text-gray-500 text-xs font-medium">
-                            {reply.user?.username?.charAt(0).toUpperCase() || '?'}
-                          </span>
-                        </div>
+                        {#if reply.user?.profilePictureUrl}
+                          <img
+                            src={reply.user.profilePictureUrl}
+                            alt={reply.user.username}
+                            class="w-7 h-7 rounded-full object-cover flex-shrink-0"
+                          />
+                        {:else}
+                          <div class="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                            <span class="text-gray-500 text-xs font-medium">
+                              {reply.user?.username?.charAt(0).toUpperCase() || '?'}
+                            </span>
+                          </div>
+                        {/if}
                       {/if}
 
                       <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2 mb-1">
-                          <span class="font-medium text-gray-900 text-xs truncate">
-                            {reply.user?.username || 'Unknown'}
-                          </span>
+                          {#if reply.user?.id}
+                            <a
+                              href={buildProfileHref(reply.user.id)}
+                              class="font-medium text-gray-900 text-xs truncate hover:underline"
+                              on:click={(event) => handleProfileNavigation(event, reply.user?.id)}
+                            >
+                              {reply.user?.username || 'Unknown'}
+                            </a>
+                          {:else}
+                            <span class="font-medium text-gray-900 text-xs truncate">
+                              {reply.user?.username || 'Unknown'}
+                            </span>
+                          {/if}
                           <span class="text-gray-400 text-xs">·</span>
                           <time class="text-gray-500 text-xs" datetime={reply.createdAt}>
                             {formatDate(reply.createdAt)}

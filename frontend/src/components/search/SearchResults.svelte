@@ -3,6 +3,7 @@
   import PostCard from '../PostCard.svelte';
   import ReactionBar from '../reactions/ReactionBar.svelte';
   import { api } from '../../services/api';
+  import { buildProfileHref, handleProfileNavigation } from '../../services/profileNavigation';
   import type { CommentResult } from '../../stores/searchStore';
 
   // Track pending reactions to prevent double-clicks
@@ -136,55 +137,89 @@
       {#if result.type === 'post' && result.post}
         <PostCard post={result.post} />
       {:else if result.type === 'comment' && result.comment}
+        {@const comment = result.comment}
         <article class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div class="flex items-start gap-3">
-            {#if result.comment.user?.profilePictureUrl}
-              <img
-                src={result.comment.user.profilePictureUrl}
-                alt={result.comment.user.username}
-                class="w-9 h-9 rounded-full object-cover flex-shrink-0"
-              />
+            {#if comment.user?.id}
+              <a
+                href={buildProfileHref(comment.user.id)}
+                class="flex-shrink-0"
+                on:click={(event) => handleProfileNavigation(event, comment.user?.id)}
+                aria-label={`View ${(comment.user?.username ?? 'user')}'s profile`}
+              >
+                {#if comment.user?.profilePictureUrl}
+                  <img
+                    src={comment.user.profilePictureUrl}
+                    alt={comment.user.username}
+                    class="w-9 h-9 rounded-full object-cover"
+                  />
+                {:else}
+                  <div class="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center">
+                    <span class="text-gray-500 text-sm font-medium">
+                      {comment.user?.username?.charAt(0).toUpperCase() || '?'}
+                    </span>
+                  </div>
+                {/if}
+              </a>
             {:else}
-              <div class="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                <span class="text-gray-500 text-sm font-medium">
-                  {result.comment.user?.username?.charAt(0).toUpperCase() || '?'}
-                </span>
-              </div>
+              {#if comment.user?.profilePictureUrl}
+                <img
+                  src={comment.user.profilePictureUrl}
+                  alt={comment.user.username}
+                  class="w-9 h-9 rounded-full object-cover flex-shrink-0"
+                />
+              {:else}
+                <div class="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                  <span class="text-gray-500 text-sm font-medium">
+                    {comment.user?.username?.charAt(0).toUpperCase() || '?'}
+                  </span>
+                </div>
+              {/if}
             {/if}
 
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-1">
-                <span class="font-medium text-gray-900 truncate">
-                  {result.comment.user?.username || 'Unknown'}
-                </span>
+                {#if comment.user?.id}
+                  <a
+                    href={buildProfileHref(comment.user.id)}
+                    class="font-medium text-gray-900 truncate hover:underline"
+                    on:click={(event) => handleProfileNavigation(event, comment.user?.id)}
+                  >
+                    {comment.user?.username || 'Unknown'}
+                  </a>
+                {:else}
+                  <span class="font-medium text-gray-900 truncate">
+                    {comment.user?.username || 'Unknown'}
+                  </span>
+                {/if}
                 <span class="text-gray-400 text-sm">commented</span>
-                <time class="text-gray-500 text-sm" datetime={result.comment.createdAt}>
-                  {formatDate(result.comment.createdAt)}
+                <time class="text-gray-500 text-sm" datetime={comment.createdAt}>
+                  {formatDate(comment.createdAt)}
                 </time>
               </div>
 
               <p class="text-gray-800 whitespace-pre-wrap break-words">
-                {result.comment.content}
+                {comment.content}
               </p>
 
-              {#if result.comment.links && result.comment.links.length > 0}
+              {#if comment.links && comment.links.length > 0}
                 <div class="mt-2 text-sm text-blue-600 break-all">
                   <a
-                    href={result.comment.links[0].url}
+                    href={comment.links[0].url}
                     target="_blank"
                     rel="noopener noreferrer"
                     class="underline"
                   >
-                    {result.comment.links[0].url}
+                    {comment.links[0].url}
                   </a>
                 </div>
               {/if}
 
               <div class="mt-3">
                 <ReactionBar
-                  reactionCounts={result.comment.reactionCounts ?? {}}
-                  userReactions={new Set(result.comment.viewerReactions ?? [])}
-                  onToggle={(emoji) => result.comment && toggleCommentReaction(result.comment, emoji)}
+                  reactionCounts={comment.reactionCounts ?? {}}
+                  userReactions={new Set(comment.viewerReactions ?? [])}
+                  onToggle={(emoji) => toggleCommentReaction(comment, emoji)}
                 />
               </div>
             </div>

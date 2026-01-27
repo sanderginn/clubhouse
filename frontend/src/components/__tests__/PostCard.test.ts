@@ -78,4 +78,10 @@ describe('PostCard', () => {
     render(PostCard, { post: basePost });
     expect(screen.getByText('S')).toBeInTheDocument();
   });
+
+  it('links to the author profile', () => {
+    render(PostCard, { post: basePost });
+    const link = screen.getByRole('link', { name: 'Sander' });
+    expect(link).toHaveAttribute('href', '/users/user-1');
+  });
 });
