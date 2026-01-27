@@ -131,7 +131,8 @@
     238,
     239,
     240,
-    245
+    245,
+    269
   ],
   "issues": [
     {
@@ -2408,6 +2409,240 @@
       "claimed_at": "2026-01-26T20:02:41Z",
       "pr_number": 248,
       "completed_at": "2026-01-26T20:08:00Z"
+    },
+    {
+      "issue_number": 259,
+      "title": "Bug: Comment author shows as Unknown",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "comments",
+        "ui"
+      ],
+      "branch": "fix/issue-259-comment-author-shows-unknown"
+    },
+    {
+      "issue_number": 260,
+      "title": "Bug: Incorrect comment count and load-more UI with single comment",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "comments",
+        "ui"
+      ],
+      "branch": "fix/issue-260-comment-count-load-more-single-comment"
+    },
+    {
+      "issue_number": 261,
+      "title": "Enhancement: Replace link prompt with inline input",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "frontend",
+        "links",
+        "ui"
+      ],
+      "branch": "feat/issue-261-replace-link-prompt-inline-input"
+    },
+    {
+      "issue_number": 262,
+      "title": "Enhancement: Add UI navigation to user profiles",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "frontend",
+        "users",
+        "ui"
+      ],
+      "branch": "feat/issue-262-add-ui-navigation-user-profiles"
+    },
+    {
+      "issue_number": 263,
+      "title": "Bug: Header navbar rubber-bands instead of staying fixed",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "ui"
+      ],
+      "branch": "fix/issue-263-header-navbar-not-fixed"
+    },
+    {
+      "issue_number": 264,
+      "title": "Bug: Loki fails to start due to shared_store config (backend OTLP logs fail)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "observability",
+        "devops",
+        "backend"
+      ],
+      "branch": "fix/issue-264-loki-config-parsing-fails"
+    },
+    {
+      "issue_number": 265,
+      "title": "Bug: Grafana logs show xychart plugin already registered on startup",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "observability",
+        "devops"
+      ],
+      "branch": "fix/issue-265-grafana-xychart-plugin-duplicate"
+    },
+    {
+      "issue_number": 266,
+      "title": "Bug: Postgres init logs warn about missing locales on Alpine",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "db",
+        "devops"
+      ],
+      "branch": "fix/issue-266-postgres-missing-locales-warning"
+    },
+    {
+      "issue_number": 267,
+      "title": "Bug: Frontend dev container reports npm audit moderate vulnerability",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend"
+      ],
+      "branch": "fix/issue-267-frontend-npm-audit-vulnerability"
+    },
+    {
+      "issue_number": 268,
+      "title": "Bug: Auth form errors persist after correcting input",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "auth",
+        "ui"
+      ],
+      "branch": "fix/issue-268-auth-form-error-clear"
+    },
+    {
+      "issue_number": 269,
+      "title": "Bug: Enable notifications toggle stays stuck on 'Enabling...'",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "pwa",
+        "ui"
+      ],
+      "branch": "fix/issue-269-notifications-toggle-stuck"
+    },
+    {
+      "issue_number": 270,
+      "title": "Bug: No sections listed after fresh setup, leaving UI with no navigable content",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "sections",
+        "ui"
+      ],
+      "branch": "fix/issue-270-missing-sections-after-setup"
+    },
+    {
+      "issue_number": 271,
+      "title": "Bug: Admin MFA enrollment fails with 'TOTP configuration missing' in default dev setup",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "auth",
+        "admin"
+      ],
+      "branch": "fix/issue-271-admin-mfa-config-missing"
+    },
+    {
+      "issue_number": 272,
+      "title": "Bug: Moderation pending users view stuck 'Loading pending users...' with console error",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "admin"
+      ],
+      "branch": "fix/issue-272-moderation-pending-users-stuck"
+    },
+    {
+      "issue_number": 273,
+      "title": "Bug: Notifications toggle cannot be disabled after enabling",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "pwa",
+        "ui"
+      ],
+      "branch": "fix/issue-273-notifications-toggle-disable"
     }
   ]
 }
