@@ -149,7 +149,8 @@
     273,
     275,
     277,
-    278
+    278,
+    294
   ],
   "issues": [
     {
@@ -2772,7 +2773,7 @@
     {
       "issue_number": 294,
       "title": "Bug: Login for unapproved users shows invalid credentials instead of awaiting approval",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769557354-25092",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769557354-25092",
       "dependencies": [],
@@ -2784,7 +2785,9 @@
         "auth"
       ],
       "branch": "fix/issue-294-login-for-unapproved-users-shows-invalid",
-      "claimed_at": "2026-01-27T23:42:34Z"
+      "claimed_at": "2026-01-27T23:42:34Z",
+      "pr_number": 318,
+      "completed_at": "2026-01-27T23:59:27Z"
     },
     {
       "issue_number": 295,
