@@ -41,10 +41,11 @@
     }
 
     try {
-      pendingUsers = await api.get<PendingUser[]>(
+      const response = await api.get<PendingUser[] | null>(
         '/admin/users',
         controller ? { signal: controller.signal } : undefined
       );
+      pendingUsers = Array.isArray(response) ? response : [];
     } catch (error) {
       if (pendingUsersAbortController !== controller) {
         return;
