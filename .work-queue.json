@@ -2772,9 +2772,9 @@
     {
       "issue_number": 294,
       "title": "Bug: Login for unapproved users shows invalid credentials instead of awaiting approval",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769557354-25092",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769557354-25092",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -2783,7 +2783,8 @@
         "frontend",
         "auth"
       ],
-      "branch": "fix/issue-294-bug--login-for-unapproved-users-shows-invalid-credentials-instead-of-awaiting-approval"
+      "branch": "fix/issue-294-login-for-unapproved-users-shows-invalid",
+      "claimed_at": "2026-01-27T23:42:34Z"
     },
     {
       "issue_number": 295,
