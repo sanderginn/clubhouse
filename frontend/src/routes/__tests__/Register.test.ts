@@ -64,6 +64,29 @@ describe('Register', () => {
     expect(apiPost).not.toHaveBeenCalled();
   });
 
+  it('clears validation errors when the user edits fields', async () => {
+    render(Register, { onNavigate: vi.fn() });
+
+    await fireEvent.input(screen.getByLabelText('Username'), {
+      target: { value: 'newuser' },
+    });
+    await fireEvent.input(screen.getByLabelText('Password'), {
+      target: { value: 'short' },
+    });
+    await fireEvent.input(screen.getByLabelText('Confirm Password'), {
+      target: { value: 'short' },
+    });
+    await fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+
+    expect(screen.getByText('Password must be at least 12 characters')).toBeInTheDocument();
+
+    await fireEvent.input(screen.getByLabelText('Password'), {
+      target: { value: 'longpassword12' },
+    });
+
+    expect(screen.queryByText('Password must be at least 12 characters')).toBeNull();
+  });
+
   it('shows a validation message when passwords do not match', async () => {
     render(Register, { onNavigate: vi.fn() });
 

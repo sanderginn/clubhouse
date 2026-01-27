@@ -69,6 +69,20 @@ describe('Login', () => {
     expect(apiPost).not.toHaveBeenCalled();
   });
 
+  it('clears validation errors when the user edits fields', async () => {
+    render(Login, { onNavigate: vi.fn() });
+
+    await fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+    expect(screen.getByText('Username and password are required')).toBeInTheDocument();
+
+    await fireEvent.input(screen.getByLabelText('Username'), {
+      target: { value: 'sander' },
+    });
+
+    expect(screen.queryByText('Username and password are required')).toBeNull();
+  });
+
   it('prompts for TOTP when MFA is required', async () => {
     const totpError = new Error('TOTP required') as Error & { code?: string };
     totpError.code = 'TOTP_REQUIRED';
