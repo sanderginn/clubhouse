@@ -132,7 +132,9 @@
     239,
     240,
     245,
-    269
+    259,
+    269,
+    278
   ],
   "issues": [
     {
@@ -2413,7 +2415,7 @@
     {
       "issue_number": 259,
       "title": "Bug: Comment author shows as Unknown",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769497162-8746",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769497162-8746",
       "dependencies": [],
@@ -2425,7 +2427,9 @@
         "ui"
       ],
       "branch": "fix/issue-259-comment-author-shows-as-unknown",
-      "claimed_at": "2026-01-27T06:59:22Z"
+      "claimed_at": "2026-01-27T06:59:22Z",
+      "pr_number": 274,
+      "completed_at": "2026-01-27T07:22:12Z"
     },
     {
       "issue_number": 260,
@@ -2645,6 +2649,67 @@
         "ui"
       ],
       "branch": "fix/issue-273-notifications-toggle-disable"
+    },
+    {
+      "issue_number": 275,
+      "title": "Bug: Search query/results persist across section changes and show mismatched posts",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "search",
+        "ui"
+      ],
+      "branch": "fix/issue-275-search-state-persists-across-sections"
+    },
+    {
+      "issue_number": 277,
+      "title": "Bug: Comment input label/placeholder duplicates 'Add a comment' text",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "comments",
+        "ui"
+      ],
+      "branch": "fix/issue-277-duplicate-comment-placeholder"
+    },
+    {
+      "issue_number": 278,
+      "title": "Bug: Logout API succeeds but UI stays on authenticated screen until refresh",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "auth"
+      ],
+      "branch": "fix/issue-278-logout-no-redirect"
+    },
+    {
+      "issue_number": 279,
+      "title": "UAT: Manual UI flows requiring native browser prompts",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "uat",
+      "labels": [
+        "enhancement",
+        "ui"
+      ],
+      "branch": "chore/issue-279-uat-manual-prompts"
     }
   ]
 }
