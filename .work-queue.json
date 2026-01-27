@@ -2413,9 +2413,9 @@
     {
       "issue_number": 259,
       "title": "Bug: Comment author shows as Unknown",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769497162-8746",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769497162-8746",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -2424,7 +2424,8 @@
         "comments",
         "ui"
       ],
-      "branch": "fix/issue-259-comment-author-shows-unknown"
+      "branch": "fix/issue-259-comment-author-shows-as-unknown",
+      "claimed_at": "2026-01-27T06:59:22Z"
     },
     {
       "issue_number": 260,
