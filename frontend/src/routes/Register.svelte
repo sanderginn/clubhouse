@@ -8,6 +8,15 @@
   let success = '';
   let isLoading = false;
 
+  function clearMessages() {
+    if (error) {
+      error = '';
+    }
+    if (success) {
+      success = '';
+    }
+  }
+
   async function handleSubmit() {
     error = '';
     success = '';
@@ -99,6 +108,7 @@
             autocomplete="username"
             required
             bind:value={username}
+            on:input={clearMessages}
             class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
             placeholder="Username"
           />
@@ -111,6 +121,7 @@
             type="password"
             required
             bind:value={password}
+            on:input={clearMessages}
             aria-describedby="password-help"
             class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
             placeholder="Password"
@@ -127,6 +138,7 @@
             type="password"
             required
             bind:value={confirmPassword}
+            on:input={clearMessages}
             class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
             placeholder="Confirm password"
           />
