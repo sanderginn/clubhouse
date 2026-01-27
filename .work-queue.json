@@ -139,6 +139,7 @@
     265,
     266,
     267,
+    268,
     269,
     278
   ],
@@ -2581,7 +2582,7 @@
     {
       "issue_number": 268,
       "title": "Bug: Auth form errors persist after correcting input",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769498756-42536",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769498756-42536",
       "dependencies": [],
@@ -2593,7 +2594,9 @@
         "ui"
       ],
       "branch": "fix/issue-268-auth-form-errors-persist-after-correctin",
-      "claimed_at": "2026-01-27T07:25:56Z"
+      "claimed_at": "2026-01-27T07:25:56Z",
+      "pr_number": 285,
+      "completed_at": "2026-01-27T07:49:06Z"
     },
     {
       "issue_number": 269,
