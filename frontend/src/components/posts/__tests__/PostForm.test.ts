@@ -172,6 +172,30 @@ describe('PostForm', () => {
     expect(screen.queryByText('Example')).not.toBeInTheDocument();
   });
 
+  it('adds a link via the inline input', async () => {
+    setAuthenticated();
+    setActiveSection();
+    previewLink.mockResolvedValue({
+      metadata: {
+        url: 'https://example.com',
+        title: 'Example',
+      },
+    });
+
+    render(PostForm);
+
+    const addLinkButton = screen.getByLabelText('Add link');
+    await fireEvent.click(addLinkButton);
+
+    const linkInput = screen.getByLabelText('Link URL');
+    await fireEvent.input(linkInput, { target: { value: 'example.com' } });
+    await fireEvent.keyDown(linkInput, { key: 'Enter' });
+    await tick();
+
+    expect(previewLink).toHaveBeenCalledWith('https://example.com');
+    expect(screen.getByText('Example')).toBeInTheDocument();
+  });
+
   it('handles file attachments', async () => {
     setAuthenticated();
     setActiveSection();
