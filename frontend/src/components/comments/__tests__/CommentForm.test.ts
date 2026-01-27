@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent, screen, cleanup } from '@testing-library/svelte';
-import { commentStore, postStore } from '../../../stores';
 import { afterEach } from 'vitest';
 
 const createComment = vi.hoisted(() => vi.fn());
@@ -16,11 +15,34 @@ vi.mock('../../../stores/commentMapper', () => ({
   mapApiComment: (comment: unknown) => mapApiComment(comment),
 }));
 
+const websocketStatus = vi.hoisted(() => {
+  let value: 'disconnected' | 'connecting' | 'connected' | 'error' = 'disconnected';
+  const subscribers = new Set<(value: typeof value) => void>();
+
+  return {
+    subscribe: (run: (value: typeof value) => void) => {
+      run(value);
+      subscribers.add(run);
+      return () => subscribers.delete(run);
+    },
+    set: (next: typeof value) => {
+      value = next;
+      subscribers.forEach((run) => run(value));
+    },
+  };
+});
+
+vi.mock('../../../stores/websocketStore', () => ({
+  websocketStatus,
+}));
+
+const { commentStore, postStore } = await import('../../../stores');
 const { default: CommentForm } = await import('../CommentForm.svelte');
 
 beforeEach(() => {
   createComment.mockReset();
   mapApiComment.mockReset();
+  websocketStatus.set('disconnected');
   const state = (commentStore as unknown as { resetThread: (postId: string) => void });
   if (state.resetThread) {
     state.resetThread('post-1');
@@ -58,6 +80,30 @@ describe('CommentForm', () => {
     expect(addCommentSpy).toHaveBeenCalled();
     expect(incrementSpy).toHaveBeenCalledWith('post-1', 1);
     expect((textarea as HTMLTextAreaElement).value).toBe('');
+  });
+
+  it('skips comment count increment when websocket is connected', async () => {
+    websocketStatus.set('connected');
+    const incrementSpy = vi.spyOn(postStore, 'incrementCommentCount');
+
+    mapApiComment.mockReturnValue({
+      id: 'comment-1',
+      postId: 'post-1',
+      userId: 'user-1',
+      content: 'Nice',
+      createdAt: 'now',
+    });
+    createComment.mockResolvedValue({ comment: { id: 'comment-1' } });
+
+    const { container } = render(CommentForm, { postId: 'post-1' });
+    const textarea = screen.getByPlaceholderText('Write a comment...');
+
+    await fireEvent.input(textarea, { target: { value: 'Nice' } });
+    const form = container.querySelector('form');
+    if (!form) throw new Error('form not found');
+    await fireEvent.submit(form);
+
+    expect(incrementSpy).not.toHaveBeenCalled();
   });
 
   it('shows error on failure', async () => {
