@@ -87,6 +87,7 @@ services:
   grafana:
     image: grafana/grafana:11.2.0
     container_name: clubhouse-grafana
+    entrypoint: ["/bin/sh", "/etc/grafana/entrypoint.sh"]
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
@@ -96,6 +97,7 @@ services:
       - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./grafana/entrypoint.sh:/etc/grafana/entrypoint.sh:ro
       - ./grafana/datasources:/etc/grafana/provisioning/datasources
       - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
     networks:
