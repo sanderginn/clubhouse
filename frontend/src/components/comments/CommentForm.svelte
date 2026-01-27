@@ -28,8 +28,8 @@
         content: content.trim(),
       });
       const comment = mapApiComment(response.comment);
-      commentStore.addComment(postId, comment);
       const skipIncrement = commentStore.consumeSeenComment(postId, comment.id);
+      commentStore.addComment(postId, comment);
       if (!skipIncrement) {
         postStore.incrementCommentCount(postId, 1);
       }

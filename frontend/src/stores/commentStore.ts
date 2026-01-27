@@ -185,13 +185,16 @@ function createCommentStore() {
       })),
     addComment: (postId: string, comment: Comment) =>
       updateThread(postId, (thread) => {
+        const seenCommentIds = new Set(thread.seenCommentIds);
         if (hasComment(thread.comments, comment.id)) {
-          return { ...thread, loaded: true };
+          return { ...thread, loaded: true, seenCommentIds };
         }
+        seenCommentIds.delete(comment.id);
         return {
           ...thread,
           comments: [comment, ...thread.comments],
           loaded: true,
+          seenCommentIds,
         };
       }),
     markSeenComment: (postId: string, commentId: string) =>
@@ -220,9 +223,9 @@ function createCommentStore() {
       return true;
     },
     addReply: (postId: string, parentCommentId: string, reply: Comment) =>
-      updateThread(postId, (thread) => ({
-        ...thread,
-        comments: thread.comments.map((comment) =>
+      updateThread(postId, (thread) => {
+        const seenCommentIds = new Set(thread.seenCommentIds);
+        const comments = thread.comments.map((comment) =>
           comment.id === parentCommentId
             ? {
                 ...comment,
@@ -231,9 +234,18 @@ function createCommentStore() {
                   : [...(comment.replies ?? []), reply],
               }
             : comment
-        ),
-        loaded: true,
-      })),
+        );
+        const shouldDeleteSeen = !hasComment(thread.comments, reply.id) && seenCommentIds.has(reply.id);
+        if (shouldDeleteSeen) {
+          seenCommentIds.delete(reply.id);
+        }
+        return {
+          ...thread,
+          comments,
+          loaded: true,
+          seenCommentIds,
+        };
+      }),
     setLoading: (postId: string, isLoading: boolean) =>
       updateThread(postId, (thread) => ({
         ...thread,

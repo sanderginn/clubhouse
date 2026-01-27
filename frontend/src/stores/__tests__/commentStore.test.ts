@@ -121,6 +121,34 @@ describe('commentStore', () => {
     expect(state.loaded).toBe(true);
   });
 
+  it('clears seen comment ids when comment is added', () => {
+    resetStore();
+
+    commentStore.setThread('post-5', [], null, false);
+    commentStore.markSeenComment('post-5', 'comment-40');
+    commentStore.markSeenComment('post-5', 'comment-41');
+
+    commentStore.addComment('post-5', {
+      id: 'comment-40',
+      userId: 'user-40',
+      postId: 'post-5',
+      content: 'Hello',
+      createdAt: '2025-01-02T00:00:00Z',
+    });
+
+    commentStore.addComment('post-5', {
+      id: 'comment-40',
+      userId: 'user-40',
+      postId: 'post-5',
+      content: 'Duplicate',
+      createdAt: '2025-01-02T00:00:00Z',
+    });
+
+    const state = get(commentStore)['post-5'];
+    expect(state.seenCommentIds.has('comment-40')).toBe(false);
+    expect(state.seenCommentIds.has('comment-41')).toBe(true);
+  });
+
   it('dedupes replies and appended comments by id', () => {
     resetStore();
 
