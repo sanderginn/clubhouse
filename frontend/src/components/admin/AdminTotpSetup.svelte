@@ -18,6 +18,7 @@
   let isVerifying = false;
   let errorMessage = '';
   let successMessage = '';
+  let isConfigMissing = false;
   let code = '';
   let qrCode = '';
   let manualKey = '';
@@ -38,13 +39,20 @@
     isLoading = true;
     errorMessage = '';
     successMessage = '';
+    isConfigMissing = false;
     try {
       const response = await api.post<TotpEnrollResponse>('/admin/totp/enroll');
       qrCode = normalizeQr(response);
       manualKey = response.manual_entry_key ?? response.secret ?? '';
       otpauthUrl = response.otpauth_url ?? '';
     } catch (error) {
-      errorMessage = error instanceof Error ? error.message : 'Failed to start enrollment.';
+      const errorWithCode = error as Error & { code?: string };
+      if (errorWithCode.code === 'TOTP_CONFIG_MISSING') {
+        isConfigMissing = true;
+        errorMessage = 'TOTP is not configured on the server yet.';
+      } else {
+        errorMessage = error instanceof Error ? error.message : 'Failed to start enrollment.';
+      }
     } finally {
       isLoading = false;
     }
@@ -59,12 +67,19 @@
     isVerifying = true;
     errorMessage = '';
     successMessage = '';
+    isConfigMissing = false;
     try {
       const response = await api.post<TotpVerifyResponse>('/admin/totp/verify', { code: trimmed });
       successMessage = response.message || 'Multi-factor authentication enabled.';
       code = '';
     } catch (error) {
-      errorMessage = error instanceof Error ? error.message : 'Verification failed.';
+      const errorWithCode = error as Error & { code?: string };
+      if (errorWithCode.code === 'TOTP_CONFIG_MISSING') {
+        isConfigMissing = true;
+        errorMessage = 'TOTP is not configured on the server yet.';
+      } else {
+        errorMessage = error instanceof Error ? error.message : 'Verification failed.';
+      }
     } finally {
       isVerifying = false;
     }
@@ -77,6 +92,7 @@
     code = '';
     errorMessage = '';
     successMessage = '';
+    isConfigMissing = false;
   };
 </script>
 
@@ -102,6 +118,22 @@
   {#if errorMessage}
     <div class="mt-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
       {errorMessage}
+    </div>
+  {/if}
+
+  {#if isConfigMissing}
+    <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+      <p class="font-semibold">Set up the TOTP encryption key to continue.</p>
+      <p class="mt-2 text-amber-900/80">
+        In your backend environment, set a base64-encoded 32-byte key:
+      </p>
+      <div class="mt-2 rounded-lg border border-amber-200 bg-white p-3 font-mono text-xs text-amber-900">
+        CLUBHOUSE_TOTP_ENCRYPTION_KEY=&lt;base64-32-byte-key&gt;
+      </div>
+      <p class="mt-2 text-amber-900/80">
+        Example generator: <code class="font-mono text-xs">openssl rand -base64 32</code>. Restart
+        the backend and try again.
+      </p>
     </div>
   {/if}
 
