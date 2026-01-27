@@ -17,10 +17,10 @@
 
   let unauthRoute: 'login' | 'register' | 'reset' = 'login';
   let resetToken: string | null = null;
+  let sectionsLoadedForSession = false;
 
   onMount(() => {
     authStore.checkSession();
-    sectionStore.loadSections();
     websocketStore.init();
     pwaStore.init();
     syncRouteFromLocation();
@@ -49,6 +49,16 @@
     if (typeof window !== 'undefined') {
       window.history.replaceState(null, '', '/');
     }
+  }
+
+  $: if ($isAuthenticated && !sectionsLoadedForSession) {
+    sectionsLoadedForSession = true;
+    sectionStore.loadSections();
+  }
+
+  $: if (!$isAuthenticated && sectionsLoadedForSession) {
+    sectionsLoadedForSession = false;
+    sectionStore.setSections([]);
   }
 </script>
 
