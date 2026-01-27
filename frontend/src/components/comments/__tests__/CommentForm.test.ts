@@ -47,7 +47,7 @@ describe('CommentForm', () => {
     createComment.mockResolvedValue({ comment: { id: 'comment-1' } });
 
     const { container } = render(CommentForm, { postId: 'post-1' });
-    const textarea = screen.getByPlaceholderText('Write a comment...');
+    const textarea = screen.getByLabelText('Add a comment');
 
     await fireEvent.input(textarea, { target: { value: 'Nice' } });
     const form = container.querySelector('form');
@@ -74,7 +74,7 @@ describe('CommentForm', () => {
     commentStore.markSeenComment('post-1', 'comment-1');
 
     const { container } = render(CommentForm, { postId: 'post-1' });
-    const textarea = screen.getByPlaceholderText('Write a comment...');
+    const textarea = screen.getByLabelText('Add a comment');
 
     await fireEvent.input(textarea, { target: { value: 'Nice' } });
     const form = container.querySelector('form');
@@ -88,7 +88,7 @@ describe('CommentForm', () => {
     createComment.mockRejectedValue(new Error('boom'));
 
     const { container } = render(CommentForm, { postId: 'post-1' });
-    const textarea = screen.getByPlaceholderText('Write a comment...');
+    const textarea = screen.getByLabelText('Add a comment');
     await fireEvent.input(textarea, { target: { value: 'Nice' } });
 
     const form = container.querySelector('form');
