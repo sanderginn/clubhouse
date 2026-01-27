@@ -91,4 +91,14 @@ describe('UserResetLinks', () => {
     expect(screen.getByText('Copy link')).toBeInTheDocument();
     expect(screen.getByText(/Single-use link/)).toBeInTheDocument();
   });
+
+  it('treats a null response as no approved users', async () => {
+    apiGet.mockResolvedValue(null);
+
+    render(UserResetLinks);
+    await fireEvent.click(screen.getByText('Refresh'));
+    await flushUsersLoad();
+
+    expect(await screen.findByText('No approved members yet.')).toBeInTheDocument();
+  });
 });

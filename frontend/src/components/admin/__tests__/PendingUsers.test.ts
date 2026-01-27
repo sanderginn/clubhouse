@@ -156,4 +156,14 @@ describe('PendingUsers', () => {
 
     expect(await screen.findByText('Request timed out. Please try again.')).toBeInTheDocument();
   });
+
+  it('treats a null response as no pending users', async () => {
+    apiGet.mockResolvedValue(null);
+
+    render(PendingUsers);
+    await fireEvent.click(screen.getByText('Refresh'));
+    await flushPendingUsersLoad();
+
+    expect(await screen.findByText('All caught up. No pending approvals right now.')).toBeInTheDocument();
+  });
 });

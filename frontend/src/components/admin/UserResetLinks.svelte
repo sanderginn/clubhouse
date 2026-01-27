@@ -55,10 +55,11 @@
     }
 
     try {
-      users = await api.get<AdminUser[]>(
+      const response = await api.get<AdminUser[] | null>(
         '/admin/users/approved',
         controller ? { signal: controller.signal } : undefined
       );
+      users = Array.isArray(response) ? response : [];
     } catch (error) {
       if (usersAbortController !== controller) {
         return;
