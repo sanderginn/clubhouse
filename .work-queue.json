@@ -143,6 +143,7 @@
     269,
     270,
     271,
+    272,
     278
   ],
   "issues": [
@@ -2659,7 +2660,7 @@
     {
       "issue_number": 272,
       "title": "Bug: Moderation pending users view stuck 'Loading pending users...' with console error",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769500785-65360",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769500785-65360",
       "dependencies": [],
@@ -2670,7 +2671,9 @@
         "admin"
       ],
       "branch": "fix/issue-272-moderation-pending-users-view-stuck-load",
-      "claimed_at": "2026-01-27T07:59:45Z"
+      "claimed_at": "2026-01-27T07:59:45Z",
+      "pr_number": 288,
+      "completed_at": "2026-01-27T08:05:17Z"
     },
     {
       "issue_number": 273,
