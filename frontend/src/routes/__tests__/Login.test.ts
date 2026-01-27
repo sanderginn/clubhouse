@@ -117,6 +117,7 @@ describe('Login', () => {
     );
 
     expect(await screen.findByPlaceholderText('6-digit authentication code')).toBeInTheDocument();
+    expect(screen.queryByText('Authentication code is required')).toBeNull();
 
     await fireEvent.input(screen.getByPlaceholderText('6-digit authentication code'), {
       target: { value: '123456' },

@@ -79,7 +79,7 @@
       if (errorWithCode.code === 'TOTP_REQUIRED') {
         needsTotp = true;
         authStore.setMfaChallenge({ username: trimmedUsername });
-        error = 'Authentication code is required';
+        error = '';
       } else {
         error = e instanceof Error ? e.message : 'Login failed';
       }
