@@ -2499,9 +2499,9 @@
     {
       "issue_number": 264,
       "title": "Bug: Loki fails to start due to shared_store config (backend OTLP logs fail)",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769498615-33138",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769498615-33138",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -2510,7 +2510,8 @@
         "devops",
         "backend"
       ],
-      "branch": "fix/issue-264-loki-config-parsing-fails"
+      "branch": "fix/issue-264-loki-fails-to-start-due-to-sharedstore-c",
+      "claimed_at": "2026-01-27T07:23:35Z"
     },
     {
       "issue_number": 265,
