@@ -63,14 +63,16 @@ function tokenFromQuery(query: string): string | null {
 
 export function parseResetRoute(location: ResetLocation): ResetRoute {
   const hashParts = splitHash(location.hash);
-  const searchToken = tokenFromQuery(location.search);
-  const hashToken = tokenFromQuery(hashParts.query);
-  const pathToken = tokenFromPath(normalizePath(location.pathname));
-  const hashPathToken = tokenFromPath(hashParts.path);
+  const resetPathMatch =
+    isResetPath(normalizePath(location.pathname)) || isResetPath(hashParts.path);
 
-  const token = searchToken ?? hashToken ?? pathToken ?? hashPathToken ?? null;
-  const resetPathMatch = isResetPath(normalizePath(location.pathname)) || isResetPath(hashParts.path);
-  const isReset = resetPathMatch || Boolean(token);
+  const pathToken = resetPathMatch ? tokenFromPath(normalizePath(location.pathname)) : null;
+  const hashPathToken = resetPathMatch ? tokenFromPath(hashParts.path) : null;
+  const searchToken = resetPathMatch ? tokenFromQuery(location.search) : null;
+  const hashToken = resetPathMatch ? tokenFromQuery(hashParts.query) : null;
+
+  const token = pathToken ?? hashPathToken ?? searchToken ?? hashToken ?? null;
+  const isReset = resetPathMatch;
 
   return { isReset, token };
 }

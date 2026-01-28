@@ -46,21 +46,21 @@ describe('parseResetRoute', () => {
     expect(result.token).toBe('hash-token');
   });
 
-  it('falls back to token query on root path', () => {
-    const result = parseResetRoute({
-      pathname: '/',
-      search: '?token=fallback-token',
-      hash: '',
-    });
-
-    expect(result.isReset).toBe(true);
-    expect(result.token).toBe('fallback-token');
-  });
-
   it('returns non-reset routes without token', () => {
     const result = parseResetRoute({
       pathname: '/login',
       search: '',
+      hash: '',
+    });
+
+    expect(result.isReset).toBe(false);
+    expect(result.token).toBeNull();
+  });
+
+  it('does not treat non-reset routes as reset even with token query', () => {
+    const result = parseResetRoute({
+      pathname: '/',
+      search: '?token=fallback-token',
       hash: '',
     });
 
