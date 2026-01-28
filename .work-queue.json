@@ -3151,7 +3151,7 @@
     {
       "issue_number": 314,
       "title": "Enhancement: Linkify URLs in posts and comments",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "feature",
       "labels": [
@@ -3160,7 +3160,11 @@
         "posts",
         "comments",
         "ui"
-      ]
+      ],
+      "assigned_to": "agent-1769588215-91435",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769588215-91435",
+      "branch": "feat/issue-314-enhancement-linkify-urls-in-posts-and-co",
+      "claimed_at": "2026-01-28T08:16:55Z"
     },
     {
       "issue_number": 315,
