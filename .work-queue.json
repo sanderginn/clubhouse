@@ -167,7 +167,8 @@
     309,
     312,
     313,
-    314
+    314,
+    317
   ],
   "issues": [
     {
@@ -3201,7 +3202,7 @@
     {
       "issue_number": 317,
       "title": "Bug: Navigation does not update URL, causing refresh to reset view",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -3212,7 +3213,9 @@
       "assigned_to": "agent-1769586404-44971",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769586404-44971",
       "branch": "fix/issue-317-navigation-does-not-update-url-causing-r",
-      "claimed_at": "2026-01-28T07:46:44Z"
+      "claimed_at": "2026-01-28T07:46:44Z",
+      "pr_number": 334,
+      "completed_at": "2026-01-28T08:28:42Z"
     }
   ]
 }
