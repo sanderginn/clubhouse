@@ -65,6 +65,27 @@ describe('SectionFeed', () => {
     expect(loadMorePosts).toHaveBeenCalled();
   });
 
+  it('shows pagination error and allows retry when posts exist', async () => {
+    sectionStore.setActiveSection({ id: 'section-1', name: 'Music', type: 'music', icon: '🎵' });
+    render(SectionFeed);
+
+    postStore.setPosts(
+      [
+        { id: 'post-1', userId: 'user-1', sectionId: 'section-1', content: 'hello', createdAt: 'now' },
+      ],
+      'cursor-1',
+      true
+    );
+    postStore.setError('Rate limit exceeded');
+    await tick();
+
+    expect(screen.getByText(/Could not load more posts/i)).toBeInTheDocument();
+    const button = screen.getByText('Try again');
+    await fireEvent.click(button);
+
+    expect(loadMorePosts).toHaveBeenCalled();
+  });
+
   it('cleanup resets posts on destroy', () => {
     const resetSpy = vi.spyOn(postStore, 'reset');
     sectionStore.setActiveSection({ id: 'section-1', name: 'Music', type: 'music', icon: '🎵' });

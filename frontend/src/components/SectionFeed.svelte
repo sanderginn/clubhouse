@@ -25,7 +25,13 @@
       observer = new IntersectionObserver(
         (entries) => {
           const entry = entries[0];
-          if (entry?.isIntersecting && $hasMorePosts && !isLoadingMore && !$isLoadingPosts) {
+          if (
+            entry?.isIntersecting &&
+            $hasMorePosts &&
+            !isLoadingMore &&
+            !$isLoadingPosts &&
+            !$postsError
+          ) {
             handleLoadMore();
           }
         },
@@ -87,7 +93,7 @@
         <span>Loading posts...</span>
       </div>
     </div>
-  {:else if $postsError}
+  {:else if $postsError && $posts.length === 0}
     <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
       <p class="text-red-600">{$postsError}</p>
       <button
@@ -133,6 +139,15 @@
           </svg>
           <span class="text-sm">Loading more...</span>
         </div>
+      </div>
+    {/if}
+
+    {#if $postsError}
+      <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-700">
+        <p>Could not load more posts. {$postsError}</p>
+        <button on:click={handleLoadMore} class="mt-2 text-xs text-amber-800 underline hover:no-underline">
+          Try again
+        </button>
       </div>
     {/if}
 

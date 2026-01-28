@@ -109,6 +109,7 @@ function createPostStore() {
           cursor,
           hasMore,
           isLoading: false,
+          error: null,
         };
       }),
     removePost: (postId: string) =>
@@ -175,7 +176,12 @@ function createPostStore() {
           };
         }),
       })),
-    setLoading: (isLoading: boolean) => update((state) => ({ ...state, isLoading })),
+    setLoading: (isLoading: boolean) =>
+      update((state) => ({
+        ...state,
+        isLoading,
+        error: isLoading ? null : state.error,
+      })),
     setError: (error: string | null) => update((state) => ({ ...state, error, isLoading: false })),
     reset: () =>
       set({

@@ -29,6 +29,15 @@ describe('postStore', () => {
     expect(state.error).toBeNull();
   });
 
+  it('setLoading clears error when starting a request', () => {
+    postStore.setError('boom');
+    postStore.setLoading(true);
+
+    const state = get(postStore);
+    expect(state.isLoading).toBe(true);
+    expect(state.error).toBeNull();
+  });
+
   it('addPost prepends', () => {
     postStore.setPosts([basePost], null, true);
     postStore.addPost({ ...basePost, id: 'post-2' });
