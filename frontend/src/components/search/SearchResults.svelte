@@ -157,6 +157,17 @@
     return linkId ? `link-${linkId}` : `${result.type}-${index}`;
   }
 
+  function resolveSectionName(result: SearchResult): string | null {
+    const sectionId =
+      (result.type === 'post' && result.post?.sectionId) ||
+      (result.type === 'comment' && result.post?.sectionId) ||
+      $activeSection?.id ||
+      null;
+    if (!sectionId) return null;
+    const section = $sections.find((item) => item.id === sectionId);
+    return section?.name ?? $activeSection?.name ?? null;
+  }
+
   $: normalizedQuery = $searchQuery.trim();
   $: hasQuery = normalizedQuery.length > 0;
   $: showResults = $lastSearchQuery && $lastSearchQuery === normalizedQuery;
@@ -211,7 +222,15 @@
     </div>
 
     {#each $searchResults as result, index (resultKey(result, index))}
+      {@const sectionName = resolveSectionName(result)}
       {#if result.type === 'post' && result.post}
+        {#if sectionName}
+          <div class="inline-flex items-center gap-2 text-xs font-medium text-gray-500">
+            <span class="px-2 py-0.5 rounded-full bg-gray-100 border border-gray-200">
+              {sectionName}
+            </span>
+          </div>
+        {/if}
         <PostCard post={result.post} />
       {:else if result.type === 'comment' && result.comment}
         {@const comment = result.comment}
@@ -220,7 +239,14 @@
           {#if parentPost}
             <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
               <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
-                <span>Parent post</span>
+                <div class="flex items-center gap-2">
+                  <span>Parent post</span>
+                  {#if sectionName}
+                    <span class="px-2 py-0.5 rounded-full bg-white border border-gray-200 text-gray-500">
+                      {sectionName}
+                    </span>
+                  {/if}
+                </div>
                 <button
                   type="button"
                   class="text-blue-600 hover:text-blue-800 underline"
@@ -271,6 +297,14 @@
                   {/if}
                 </div>
               </div>
+            </div>
+          {/if}
+
+          {#if !parentPost && sectionName}
+            <div class="inline-flex items-center gap-2 text-xs font-medium text-gray-500">
+              <span class="px-2 py-0.5 rounded-full bg-gray-100 border border-gray-200">
+                {sectionName}
+              </span>
             </div>
           {/if}
 

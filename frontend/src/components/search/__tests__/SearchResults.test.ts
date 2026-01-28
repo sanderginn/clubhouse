@@ -119,7 +119,7 @@ describe('SearchResults', () => {
 
     render(SearchResults);
     expect(screen.getByText('Nice post')).toBeInTheDocument();
-    expect(screen.getByText('Music')).toBeInTheDocument();
+    expect(screen.getAllByText('Music').length).toBeGreaterThan(0);
   });
 
   it('renders section label for post results', () => {
@@ -144,6 +144,6 @@ describe('SearchResults', () => {
     ]);
 
     render(SearchResults);
-    expect(screen.getByText('Movies')).toBeInTheDocument();
+    expect(screen.getAllByText('Movies').length).toBeGreaterThan(0);
   });
 });
