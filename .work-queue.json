@@ -175,6 +175,7 @@
     316,
     317,
     342,
+    343,
     344,
     346,
     347
@@ -3380,7 +3381,7 @@
     {
       "issue_number": 343,
       "title": "Bug: \"View full thread\" link in search navigates to section instead of thread",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769639352-11513",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769639352-11513",
       "dependencies": [],
@@ -3393,7 +3394,9 @@
         "ui"
       ],
       "branch": "fix/issue-343-view-full-thread-link-in-search-navigate",
-      "claimed_at": "2026-01-28T22:29:12Z"
+      "claimed_at": "2026-01-28T22:29:12Z",
+      "pr_number": 355,
+      "completed_at": "2026-01-28T22:59:33Z"
     },
     {
       "issue_number": 342,
