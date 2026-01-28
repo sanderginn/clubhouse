@@ -3192,10 +3192,10 @@
         "reactions",
         "ui"
       ],
-      "assigned_to": "agent-1769626503-56691",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769626503-56691",
+      "assigned_to": "agent-1769626547-57838",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769626547-57838",
       "branch": "feat/issue-315-enhancement-add-reaction-tooltips-listin",
-      "claimed_at": "2026-01-28T18:55:03Z"
+      "claimed_at": "2026-01-28T18:55:47Z"
     },
     {
       "issue_number": 316,
