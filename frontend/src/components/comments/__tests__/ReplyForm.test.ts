@@ -21,6 +21,10 @@ const { default: ReplyForm } = await import('../ReplyForm.svelte');
 beforeEach(() => {
   createComment.mockReset();
   mapApiComment.mockReset();
+  const state = (commentStore as unknown as { resetThread: (postId: string) => void });
+  if (state.resetThread) {
+    state.resetThread('post-1');
+  }
   postStore.reset();
 });
 
@@ -75,5 +79,33 @@ describe('ReplyForm', () => {
     await fireEvent.click(cancelButton);
 
     expect(cancelHandler).toHaveBeenCalled();
+  });
+
+  it('skips comment count increment when websocket already counted', async () => {
+    const incrementSpy = vi.spyOn(postStore, 'incrementCommentCount');
+    mapApiComment.mockReturnValue({
+      id: 'reply-1',
+      postId: 'post-1',
+      parentCommentId: 'comment-1',
+      userId: 'user-1',
+      content: 'Reply',
+      createdAt: 'now',
+    });
+    createComment.mockResolvedValue({ comment: { id: 'reply-1' } });
+    commentStore.markSeenComment('post-1', 'reply-1');
+
+    const { container } = render(ReplyForm, {
+      postId: 'post-1',
+      parentCommentId: 'comment-1',
+    });
+
+    const textarea = screen.getByPlaceholderText('Write a reply...');
+    await fireEvent.input(textarea, { target: { value: 'Reply' } });
+
+    const form = container.querySelector('form');
+    if (!form) throw new Error('form not found');
+    await fireEvent.submit(form);
+
+    expect(incrementSpy).not.toHaveBeenCalled();
   });
 });
