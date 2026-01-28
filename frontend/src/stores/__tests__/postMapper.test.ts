@@ -55,7 +55,7 @@ describe('mapApiPost', () => {
     expect(post.links).toBeUndefined();
   });
 
-  it('maps metadata even when url is missing', () => {
+  it('falls back to link url when metadata url is missing', () => {
     const post = mapApiPost({
       id: 'post-3',
       user_id: 'user-3',
@@ -64,18 +64,39 @@ describe('mapApiPost', () => {
       created_at: '2025-01-01T00:00:00Z',
       links: [
         {
-          id: 'link-2',
-          url: 'https://example.com',
+          id: 'link-3',
+          url: 'https://example.com/photo.png',
           metadata: {
-            provider: 'example',
-            title: 'Example',
-            description: 'Desc',
+            image: 'https://cdn.example.com/photo.png',
           },
         },
       ],
     });
 
-    expect(post.links?.[0].metadata?.url).toBe('https://example.com');
-    expect(post.links?.[0].metadata?.title).toBe('Example');
+    expect(post.links?.[0].metadata?.url).toBe('https://example.com/photo.png');
+    expect(post.links?.[0].metadata?.image).toBe('https://cdn.example.com/photo.png');
+  });
+
+  it('falls back to link url when metadata url is empty', () => {
+    const post = mapApiPost({
+      id: 'post-4',
+      user_id: 'user-4',
+      section_id: 'section-4',
+      content: 'hello',
+      created_at: '2025-01-01T00:00:00Z',
+      links: [
+        {
+          id: 'link-4',
+          url: 'https://example.com/photo.png',
+          metadata: {
+            url: '',
+            image: 'https://cdn.example.com/photo.png',
+          },
+        },
+      ],
+    });
+
+    expect(post.links?.[0].metadata?.url).toBe('https://example.com/photo.png');
+    expect(post.links?.[0].metadata?.image).toBe('https://cdn.example.com/photo.png');
   });
 });
