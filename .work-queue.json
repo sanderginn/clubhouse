@@ -3073,9 +3073,9 @@
     {
       "issue_number": 311,
       "title": "Enhancement: Highlight matched comment in search results",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769584130-3291",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769584130-3291",
       "dependencies": [],
       "phase": "feature",
       "labels": [
@@ -3084,7 +3084,8 @@
         "search",
         "ui"
       ],
-      "branch": "feat/issue-311-enhancement--highlight-matched-comment-in-search-results"
+      "branch": "feat/issue-311-enhancement-highlight-matched-comment-in",
+      "claimed_at": "2026-01-28T07:08:50Z"
     },
     {
       "issue_number": 312,
