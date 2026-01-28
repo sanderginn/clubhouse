@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { fade, fly } from 'svelte/transition';
   import PendingUsers from '../components/admin/PendingUsers.svelte';
   import AuditLogs from '../components/admin/AuditLogs.svelte';
   import UserResetLinks from '../components/admin/UserResetLinks.svelte';
@@ -34,10 +33,7 @@
 </script>
 
 <div class="admin-panel space-y-8">
-  <section
-    class="admin-hero relative overflow-hidden rounded-3xl border border-amber-100 bg-white px-6 py-8 shadow-sm"
-    transition:fade
-  >
+  <section class="admin-hero relative overflow-hidden rounded-3xl border border-amber-100 bg-white px-6 py-8 shadow-sm">
     <div class="absolute inset-0 admin-grid" aria-hidden="true"></div>
     <div class="relative z-10 space-y-3">
       <p class="text-xs uppercase tracking-[0.35em] text-amber-700 font-mono">Moderation Console</p>
@@ -63,7 +59,7 @@
   </section>
 
   <section class="grid gap-4 md:grid-cols-[1fr,2fr]">
-    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" transition:fly={{ y: 12, duration: 220 }}>
+    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <h2 class="text-lg font-serif font-semibold text-slate-900">Admin Toolkit</h2>
       <p class="mt-2 text-sm text-slate-600">
         Choose a workflow. Approvals keep your roster curated; audit logs keep everything transparent.
@@ -92,21 +88,13 @@
 
     <div class="min-h-[420px]">
       {#if activeTab === 'pending'}
-        <div transition:fade>
-          <PendingUsers />
-        </div>
+        <PendingUsers />
       {:else if activeTab === 'users'}
-        <div transition:fade>
-          <UserResetLinks />
-        </div>
+        <UserResetLinks />
       {:else if activeTab === 'audit'}
-        <div transition:fade>
-          <AuditLogs />
-        </div>
+        <AuditLogs />
       {:else}
-        <div transition:fade>
-          <AdminTotpSetup />
-        </div>
+        <AdminTotpSetup />
       {/if}
     </div>
   </section>
