@@ -96,8 +96,8 @@ describe('SearchResults', () => {
   });
 
   it('renders comment results', () => {
-    storeRefs.searchQuery.set('hello');
-    storeRefs.lastSearchQuery.set('hello');
+    storeRefs.searchQuery.set('nice');
+    storeRefs.lastSearchQuery.set('nice');
     storeRefs.sections.set([
       { id: 'section-1', name: 'Music', type: 'music', icon: '🎵' },
     ]);
@@ -118,8 +118,11 @@ describe('SearchResults', () => {
     ]);
 
     render(SearchResults);
-    expect(screen.getByText('Nice post')).toBeInTheDocument();
-    expect(screen.getAllByText('Music').length).toBeGreaterThan(0);
+    const highlight = screen.getByText('Nice');
+    expect(highlight).toBeInTheDocument();
+    expect(highlight.tagName).toBe('MARK');
+    expect(screen.getByText(/post/i)).toBeInTheDocument();
+    expect(screen.getByText('Music')).toBeInTheDocument();
   });
 
   it('renders section label for post results', () => {
