@@ -2956,7 +2956,7 @@
     {
       "issue_number": 304,
       "title": "Bug: Post creation rejects URL-only posts",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -2965,7 +2965,11 @@
         "frontend",
         "posts",
         "links"
-      ]
+      ],
+      "assigned_to": "agent-1769585867-32419",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769585867-32419",
+      "branch": "fix/issue-304-post-creation-rejects-urlonly-posts",
+      "claimed_at": "2026-01-28T07:37:47Z"
     },
     {
       "issue_number": 305,
