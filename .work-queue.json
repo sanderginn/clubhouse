@@ -173,7 +173,8 @@
     314,
     315,
     316,
-    317
+    317,
+    344
   ],
   "issues": [
     {
@@ -3349,7 +3350,7 @@
     {
       "issue_number": 344,
       "title": "Bug: Search scope button too narrow for \"Everywhere\" label",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769639364-11796",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769639364-11796",
       "dependencies": [],
@@ -3361,7 +3362,9 @@
         "ui"
       ],
       "branch": "fix/issue-344-search-scope-button-too-narrow-for-every",
-      "claimed_at": "2026-01-28T22:29:24Z"
+      "claimed_at": "2026-01-28T22:29:24Z",
+      "pr_number": 352,
+      "completed_at": "2026-01-28T22:36:35Z"
     },
     {
       "issue_number": 343,
