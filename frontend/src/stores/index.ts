@@ -8,3 +8,4 @@ export * from './commentFeedStore';
 export * from './websocketStore';
 export * from './searchStore';
 export * from './pwaStore';
+export * from './threadRouteStore';

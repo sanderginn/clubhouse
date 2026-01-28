@@ -18,9 +18,16 @@
     pwaStore,
     activeProfileUserId,
     uiStore,
+    threadRouteStore,
   } from './stores';
   import { parseProfileUserId } from './services/profileNavigation';
-  import { buildFeedHref, isAdminPath, parseSectionId, replacePath } from './services/routeNavigation';
+  import {
+    buildFeedHref,
+    isAdminPath,
+    parseSectionId,
+    parseThreadPostId,
+    replacePath,
+  } from './services/routeNavigation';
   import { parseResetRoute } from './services/resetLink';
 
   let unauthRoute: 'login' | 'register' | 'reset' = 'login';
@@ -60,9 +67,16 @@
     const profileUserId = parseProfileUserId(path);
     if (profileUserId) {
       uiStore.openProfile(profileUserId);
+      threadRouteStore.clearTarget();
       pendingSectionId = null;
     } else {
+      const threadPostId = parseThreadPostId(path);
       const sectionId = parseSectionId(path);
+      if (threadPostId && sectionId) {
+        threadRouteStore.setTarget(threadPostId, sectionId);
+      } else {
+        threadRouteStore.clearTarget();
+      }
       if (sectionId) {
         const availableSections = get(sections);
         if (availableSections.length > 0) {

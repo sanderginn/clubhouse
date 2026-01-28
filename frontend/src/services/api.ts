@@ -196,6 +196,11 @@ class ApiClient {
     return { post: mapApiPost(response.post) };
   }
 
+  async getPost(postId: string): Promise<{ post: Post | null }> {
+    const response = await this.get<{ post: ApiPost | null }>(`/posts/${postId}`);
+    return { post: response.post ? mapApiPost(response.post) : null };
+  }
+
   async getFeed(
     sectionId: string,
     limit = 20,
