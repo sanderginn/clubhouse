@@ -566,6 +566,20 @@ Auth: Required
 Response: {}
 ```
 
+**List Reactions for Post**
+```
+GET /posts/{postId}/reactions
+Auth: Required
+Response: { reactions: [ { emoji, users: [ { id, username, profilePictureUrl } ] } ] }
+```
+
+**List Reactions for Comment**
+```
+GET /comments/{commentId}/reactions
+Auth: Required
+Response: { reactions: [ { emoji, users: [ { id, username, profilePictureUrl } ] } ] }
+```
+
 #### Search
 
 **Global Search**

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import EmojiPicker from './EmojiPicker.svelte';
   import { api } from '../../services/api';
   import type { ApiReactionGroup, ApiReactionUser } from '../../services/api';
@@ -10,6 +11,7 @@
   export let commentId: string | null = null;
 
   let showPicker = false;
+  let tooltipContainer: HTMLDivElement | null = null;
   let pendingEmoji: string | null = null;
   let showTooltip = false;
   let tooltipLoading = false;
@@ -32,6 +34,16 @@
     } finally {
       pendingEmoji = null;
     }
+  }
+
+  function handleFocusOut(event: FocusEvent) {
+    if (tooltipContainer && event.relatedTarget) {
+      const target = event.relatedTarget as Node;
+      if (tooltipContainer.contains(target)) {
+        return;
+      }
+    }
+    hideTooltip();
   }
 
   function hideTooltip() {
@@ -90,16 +102,23 @@
       await loadTooltipData();
     }, 150);
   }
+
+  onDestroy(() => {
+    if (tooltipTimeout) {
+      clearTimeout(tooltipTimeout);
+    }
+  });
 </script>
 
 <div class="flex flex-wrap items-center gap-2">
   <div
     class="relative"
     role="group"
+    bind:this={tooltipContainer}
     on:mouseenter={showTooltipWithDelay}
     on:mouseleave={hideTooltip}
     on:focusin={showTooltipWithDelay}
-    on:focusout={hideTooltip}
+    on:focusout={handleFocusOut}
   >
     <div class="flex flex-wrap items-center gap-2">
       {#each orderedReactions as [emoji, count]}
