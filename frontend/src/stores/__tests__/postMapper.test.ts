@@ -99,4 +99,37 @@ describe('mapApiPost', () => {
     expect(post.links?.[0].metadata?.url).toBe('https://example.com/photo.png');
     expect(post.links?.[0].metadata?.image).toBe('https://cdn.example.com/photo.png');
   });
+
+  it('normalizes snake_case metadata and JSON strings', () => {
+    const rawMetadata = JSON.stringify({
+      site_name: 'Example Site',
+      title: 'Example Title',
+      description: 'Example Description',
+      image_url: 'https://cdn.example.com/image.png',
+      embed_url: 'https://example.com/embed',
+      duration: '180',
+    });
+
+    const post = mapApiPost({
+      id: 'post-5',
+      user_id: 'user-5',
+      section_id: 'section-5',
+      content: 'hello',
+      created_at: '2025-01-01T00:00:00Z',
+      links: [
+        {
+          id: 'link-5',
+          url: 'https://example.com',
+          metadata: rawMetadata,
+        },
+      ],
+    });
+
+    expect(post.links?.[0].metadata?.provider).toBe('Example Site');
+    expect(post.links?.[0].metadata?.title).toBe('Example Title');
+    expect(post.links?.[0].metadata?.description).toBe('Example Description');
+    expect(post.links?.[0].metadata?.image).toBe('https://cdn.example.com/image.png');
+    expect(post.links?.[0].metadata?.embedUrl).toBe('https://example.com/embed');
+    expect(post.links?.[0].metadata?.duration).toBe(180);
+  });
 });
