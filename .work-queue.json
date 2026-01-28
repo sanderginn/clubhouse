@@ -164,6 +164,7 @@
     306,
     307,
     308,
+    312,
     313
   ],
   "issues": [
@@ -3105,7 +3106,7 @@
     {
       "issue_number": 312,
       "title": "Bug: WebSocket section updates not delivered between clients",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -3117,7 +3118,9 @@
       "assigned_to": "agent-1769586302-40500",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769586302-40500",
       "branch": "fix/issue-312-websocket-section-updates-not-delivered-",
-      "claimed_at": "2026-01-28T07:45:02Z"
+      "claimed_at": "2026-01-28T07:45:02Z",
+      "pr_number": 333,
+      "completed_at": "2026-01-28T08:01:30Z"
     },
     {
       "issue_number": 313,
