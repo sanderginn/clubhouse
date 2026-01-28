@@ -178,7 +178,8 @@
     343,
     344,
     346,
-    347
+    347,
+    348
   ],
   "issues": [
     {
@@ -3290,7 +3291,7 @@
     {
       "issue_number": 348,
       "title": "Bug: Reactions do not update in real-time via WebSocket",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769640406-46499",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769640406-46499",
       "dependencies": [],
@@ -3302,7 +3303,9 @@
         "reactions"
       ],
       "branch": "fix/issue-348-reactions-do-not-update-in-realtime-via-",
-      "claimed_at": "2026-01-28T22:46:46Z"
+      "claimed_at": "2026-01-28T22:46:46Z",
+      "pr_number": 357,
+      "completed_at": "2026-01-28T23:09:28Z"
     },
     {
       "issue_number": 347,
