@@ -3276,9 +3276,9 @@
     {
       "issue_number": 349,
       "title": "Bug: User profile navigation crashes with \"apiUser is undefined\" error",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769642335-76245",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769642335-76245",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -3286,7 +3286,9 @@
         "frontend",
         "users",
         "ui"
-      ]
+      ],
+      "branch": "fix/issue-349-user-profile-navigation-crashes-with-api",
+      "claimed_at": "2026-01-28T23:18:55Z"
     },
     {
       "issue_number": 348,
