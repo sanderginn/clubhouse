@@ -2,6 +2,7 @@
   import { searchResults, isSearching, searchError, searchQuery, lastSearchQuery, searchScope, activeSection, sections } from '../../stores';
   import PostCard from '../PostCard.svelte';
   import ReactionBar from '../reactions/ReactionBar.svelte';
+  import LinkifiedText from '../LinkifiedText.svelte';
   import { api } from '../../services/api';
   import { buildProfileHref, handleProfileNavigation } from '../../services/profileNavigation';
   import type { CommentResult } from '../../stores/searchStore';
@@ -231,9 +232,11 @@
                 </time>
               </div>
 
-              <p class="text-gray-800 whitespace-pre-wrap break-words">
-                {comment.content}
-              </p>
+              <LinkifiedText
+                text={comment.content}
+                className="text-gray-800 whitespace-pre-wrap break-words"
+                linkClassName="text-blue-600 hover:text-blue-800 underline"
+              />
 
               {#if comment.links && comment.links.length > 0}
                 <div class="mt-2 text-sm text-blue-600 break-all">

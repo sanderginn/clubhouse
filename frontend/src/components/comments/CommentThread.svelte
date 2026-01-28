@@ -7,6 +7,7 @@
   import CommentForm from './CommentForm.svelte';
   import ReplyForm from './ReplyForm.svelte';
   import ReactionBar from '../reactions/ReactionBar.svelte';
+  import LinkifiedText from '../LinkifiedText.svelte';
 
   export let postId: string;
   export let commentCount = 0;
@@ -253,9 +254,11 @@
                 </time>
               </div>
 
-              <p class="text-gray-800 text-sm whitespace-pre-wrap break-words">
-                {comment.content}
-              </p>
+              <LinkifiedText
+                text={comment.content}
+                className="text-gray-800 text-sm whitespace-pre-wrap break-words"
+                linkClassName="text-blue-600 hover:text-blue-800 underline"
+              />
 
               {#if comment.links?.length}
                 {#each comment.links as link (link.url)}
@@ -404,9 +407,11 @@
                             {formatDate(reply.createdAt)}
                           </time>
                         </div>
-                        <p class="text-gray-800 text-sm whitespace-pre-wrap break-words">
-                          {reply.content}
-                        </p>
+                        <LinkifiedText
+                          text={reply.content}
+                          className="text-gray-800 text-sm whitespace-pre-wrap break-words"
+                          linkClassName="text-blue-600 hover:text-blue-800 underline"
+                        />
                         <div class="mt-2">
                           <ReactionBar
                             reactionCounts={reply.reactionCounts ?? {}}
