@@ -150,7 +150,8 @@
     275,
     277,
     278,
-    294
+    294,
+    295
   ],
   "issues": [
     {
@@ -2792,7 +2793,7 @@
     {
       "issue_number": 295,
       "title": "Bug: Password reset link routes to login instead of reset screen",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769558135-29251",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769558135-29251",
       "dependencies": [],
@@ -2803,7 +2804,9 @@
         "auth"
       ],
       "branch": "fix/issue-295-password-reset-link-routes-to-login-inst",
-      "claimed_at": "2026-01-27T23:55:35Z"
+      "claimed_at": "2026-01-27T23:55:35Z",
+      "pr_number": 319,
+      "completed_at": "2026-01-28T00:01:46Z"
     },
     {
       "issue_number": 296,
