@@ -2896,9 +2896,9 @@
     {
       "issue_number": 301,
       "title": "Bug: Login for unapproved users shows invalid credentials instead of awaiting approval",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769583414-73977",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769583414-73977",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -2906,7 +2906,9 @@
         "backend",
         "frontend",
         "auth"
-      ]
+      ],
+      "branch": "fix/issue-301-login-for-unapproved-users-shows-invalid",
+      "claimed_at": "2026-01-28T06:56:54Z"
     },
     {
       "issue_number": 302,
