@@ -6,6 +6,7 @@
   let password = '';
   let totpCode = '';
   let error = '';
+  let errorCode: string | null = null;
   let isLoading = false;
   let needsTotp = false;
   let totpAttempted = false;
@@ -34,6 +35,9 @@
     if (error) {
       error = '';
     }
+    if (errorCode) {
+      errorCode = null;
+    }
     if (totpAttempted) {
       totpAttempted = false;
     }
@@ -41,6 +45,7 @@
 
   async function handleSubmit() {
     error = '';
+    errorCode = null;
     const trimmedUsername = username.trim();
     const trimmedTotp = totpCode.replace(/\s+/g, '');
 
@@ -84,11 +89,16 @@
       }
     } catch (e) {
       const errorWithCode = e as Error & { code?: string };
+      errorCode = errorWithCode.code ?? null;
       if (errorWithCode.code === 'TOTP_REQUIRED') {
         needsTotp = true;
         totpAttempted = false;
         authStore.setMfaChallenge({ username: trimmedUsername });
         error = '';
+      } else if (errorWithCode.code === 'USER_NOT_APPROVED') {
+        needsTotp = false;
+        totpAttempted = false;
+        error = errorWithCode.message || 'Your account is awaiting admin approval.';
       } else {
         if (needsTotp) {
           totpAttempted = true;
@@ -121,8 +131,12 @@
 
     <form class="mt-8 space-y-6" novalidate on:submit|preventDefault={handleSubmit}>
       {#if error}
-        <div class="rounded-md bg-red-50 p-4">
-          <p class="text-sm text-red-700">{error}</p>
+        <div
+          class={`rounded-md p-4 ${
+            errorCode === 'USER_NOT_APPROVED' ? 'bg-blue-50 text-blue-700' : 'bg-red-50 text-red-700'
+          }`}
+        >
+          <p class="text-sm">{error}</p>
         </div>
       {/if}
 

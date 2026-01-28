@@ -22,6 +22,13 @@ const (
 // dummyPasswordHash is a bcrypt hash for timing-equalized compares on unknown users.
 var dummyPasswordHash = []byte("$2a$12$ukjUkUX1cfSD88LBRMvNjuwNn2eWmisHaOuhtgo/napH/3VmLCtNK")
 
+var (
+	ErrUsernameRequired   = errors.New("username is required")
+	ErrPasswordRequired   = errors.New("password is required")
+	ErrInvalidCredentials = errors.New("invalid username or password")
+	ErrUserNotApproved    = errors.New("user not approved")
+)
+
 // UserService handles user-related operations
 type UserService struct {
 	db *sql.DB
@@ -237,17 +244,17 @@ func (s *UserService) LoginUser(ctx context.Context, req *models.LoginRequest) (
 	user, err := s.GetUserByUsername(ctx, req.Username)
 	if err != nil {
 		_ = bcrypt.CompareHashAndPassword(dummyPasswordHash, []byte(req.Password))
-		return nil, fmt.Errorf("invalid username or password")
+		return nil, ErrInvalidCredentials
 	}
 
 	// Verify password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-		return nil, fmt.Errorf("invalid username or password")
+		return nil, ErrInvalidCredentials
 	}
 
 	// Check if user is approved
 	if user.ApprovedAt == nil {
-		return nil, fmt.Errorf("user not approved")
+		return nil, ErrUserNotApproved
 	}
 
 	return user, nil
@@ -256,11 +263,11 @@ func (s *UserService) LoginUser(ctx context.Context, req *models.LoginRequest) (
 // validateLoginInput validates login input
 func validateLoginInput(req *models.LoginRequest) error {
 	if strings.TrimSpace(req.Username) == "" {
-		return fmt.Errorf("username is required")
+		return ErrUsernameRequired
 	}
 
 	if strings.TrimSpace(req.Password) == "" {
-		return fmt.Errorf("password is required")
+		return ErrPasswordRequired
 	}
 
 	return nil
