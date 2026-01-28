@@ -194,23 +194,23 @@ func (h *WebSocketHandler) readLoop(ctx context.Context, wsConn *wsConnection) {
 		observability.RecordWebsocketMessageReceived(spanCtx, messageType)
 		switch msg.Type {
 		case wsSubscribe:
-			var data subscribePayload
-			if err := json.Unmarshal(msg.Data, &data); err != nil {
+			sectionIDs, err := parseSubscribePayload(msg)
+			if err != nil {
 				span.RecordError(err)
 				observability.RecordWebsocketError(spanCtx, "invalid_payload", messageType)
 				span.End()
 				continue
 			}
-			h.addSubscriptions(spanCtx, wsConn, data.SectionIDs, messageType)
+			h.addSubscriptions(spanCtx, wsConn, sectionIDs, messageType)
 		case wsUnsubscribe:
-			var data subscribePayload
-			if err := json.Unmarshal(msg.Data, &data); err != nil {
+			sectionIDs, err := parseSubscribePayload(msg)
+			if err != nil {
 				span.RecordError(err)
 				observability.RecordWebsocketError(spanCtx, "invalid_payload", messageType)
 				span.End()
 				continue
 			}
-			h.removeSubscriptions(spanCtx, wsConn, data.SectionIDs, messageType)
+			h.removeSubscriptions(spanCtx, wsConn, sectionIDs, messageType)
 		case wsPing:
 			// Ping messages are no-ops but still traced/metriced.
 		default:
@@ -472,16 +472,46 @@ func truncateString(value string, max int) string {
 }
 
 type wsMessage struct {
-	Type string          `json:"type"`
-	Data json.RawMessage `json:"data"`
+	Type            string          `json:"type"`
+	Data            json.RawMessage `json:"data"`
+	SectionIDs      []string        `json:"sectionIds"`
+	SectionIDsSnake []string        `json:"section_ids"`
 }
 
 type subscribePayload struct {
-	SectionIDs []string `json:"sectionIds"`
+	SectionIDs      []string `json:"sectionIds"`
+	SectionIDsSnake []string `json:"section_ids"`
+}
+
+func parseSubscribePayload(msg wsMessage) ([]string, error) {
+	if len(msg.Data) == 0 {
+		return mergeSectionIDs(msg.SectionIDs, msg.SectionIDsSnake), nil
+	}
+
+	var data subscribePayload
+	if err := json.Unmarshal(msg.Data, &data); err != nil {
+		return nil, err
+	}
+
+	return mergeSectionIDs(data.SectionIDs, data.SectionIDsSnake), nil
 }
 
 func formatChannel(format string, id any) string {
 	return fmt.Sprintf(format, id)
+}
+
+func mergeSectionIDs(primary, secondary []string) []string {
+	if len(primary) == 0 {
+		return secondary
+	}
+	if len(secondary) == 0 {
+		return primary
+	}
+
+	combined := make([]string, 0, len(primary)+len(secondary))
+	combined = append(combined, primary...)
+	combined = append(combined, secondary...)
+	return combined
 }
 
 func sectionChannels(sectionIDs []string) []string {

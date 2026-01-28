@@ -168,6 +168,66 @@ func TestWebSocketSubscribeDispatchAndUnsubscribe(t *testing.T) {
 	}
 }
 
+func TestWebSocketSubscribeDispatchSnakeCase(t *testing.T) {
+	redisClient := testutil.GetTestRedis(t)
+	t.Cleanup(func() {
+		testutil.CleanupRedis(t)
+		_ = redisClient.Close()
+	})
+
+	handler := NewWebSocketHandler(redisClient)
+	userID := uuid.New()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r = r.WithContext(createTestUserContext(r.Context(), userID, "wsuser", false))
+		handler.HandleWS(w, r)
+	}))
+	t.Cleanup(server.Close)
+
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http")
+	origin := server.URL
+	t.Setenv("WS_ORIGIN_ALLOWLIST", origin)
+	conn, _, err := websocket.DefaultDialer.Dial(wsURL, http.Header{"Origin": []string{origin}})
+	if err != nil {
+		t.Fatalf("failed to dial websocket: %v", err)
+	}
+	t.Cleanup(func() { _ = conn.Close() })
+
+	sectionID := "section-456"
+	subscribe := mustMarshal(t, wsMessage{
+		Type: wsSubscribe,
+		Data: mustMarshal(t, map[string][]string{"section_ids": {sectionID}}),
+	})
+	if err := conn.WriteMessage(websocket.TextMessage, subscribe); err != nil {
+		t.Fatalf("failed to send subscribe: %v", err)
+	}
+	waitForSubscription(t, redisClient, formatChannel(sectionPrefix, sectionID), 1)
+
+	event := wsEvent{
+		Type:      "comment_added",
+		Data:      map[string]string{"id": "comment-1"},
+		Timestamp: time.Now().UTC(),
+	}
+	eventBytes := mustMarshal(t, event)
+	if err := redisClient.Publish(context.Background(), formatChannel(sectionPrefix, sectionID), eventBytes).Err(); err != nil {
+		t.Fatalf("failed to publish event: %v", err)
+	}
+
+	conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_, msg, err := conn.ReadMessage()
+	if err != nil {
+		t.Fatalf("failed to read message: %v", err)
+	}
+
+	var got wsEvent
+	if err := json.Unmarshal(msg, &got); err != nil {
+		t.Fatalf("failed to unmarshal event: %v", err)
+	}
+	if got.Type != event.Type {
+		t.Fatalf("expected event type %q, got %q", event.Type, got.Type)
+	}
+}
+
 func mustMarshal(t *testing.T, v any) []byte {
 	t.Helper()
 	bytes, err := json.Marshal(v)
