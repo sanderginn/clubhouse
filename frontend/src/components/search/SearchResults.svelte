@@ -11,12 +11,14 @@
     postStore,
     sections,
     sectionStore,
+    uiStore,
   } from '../../stores';
   import PostCard from '../PostCard.svelte';
   import ReactionBar from '../reactions/ReactionBar.svelte';
   import LinkifiedText from '../LinkifiedText.svelte';
   import { api } from '../../services/api';
   import { buildProfileHref, handleProfileNavigation } from '../../services/profileNavigation';
+  import { buildSectionHref, pushPath } from '../../services/routeNavigation';
   import type { Post } from '../../stores/postStore';
   import type { CommentResult, SearchResult } from '../../stores/searchStore';
 
@@ -98,6 +100,10 @@
     if (!post) return;
     const targetSection = $sections.find((section) => section.id === post.sectionId);
     const switchingSection = targetSection && $activeSection?.id !== targetSection.id;
+    if (targetSection) {
+      uiStore.setActiveView('feed');
+      pushPath(buildSectionHref(targetSection.id));
+    }
     if (switchingSection) {
       sectionStore.setActiveSection(targetSection);
     }

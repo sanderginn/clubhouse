@@ -17,6 +17,7 @@ const storeRefs: {
   sectionStore: { setActiveSection: ReturnType<typeof vi.fn> };
   searchStore: { setQuery: ReturnType<typeof vi.fn> };
   postStore: { upsertPost: ReturnType<typeof vi.fn> };
+  uiStore: { setActiveView: ReturnType<typeof vi.fn> };
 } = {} as any;
 
 vi.mock('../../../stores', () => {
@@ -31,6 +32,7 @@ vi.mock('../../../stores', () => {
   storeRefs.sectionStore = { setActiveSection: vi.fn() };
   storeRefs.searchStore = { setQuery: vi.fn() };
   storeRefs.postStore = { upsertPost: vi.fn() };
+  storeRefs.uiStore = { setActiveView: vi.fn() };
 
   return storeRefs;
 });
