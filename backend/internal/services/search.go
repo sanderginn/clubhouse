@@ -135,6 +135,7 @@ func (s *SearchService) Search(ctx context.Context, query string, scope string, 
 	defer rows.Close()
 
 	results := make([]models.SearchResult, 0)
+	postCache := make(map[uuid.UUID]*models.Post)
 	for rows.Next() {
 		var resultType string
 		var id uuid.UUID
@@ -150,6 +151,7 @@ func (s *SearchService) Search(ctx context.Context, query string, scope string, 
 			if err != nil {
 				continue
 			}
+			postCache[id] = post
 			results = append(results, models.SearchResult{
 				Type:  "post",
 				Score: rank,
@@ -160,10 +162,19 @@ func (s *SearchService) Search(ctx context.Context, query string, scope string, 
 			if err != nil {
 				continue
 			}
+			post, ok := postCache[comment.PostID]
+			if !ok {
+				post, err = s.postService.GetPostByID(ctx, comment.PostID, userID)
+				if err != nil {
+					continue
+				}
+				postCache[comment.PostID] = post
+			}
 			results = append(results, models.SearchResult{
 				Type:    "comment",
 				Score:   rank,
 				Comment: comment,
+				Post:    post,
 			})
 		case "link_metadata":
 			linkResult, err := s.getLinkMetadataResult(ctx, id)

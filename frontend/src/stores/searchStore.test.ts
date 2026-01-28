@@ -60,6 +60,14 @@ describe('searchStore', () => {
             content: 'nice post',
             created_at: '2024-01-01T01:00:00Z',
           },
+          post: {
+            id: 'post-1',
+            user_id: 'user-1',
+            section_id: 'section-1',
+            content: 'hello world',
+            created_at: '2024-01-01T00:00:00Z',
+            comment_count: 0,
+          },
         },
       ],
     });
@@ -76,6 +84,7 @@ describe('searchStore', () => {
     expect(state.results).toHaveLength(2);
     expect(state.results[0].type).toBe('post');
     expect(state.results[1].type).toBe('comment');
+    expect(state.results[1].post?.id).toBe('post-1');
   });
 
   it('searches globally when scope is global', async () => {

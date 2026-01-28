@@ -271,6 +271,9 @@ func TestSearchSectionScopeUsesContextSectionID(t *testing.T) {
 	if response.Results[1].Type != "comment" || response.Results[1].Comment == nil || response.Results[1].Comment.ID != commentID {
 		t.Fatalf("expected second result to be comment %s", commentID)
 	}
+	if response.Results[1].Post == nil || response.Results[1].Post.ID != postID {
+		t.Fatalf("expected comment result to include post %s", postID)
+	}
 	if response.Results[2].Type != "link_metadata" || response.Results[2].LinkMetadata == nil || response.Results[2].LinkMetadata.ID != linkID {
 		t.Fatalf("expected third result to be link metadata %s", linkID)
 	}
@@ -410,6 +413,9 @@ func TestSearchSuccessGlobal(t *testing.T) {
 	}
 	if response.Results[1].Type != "comment" || response.Results[1].Comment == nil || response.Results[1].Comment.ID != commentID {
 		t.Fatalf("expected second result to be comment %s", commentID)
+	}
+	if response.Results[1].Post == nil || response.Results[1].Post.ID != postID {
+		t.Fatalf("expected comment result to include post %s", postID)
 	}
 	if response.Results[2].Type != "link_metadata" || response.Results[2].LinkMetadata == nil || response.Results[2].LinkMetadata.ID != linkID {
 		t.Fatalf("expected third result to be link metadata %s", linkID)
