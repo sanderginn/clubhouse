@@ -369,6 +369,7 @@
 
               <LinkifiedText
                 text={comment.content}
+                highlightQuery={normalizedQuery}
                 className="text-gray-800 whitespace-pre-wrap break-words"
                 linkClassName="text-blue-600 hover:text-blue-800 underline"
               />
