@@ -493,7 +493,15 @@ func parseSubscribePayload(msg wsMessage) ([]string, error) {
 		return nil, err
 	}
 
-	return mergeSectionIDs(data.SectionIDs, data.SectionIDsSnake), nil
+	combined := mergeSectionIDs(data.SectionIDs, data.SectionIDsSnake)
+	topLevel := mergeSectionIDs(msg.SectionIDs, msg.SectionIDsSnake)
+	if len(combined) == 0 {
+		return topLevel, nil
+	}
+	if len(topLevel) == 0 {
+		return combined, nil
+	}
+	return mergeSectionIDs(combined, topLevel), nil
 }
 
 func formatChannel(format string, id any) string {

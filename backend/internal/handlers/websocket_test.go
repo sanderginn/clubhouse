@@ -228,6 +228,43 @@ func TestWebSocketSubscribeDispatchSnakeCase(t *testing.T) {
 	}
 }
 
+func TestWebSocketSubscribeDispatchTopLevelWithNullData(t *testing.T) {
+	redisClient := testutil.GetTestRedis(t)
+	t.Cleanup(func() {
+		testutil.CleanupRedis(t)
+		_ = redisClient.Close()
+	})
+
+	handler := NewWebSocketHandler(redisClient)
+	userID := uuid.New()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r = r.WithContext(createTestUserContext(r.Context(), userID, "wsuser", false))
+		handler.HandleWS(w, r)
+	}))
+	t.Cleanup(server.Close)
+
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http")
+	origin := server.URL
+	t.Setenv("WS_ORIGIN_ALLOWLIST", origin)
+	conn, _, err := websocket.DefaultDialer.Dial(wsURL, http.Header{"Origin": []string{origin}})
+	if err != nil {
+		t.Fatalf("failed to dial websocket: %v", err)
+	}
+	t.Cleanup(func() { _ = conn.Close() })
+
+	sectionID := "section-789"
+	subscribe := mustMarshal(t, wsMessage{
+		Type:       wsSubscribe,
+		Data:       json.RawMessage("null"),
+		SectionIDs: []string{sectionID},
+	})
+	if err := conn.WriteMessage(websocket.TextMessage, subscribe); err != nil {
+		t.Fatalf("failed to send subscribe: %v", err)
+	}
+	waitForSubscription(t, redisClient, formatChannel(sectionPrefix, sectionID), 1)
+}
+
 func mustMarshal(t *testing.T, v any) []byte {
 	t.Helper()
 	bytes, err := json.Marshal(v)
