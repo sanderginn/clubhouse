@@ -8,6 +8,7 @@
   let error = '';
   let isLoading = false;
   let needsTotp = false;
+  let totpAttempted = false;
 
   interface LoginResponse {
     id: string;
@@ -33,6 +34,9 @@
     if (error) {
       error = '';
     }
+    if (totpAttempted) {
+      totpAttempted = false;
+    }
   }
 
   async function handleSubmit() {
@@ -46,6 +50,7 @@
     }
 
     if (needsTotp && !trimmedTotp) {
+      totpAttempted = true;
       error = 'Authentication code is required';
       return;
     }
@@ -61,6 +66,8 @@
 
       if (isTotpChallenge(response)) {
         needsTotp = true;
+        totpAttempted = false;
+        error = '';
         authStore.setMfaChallenge({
           username: trimmedUsername,
           challengeId: response.challenge_id,
@@ -73,14 +80,19 @@
           isAdmin: response.is_admin,
         };
         authStore.setUser(user);
+        totpAttempted = false;
       }
     } catch (e) {
       const errorWithCode = e as Error & { code?: string };
       if (errorWithCode.code === 'TOTP_REQUIRED') {
         needsTotp = true;
+        totpAttempted = false;
         authStore.setMfaChallenge({ username: trimmedUsername });
         error = '';
       } else {
+        if (needsTotp) {
+          totpAttempted = true;
+        }
         error = e instanceof Error ? e.message : 'Login failed';
       }
     } finally {
@@ -127,7 +139,11 @@
               required
               bind:value={totpCode}
               on:input={clearError}
-              class="appearance-none rounded-md relative block w-full px-3 py-2 border border-indigo-200 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+              class={`appearance-none rounded-md relative block w-full px-3 py-2 border placeholder-gray-500 text-gray-900 focus:outline-none focus:z-10 sm:text-sm ${
+                needsTotp && totpAttempted && error
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                  : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'
+              }`}
               placeholder="6-digit authentication code"
             />
           </div>
