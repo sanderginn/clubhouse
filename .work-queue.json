@@ -174,6 +174,7 @@
     315,
     316,
     317,
+    342,
     344,
     346
   ],
@@ -3392,7 +3393,7 @@
     {
       "issue_number": 342,
       "title": "Bug: Uploaded images do not render in posts",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769639348-11404",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769639348-11404",
       "dependencies": [],
@@ -3404,7 +3405,9 @@
         "ui"
       ],
       "branch": "fix/issue-342-uploaded-images-do-not-render-in-posts",
-      "claimed_at": "2026-01-28T22:29:08Z"
+      "claimed_at": "2026-01-28T22:29:08Z",
+      "pr_number": 354,
+      "completed_at": "2026-01-28T22:45:14Z"
     }
   ]
 }
