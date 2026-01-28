@@ -17,6 +17,24 @@ type Reaction struct {
 	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 }
 
+// ReactionUser represents a minimal user payload for reaction tooltips.
+type ReactionUser struct {
+	ID                uuid.UUID `json:"id"`
+	Username          string    `json:"username"`
+	ProfilePictureUrl *string   `json:"profile_picture_url,omitempty"`
+}
+
+// ReactionGroup represents users grouped by emoji.
+type ReactionGroup struct {
+	Emoji string         `json:"emoji"`
+	Users []ReactionUser `json:"users"`
+}
+
+// GetReactionsResponse represents the response for listing reactions on a post or comment.
+type GetReactionsResponse struct {
+	Reactions []ReactionGroup `json:"reactions"`
+}
+
 // CreateReactionRequest represents the request body for creating a reaction
 type CreateReactionRequest struct {
 	Emoji string `json:"emoji"`

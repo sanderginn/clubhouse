@@ -14,6 +14,7 @@ type postRouteDeps struct {
 	restorePost            http.HandlerFunc
 	addReactionToPost      http.HandlerFunc
 	removeReactionFromPost http.HandlerFunc
+	getReactions           http.HandlerFunc
 	getPost                http.HandlerFunc
 	deletePost             http.HandlerFunc
 }
@@ -38,6 +39,11 @@ func newPostRouteHandler(requireAuth authMiddleware, requireAuthCSRF authMiddlew
 		if r.Method == http.MethodDelete && strings.Contains(r.URL.Path, "/reactions/") {
 			// DELETE /api/v1/posts/{id}/reactions/{emoji}
 			requireAuthCSRF(http.HandlerFunc(deps.removeReactionFromPost)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/reactions") {
+			// GET /api/v1/posts/{id}/reactions
+			requireAuth(http.HandlerFunc(deps.getReactions)).ServeHTTP(w, r)
 			return
 		}
 		if r.Method == http.MethodDelete && isPostIDPath(r.URL.Path) {

@@ -322,6 +322,7 @@
                   reactionCounts={comment.reactionCounts ?? {}}
                   userReactions={getUserReactions(comment)}
                   onToggle={(emoji) => toggleCommentReaction(comment.id, emoji)}
+                  commentId={comment.id}
                 />
               </div>
 
@@ -417,6 +418,7 @@
                             reactionCounts={reply.reactionCounts ?? {}}
                             userReactions={getUserReactions(reply)}
                             onToggle={(emoji) => toggleCommentReaction(reply.id, emoji)}
+                            commentId={reply.id}
                           />
                         </div>
                       </div>

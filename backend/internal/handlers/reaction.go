@@ -102,6 +102,45 @@ func (h *ReactionHandler) AddReactionToPost(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+// GetPostReactions handles GET /api/v1/posts/{postId}/reactions
+func (h *ReactionHandler) GetPostReactions(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		return
+	}
+
+	postID, err := extractPostIDFromPath(r.URL.Path)
+	if err != nil {
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
+		return
+	}
+
+	reactions, err := h.reactionService.GetPostReactions(r.Context(), postID)
+	if err != nil {
+		if err.Error() == "post not found" {
+			writeError(r.Context(), w, http.StatusNotFound, "POST_NOT_FOUND", "Post not found")
+			return
+		}
+		writeError(r.Context(), w, http.StatusInternalServerError, "GET_REACTIONS_FAILED", "Failed to get reactions")
+		return
+	}
+
+	response := models.GetReactionsResponse{
+		Reactions: reactions,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode get post reactions response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}
+
 // RemoveReactionFromPost handles DELETE /api/v1/posts/{postId}/reactions/{emoji}
 func (h *ReactionHandler) RemoveReactionFromPost(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
@@ -227,6 +266,45 @@ func (h *ReactionHandler) AddReactionToComment(w http.ResponseWriter, r *http.Re
 			Message:    "failed to encode create reaction response",
 			Code:       "ENCODE_FAILED",
 			StatusCode: http.StatusCreated,
+			Err:        err,
+		})
+	}
+}
+
+// GetCommentReactions handles GET /api/v1/comments/{commentId}/reactions
+func (h *ReactionHandler) GetCommentReactions(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		return
+	}
+
+	commentID, err := extractCommentIDFromPath(r.URL.Path)
+	if err != nil {
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_COMMENT_ID", "Invalid comment ID format")
+		return
+	}
+
+	reactions, err := h.reactionService.GetCommentReactions(r.Context(), commentID)
+	if err != nil {
+		if err.Error() == "comment not found" {
+			writeError(r.Context(), w, http.StatusNotFound, "COMMENT_NOT_FOUND", "Comment not found")
+			return
+		}
+		writeError(r.Context(), w, http.StatusInternalServerError, "GET_REACTIONS_FAILED", "Failed to get reactions")
+		return
+	}
+
+	response := models.GetReactionsResponse{
+		Reactions: reactions,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode get comment reactions response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
 			Err:        err,
 		})
 	}

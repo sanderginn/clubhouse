@@ -207,6 +207,10 @@ func main() {
 			// POST /api/v1/comments/{id}/reactions
 			reactionAuthHandler := requireAuthCSRF(http.HandlerFunc(reactionHandler.AddReactionToComment))
 			reactionAuthHandler.ServeHTTP(w, r)
+		} else if r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/reactions") {
+			// GET /api/v1/comments/{id}/reactions
+			reactionAuthHandler := requireAuth(http.HandlerFunc(reactionHandler.GetCommentReactions))
+			reactionAuthHandler.ServeHTTP(w, r)
 		} else if r.Method == http.MethodDelete && strings.Contains(r.URL.Path, "/reactions/") {
 			// DELETE /api/v1/comments/{id}/reactions/{emoji}
 			reactionAuthHandler := requireAuthCSRF(http.HandlerFunc(reactionHandler.RemoveReactionFromComment))
@@ -228,6 +232,7 @@ func main() {
 		restorePost:            postHandler.RestorePost,
 		addReactionToPost:      reactionHandler.AddReactionToPost,
 		removeReactionFromPost: reactionHandler.RemoveReactionFromPost,
+		getReactions:           reactionHandler.GetPostReactions,
 		getPost:                postHandler.GetPost,
 		deletePost:             postHandler.DeletePost,
 	})
