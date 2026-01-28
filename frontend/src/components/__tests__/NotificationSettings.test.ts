@@ -141,7 +141,9 @@ describe('NotificationSettings', () => {
       _setMockState({ pushPermission: 'denied' });
       render(NotificationSettings);
 
-      expect(screen.getByText('To enable, allow notifications in your browser settings.')).toBeInTheDocument();
+      expect(
+        screen.getByText('Notifications blocked. Enable notifications in your browser settings.')
+      ).toBeInTheDocument();
     });
 
     it('should disable the button when permission is denied', () => {
@@ -184,6 +186,22 @@ describe('NotificationSettings', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Failed to disable notifications. Please try again.')).toBeInTheDocument();
+      });
+    });
+
+    it('should show a single denied message when permission is denied after subscribe attempt', async () => {
+      _setMockState({ isPushSubscribed: false, pushPermission: 'denied' });
+      (pwaStore.subscribeToPush as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
+      render(NotificationSettings);
+
+      const button = screen.getByRole('button');
+      await fireEvent.click(button);
+
+      await waitFor(() => {
+        const messages = screen.getAllByText(
+          'Notifications blocked. Enable notifications in your browser settings.'
+        );
+        expect(messages).toHaveLength(1);
       });
     });
   });

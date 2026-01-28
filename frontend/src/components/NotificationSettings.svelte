@@ -9,6 +9,7 @@
 
   let isLoading = false;
   let error = '';
+  const permissionDeniedMessage = 'Notifications blocked. Enable notifications in your browser settings.';
 
   async function handleToggle() {
     isLoading = true;
@@ -26,7 +27,7 @@
           // Check if permission was denied
           const permission = get(pushPermission);
           if (permission === 'denied') {
-            error = 'Permission denied. Please enable notifications in your browser settings.';
+            error = permissionDeniedMessage;
           } else {
             error = 'Failed to enable notifications. Please try again.';
           }
@@ -103,13 +104,9 @@
       {/if}
     </button>
 
-    {#if error}
-      <p class="px-3 mt-1 text-xs text-red-600">{error}</p>
-    {/if}
-
-    {#if $pushPermission === 'denied'}
-      <p class="px-3 mt-1 text-xs text-gray-500">
-        To enable, allow notifications in your browser settings.
+    {#if error || $pushPermission === 'denied'}
+      <p class="px-3 mt-1 text-xs text-red-600">
+        {error || permissionDeniedMessage}
       </p>
     {/if}
   {/if}
