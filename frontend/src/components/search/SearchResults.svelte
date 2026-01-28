@@ -18,7 +18,7 @@
   import { api } from '../../services/api';
   import { buildProfileHref, handleProfileNavigation } from '../../services/profileNavigation';
   import type { Post } from '../../stores/postStore';
-  import type { CommentResult } from '../../stores/searchStore';
+  import type { CommentResult, SearchResult } from '../../stores/searchStore';
 
   // Track pending reactions to prevent double-clicks
   let pendingReactions = new Set<string>();
@@ -107,6 +107,19 @@
     }
   }
 
+  type SearchResultWithLink = SearchResult & { linkMetadata?: { id?: string } };
+
+  function resultKey(result: SearchResult, index: number): string {
+    if (result.type === 'comment') {
+      return `comment-${result.comment?.id ?? index}`;
+    }
+    if (result.type === 'post') {
+      return `post-${result.post?.id ?? index}`;
+    }
+    const linkId = (result as SearchResultWithLink).linkMetadata?.id;
+    return linkId ? `link-${linkId}` : `${result.type}-${index}`;
+  }
+
   $: normalizedQuery = $searchQuery.trim();
   $: hasQuery = normalizedQuery.length > 0;
   $: showResults = $lastSearchQuery && $lastSearchQuery === normalizedQuery;
@@ -160,7 +173,7 @@
       </span>
     </div>
 
-    {#each $searchResults as result (result.type === 'comment' ? `comment-${result.comment?.id ?? ''}` : `post-${result.post?.id ?? ''}`)}
+    {#each $searchResults as result, index (resultKey(result, index))}
       {#if result.type === 'post' && result.post}
         <PostCard post={result.post} />
       {:else if result.type === 'comment' && result.comment}
