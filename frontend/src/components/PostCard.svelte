@@ -6,6 +6,7 @@
   import ReactionBar from './reactions/ReactionBar.svelte';
   import { buildProfileHref, handleProfileNavigation } from '../services/profileNavigation';
   import LinkifiedText from './LinkifiedText.svelte';
+  import { getImageLinkUrl } from '../services/linkUtils';
 
   export let post: Post;
 
@@ -72,6 +73,14 @@
 
   $: link = post.links?.[0];
   $: metadata = link?.metadata;
+  $: imageUrl = getImageLinkUrl(link);
+
+  let imageLoadFailed = false;
+  let lastImageUrl: string | undefined;
+  $: if (imageUrl !== lastImageUrl) {
+    imageLoadFailed = false;
+    lastImageUrl = imageUrl;
+  }
 </script>
 
 <article class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
@@ -136,7 +145,34 @@
 
       <LinkifiedText text={post.content} className="text-gray-800 whitespace-pre-wrap break-words mb-3" />
 
-      {#if link && metadata}
+      {#if link && imageUrl}
+        <div class="mb-3 rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+          {#if imageLoadFailed}
+            <div class="flex items-center justify-center px-4 py-6 text-sm text-gray-500">
+              Image unavailable. Try opening the link directly.
+            </div>
+          {:else}
+            <img
+              src={imageUrl}
+              alt={metadata?.title || 'Uploaded image'}
+              class="w-full max-h-[28rem] object-contain bg-white"
+              loading="lazy"
+              on:error={() => {
+                imageLoadFailed = true;
+              }}
+            />
+          {/if}
+        </div>
+        <a
+          href={link.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm break-all"
+        >
+          <span>🔗</span>
+          <span class="underline">{link.url}</span>
+        </a>
+      {:else if link && metadata}
         <a
           href={link.url}
           target="_blank"

@@ -91,9 +91,20 @@ export function normalizeLinkMetadata(
   const duration = normalizeNumber(metadata.duration);
   const embedUrl =
     normalizeString(metadata.embedUrl) ?? normalizeString(metadata.embed_url);
+  const type =
+    normalizeString(metadata.type) ??
+    normalizeString(metadata.og_type) ??
+    normalizeString(metadata.ogType);
 
   const hasMetadata =
-    !!provider || !!title || !!description || !!image || !!author || !!duration || !!embedUrl;
+    !!provider ||
+    !!title ||
+    !!description ||
+    !!image ||
+    !!author ||
+    !!duration ||
+    !!embedUrl ||
+    !!type;
   if (!hasMetadata) {
     return undefined;
   }
@@ -107,6 +118,7 @@ export function normalizeLinkMetadata(
     author,
     duration,
     embedUrl,
+    type,
   };
 }
 
