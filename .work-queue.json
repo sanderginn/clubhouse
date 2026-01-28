@@ -2981,10 +2981,10 @@
         "posts",
         "links"
       ],
-      "assigned_to": "agent-1769585867-32419",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769585867-32419",
+      "assigned_to": "agent-1769625512-38658",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769625512-38658",
       "branch": "fix/issue-304-post-creation-rejects-urlonly-posts",
-      "claimed_at": "2026-01-28T07:37:47Z"
+      "claimed_at": "2026-01-28T18:38:32Z"
     },
     {
       "issue_number": 305,
@@ -3180,7 +3180,7 @@
     {
       "issue_number": 315,
       "title": "Enhancement: Add reaction tooltips listing reacting users",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [],
       "phase": "feature",
       "labels": [
@@ -3188,11 +3188,7 @@
         "frontend",
         "reactions",
         "ui"
-      ],
-      "assigned_to": "agent-1769588512-99386",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769588512-99386",
-      "branch": "feat/issue-315-enhancement-add-reaction-tooltips-listin",
-      "claimed_at": "2026-01-28T08:21:52Z"
+      ]
     },
     {
       "issue_number": 316,
