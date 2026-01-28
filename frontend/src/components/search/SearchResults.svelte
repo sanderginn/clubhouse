@@ -100,7 +100,14 @@
     if (targetSection && $activeSection?.id !== targetSection.id) {
       sectionStore.setActiveSection(targetSection);
     }
-    postStore.upsertPost(post);
+    let resolved = false;
+    let unsubscribe = () => {};
+    unsubscribe = postStore.subscribe((state) => {
+      if (resolved || state.isLoading) return;
+      resolved = true;
+      postStore.upsertPost(post);
+      unsubscribe();
+    });
     searchStore.setQuery('');
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
