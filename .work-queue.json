@@ -3250,8 +3250,7 @@
         "frontend",
         "sections",
         "ui"
-      ],
-      "branch": "feat/issue-351-use-section-names-instead-of-ids-in-url-paths"
+      ]
     },
     {
       "issue_number": 350,
@@ -3266,8 +3265,7 @@
         "frontend",
         "reactions",
         "ui"
-      ],
-      "branch": "feat/issue-350-display-reaction-tooltip-emoji-and-names-on-a-sing"
+      ]
     },
     {
       "issue_number": 349,
@@ -3282,8 +3280,7 @@
         "frontend",
         "users",
         "ui"
-      ],
-      "branch": "fix/issue-349-user-profile-navigation-crashes-with-apiuser-is-un"
+      ]
     },
     {
       "issue_number": 348,
@@ -3298,8 +3295,7 @@
         "frontend",
         "websocket",
         "reactions"
-      ],
-      "branch": "fix/issue-348-reactions-do-not-update-in-real-time-via-websocket"
+      ]
     },
     {
       "issue_number": 347,
@@ -3314,8 +3310,7 @@
         "frontend",
         "admin",
         "ui"
-      ],
-      "branch": "fix/issue-347-previous-section-stays-highlighted-in-sidebar-when"
+      ]
     },
     {
       "issue_number": 346,
@@ -3331,8 +3326,7 @@
         "search",
         "comments",
         "ui"
-      ],
-      "branch": "fix/issue-346-search-results-for-replies-not-grouped-by-section"
+      ]
     },
     {
       "issue_number": 345,
@@ -3348,8 +3342,7 @@
         "search",
         "sections",
         "ui"
-      ],
-      "branch": "feat/issue-345-enlarge-section-name-pills-in-search-results-and-a"
+      ]
     },
     {
       "issue_number": 344,
@@ -3364,8 +3357,7 @@
         "frontend",
         "search",
         "ui"
-      ],
-      "branch": "fix/issue-344-search-scope-button-too-narrow-for-everywhere-labe"
+      ]
     },
     {
       "issue_number": 343,
@@ -3381,8 +3373,7 @@
         "frontend",
         "search",
         "ui"
-      ],
-      "branch": "fix/issue-343-view-full-thread-link-in-search-navigates-to-secti"
+      ]
     },
     {
       "issue_number": 342,
@@ -3397,23 +3388,7 @@
         "frontend",
         "posts",
         "ui"
-      ],
-      "branch": "fix/issue-342-uploaded-images-do-not-render-in-posts"
-    },
-    {
-      "issue_number": 279,
-      "title": "UAT: Manual UI flows requiring native browser prompts",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
-      "dependencies": [],
-      "phase": 5,
-      "labels": [
-        "enhancement",
-        "phase5",
-        "ui"
-      ],
-      "branch": "feat/issue-279-manual-ui-flows-requiring-native-browser-prompts"
+      ]
     }
   ]
 }
