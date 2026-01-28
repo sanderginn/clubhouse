@@ -166,6 +166,7 @@
     308,
     309,
     310,
+    311,
     312,
     313,
     314,
@@ -3101,7 +3102,7 @@
     {
       "issue_number": 311,
       "title": "Enhancement: Highlight matched comment in search results",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "feature",
       "labels": [
@@ -3113,7 +3114,9 @@
       "assigned_to": "agent-1769588202-90249",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769588202-90249",
       "branch": "feat/issue-311-enhancement-highlight-matched-comment-in",
-      "claimed_at": "2026-01-28T08:16:42Z"
+      "claimed_at": "2026-01-28T08:16:42Z",
+      "pr_number": 337,
+      "completed_at": "2026-01-28T18:19:18Z"
     },
     {
       "issue_number": 312,
