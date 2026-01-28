@@ -21,6 +21,8 @@ type ReactionHandler struct {
 	reactionService *services.ReactionService
 	notify          *services.NotificationService
 	redis           *redis.Client
+	postService     *services.PostService
+	commentService  *services.CommentService
 }
 
 // NewReactionHandler creates a new reaction handler
@@ -29,6 +31,8 @@ func NewReactionHandler(db *sql.DB, redisClient *redis.Client, pushService *serv
 		reactionService: services.NewReactionService(db),
 		notify:          services.NewNotificationService(db, pushService),
 		redis:           redisClient,
+		postService:     services.NewPostService(db),
+		commentService:  services.NewCommentService(db),
 	}
 }
 
@@ -87,6 +91,13 @@ func (h *ReactionHandler) AddReactionToPost(w http.ResponseWriter, r *http.Reque
 		UserID: reaction.UserID,
 		Emoji:  reaction.Emoji,
 	})
+	if sectionID, err := h.postService.GetSectionIDByPostID(publishCtx, postID); err == nil {
+		_ = publishEvent(publishCtx, h.redis, formatChannel(sectionPrefix, sectionID), "reaction_added", reactionEventData{
+			PostID: &postID,
+			UserID: reaction.UserID,
+			Emoji:  reaction.Emoji,
+		})
+	}
 	observability.RecordReactionAdded(publishCtx, "post")
 	cancel()
 
@@ -195,6 +206,13 @@ func (h *ReactionHandler) RemoveReactionFromPost(w http.ResponseWriter, r *http.
 		UserID: userID,
 		Emoji:  emoji,
 	})
+	if sectionID, err := h.postService.GetSectionIDByPostID(publishCtx, postID); err == nil {
+		_ = publishEvent(publishCtx, h.redis, formatChannel(sectionPrefix, sectionID), "reaction_removed", reactionEventData{
+			PostID: &postID,
+			UserID: userID,
+			Emoji:  emoji,
+		})
+	}
 	observability.RecordReactionRemoved(publishCtx, "post")
 	cancel()
 
@@ -256,6 +274,14 @@ func (h *ReactionHandler) AddReactionToComment(w http.ResponseWriter, r *http.Re
 		UserID:    reaction.UserID,
 		Emoji:     reaction.Emoji,
 	})
+	if postID, sectionID, err := h.commentService.GetCommentContext(publishCtx, commentID); err == nil {
+		_ = publishEvent(publishCtx, h.redis, formatChannel(sectionPrefix, sectionID), "reaction_added", reactionEventData{
+			PostID:    &postID,
+			CommentID: &commentID,
+			UserID:    reaction.UserID,
+			Emoji:     reaction.Emoji,
+		})
+	}
 	observability.RecordReactionAdded(publishCtx, "comment")
 	cancel()
 
@@ -364,6 +390,14 @@ func (h *ReactionHandler) RemoveReactionFromComment(w http.ResponseWriter, r *ht
 		UserID:    userID,
 		Emoji:     emoji,
 	})
+	if postID, sectionID, err := h.commentService.GetCommentContext(publishCtx, commentID); err == nil {
+		_ = publishEvent(publishCtx, h.redis, formatChannel(sectionPrefix, sectionID), "reaction_removed", reactionEventData{
+			PostID:    &postID,
+			CommentID: &commentID,
+			UserID:    userID,
+			Emoji:     emoji,
+		})
+	}
 	observability.RecordReactionRemoved(publishCtx, "comment")
 	cancel()
 
