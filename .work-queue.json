@@ -157,6 +157,7 @@
     298,
     299,
     300,
+    301,
     303,
     306,
     307,
@@ -2903,7 +2904,7 @@
     {
       "issue_number": 301,
       "title": "Bug: Login for unapproved users shows invalid credentials instead of awaiting approval",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -2915,7 +2916,9 @@
       "assigned_to": "agent-1769585859-32401",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769585859-32401",
       "branch": "fix/issue-301-login-for-unapproved-users-shows-invalid",
-      "claimed_at": "2026-01-28T07:37:39Z"
+      "claimed_at": "2026-01-28T07:37:39Z",
+      "pr_number": 329,
+      "completed_at": "2026-01-28T07:46:10Z"
     },
     {
       "issue_number": 302,
