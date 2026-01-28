@@ -27,10 +27,10 @@
           <button
             on:click={() => handleSectionClick(section)}
             class="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors
-              {$activeSection?.id === section.id
+              {$activeView === 'feed' && $activeSection?.id === section.id
               ? 'bg-primary text-white'
               : 'text-gray-700 hover:bg-gray-100'}"
-            aria-current={$activeSection?.id === section.id ? 'page' : undefined}
+            aria-current={$activeView === 'feed' && $activeSection?.id === section.id ? 'page' : undefined}
           >
             <span class="text-lg" aria-hidden="true">{section.icon}</span>
             <span>{section.name}</span>
