@@ -5,6 +5,7 @@
   import CommentThread from './comments/CommentThread.svelte';
   import ReactionBar from './reactions/ReactionBar.svelte';
   import { buildProfileHref, handleProfileNavigation } from '../services/profileNavigation';
+  import LinkifiedText from './LinkifiedText.svelte';
 
   export let post: Post;
 
@@ -133,9 +134,7 @@
         </time>
       </div>
 
-      <p class="text-gray-800 whitespace-pre-wrap break-words mb-3">
-        {post.content}
-      </p>
+      <LinkifiedText text={post.content} className="text-gray-800 whitespace-pre-wrap break-words mb-3" />
 
       {#if link && metadata}
         <a

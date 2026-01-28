@@ -7,6 +7,7 @@
   import type { Comment } from '../stores/commentStore';
   import PostCard from './PostCard.svelte';
   import ReactionBar from './reactions/ReactionBar.svelte';
+  import LinkifiedText from './LinkifiedText.svelte';
   import { buildProfileHref, handleProfileNavigation, returnToFeed } from '../services/profileNavigation';
 
   export let userId: string | null;
@@ -557,9 +558,11 @@
                       </time>
                     </div>
 
-                    <p class="text-gray-800 whitespace-pre-wrap break-words text-sm">
-                      {comment.content}
-                    </p>
+                    <LinkifiedText
+                      text={comment.content}
+                      className="text-gray-800 whitespace-pre-wrap break-words text-sm"
+                      linkClassName="text-blue-600 hover:text-blue-800 underline"
+                    />
 
                     {#if comment.links && comment.links.length > 0}
                       <div class="mt-2 text-sm text-blue-600 break-all">
