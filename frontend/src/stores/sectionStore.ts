@@ -81,7 +81,7 @@ function createSectionStore() {
     setActiveSection: (section: Section | null) =>
       update((state) => ({ ...state, activeSection: section })),
     setLoading: (isLoading: boolean) => update((state) => ({ ...state, isLoading })),
-    loadSections: async () => {
+    loadSections: async (preferredSectionId?: string | null) => {
       update((state) => ({ ...state, isLoading: true }));
       try {
         const response = await api.get<{ sections: ApiSection[] }>('/sections');
@@ -91,10 +91,14 @@ function createSectionStore() {
           type: section.type,
           icon: sectionIcons[section.type] || '📁',
         }));
+        const preferred =
+          preferredSectionId && sections.length > 0
+            ? sections.find((section) => section.id === preferredSectionId) ?? null
+            : null;
         update((state) => ({
           ...state,
           sections,
-          activeSection: sections[0] ?? null,
+          activeSection: preferred ?? sections[0] ?? null,
           isLoading: false,
         }));
       } catch {
