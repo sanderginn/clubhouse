@@ -26,6 +26,17 @@ interface ApiResponse<T> {
   };
 }
 
+export interface ApiReactionUser {
+  id: string;
+  username: string;
+  profile_picture_url?: string | null;
+}
+
+export interface ApiReactionGroup {
+  emoji: string;
+  users: ApiReactionUser[];
+}
+
 class ApiClient {
   private csrfToken: string | null = null;
   private csrfTokenPromise: Promise<string | null> | null = null;
@@ -230,12 +241,20 @@ class ApiClient {
     await this.post(`/posts/${postId}/reactions`, { emoji });
   }
 
+  async getPostReactions(postId: string): Promise<{ reactions: ApiReactionGroup[] }> {
+    return this.get(`/posts/${postId}/reactions`);
+  }
+
   async removePostReaction(postId: string, emoji: string): Promise<void> {
     await this.delete(`/posts/${postId}/reactions/${encodeURIComponent(emoji)}`);
   }
 
   async addCommentReaction(commentId: string, emoji: string): Promise<void> {
     await this.post(`/comments/${commentId}/reactions`, { emoji });
+  }
+
+  async getCommentReactions(commentId: string): Promise<{ reactions: ApiReactionGroup[] }> {
+    return this.get(`/comments/${commentId}/reactions`);
   }
 
   async removeCommentReaction(commentId: string, emoji: string): Promise<void> {

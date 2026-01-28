@@ -202,6 +202,7 @@
           reactionCounts={post.reactionCounts ?? {}}
           userReactions={userReactions}
           onToggle={toggleReaction}
+          postId={post.id}
         />
       </div>
 

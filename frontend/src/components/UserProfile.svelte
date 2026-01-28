@@ -582,6 +582,7 @@
                         reactionCounts={comment.reactionCounts ?? {}}
                         userReactions={new Set(comment.viewerReactions ?? [])}
                         onToggle={(emoji) => toggleCommentReaction(comment, emoji)}
+                        commentId={comment.id}
                       />
                     </div>
                   </div>

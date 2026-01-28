@@ -46,6 +46,14 @@ func (s *ReactionService) AddReactionToPost(ctx context.Context, postID uuid.UUI
 	return s.createPostReaction(ctx, postID, userID, emoji)
 }
 
+// GetPostReactions retrieves reactions for a post grouped by emoji.
+func (s *ReactionService) GetPostReactions(ctx context.Context, postID uuid.UUID) ([]models.ReactionGroup, error) {
+	if err := s.verifyPostExists(ctx, postID); err != nil {
+		return nil, err
+	}
+	return s.getReactions(ctx, "post_id", postID)
+}
+
 // RemoveReactionFromPost removes a reaction from a post
 // Users can only remove their own reactions
 func (s *ReactionService) RemoveReactionFromPost(ctx context.Context, postID uuid.UUID, emoji string, userID uuid.UUID) error {
@@ -94,6 +102,14 @@ func (s *ReactionService) AddReactionToComment(ctx context.Context, commentID uu
 	}
 
 	return s.createCommentReaction(ctx, commentID, userID, emoji)
+}
+
+// GetCommentReactions retrieves reactions for a comment grouped by emoji.
+func (s *ReactionService) GetCommentReactions(ctx context.Context, commentID uuid.UUID) ([]models.ReactionGroup, error) {
+	if err := s.verifyCommentExists(ctx, commentID); err != nil {
+		return nil, err
+	}
+	return s.getReactions(ctx, "comment_id", commentID)
 }
 
 // RemoveReactionFromComment removes a reaction from a comment
@@ -266,4 +282,48 @@ func (s *ReactionService) createCommentReaction(ctx context.Context, commentID u
 	}
 
 	return &reaction, nil
+}
+
+func (s *ReactionService) getReactions(ctx context.Context, column string, id uuid.UUID) ([]models.ReactionGroup, error) {
+	query := fmt.Sprintf(`
+		SELECT r.emoji, u.id, u.username, u.profile_picture_url
+		FROM reactions r
+		JOIN users u ON r.user_id = u.id
+		WHERE r.%s = $1 AND r.deleted_at IS NULL
+		ORDER BY r.emoji ASC, r.created_at ASC
+	`, column)
+
+	rows, err := s.db.QueryContext(ctx, query, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query reactions: %w", err)
+	}
+	defer rows.Close()
+
+	groups := []models.ReactionGroup{}
+	groupIndex := map[string]int{}
+
+	for rows.Next() {
+		var emoji string
+		var user models.ReactionUser
+		if err := rows.Scan(&emoji, &user.ID, &user.Username, &user.ProfilePictureUrl); err != nil {
+			return nil, fmt.Errorf("failed to scan reaction user: %w", err)
+		}
+
+		if idx, ok := groupIndex[emoji]; ok {
+			groups[idx].Users = append(groups[idx].Users, user)
+			continue
+		}
+
+		groupIndex[emoji] = len(groups)
+		groups = append(groups, models.ReactionGroup{
+			Emoji: emoji,
+			Users: []models.ReactionUser{user},
+		})
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate reactions: %w", err)
+	}
+
+	return groups, nil
 }
