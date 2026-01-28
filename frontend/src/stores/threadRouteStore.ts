@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import { api } from '../services/api';
 import { postStore } from './postStore';
 
@@ -37,6 +37,10 @@ export async function loadThreadTargetPost(postId: string, sectionId: string): P
   threadRouteStore.setLoading();
   try {
     const response = await api.getPost(postId);
+    const current = get(threadRouteStore);
+    if (current.postId !== postId || current.sectionId !== sectionId) {
+      return;
+    }
     if (!response.post || response.post.sectionId !== sectionId) {
       threadRouteStore.setNotFound();
       return;
@@ -45,6 +49,10 @@ export async function loadThreadTargetPost(postId: string, sectionId: string): P
     threadRouteStore.setReady();
   } catch (error) {
     const typedError = error as Error & { code?: string };
+    const current = get(threadRouteStore);
+    if (current.postId !== postId || current.sectionId !== sectionId) {
+      return;
+    }
     if (typedError?.code === 'NOT_FOUND') {
       threadRouteStore.setNotFound();
       return;
