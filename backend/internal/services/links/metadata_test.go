@@ -108,6 +108,40 @@ func TestFetchMetadataTimeout(t *testing.T) {
 	}
 }
 
+func TestFetchMetadataImageContent(t *testing.T) {
+	fetcher := NewFetcher(&http.Client{
+		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Status:     "200 OK",
+				Header:     http.Header{"Content-Type": []string{"image/png"}},
+				Body:       io.NopCloser(strings.NewReader("pngbytes")),
+				Request:    r,
+			}, nil
+		}),
+	})
+	fetcher.resolver = fakeResolver{
+		addrs: map[string][]net.IPAddr{
+			"example.com": {{IP: net.ParseIP("93.184.216.34")}},
+		},
+	}
+
+	metadata, err := fetcher.Fetch(context.Background(), "https://example.com/image.png")
+	if err != nil {
+		t.Fatalf("FetchMetadata error: %v", err)
+	}
+
+	if metadata["image"] != "https://example.com/image.png" {
+		t.Errorf("image = %v, want %v", metadata["image"], "https://example.com/image.png")
+	}
+	if metadata["type"] != "image" {
+		t.Errorf("type = %v, want image", metadata["type"])
+	}
+	if metadata["provider"] != "example.com" {
+		t.Errorf("provider = %v, want example.com", metadata["provider"])
+	}
+}
+
 func TestValidateURLBlocksHosts(t *testing.T) {
 	fetcher := NewFetcher(&http.Client{})
 	fetcher.resolver = fakeResolver{

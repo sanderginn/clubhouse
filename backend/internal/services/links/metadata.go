@@ -90,6 +90,7 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	}
 
 	contentType := resp.Header.Get("Content-Type")
+	contentTypeLower := strings.ToLower(contentType)
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBodyBytes))
 	if err != nil {
 		return nil, fmt.Errorf("read response: %w", err)
@@ -98,7 +99,12 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	metadata := make(map[string]interface{})
 	provider := detectProvider(u.Hostname())
 
-	if strings.Contains(strings.ToLower(contentType), "text/html") {
+	if strings.HasPrefix(contentTypeLower, "image/") {
+		metadata["image"] = u.String()
+		metadata["type"] = "image"
+	}
+
+	if strings.Contains(contentTypeLower, "text/html") {
 		metaTags, title := extractHTMLMeta(body)
 		title = firstNonEmpty(metaTags["og:title"], metaTags["twitter:title"], title)
 		description := firstNonEmpty(metaTags["og:description"], metaTags["twitter:description"], metaTags["description"])
@@ -132,6 +138,11 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 		if provider == "" && siteName != "" {
 			provider = siteName
 		}
+	}
+
+	if _, ok := metadata["image"]; !ok && looksLikeImageURL(u.Path) {
+		metadata["image"] = u.String()
+		metadata["type"] = "image"
 	}
 
 	if provider == "" {
@@ -224,6 +235,28 @@ func isBlockedIP(ip net.IP) bool {
 		return true
 	}
 	return false
+}
+
+func looksLikeImageURL(path string) bool {
+	if path == "" {
+		return false
+	}
+	path = strings.ToLower(path)
+	switch {
+	case strings.HasSuffix(path, ".jpg"),
+		strings.HasSuffix(path, ".jpeg"),
+		strings.HasSuffix(path, ".png"),
+		strings.HasSuffix(path, ".gif"),
+		strings.HasSuffix(path, ".webp"),
+		strings.HasSuffix(path, ".bmp"),
+		strings.HasSuffix(path, ".svg"),
+		strings.HasSuffix(path, ".avif"),
+		strings.HasSuffix(path, ".tif"),
+		strings.HasSuffix(path, ".tiff"):
+		return true
+	default:
+		return false
+	}
 }
 
 func extractHTMLMeta(body []byte) (map[string]string, string) {
