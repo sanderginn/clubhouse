@@ -196,6 +196,41 @@ describe('PostForm', () => {
     expect(screen.getByText('Example')).toBeInTheDocument();
   });
 
+  it('submits with a link and empty content', async () => {
+    setAuthenticated();
+    setActiveSection();
+    previewLink.mockResolvedValue({
+      metadata: {
+        url: 'https://example.com',
+        title: 'Example',
+      },
+    });
+    createPost.mockResolvedValue({
+      post: { id: 'post-1', userId: 'user-1', sectionId: 'section-1', content: '', createdAt: 'now' },
+    });
+
+    const { container } = render(PostForm);
+
+    const addLinkButton = screen.getByLabelText('Add link');
+    await fireEvent.click(addLinkButton);
+
+    const linkInput = screen.getByLabelText('Link URL');
+    await fireEvent.input(linkInput, { target: { value: 'example.com' } });
+    await fireEvent.keyDown(linkInput, { key: 'Enter' });
+    await tick();
+
+    const form = container.querySelector('form');
+    if (!form) throw new Error('form not found');
+    await fireEvent.submit(form);
+    await tick();
+
+    expect(createPost).toHaveBeenCalledWith({
+      sectionId: 'section-1',
+      content: '',
+      links: [{ url: 'https://example.com' }],
+    });
+  });
+
   it('handles file attachments', async () => {
     setAuthenticated();
     setActiveSection();
