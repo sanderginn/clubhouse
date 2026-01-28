@@ -160,6 +160,7 @@
     301,
     302,
     303,
+    305,
     306,
     307,
     308,
@@ -2981,7 +2982,7 @@
     {
       "issue_number": 305,
       "title": "Bug: Link previews missing after page reload",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -2993,7 +2994,9 @@
       "assigned_to": "agent-1769585946-33599",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769585946-33599",
       "branch": "fix/issue-305-link-previews-missing-after-page-reload",
-      "claimed_at": "2026-01-28T07:39:06Z"
+      "claimed_at": "2026-01-28T07:39:06Z",
+      "pr_number": 332,
+      "completed_at": "2026-01-28T07:53:12Z"
     },
     {
       "issue_number": 306,
