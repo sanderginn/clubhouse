@@ -181,7 +181,8 @@
     346,
     347,
     348,
-    349
+    349,
+    350
   ],
   "issues": [
     {
@@ -3265,7 +3266,7 @@
     {
       "issue_number": 350,
       "title": "Enhancement: Display reaction tooltip emoji and names on a single line",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769642344-76411",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769642344-76411",
       "dependencies": [],
@@ -3277,7 +3278,9 @@
         "ui"
       ],
       "branch": "feat/issue-350-enhancement-display-reaction-tooltip-emo",
-      "claimed_at": "2026-01-28T23:19:04Z"
+      "claimed_at": "2026-01-28T23:19:04Z",
+      "pr_number": 360,
+      "completed_at": "2026-01-28T23:30:03Z"
     },
     {
       "issue_number": 349,
