@@ -3196,7 +3196,7 @@
     {
       "issue_number": 316,
       "title": "UI: Align admin moderation toolkit transitions with app",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "feature",
       "labels": [
@@ -3204,7 +3204,11 @@
         "frontend",
         "admin",
         "ui"
-      ]
+      ],
+      "assigned_to": "agent-1769624545-23260",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769624545-23260",
+      "branch": "feat/issue-316-ui-align-admin-moderation-toolkit-transi",
+      "claimed_at": "2026-01-28T18:22:25Z"
     },
     {
       "issue_number": 317,
