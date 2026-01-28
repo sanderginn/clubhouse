@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import { api } from '../services/api';
+  import { getResetTokenFromLocation } from '../services/resetLink';
 
   export let token: string | null = null;
   export let onNavigate: (page: 'login' | 'register') => void;
@@ -12,12 +13,11 @@
   let isLoading = false;
   let redirectTimer: ReturnType<typeof setTimeout> | null = null;
 
+  const readResetToken = () =>
+    typeof window === 'undefined' ? null : getResetTokenFromLocation(window.location);
+
   let resolvedToken = '';
-  if (token !== null) {
-    resolvedToken = token;
-  } else if (typeof window !== 'undefined') {
-    resolvedToken = new URLSearchParams(window.location.search).get('token') ?? '';
-  }
+  $: resolvedToken = token ?? readResetToken() ?? '';
 
   async function handleSubmit() {
     error = '';

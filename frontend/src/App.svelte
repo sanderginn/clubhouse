@@ -18,6 +18,7 @@
     uiStore,
   } from './stores';
   import { parseProfileUserId } from './services/profileNavigation';
+  import { parseResetRoute } from './services/resetLink';
 
   let unauthRoute: 'login' | 'register' | 'reset' = 'login';
   let resetToken: string | null = null;
@@ -45,15 +46,10 @@
   function syncRouteFromLocation() {
     if (typeof window === 'undefined') return;
     const path = window.location.pathname;
-    if (
-      path === '/reset' ||
-      path.startsWith('/reset/') ||
-      path === '/reset-password' ||
-      path.startsWith('/reset-password/')
-    ) {
+    const { isReset, token } = parseResetRoute(window.location);
+    if (isReset) {
       unauthRoute = 'reset';
-      const url = new URL(window.location.href);
-      resetToken = url.searchParams.get('token');
+      resetToken = token;
       return;
     }
     const profileUserId = parseProfileUserId(path);
