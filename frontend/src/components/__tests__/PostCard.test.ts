@@ -74,6 +74,20 @@ describe('PostCard', () => {
     expect(screen.getByText('https://example.com')).toBeInTheDocument();
   });
 
+  it('renders inline image when link points to an image', () => {
+    const postWithImage: Post = {
+      ...basePost,
+      links: [
+        {
+          url: 'https://cdn.example.com/uploads/photo.png',
+        },
+      ],
+    };
+
+    render(PostCard, { post: postWithImage });
+    expect(screen.getByRole('img', { name: 'Uploaded image' })).toBeInTheDocument();
+  });
+
   it('shows avatar fallback when no profile image', () => {
     render(PostCard, { post: basePost });
     expect(screen.getByText('S')).toBeInTheDocument();

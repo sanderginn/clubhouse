@@ -15,6 +15,7 @@ export interface LinkMetadata {
   author?: string;
   duration?: number;
   embedUrl?: string;
+  type?: string;
 }
 
 export interface Post {
