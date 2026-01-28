@@ -136,7 +136,16 @@
     if (!match && $activeSection?.id !== fallback?.id) {
       sectionStore.setActiveSection(fallback);
     }
-    replacePath(buildFeedHref(match?.id ?? fallback?.id ?? null));
+    const hasThreadTarget =
+      $threadRouteStore.postId && $threadRouteStore.sectionId === pendingSectionId;
+    if (hasThreadTarget && match) {
+      // Preserve thread deep-link URL once sections are loaded.
+    } else {
+      if (hasThreadTarget && !match) {
+        threadRouteStore.clearTarget();
+      }
+      replacePath(buildFeedHref(match?.id ?? fallback?.id ?? null));
+    }
     pendingSectionId = null;
   }
 </script>
