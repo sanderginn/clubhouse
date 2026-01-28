@@ -2903,9 +2903,7 @@
     {
       "issue_number": 301,
       "title": "Bug: Login for unapproved users shows invalid credentials instead of awaiting approval",
-      "status": "in_progress",
-      "assigned_to": "agent-1769583414-73977",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769583414-73977",
+      "status": "available",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -2913,25 +2911,19 @@
         "backend",
         "frontend",
         "auth"
-      ],
-      "branch": "fix/issue-301-login-for-unapproved-users-shows-invalid",
-      "claimed_at": "2026-01-28T06:56:54Z"
+      ]
     },
     {
       "issue_number": 302,
       "title": "Bug: Password reset link routes to login instead of reset screen",
-      "status": "in_progress",
-      "assigned_to": "agent-1769583424-74960",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769583424-74960",
+      "status": "available",
       "dependencies": [],
       "phase": "bug",
       "labels": [
         "bug",
         "frontend",
         "auth"
-      ],
-      "branch": "fix/issue-302-password-reset-link-routes-to-login-inst",
-      "claimed_at": "2026-01-28T06:57:04Z"
+      ]
     },
     {
       "issue_number": 303,
@@ -2956,9 +2948,7 @@
     {
       "issue_number": 304,
       "title": "Bug: Post creation rejects URL-only posts",
-      "status": "in_progress",
-      "assigned_to": "agent-1769583436-75959",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769583436-75959",
+      "status": "available",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -2967,16 +2957,12 @@
         "frontend",
         "posts",
         "links"
-      ],
-      "branch": "fix/issue-304-post-creation-rejects-urlonly-posts",
-      "claimed_at": "2026-01-28T06:57:16Z"
+      ]
     },
     {
       "issue_number": 305,
       "title": "Bug: Link previews missing after page reload",
-      "status": "in_progress",
-      "assigned_to": "agent-1769583442-76905",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769583442-76905",
+      "status": "available",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -2984,9 +2970,7 @@
         "frontend",
         "links",
         "ui"
-      ],
-      "branch": "fix/issue-305-link-previews-missing-after-page-reload",
-      "claimed_at": "2026-01-28T06:57:22Z"
+      ]
     },
     {
       "issue_number": 306,
@@ -3048,9 +3032,7 @@
     {
       "issue_number": 309,
       "title": "Enhancement: Show section name on search results",
-      "status": "in_progress",
-      "assigned_to": "agent-1769583769-89268",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769583769-89268",
+      "status": "available",
       "dependencies": [],
       "phase": "feature",
       "labels": [
@@ -3058,16 +3040,12 @@
         "frontend",
         "search",
         "ui"
-      ],
-      "branch": "feat/issue-309-enhancement-show-section-name-on-search-",
-      "claimed_at": "2026-01-28T07:02:49Z"
+      ]
     },
     {
       "issue_number": 310,
       "title": "Enhancement: Include parent post context for comment search results",
-      "status": "in_progress",
-      "assigned_to": "agent-1769583780-90512",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769583780-90512",
+      "status": "available",
       "dependencies": [],
       "phase": "feature",
       "labels": [
@@ -3075,16 +3053,12 @@
         "frontend",
         "search",
         "ui"
-      ],
-      "branch": "feat/issue-310-enhancement-include-parent-post-context-",
-      "claimed_at": "2026-01-28T07:03:00Z"
+      ]
     },
     {
       "issue_number": 311,
       "title": "Enhancement: Highlight matched comment in search results",
-      "status": "in_progress",
-      "assigned_to": "agent-1769584130-3291",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769584130-3291",
+      "status": "available",
       "dependencies": [],
       "phase": "feature",
       "labels": [
@@ -3092,16 +3066,12 @@
         "frontend",
         "search",
         "ui"
-      ],
-      "branch": "feat/issue-311-enhancement-highlight-matched-comment-in",
-      "claimed_at": "2026-01-28T07:08:50Z"
+      ]
     },
     {
       "issue_number": 312,
       "title": "Bug: WebSocket section updates not delivered between clients",
-      "status": "in_progress",
-      "assigned_to": "agent-1769583546-80625",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769583546-80625",
+      "status": "available",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -3109,16 +3079,12 @@
         "backend",
         "websocket",
         "redis"
-      ],
-      "branch": "fix/issue-312-websocket-section-updates-not-delivered-",
-      "claimed_at": "2026-01-28T06:59:06Z"
+      ]
     },
     {
       "issue_number": 313,
       "title": "Bug: Duplicate error message when notifications permission denied",
-      "status": "in_progress",
-      "assigned_to": "agent-1769583552-80896",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769583552-80896",
+      "status": "available",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -3126,16 +3092,12 @@
         "frontend",
         "pwa",
         "ui"
-      ],
-      "branch": "fix/issue-313-duplicate-error-message-when-notificatio",
-      "claimed_at": "2026-01-28T06:59:12Z"
+      ]
     },
     {
       "issue_number": 314,
       "title": "Enhancement: Linkify URLs in posts and comments",
-      "status": "in_progress",
-      "assigned_to": "agent-1769584139-4338",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769584139-4338",
+      "status": "available",
       "dependencies": [],
       "phase": "feature",
       "labels": [
@@ -3144,16 +3106,12 @@
         "posts",
         "comments",
         "ui"
-      ],
-      "branch": "feat/issue-314-enhancement-linkify-urls-in-posts-and-co",
-      "claimed_at": "2026-01-28T07:08:59Z"
+      ]
     },
     {
       "issue_number": 315,
       "title": "Enhancement: Add reaction tooltips listing reacting users",
-      "status": "in_progress",
-      "assigned_to": "agent-1769584151-5728",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769584151-5728",
+      "status": "available",
       "dependencies": [],
       "phase": "feature",
       "labels": [
@@ -3161,16 +3119,12 @@
         "frontend",
         "reactions",
         "ui"
-      ],
-      "branch": "feat/issue-315-enhancement-add-reaction-tooltips-listin",
-      "claimed_at": "2026-01-28T07:09:11Z"
+      ]
     },
     {
       "issue_number": 316,
       "title": "UI: Align admin moderation toolkit transitions with app",
-      "status": "in_progress",
-      "assigned_to": "agent-1769584166-7281",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769584166-7281",
+      "status": "available",
       "dependencies": [],
       "phase": "feature",
       "labels": [
@@ -3178,25 +3132,19 @@
         "frontend",
         "admin",
         "ui"
-      ],
-      "branch": "feat/issue-316-ui-align-admin-moderation-toolkit-transi",
-      "claimed_at": "2026-01-28T07:09:26Z"
+      ]
     },
     {
       "issue_number": 317,
       "title": "Bug: Navigation does not update URL, causing refresh to reset view",
-      "status": "in_progress",
-      "assigned_to": "agent-1769583690-85946",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769583690-85946",
+      "status": "available",
       "dependencies": [],
       "phase": "bug",
       "labels": [
         "bug",
         "frontend",
         "ui"
-      ],
-      "branch": "fix/issue-317-navigation-does-not-update-url-causing-r",
-      "claimed_at": "2026-01-28T07:01:30Z"
+      ]
     }
   ]
 }
