@@ -92,7 +92,7 @@ func TestCreatePostWithLinksNoContent(t *testing.T) {
 	service := NewPostService(db)
 	req := &models.CreatePostRequest{
 		SectionID: sectionID,
-		Content:   "",
+		Content:   "   ",
 		Links: []models.LinkRequest{
 			{URL: "https://example.com"},
 		},

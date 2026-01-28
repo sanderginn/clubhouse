@@ -74,6 +74,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 
 	// Create post ID
 	postID := uuid.New()
+	trimmedContent := strings.TrimSpace(req.Content)
 
 	linkMetadata := fetchLinkMetadata(ctx, req.Links)
 
@@ -94,7 +95,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 	`
 
 	var post models.Post
-	err = tx.QueryRowContext(ctx, query, postID, userID, sectionID, req.Content).
+	err = tx.QueryRowContext(ctx, query, postID, userID, sectionID, trimmedContent).
 		Scan(&post.ID, &post.UserID, &post.SectionID, &post.Content, &post.CreatedAt)
 
 	if err != nil {
@@ -789,11 +790,12 @@ func validateCreatePostInput(req *models.CreatePostRequest) error {
 		return fmt.Errorf("section_id is required")
 	}
 
-	if strings.TrimSpace(req.Content) == "" && len(req.Links) == 0 {
+	trimmedContent := strings.TrimSpace(req.Content)
+	if trimmedContent == "" && len(req.Links) == 0 {
 		return fmt.Errorf("content is required")
 	}
 
-	if len(req.Content) > 5000 {
+	if len(trimmedContent) > 5000 {
 		return fmt.Errorf("content must be less than 5000 characters")
 	}
 
