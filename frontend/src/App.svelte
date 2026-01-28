@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { get } from 'svelte/store';
   import { onMount, onDestroy } from 'svelte';
   import './styles/globals.css';
   import { Layout, PostForm, SectionFeed, SearchBar, SearchResults, InstallPrompt } from './components';
@@ -8,6 +9,7 @@
     authStore,
     isAuthenticated,
     activeSection,
+    sections,
     searchQuery,
     websocketStore,
     sectionStore,
@@ -18,12 +20,14 @@
     uiStore,
   } from './stores';
   import { parseProfileUserId } from './services/profileNavigation';
+  import { isAdminPath, parseSectionId } from './services/routeNavigation';
   import { parseResetRoute } from './services/resetLink';
 
   let unauthRoute: 'login' | 'register' | 'reset' = 'login';
   let resetToken: string | null = null;
   let sectionsLoadedForSession = false;
   let popstateHandler: (() => void) | null = null;
+  let pendingSectionId: string | null = null;
 
   onMount(() => {
     authStore.checkSession();
@@ -50,13 +54,32 @@
     if (isReset) {
       unauthRoute = 'reset';
       resetToken = token;
+      pendingSectionId = null;
       return;
     }
     const profileUserId = parseProfileUserId(path);
     if (profileUserId) {
       uiStore.openProfile(profileUserId);
+      pendingSectionId = null;
     } else {
-      uiStore.setActiveView('feed');
+      const sectionId = parseSectionId(path);
+      if (sectionId) {
+        const availableSections = get(sections);
+        if (availableSections.length > 0) {
+          const match = availableSections.find((section) => section.id === sectionId);
+          sectionStore.setActiveSection(match ?? availableSections[0] ?? null);
+          pendingSectionId = null;
+        } else {
+          pendingSectionId = sectionId;
+        }
+        uiStore.setActiveView('feed');
+      } else if (isAdminPath(path)) {
+        pendingSectionId = null;
+        uiStore.setActiveView('admin');
+      } else {
+        pendingSectionId = null;
+        uiStore.setActiveView('feed');
+      }
     }
     resetToken = null;
     unauthRoute = 'login';
@@ -72,7 +95,9 @@
 
   $: if ($isAuthenticated && !sectionsLoadedForSession) {
     sectionsLoadedForSession = true;
-    sectionStore.loadSections();
+    const preferredSectionId = pendingSectionId;
+    pendingSectionId = null;
+    sectionStore.loadSections(preferredSectionId);
   }
 
   $: if (!$isAuthenticated && sectionsLoadedForSession) {

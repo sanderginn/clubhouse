@@ -1,15 +1,18 @@
 <script lang="ts">
   import { sections, activeSection, sectionStore, uiStore, isAdmin, activeView, isAuthenticated } from '../stores';
+  import { buildAdminHref, buildSectionHref, pushPath } from '../services/routeNavigation';
   import type { Section } from '../stores/sectionStore';
   import NotificationSettings from './NotificationSettings.svelte';
 
   function handleSectionClick(section: Section) {
     sectionStore.setActiveSection(section);
     uiStore.setActiveView('feed');
+    pushPath(buildSectionHref(section.id));
   }
 
   function handleAdminClick() {
     uiStore.setActiveView('admin');
+    pushPath(buildAdminHref());
   }
 </script>
 
