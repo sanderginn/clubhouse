@@ -165,6 +165,7 @@
     307,
     308,
     309,
+    310,
     312,
     313,
     314,
@@ -3081,7 +3082,7 @@
     {
       "issue_number": 310,
       "title": "Enhancement: Include parent post context for comment search results",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "feature",
       "labels": [
@@ -3093,7 +3094,9 @@
       "assigned_to": "agent-1769586839-61833",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769586839-61833",
       "branch": "feat/issue-310-enhancement-include-parent-post-context-",
-      "claimed_at": "2026-01-28T07:53:59Z"
+      "claimed_at": "2026-01-28T07:53:59Z",
+      "pr_number": 336,
+      "completed_at": "2026-01-28T17:58:18Z"
     },
     {
       "issue_number": 311,
