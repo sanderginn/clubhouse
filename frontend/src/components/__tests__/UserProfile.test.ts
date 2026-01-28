@@ -34,11 +34,9 @@ describe('UserProfile', () => {
     apiGet.mockImplementation((endpoint: string) => {
       if (endpoint === '/users/user-1') {
         return Promise.resolve({
-          user: {
-            id: 'user-1',
-            username: 'Lena',
-            created_at: '2025-01-01T00:00:00Z',
-          },
+          id: 'user-1',
+          username: 'Lena',
+          created_at: '2025-01-01T00:00:00Z',
           stats: {
             post_count: 2,
             comment_count: 1,

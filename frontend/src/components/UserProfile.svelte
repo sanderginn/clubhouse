@@ -29,6 +29,10 @@
     comment_count?: number;
   }
 
+  type ApiProfileResponse =
+    | { user: ApiProfileUser; stats?: ApiProfileStats }
+    | (ApiProfileUser & { stats?: ApiProfileStats });
+
   interface ProfileUser {
     id: string;
     username: string;
@@ -62,6 +66,20 @@
   let postsRequestId = 0;
   let commentsRequestId = 0;
   let pendingCommentReactions = new Set<string>();
+
+  function normalizeProfileResponse(
+    response: ApiProfileResponse
+  ): { user: ApiProfileUser; stats: ApiProfileStats } {
+    const hasUserField = typeof response === 'object' && response !== null && 'user' in response;
+    const apiUser = (hasUserField ? response.user : response) as ApiProfileUser | undefined;
+    if (!apiUser?.id) {
+      throw new Error('Profile data is missing.');
+    }
+    const apiStats = (hasUserField
+      ? (response as { stats?: ApiProfileStats }).stats
+      : (response as { stats?: ApiProfileStats }).stats) ?? {};
+    return { user: apiUser, stats: apiStats };
+  }
 
   $: if (userId) {
     resetProfile();
@@ -106,14 +124,11 @@
     profileError = null;
 
     try {
-      const response = await api.get<{ user: ApiProfileUser; stats?: ApiProfileStats }>(
-        `/users/${id}`,
-        { signal: controller.signal }
-      );
+      const response = await api.get<ApiProfileResponse>(`/users/${id}`, { signal: controller.signal });
 
       if (currentController !== controller || id !== userId) return;
 
-      const apiUser = response.user;
+      const { user: apiUser, stats: apiStats } = normalizeProfileResponse(response);
       profile = {
         id: apiUser.id,
         username: apiUser.username,
@@ -122,7 +137,6 @@
         createdAt: apiUser.createdAt ?? apiUser.created_at ?? null,
       };
 
-      const apiStats = response.stats ?? {};
       stats = {
         postCount: apiStats.postCount ?? apiStats.post_count ?? 0,
         commentCount: apiStats.commentCount ?? apiStats.comment_count ?? 0,
@@ -356,7 +370,12 @@
     <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
       <p class="text-red-600">{profileError}</p>
       <button
-        on:click={() => userId && loadProfile(userId)}
+        on:click={() => {
+          if (!userId) return;
+          resetProfile();
+          void loadProfile(userId);
+          void loadPosts(userId, true);
+        }}
         class="mt-2 text-sm text-red-700 underline hover:no-underline"
       >
         Try again
