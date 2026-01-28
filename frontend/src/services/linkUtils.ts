@@ -39,7 +39,9 @@ export function getImageLinkUrl(link?: Link): string | undefined {
   }
 
   const metadata = link.metadata;
-  const isImage = metadata?.type === 'image' || looksLikeImageUrl(link.url);
+  const metadataType = typeof metadata?.type === 'string' ? metadata.type.toLowerCase() : '';
+  const isImage =
+    metadataType === 'image' || metadataType.startsWith('image/') || looksLikeImageUrl(link.url);
   if (!isImage) {
     return undefined;
   }
