@@ -510,16 +510,37 @@ func formatChannel(format string, id any) string {
 
 func mergeSectionIDs(primary, secondary []string) []string {
 	if len(primary) == 0 {
-		return secondary
+		return uniqueSectionIDs(secondary)
 	}
 	if len(secondary) == 0 {
-		return primary
+		return uniqueSectionIDs(primary)
 	}
 
 	combined := make([]string, 0, len(primary)+len(secondary))
 	combined = append(combined, primary...)
 	combined = append(combined, secondary...)
-	return combined
+	return uniqueSectionIDs(combined)
+}
+
+func uniqueSectionIDs(sectionIDs []string) []string {
+	if len(sectionIDs) == 0 {
+		return nil
+	}
+
+	seen := make(map[string]struct{}, len(sectionIDs))
+	unique := make([]string, 0, len(sectionIDs))
+	for _, id := range sectionIDs {
+		id = strings.TrimSpace(id)
+		if id == "" {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		unique = append(unique, id)
+	}
+	return unique
 }
 
 func sectionChannels(sectionIDs []string) []string {
