@@ -3236,6 +3236,184 @@
       "claimed_at": "2026-01-28T07:46:44Z",
       "pr_number": 334,
       "completed_at": "2026-01-28T08:28:42Z"
+    },
+    {
+      "issue_number": 351,
+      "title": "Enhancement: Use section names instead of IDs in URL paths",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "frontend",
+        "sections",
+        "ui"
+      ],
+      "branch": "feat/issue-351-use-section-names-instead-of-ids-in-url-paths"
+    },
+    {
+      "issue_number": 350,
+      "title": "Enhancement: Display reaction tooltip emoji and names on a single line",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "frontend",
+        "reactions",
+        "ui"
+      ],
+      "branch": "feat/issue-350-display-reaction-tooltip-emoji-and-names-on-a-sing"
+    },
+    {
+      "issue_number": 349,
+      "title": "Bug: User profile navigation crashes with \"apiUser is undefined\" error",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "users",
+        "ui"
+      ],
+      "branch": "fix/issue-349-user-profile-navigation-crashes-with-apiuser-is-un"
+    },
+    {
+      "issue_number": 348,
+      "title": "Bug: Reactions do not update in real-time via WebSocket",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "websocket",
+        "reactions"
+      ],
+      "branch": "fix/issue-348-reactions-do-not-update-in-real-time-via-websocket"
+    },
+    {
+      "issue_number": 347,
+      "title": "Bug: Previous section stays highlighted in sidebar when navigating to Moderation",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "admin",
+        "ui"
+      ],
+      "branch": "fix/issue-347-previous-section-stays-highlighted-in-sidebar-when"
+    },
+    {
+      "issue_number": 346,
+      "title": "Bug: Search results for replies not grouped by section in \"Everywhere\" scope",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "search",
+        "comments",
+        "ui"
+      ],
+      "branch": "fix/issue-346-search-results-for-replies-not-grouped-by-section"
+    },
+    {
+      "issue_number": 345,
+      "title": "Enhancement: Enlarge section name pills in search results and add emoji",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "frontend",
+        "search",
+        "sections",
+        "ui"
+      ],
+      "branch": "feat/issue-345-enlarge-section-name-pills-in-search-results-and-a"
+    },
+    {
+      "issue_number": 344,
+      "title": "Bug: Search scope button too narrow for \"Everywhere\" label",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "search",
+        "ui"
+      ],
+      "branch": "fix/issue-344-search-scope-button-too-narrow-for-everywhere-labe"
+    },
+    {
+      "issue_number": 343,
+      "title": "Bug: \"View full thread\" link in search navigates to section instead of thread",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "enhancement",
+        "frontend",
+        "search",
+        "ui"
+      ],
+      "branch": "fix/issue-343-view-full-thread-link-in-search-navigates-to-secti"
+    },
+    {
+      "issue_number": 342,
+      "title": "Bug: Uploaded images do not render in posts",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "posts",
+        "ui"
+      ],
+      "branch": "fix/issue-342-uploaded-images-do-not-render-in-posts"
+    },
+    {
+      "issue_number": 279,
+      "title": "UAT: Manual UI flows requiring native browser prompts",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "phase5",
+        "ui"
+      ],
+      "branch": "feat/issue-279-manual-ui-flows-requiring-native-browser-prompts"
     }
   ]
 }
