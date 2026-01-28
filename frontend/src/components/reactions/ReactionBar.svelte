@@ -73,6 +73,20 @@
       .filter((group) => group.users.length > 0);
   }
 
+  function formatUserList(users: ApiReactionUser[], maxNames = 3): string {
+    const names = users.map((user) => {
+      const trimmed = user.username?.trim();
+      return trimmed && trimmed.length > 0 ? trimmed : 'Unknown';
+    });
+    if (names.length <= maxNames) {
+      return names.join(', ');
+    }
+    const remaining = names.length - maxNames;
+    return `${names.slice(0, maxNames).join(', ')}, and ${remaining} other${
+      remaining === 1 ? '' : 's'
+    }`;
+  }
+
   async function loadTooltipData(force = false) {
     if (!tooltipReady) return;
     if (!force && tooltipReactions.length > 0 && countsKey === lastCountsKey) return;
@@ -153,26 +167,11 @@
         {:else}
           <div class="space-y-2">
             {#each tooltipReactions as reaction}
-              <div>
-                <div class="font-medium text-gray-700">{reaction.emoji}</div>
-                <div class="mt-1 flex flex-wrap gap-2">
-                  {#each reaction.users as user}
-                    <div class="flex items-center gap-2">
-                      {#if user.profile_picture_url}
-                        <img
-                          src={user.profile_picture_url}
-                          alt={user.username}
-                          class="h-5 w-5 rounded-full object-cover"
-                        />
-                      {:else}
-                        <div class="h-5 w-5 rounded-full bg-gray-200 flex items-center justify-center text-[10px] text-gray-500">
-                          {user.username?.charAt(0).toUpperCase() || '?'}
-                        </div>
-                      {/if}
-                      <span class="text-gray-600">{user.username}</span>
-                    </div>
-                  {/each}
-                </div>
+              <div class="flex flex-wrap items-center gap-2 leading-snug">
+                <span class="text-base text-gray-700">{reaction.emoji}</span>
+                <span class="min-w-0 text-gray-600 break-words">
+                  {formatUserList(reaction.users)}
+                </span>
               </div>
             {/each}
           </div>
