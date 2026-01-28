@@ -2913,16 +2913,18 @@
     {
       "issue_number": 302,
       "title": "Bug: Password reset link routes to login instead of reset screen",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769583424-74960",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769583424-74960",
       "dependencies": [],
       "phase": "bug",
       "labels": [
         "bug",
         "frontend",
         "auth"
-      ]
+      ],
+      "branch": "fix/issue-302-password-reset-link-routes-to-login-inst",
+      "claimed_at": "2026-01-28T06:57:04Z"
     },
     {
       "issue_number": 303,
