@@ -155,7 +155,8 @@
     296,
     297,
     298,
-    300
+    300,
+    307
   ],
   "issues": [
     {
@@ -2999,7 +3000,7 @@
     {
       "issue_number": 307,
       "title": "Bug: Nested comment replies increment comment count by 2",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769583456-78144",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769583456-78144",
       "dependencies": [],
@@ -3011,7 +3012,9 @@
         "ui"
       ],
       "branch": "fix/issue-307-nested-comment-replies-increment-comment",
-      "claimed_at": "2026-01-28T06:57:36Z"
+      "claimed_at": "2026-01-28T06:57:36Z",
+      "pr_number": 326,
+      "completed_at": "2026-01-28T07:02:15Z"
     },
     {
       "issue_number": 308,
