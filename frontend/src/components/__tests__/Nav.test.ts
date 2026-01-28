@@ -6,8 +6,8 @@ const { default: Nav } = await import('../Nav.svelte');
 
 beforeEach(() => {
   sectionStore.setSections([
-    { id: 'section-1', name: 'Music', type: 'music', icon: '🎵' },
-    { id: 'section-2', name: 'Books', type: 'book', icon: '📚' },
+    { id: 'section-1', name: 'Music', type: 'music', icon: '🎵', slug: 'music' },
+    { id: 'section-2', name: 'Books', type: 'book', icon: '📚', slug: 'books' },
   ]);
 });
 
@@ -23,6 +23,6 @@ describe('Nav', () => {
     expect(setActiveSpy).toHaveBeenCalled();
     const call = setActiveSpy.mock.calls[0]?.[0];
     expect(call?.id).toBe('section-2');
-    expect(pushStateSpy).toHaveBeenCalledWith(null, '', '/sections/section-2');
+    expect(pushStateSpy).toHaveBeenCalledWith(null, '', '/sections/books');
   });
 });

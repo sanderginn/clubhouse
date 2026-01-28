@@ -27,14 +27,26 @@ afterEach(() => {
 
 describe('SectionFeed', () => {
   it('loads feed when active section changes', () => {
-    sectionStore.setActiveSection({ id: 'section-1', name: 'Music', type: 'music', icon: '🎵' });
+    sectionStore.setActiveSection({
+      id: 'section-1',
+      name: 'Music',
+      type: 'music',
+      icon: '🎵',
+      slug: 'music',
+    });
     render(SectionFeed);
 
     expect(loadFeed).toHaveBeenCalledWith('section-1');
   });
 
   it('retry button calls loadFeed', async () => {
-    sectionStore.setActiveSection({ id: 'section-1', name: 'Music', type: 'music', icon: '🎵' });
+    sectionStore.setActiveSection({
+      id: 'section-1',
+      name: 'Music',
+      type: 'music',
+      icon: '🎵',
+      slug: 'music',
+    });
     postStore.setError('boom');
 
     render(SectionFeed);
@@ -46,7 +58,13 @@ describe('SectionFeed', () => {
   });
 
   it('intersection observer triggers loadMorePosts', async () => {
-    sectionStore.setActiveSection({ id: 'section-1', name: 'Music', type: 'music', icon: '🎵' });
+    sectionStore.setActiveSection({
+      id: 'section-1',
+      name: 'Music',
+      type: 'music',
+      icon: '🎵',
+      slug: 'music',
+    });
     render(SectionFeed);
 
     postStore.setPosts(
@@ -66,7 +84,13 @@ describe('SectionFeed', () => {
   });
 
   it('shows pagination error and allows retry when posts exist', async () => {
-    sectionStore.setActiveSection({ id: 'section-1', name: 'Music', type: 'music', icon: '🎵' });
+    sectionStore.setActiveSection({
+      id: 'section-1',
+      name: 'Music',
+      type: 'music',
+      icon: '🎵',
+      slug: 'music',
+    });
     render(SectionFeed);
 
     postStore.setPosts(
@@ -88,7 +112,13 @@ describe('SectionFeed', () => {
 
   it('cleanup resets posts on destroy', () => {
     const resetSpy = vi.spyOn(postStore, 'reset');
-    sectionStore.setActiveSection({ id: 'section-1', name: 'Music', type: 'music', icon: '🎵' });
+    sectionStore.setActiveSection({
+      id: 'section-1',
+      name: 'Music',
+      type: 'music',
+      icon: '🎵',
+      slug: 'music',
+    });
 
     const { unmount } = render(SectionFeed);
     const observer = (globalThis as { __lastObserver?: { disconnect: () => void } }).__lastObserver;

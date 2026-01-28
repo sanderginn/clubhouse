@@ -5,7 +5,7 @@ import {
   buildSectionHref,
   buildThreadHref,
   isAdminPath,
-  parseSectionId,
+  parseSectionSlug,
   parseThreadPostId,
 } from '../routeNavigation';
 
@@ -14,12 +14,12 @@ describe('routeNavigation', () => {
     expect(buildSectionHref('section-1')).toBe('/sections/section-1');
   });
 
-  it('parses section ids from section paths', () => {
-    expect(parseSectionId('/sections/section-1')).toBe('section-1');
-    expect(parseSectionId('/sections/section-1/extra')).toBe('section-1');
-    expect(parseSectionId('/sections/section-1/posts/post-1')).toBe('section-1');
-    expect(parseSectionId('/sections/')).toBeNull();
-    expect(parseSectionId('/admin')).toBeNull();
+  it('parses section slugs from section paths', () => {
+    expect(parseSectionSlug('/sections/music')).toBe('music');
+    expect(parseSectionSlug('/sections/music/extra')).toBe('music');
+    expect(parseSectionSlug('/sections/music/posts/post-1')).toBe('music');
+    expect(parseSectionSlug('/sections/')).toBeNull();
+    expect(parseSectionSlug('/admin')).toBeNull();
   });
 
   it('builds and parses thread hrefs', () => {
@@ -37,8 +37,8 @@ describe('routeNavigation', () => {
     expect(isAdminPath('/sections/section-1')).toBe(false);
   });
 
-  it('builds feed hrefs from section ids', () => {
-    expect(buildFeedHref('section-1')).toBe('/sections/section-1');
+  it('builds feed hrefs from section slugs', () => {
+    expect(buildFeedHref('music')).toBe('/sections/music');
     expect(buildFeedHref(null)).toBe('/');
     expect(buildFeedHref(undefined)).toBe('/');
   });

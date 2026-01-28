@@ -82,14 +82,26 @@ describe('feedStore', () => {
     expect(apiGet).not.toHaveBeenCalled();
 
     postStore.setPosts([], null, false);
-    sectionStore.setActiveSection({ id: 'section-1', name: 'Music', type: 'music', icon: '🎵' });
+    sectionStore.setActiveSection({
+      id: 'section-1',
+      name: 'Music',
+      type: 'music',
+      icon: '🎵',
+      slug: 'music',
+    });
     await loadMorePosts();
     expect(apiGet).not.toHaveBeenCalled();
   });
 
   it('loadMorePosts success appends posts', async () => {
     mapApiPost.mockImplementation((post: { id: string }) => mapPost(post.id));
-    sectionStore.setActiveSection({ id: 'section-1', name: 'Music', type: 'music', icon: '🎵' });
+    sectionStore.setActiveSection({
+      id: 'section-1',
+      name: 'Music',
+      type: 'music',
+      icon: '🎵',
+      slug: 'music',
+    });
     postStore.setPosts([mapPost('post-0')], 'cursor-1', true);
 
     apiGet.mockResolvedValue({
@@ -106,7 +118,13 @@ describe('feedStore', () => {
   });
 
   it('loadMorePosts failure sets pagination error', async () => {
-    sectionStore.setActiveSection({ id: 'section-1', name: 'Music', type: 'music', icon: '🎵' });
+    sectionStore.setActiveSection({
+      id: 'section-1',
+      name: 'Music',
+      type: 'music',
+      icon: '🎵',
+      slug: 'music',
+    });
     postStore.setPosts([mapPost('post-0')], 'cursor-1', true);
 
     apiGet.mockRejectedValue(new Error('boom'));

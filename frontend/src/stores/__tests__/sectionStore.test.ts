@@ -39,7 +39,7 @@ describe('sectionStore', () => {
 
   it('loadSections failure keeps existing state', async () => {
     sectionStore.setSections([
-      { id: 'section-1', name: 'Music', type: 'music', icon: '🎵' },
+      { id: 'section-1', name: 'Music', type: 'music', icon: '🎵', slug: 'music' },
     ]);
 
     apiGet.mockRejectedValue(new Error('fail'));
@@ -54,16 +54,22 @@ describe('sectionStore', () => {
 
   it('setSections preserves active section when present', () => {
     sectionStore.setSections([
-      { id: 'section-1', name: 'Music', type: 'music', icon: '🎵' },
-      { id: 'section-2', name: 'Books', type: 'book', icon: '📚' },
-      { id: 'section-3', name: 'General', type: 'general', icon: '💬' },
+      { id: 'section-1', name: 'Music', type: 'music', icon: '🎵', slug: 'music' },
+      { id: 'section-2', name: 'Books', type: 'book', icon: '📚', slug: 'books' },
+      { id: 'section-3', name: 'General', type: 'general', icon: '💬', slug: 'general' },
     ]);
-    sectionStore.setActiveSection({ id: 'section-2', name: 'Books', type: 'book', icon: '📚' });
+    sectionStore.setActiveSection({
+      id: 'section-2',
+      name: 'Books',
+      type: 'book',
+      icon: '📚',
+      slug: 'books',
+    });
 
     sectionStore.setSections([
-      { id: 'section-2', name: 'Books', type: 'book', icon: '📚' },
-      { id: 'section-3', name: 'General', type: 'general', icon: '💬' },
-      { id: 'section-4', name: 'Photos', type: 'photo', icon: '📷' },
+      { id: 'section-2', name: 'Books', type: 'book', icon: '📚', slug: 'books' },
+      { id: 'section-3', name: 'General', type: 'general', icon: '💬', slug: 'general' },
+      { id: 'section-4', name: 'Photos', type: 'photo', icon: '📷', slug: 'photos' },
     ]);
 
     const state = get(sectionStore);
@@ -71,11 +77,17 @@ describe('sectionStore', () => {
   });
 
   it('setSections selects first or null when active missing', () => {
-    sectionStore.setActiveSection({ id: 'section-99', name: 'Old', type: 'general', icon: '💬' });
+    sectionStore.setActiveSection({
+      id: 'section-99',
+      name: 'Old',
+      type: 'general',
+      icon: '💬',
+      slug: 'old',
+    });
 
     sectionStore.setSections([
-      { id: 'section-1', name: 'Music', type: 'music', icon: '🎵' },
-      { id: 'section-2', name: 'General', type: 'general', icon: '💬' },
+      { id: 'section-1', name: 'Music', type: 'music', icon: '🎵', slug: 'music' },
+      { id: 'section-2', name: 'General', type: 'general', icon: '💬', slug: 'general' },
     ]);
     let state = get(sectionStore);
     expect(state.activeSection?.id).toBe('section-2');
@@ -87,7 +99,13 @@ describe('sectionStore', () => {
 
   it('uses fallback icon for unknown type', () => {
     sectionStore.setSections([
-      { id: 'section-x', name: 'Unknown', type: 'unknown' as unknown as never, icon: '📁' },
+      {
+        id: 'section-x',
+        name: 'Unknown',
+        type: 'unknown' as unknown as never,
+        icon: '📁',
+        slug: 'unknown',
+      },
     ]);
 
     const state = get(sectionStore);
