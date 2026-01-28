@@ -174,7 +174,8 @@
     315,
     316,
     317,
-    344
+    344,
+    346
   ],
   "issues": [
     {
@@ -3318,7 +3319,7 @@
     {
       "issue_number": 346,
       "title": "Bug: Search results for replies not grouped by section in \"Everywhere\" scope",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769639368-11821",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769639368-11821",
       "dependencies": [],
@@ -3331,7 +3332,9 @@
         "ui"
       ],
       "branch": "fix/issue-346-search-results-for-replies-not-grouped-b",
-      "claimed_at": "2026-01-28T22:29:28Z"
+      "claimed_at": "2026-01-28T22:29:28Z",
+      "pr_number": 353,
+      "completed_at": "2026-01-28T22:41:51Z"
     },
     {
       "issue_number": 345,
