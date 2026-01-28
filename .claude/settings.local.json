@@ -21,7 +21,13 @@
       "Bash(gh pr comment:*)",
       "Bash(git rebase:*)",
       "Bash(git checkout:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "WebFetch(domain:developers.openai.com)",
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "WebFetch(domain:blog.fsck.com)",
+      "WebFetch(domain:community.openai.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }

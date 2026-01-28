@@ -12,13 +12,13 @@
 # 1. Finds the next best available issue whose dependencies are all complete
 # 2. Atomically claims it (updates work queue with lock file)
 # 3. Creates or reuses a git worktree for the agent
-# 4. Outputs instructions for the Amp subagent to continue
+# 4. Outputs the issue number and worktree path
 #
-# Usage: ./scripts/start-agent.sh
+# Usage: .codex/skills/subagent/scripts/start-agent.sh
 
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 WORK_QUEUE="$REPO_ROOT/.work-queue.json"
 LOCK_FILE="$REPO_ROOT/.work-queue.lock"
 WORKTREES_DIR="$REPO_ROOT/.worktrees"
@@ -202,11 +202,9 @@ main() {
     fi
 
     ISSUE_TITLE="$(jq -r ".issues[] | select(.issue_number == $ISSUE_NUMBER) | .title" "$WORK_QUEUE")"
-    ISSUE_PHASE="$(jq -r ".issues[] | select(.issue_number == $ISSUE_NUMBER) | .phase" "$WORK_QUEUE")"
-    ISSUE_LABELS="$(jq -r ".issues[] | select(.issue_number == $ISSUE_NUMBER) | (.labels // []) | join(\", \")" "$WORK_QUEUE")"
-    ISSUE_PRIORITY="$(jq -r ".issues[] | select(.issue_number == $ISSUE_NUMBER) | (.priority // \"\")" "$WORK_QUEUE")"
 
     if is_bug_issue "$ISSUE_NUMBER"; then
+        ISSUE_PRIORITY="$(jq -r ".issues[] | select(.issue_number == $ISSUE_NUMBER) | (.priority // \"\")" "$WORK_QUEUE")"
         log_success "Found BUG issue #$ISSUE_NUMBER (priority ${ISSUE_PRIORITY:-n/a}): $ISSUE_TITLE"
     else
         log_success "Found issue #$ISSUE_NUMBER: $ISSUE_TITLE"
@@ -247,71 +245,14 @@ main() {
         git worktree add "$WORKTREE_PATH" -b "$BRANCH_NAME" main >/dev/null 2>&1
     fi
 
-    log_success "Worktree created at $WORKTREE_PATH"
+    log_success "Worktree created"
 
     # Explicitly release lock early
     rm -f "$LOCK_FILE" || true
 
-    log_info "Fetching issue details from GitHub..."
-    ISSUE_BODY="$(gh issue view "$ISSUE_NUMBER" --json body --jq '.body' 2>/dev/null || echo "Could not fetch issue body")"
-
-    echo ""
-    echo "════════════════════════════════════════════════════════════════════════════"
-    echo "                    CLUBHOUSE AGENT READY: $AGENT_ID"
-    echo "════════════════════════════════════════════════════════════════════════════"
-    echo ""
-    echo "📋 ISSUE ASSIGNMENT"
-    echo "   Issue:    #$ISSUE_NUMBER"
-    echo "   Title:    $ISSUE_TITLE"
-    echo "   Phase:    $ISSUE_PHASE"
-    echo "   Labels:   $ISSUE_LABELS"
-    if [[ -n "${ISSUE_PRIORITY:-}" ]]; then
-        echo "   Priority: $ISSUE_PRIORITY"
-    fi
-    echo ""
-    echo "📂 WORKTREE"
-    echo "   Path:     $WORKTREE_PATH"
-    echo "   Branch:   $BRANCH_NAME"
-    echo ""
-    echo "📖 ISSUE DESCRIPTION"
-    echo "────────────────────────────────────────────────────────────────────────────"
-    echo "$ISSUE_BODY"
-    echo "────────────────────────────────────────────────────────────────────────────"
-    echo ""
-    echo "🚀 NEXT STEPS FOR SUBAGENT"
-    echo ""
-    echo "1. Change to the worktree directory:"
-    echo "   cd $WORKTREE_PATH"
-    echo ""
-    echo "2. Read project guidelines:"
-    echo "   - AGENTS.md for code standards"
-    echo "   - DESIGN.md for architecture"
-    echo ""
-    echo "3. Implement the feature described above"
-    echo ""
-    echo "4. Test your changes"
-    echo ""
-    echo "5. Commit and push:"
-    echo "   git add ."
-    echo "   git commit -m \"feat(issue-$ISSUE_NUMBER): <description>\""
-    echo "   git push -u origin $BRANCH_NAME"
-    echo ""
-    echo "6. Create PR:"
-    echo "   gh pr create --title \"$ISSUE_TITLE\" --body \"Closes #$ISSUE_NUMBER\""
-    echo ""
-    echo "7. Mark complete in work queue (from repo root):"
-    echo "   ./scripts/complete-issue.sh $ISSUE_NUMBER"
-    echo ""
-    echo "════════════════════════════════════════════════════════════════════════════"
-    echo ""
-    echo "WORKTREE_PATH=$WORKTREE_PATH"
+    # Output only machine-readable results
     echo "ISSUE_NUMBER=$ISSUE_NUMBER"
-    echo "BRANCH_NAME=$BRANCH_NAME"
-    echo "AGENT_ID=$AGENT_ID"
-    echo ""
-    echo "═══════════════════════════════════════════════════════════════════════════"
-    echo "CLAUDE: Run 'cd $WORKTREE_PATH' then read SUBAGENT_INSTRUCTIONS.md"
-    echo "═══════════════════════════════════════════════════════════════════════════"
+    echo "WORKTREE_PATH=$WORKTREE_PATH"
 }
 
 main "$@"
