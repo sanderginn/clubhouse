@@ -41,22 +41,27 @@ export function mapApiPost(apiPost: ApiPost): Post {
     userId: apiPost.user_id,
     sectionId: apiPost.section_id,
     content: apiPost.content,
-    links: apiPost.links?.map((l): Link => ({
-      id: l.id,
-      url: l.url,
-      metadata: l.metadata?.url
-        ? {
-            url: l.metadata.url,
-            provider: l.metadata.provider,
-            title: l.metadata.title,
-            description: l.metadata.description,
-            image: l.metadata.image,
-            author: l.metadata.author,
-            duration: l.metadata.duration,
-            embedUrl: l.metadata.embedUrl,
-          }
-        : undefined,
-    })),
+    links: apiPost.links?.map((l): Link => {
+      const metadata = l.metadata;
+      const hasMetadata = metadata && Object.keys(metadata).length > 0;
+
+      return {
+        id: l.id,
+        url: l.url,
+        metadata: hasMetadata
+          ? {
+              url: metadata.url ?? l.url,
+              provider: metadata.provider,
+              title: metadata.title,
+              description: metadata.description,
+              image: metadata.image,
+              author: metadata.author,
+              duration: metadata.duration,
+              embedUrl: metadata.embedUrl,
+            }
+          : undefined,
+      };
+    }),
     user: apiPost.user
       ? {
           id: apiPost.user.id,

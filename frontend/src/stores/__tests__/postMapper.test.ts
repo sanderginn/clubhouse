@@ -54,4 +54,28 @@ describe('mapApiPost', () => {
     expect(post.user).toBeUndefined();
     expect(post.links).toBeUndefined();
   });
+
+  it('maps metadata even when url is missing', () => {
+    const post = mapApiPost({
+      id: 'post-3',
+      user_id: 'user-3',
+      section_id: 'section-3',
+      content: 'hello',
+      created_at: '2025-01-01T00:00:00Z',
+      links: [
+        {
+          id: 'link-2',
+          url: 'https://example.com',
+          metadata: {
+            provider: 'example',
+            title: 'Example',
+            description: 'Desc',
+          },
+        },
+      ],
+    });
+
+    expect(post.links?.[0].metadata?.url).toBe('https://example.com');
+    expect(post.links?.[0].metadata?.title).toBe('Example');
+  });
 });
