@@ -100,6 +100,7 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	metadata := make(map[string]interface{})
 	provider := detectProvider(u.Hostname())
 
+	// Treat SVGs as images here; frontend renders via <img> to avoid inline SVG execution.
 	if strings.HasPrefix(contentTypeLower, "image/") {
 		metadata["image"] = u.String()
 		metadata["type"] = "image"
@@ -242,18 +243,31 @@ func looksLikeImageURL(u *url.URL) bool {
 	if u == nil {
 		return false
 	}
-	path := strings.ToLower(u.Path)
-	switch {
-	case strings.HasSuffix(path, ".jpg"),
-		strings.HasSuffix(path, ".jpeg"),
-		strings.HasSuffix(path, ".png"),
-		strings.HasSuffix(path, ".gif"),
-		strings.HasSuffix(path, ".webp"),
-		strings.HasSuffix(path, ".bmp"),
-		strings.HasSuffix(path, ".svg"),
-		strings.HasSuffix(path, ".avif"),
-		strings.HasSuffix(path, ".tif"),
-		strings.HasSuffix(path, ".tiff"):
+	imageExtensions := []string{"jpg", "jpeg", "png", "gif", "webp", "bmp", "svg", "avif", "tif", "tiff"}
+	hasImageExtension := func(value string) bool {
+		if value == "" {
+			return false
+		}
+		lower := strings.ToLower(value)
+		for _, ext := range imageExtensions {
+			needle := "." + ext
+			idx := strings.LastIndex(lower, needle)
+			if idx == -1 {
+				continue
+			}
+			end := idx + len(needle)
+			if end == len(lower) {
+				return true
+			}
+			switch lower[end] {
+			case '?', '#', '&':
+				return true
+			}
+		}
+		return false
+	}
+
+	if hasImageExtension(u.Path) {
 		return true
 	}
 
@@ -267,6 +281,14 @@ func looksLikeImageURL(u *url.URL) bool {
 		switch value {
 		case "jpg", "jpeg", "png", "gif", "webp", "bmp", "svg", "avif", "tif", "tiff", "image":
 			return true
+		}
+	}
+
+	for _, values := range query {
+		for _, value := range values {
+			if hasImageExtension(value) {
+				return true
+			}
 		}
 	}
 

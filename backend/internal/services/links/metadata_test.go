@@ -198,6 +198,34 @@ func TestFetchMetadataImageFallbackByQuery(t *testing.T) {
 	}
 }
 
+func TestFetchMetadataImageFallbackByQueryValue(t *testing.T) {
+	fetcher := NewFetcher(&http.Client{
+		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Status:     "200 OK",
+				Header:     http.Header{"Content-Type": []string{"application/octet-stream"}},
+				Body:       io.NopCloser(strings.NewReader("ok")),
+				Request:    r,
+			}, nil
+		}),
+	})
+	fetcher.resolver = fakeResolver{
+		addrs: map[string][]net.IPAddr{
+			"example.com": {{IP: net.ParseIP("93.184.216.34")}},
+		},
+	}
+
+	metadata, err := fetcher.Fetch(context.Background(), "https://example.com/asset?url=https://cdn.example.com/photo.png")
+	if err != nil {
+		t.Fatalf("FetchMetadata error: %v", err)
+	}
+
+	if metadata["image"] != "https://example.com/asset?url=https://cdn.example.com/photo.png" {
+		t.Errorf("image = %v, want %v", metadata["image"], "https://example.com/asset?url=https://cdn.example.com/photo.png")
+	}
+}
+
 func TestFetchMetadataImageFallbackSkipsHTML(t *testing.T) {
 	fetcher := NewFetcher(&http.Client{
 		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
