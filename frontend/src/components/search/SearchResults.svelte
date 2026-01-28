@@ -101,13 +101,26 @@
       sectionStore.setActiveSection(targetSection);
     }
     let resolved = false;
-    let unsubscribe = () => {};
+    let shouldUnsubscribe = false;
+    let unsubscribe: (() => void) | null = null;
+    const maybeUnsubscribe = () => {
+      if (unsubscribe) {
+        unsubscribe();
+        unsubscribe = null;
+      } else {
+        shouldUnsubscribe = true;
+      }
+    };
     unsubscribe = postStore.subscribe((state) => {
       if (resolved || state.isLoading) return;
       resolved = true;
       postStore.upsertPost(post);
-      unsubscribe();
+      maybeUnsubscribe();
     });
+    if (shouldUnsubscribe && unsubscribe) {
+      unsubscribe();
+      unsubscribe = null;
+    }
     searchStore.setQuery('');
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
