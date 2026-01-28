@@ -264,6 +264,7 @@ function createSearchStore() {
               type: 'comment',
               score: result.score,
               comment: mapApiComment(result.comment),
+              post: result.post ? mapApiPost(result.post) : undefined,
             } as SearchResult;
           }
           return null;

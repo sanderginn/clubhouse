@@ -1,15 +1,29 @@
 <script lang="ts">
-  import { searchResults, isSearching, searchError, searchQuery, lastSearchQuery, searchScope, activeSection, sections } from '../../stores';
+  import {
+    searchResults,
+    isSearching,
+    searchError,
+    searchQuery,
+    lastSearchQuery,
+    searchScope,
+    activeSection,
+    searchStore,
+    postStore,
+    sections,
+    sectionStore,
+    uiStore,
+  } from '../../stores';
   import PostCard from '../PostCard.svelte';
   import ReactionBar from '../reactions/ReactionBar.svelte';
   import LinkifiedText from '../LinkifiedText.svelte';
   import { api } from '../../services/api';
   import { buildProfileHref, handleProfileNavigation } from '../../services/profileNavigation';
-  import type { CommentResult } from '../../stores/searchStore';
+  import { buildSectionHref, pushPath } from '../../services/routeNavigation';
+  import type { Post } from '../../stores/postStore';
+  import type { CommentResult, SearchResult } from '../../stores/searchStore';
 
   // Track pending reactions to prevent double-clicks
   let pendingReactions = new Set<string>();
-  let sectionById = new Map<string, { id: string; name: string; type: string; icon: string }>();
 
   async function toggleCommentReaction(comment: CommentResult, emoji: string) {
     const key = `${comment.id}-${emoji}`;
@@ -82,25 +96,81 @@
     });
   }
 
+  function openPostThread(post: Post | undefined) {
+    if (!post) return;
+    const targetSection = $sections.find((section) => section.id === post.sectionId);
+    const switchingSection = targetSection && $activeSection?.id !== targetSection.id;
+    if (targetSection) {
+      uiStore.setActiveView('feed');
+      pushPath(buildSectionHref(targetSection.id));
+    }
+    if (switchingSection) {
+      sectionStore.setActiveSection(targetSection);
+    }
+    if (switchingSection) {
+      let resolved = false;
+      let sawLoading = false;
+      let shouldUnsubscribe = false;
+      let unsubscribe: (() => void) | null = null;
+      const maybeUnsubscribe = () => {
+        if (unsubscribe) {
+          unsubscribe();
+          unsubscribe = null;
+        } else {
+          shouldUnsubscribe = true;
+        }
+      };
+      unsubscribe = postStore.subscribe((state) => {
+        if (resolved) return;
+        if (state.isLoading) {
+          sawLoading = true;
+          return;
+        }
+        if (!sawLoading) return;
+        resolved = true;
+        postStore.upsertPost(post);
+        maybeUnsubscribe();
+      });
+      if (shouldUnsubscribe && unsubscribe) {
+        unsubscribe();
+        unsubscribe = null;
+      }
+    } else {
+      postStore.upsertPost(post);
+    }
+    searchStore.setQuery('');
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  type SearchResultWithLink = SearchResult & { linkMetadata?: { id?: string } };
+
+  function resultKey(result: SearchResult, index: number): string {
+    if (result.type === 'comment') {
+      return `comment-${result.comment?.id ?? index}`;
+    }
+    if (result.type === 'post') {
+      return `post-${result.post?.id ?? index}`;
+    }
+    const linkId = (result as SearchResultWithLink).linkMetadata?.id;
+    return linkId ? `link-${linkId}` : `${result.type}-${index}`;
+  }
+
+  function resolveSectionName(result: SearchResult): string | null {
+    const sectionId =
+      (result.type === 'post' && result.post?.sectionId) ||
+      (result.type === 'comment' && result.post?.sectionId) ||
+      $activeSection?.id ||
+      null;
+    if (!sectionId) return null;
+    const section = $sections.find((item) => item.id === sectionId);
+    return section?.name ?? $activeSection?.name ?? null;
+  }
+
   $: normalizedQuery = $searchQuery.trim();
   $: hasQuery = normalizedQuery.length > 0;
   $: showResults = $lastSearchQuery && $lastSearchQuery === normalizedQuery;
-  $: sectionById = new Map($sections.map((section) => [section.id, section]));
-
-  function resolveSection(sectionId?: string | null) {
-    if (sectionId) {
-      return sectionById.get(sectionId) ?? null;
-    }
-    if ($searchScope === 'section') {
-      return $activeSection ?? null;
-    }
-    return null;
-  }
-
-  function formatSectionLabel(section: { name?: string; type?: string } | null): string {
-    if (!section) return 'Section';
-    return section.name || section.type || 'Section';
-  }
 </script>
 
 <section class="space-y-4">
@@ -151,28 +221,93 @@
       </span>
     </div>
 
-    {#each $searchResults as result (result.type + (result.post?.id ?? result.comment?.id ?? ''))}
+    {#each $searchResults as result, index (resultKey(result, index))}
+      {@const sectionName = resolveSectionName(result)}
       {#if result.type === 'post' && result.post}
-        {@const section = resolveSection(result.post.sectionId)}
-        <div class="space-y-2">
-          <div class="flex items-center gap-2 text-xs text-gray-500">
-            <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5">
-              <span>{section?.icon ?? '📁'}</span>
-              <span class="capitalize">{formatSectionLabel(section)}</span>
+        {#if sectionName}
+          <div class="inline-flex items-center gap-2 text-xs font-medium text-gray-500">
+            <span class="px-2 py-0.5 rounded-full bg-gray-100 border border-gray-200">
+              {sectionName}
             </span>
           </div>
-          <PostCard post={result.post} />
-        </div>
+        {/if}
+        <PostCard post={result.post} />
       {:else if result.type === 'comment' && result.comment}
         {@const comment = result.comment}
-        {@const section = resolveSection(comment.sectionId)}
-        <article class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div class="flex items-center gap-2 text-xs text-gray-500 mb-2">
-            <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5">
-              <span>{section?.icon ?? '📁'}</span>
-              <span class="capitalize">{formatSectionLabel(section)}</span>
-            </span>
-          </div>
+        {@const parentPost = result.post}
+        <article class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 space-y-4">
+          {#if parentPost}
+            <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
+              <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
+                <div class="flex items-center gap-2">
+                  <span>Parent post</span>
+                  {#if sectionName}
+                    <span class="px-2 py-0.5 rounded-full bg-white border border-gray-200 text-gray-500">
+                      {sectionName}
+                    </span>
+                  {/if}
+                </div>
+                <button
+                  type="button"
+                  class="text-blue-600 hover:text-blue-800 underline"
+                  on:click={() => openPostThread(parentPost)}
+                >
+                  View full thread
+                </button>
+              </div>
+              <div class="flex items-start gap-3">
+                {#if parentPost.user?.profilePictureUrl}
+                  <img
+                    src={parentPost.user.profilePictureUrl}
+                    alt={parentPost.user.username}
+                    class="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                  />
+                {:else}
+                  <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                    <span class="text-gray-500 text-xs font-medium">
+                      {parentPost.user?.username?.charAt(0).toUpperCase() || '?'}
+                    </span>
+                  </div>
+                {/if}
+
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="text-sm font-medium text-gray-900 truncate">
+                      {parentPost.user?.username || 'Unknown'}
+                    </span>
+                    <span class="text-gray-400 text-xs">·</span>
+                    <time class="text-gray-500 text-xs" datetime={parentPost.createdAt}>
+                      {formatDate(parentPost.createdAt)}
+                    </time>
+                  </div>
+                  <p class="text-gray-800 text-sm whitespace-pre-wrap break-words line-clamp-3">
+                    {parentPost.content}
+                  </p>
+                  {#if parentPost.links && parentPost.links.length > 0}
+                    <div class="mt-2 text-xs text-blue-600 break-all">
+                      <a
+                        href={parentPost.links[0].url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="underline"
+                      >
+                        {parentPost.links[0].url}
+                      </a>
+                    </div>
+                  {/if}
+                </div>
+              </div>
+            </div>
+          {/if}
+
+          {#if !parentPost && sectionName}
+            <div class="inline-flex items-center gap-2 text-xs font-medium text-gray-500">
+              <span class="px-2 py-0.5 rounded-full bg-gray-100 border border-gray-200">
+                {sectionName}
+              </span>
+            </div>
+          {/if}
+
           <div class="flex items-start gap-3">
             {#if comment.user?.id}
               <a
