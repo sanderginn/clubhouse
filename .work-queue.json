@@ -3055,7 +3055,7 @@
     {
       "issue_number": 309,
       "title": "Enhancement: Show section name on search results",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "feature",
       "labels": [
@@ -3063,7 +3063,11 @@
         "frontend",
         "search",
         "ui"
-      ]
+      ],
+      "assigned_to": "agent-1769586708-55716",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769586708-55716",
+      "branch": "feat/issue-309-enhancement-show-section-name-on-search-",
+      "claimed_at": "2026-01-28T07:51:48Z"
     },
     {
       "issue_number": 310,
