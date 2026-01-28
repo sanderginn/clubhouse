@@ -215,6 +215,27 @@ func (s *CommentService) GetCommentByID(ctx context.Context, commentID uuid.UUID
 	return &comment, nil
 }
 
+// GetCommentContext retrieves the post and section IDs for a comment.
+func (s *CommentService) GetCommentContext(ctx context.Context, commentID uuid.UUID) (uuid.UUID, uuid.UUID, error) {
+	query := `
+		SELECT c.post_id, p.section_id
+		FROM comments c
+		JOIN posts p ON c.post_id = p.id
+		WHERE c.id = $1 AND c.deleted_at IS NULL
+	`
+
+	var postID uuid.UUID
+	var sectionID uuid.UUID
+	if err := s.db.QueryRowContext(ctx, query, commentID).Scan(&postID, &sectionID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return uuid.UUID{}, uuid.UUID{}, errors.New("comment not found")
+		}
+		return uuid.UUID{}, uuid.UUID{}, err
+	}
+
+	return postID, sectionID, nil
+}
+
 // getCommentLinks retrieves all links for a comment
 func (s *CommentService) getCommentLinks(ctx context.Context, commentID uuid.UUID) ([]models.Link, error) {
 	query := `

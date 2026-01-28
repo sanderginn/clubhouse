@@ -44,6 +44,7 @@ class MockWebSocket {
 const storeRefs = {
   activeSection: writable<{ id: string } | null>(null),
   isAuthenticated: writable(false),
+  currentUser: writable<{ id: string } | null>(null),
   postStore: {
     upsertPost: vi.fn(),
     incrementCommentCount: vi.fn(),
@@ -55,6 +56,7 @@ const storeRefs = {
     addComment: ReturnType<typeof vi.fn>;
     addReply: ReturnType<typeof vi.fn>;
     markSeenComment: ReturnType<typeof vi.fn>;
+    updateReactionCount: ReturnType<typeof vi.fn>;
     setState: (value: Record<string, { comments: Array<{ id: string; replies?: any[] }> }>) => void;
   },
   api: {
@@ -69,6 +71,7 @@ storeRefs.commentStore = {
   addComment: vi.fn(),
   addReply: vi.fn(),
   markSeenComment: vi.fn(),
+  updateReactionCount: vi.fn(),
   setState: (value: Record<string, { comments: Array<{ id: string; replies?: any[] }> }>) =>
     storeRefs.commentState.set(value),
 };
@@ -79,6 +82,7 @@ vi.mock('../sectionStore', () => ({
 
 vi.mock('../authStore', () => ({
   isAuthenticated: storeRefs.isAuthenticated,
+  currentUser: storeRefs.currentUser,
 }));
 
 vi.mock('../postStore', () => ({
@@ -105,12 +109,14 @@ beforeEach(() => {
   MockWebSocket.instances = [];
   storeRefs.activeSection.set(null);
   storeRefs.isAuthenticated.set(false);
+  storeRefs.currentUser.set(null);
   storeRefs.postStore.upsertPost.mockReset();
   storeRefs.postStore.incrementCommentCount.mockReset();
   storeRefs.postStore.updateReactionCount.mockReset();
   storeRefs.commentStore.addComment.mockReset();
   storeRefs.commentStore.addReply.mockReset();
   storeRefs.commentStore.markSeenComment.mockReset();
+  storeRefs.commentStore.updateReactionCount.mockReset();
   storeRefs.api.getComment.mockReset();
   storeRefs.mapApiComment.mockReset();
   storeRefs.mapApiPost.mockReset();
@@ -278,6 +284,83 @@ describe('websocketStore', () => {
 
     expect(storeRefs.postStore.updateReactionCount).toHaveBeenCalledWith('post-1', '🔥', 1);
     expect(storeRefs.postStore.updateReactionCount).toHaveBeenCalledWith('post-1', '🔥', -1);
+  });
+
+  it('handles comment reaction events', async () => {
+    storeRefs.isAuthenticated.set(true);
+    const { websocketStore } = await import('../websocketStore');
+    websocketStore.init();
+
+    const socket = MockWebSocket.instances[0];
+    socket.open();
+
+    socket.emit('message', {
+      data: JSON.stringify({
+        type: 'reaction_added',
+        data: {
+          post_id: 'post-1',
+          comment_id: 'comment-1',
+          emoji: '🎉',
+          user_id: 'user-2',
+        },
+        timestamp: 'now',
+      }),
+    });
+
+    socket.emit('message', {
+      data: JSON.stringify({
+        type: 'reaction_removed',
+        data: {
+          post_id: 'post-1',
+          comment_id: 'comment-1',
+          emoji: '🎉',
+          user_id: 'user-2',
+        },
+        timestamp: 'now',
+      }),
+    });
+
+    expect(storeRefs.commentStore.updateReactionCount).toHaveBeenCalledWith(
+      'post-1',
+      'comment-1',
+      '🎉',
+      1
+    );
+    expect(storeRefs.commentStore.updateReactionCount).toHaveBeenCalledWith(
+      'post-1',
+      'comment-1',
+      '🎉',
+      -1
+    );
+  });
+
+  it('skips reaction events from current user', async () => {
+    storeRefs.isAuthenticated.set(true);
+    storeRefs.currentUser.set({ id: 'user-1' });
+    const { websocketStore } = await import('../websocketStore');
+    websocketStore.init();
+
+    const socket = MockWebSocket.instances[0];
+    socket.open();
+
+    socket.emit('message', {
+      data: JSON.stringify({
+        type: 'reaction_added',
+        data: { post_id: 'post-1', emoji: '🔥', user_id: 'user-1' },
+        timestamp: 'now',
+      }),
+    });
+
+    socket.emit('message', {
+      data: JSON.stringify({
+        type: 'reaction_added',
+        data: { post_id: 'post-1', emoji: '🔥', user_id: 'user-1', comment_id: 'comment-1' },
+        timestamp: 'now',
+      }),
+    });
+
+    expect(storeRefs.postStore.updateReactionCount).not.toHaveBeenCalled();
+    expect(storeRefs.commentStore.updateReactionCount).not.toHaveBeenCalled();
   });
 
   it('schedules reconnect on close when authed', async () => {

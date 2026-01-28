@@ -1,6 +1,6 @@
 import { writable, get } from 'svelte/store';
 import { activeSection } from './sectionStore';
-import { isAuthenticated } from './authStore';
+import { isAuthenticated, currentUser } from './authStore';
 import { postStore, type Post } from './postStore';
 import { commentStore, type Comment } from './commentStore';
 import { api } from '../services/api';
@@ -218,14 +218,36 @@ function connect() {
       }
       case 'reaction_added': {
         const payload = parsed.data as WsReactionEvent;
-        if (payload?.post_id && payload.emoji) {
+        if (!payload?.emoji) {
+          break;
+        }
+        const userId = get(currentUser)?.id;
+        if (userId && payload.user_id === userId) {
+          break;
+        }
+        if (payload.comment_id && payload.post_id) {
+          commentStore.updateReactionCount(payload.post_id, payload.comment_id, payload.emoji, 1);
+          break;
+        }
+        if (payload.post_id) {
           postStore.updateReactionCount(payload.post_id, payload.emoji, 1);
         }
         break;
       }
       case 'reaction_removed': {
         const payload = parsed.data as WsReactionEvent;
-        if (payload?.post_id && payload.emoji) {
+        if (!payload?.emoji) {
+          break;
+        }
+        const userId = get(currentUser)?.id;
+        if (userId && payload.user_id === userId) {
+          break;
+        }
+        if (payload.comment_id && payload.post_id) {
+          commentStore.updateReactionCount(payload.post_id, payload.comment_id, payload.emoji, -1);
+          break;
+        }
+        if (payload.post_id) {
           postStore.updateReactionCount(payload.post_id, payload.emoji, -1);
         }
         break;
