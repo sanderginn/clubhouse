@@ -79,7 +79,7 @@
   };
 
   const buildResetLink = (token: string) => {
-    const path = '/reset-password';
+    const path = '/reset';
     if (typeof window === 'undefined') {
       return `${path}?token=${encodeURIComponent(token)}`;
     }
