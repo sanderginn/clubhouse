@@ -47,11 +47,11 @@
       />
     </div>
 
-    <div class="flex items-center gap-2">
+    <div class="flex flex-wrap items-center gap-2">
       <select
         value={scope}
         on:change={handleScopeChange}
-        class="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary focus:border-transparent"
+        class="w-full sm:w-auto min-w-[10rem] px-3 py-2 pr-8 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary focus:border-transparent"
       >
         <option value="section">
           {#if $activeSection}
