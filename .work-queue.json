@@ -3053,9 +3053,9 @@
     {
       "issue_number": 310,
       "title": "Enhancement: Include parent post context for comment search results",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769583780-90512",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769583780-90512",
       "dependencies": [],
       "phase": "feature",
       "labels": [
@@ -3064,7 +3064,8 @@
         "search",
         "ui"
       ],
-      "branch": "feat/issue-310-enhancement--include-parent-post-context-for-comment-search-results"
+      "branch": "feat/issue-310-enhancement-include-parent-post-context-",
+      "claimed_at": "2026-01-28T07:03:00Z"
     },
     {
       "issue_number": 311,
