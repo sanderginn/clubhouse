@@ -153,6 +153,7 @@
     294,
     295,
     296,
+    297,
     298
   ],
   "issues": [
@@ -2833,7 +2834,7 @@
     {
       "issue_number": 297,
       "title": "Bug: Post creation rejects URL-only posts",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769558171-32460",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769558171-32460",
       "dependencies": [],
@@ -2846,7 +2847,9 @@
         "links"
       ],
       "branch": "fix/issue-297-post-creation-rejects-urlonly-posts",
-      "claimed_at": "2026-01-27T23:56:11Z"
+      "claimed_at": "2026-01-27T23:56:11Z",
+      "pr_number": 321,
+      "completed_at": "2026-01-28T00:06:41Z"
     },
     {
       "issue_number": 298,
