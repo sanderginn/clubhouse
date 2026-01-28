@@ -90,6 +90,8 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	}
 
 	contentType := resp.Header.Get("Content-Type")
+	contentTypeLower := strings.ToLower(contentType)
+	isHTML := strings.Contains(contentTypeLower, "text/html")
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBodyBytes))
 	if err != nil {
 		return nil, fmt.Errorf("read response: %w", err)
@@ -98,7 +100,13 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	metadata := make(map[string]interface{})
 	provider := detectProvider(u.Hostname())
 
-	if strings.Contains(strings.ToLower(contentType), "text/html") {
+	// Treat SVGs as images here; frontend renders via <img> to avoid inline SVG execution.
+	if strings.HasPrefix(contentTypeLower, "image/") {
+		metadata["image"] = u.String()
+		metadata["type"] = "image"
+	}
+
+	if isHTML {
 		metaTags, title := extractHTMLMeta(body)
 		title = firstNonEmpty(metaTags["og:title"], metaTags["twitter:title"], title)
 		description := firstNonEmpty(metaTags["og:description"], metaTags["twitter:description"], metaTags["description"])
@@ -132,6 +140,11 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 		if provider == "" && siteName != "" {
 			provider = siteName
 		}
+	}
+
+	if _, ok := metadata["image"]; !ok && !isHTML && looksLikeImageURL(u) {
+		metadata["image"] = u.String()
+		metadata["type"] = "image"
 	}
 
 	if provider == "" {
@@ -223,6 +236,62 @@ func isBlockedIP(ip net.IP) bool {
 	if ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsPrivate() || ip.IsUnspecified() {
 		return true
 	}
+	return false
+}
+
+func looksLikeImageURL(u *url.URL) bool {
+	if u == nil {
+		return false
+	}
+	imageExtensions := []string{"jpg", "jpeg", "png", "gif", "webp", "bmp", "svg", "avif", "tif", "tiff"}
+	hasImageExtension := func(value string) bool {
+		if value == "" {
+			return false
+		}
+		lower := strings.ToLower(value)
+		for _, ext := range imageExtensions {
+			needle := "." + ext
+			idx := strings.LastIndex(lower, needle)
+			if idx == -1 {
+				continue
+			}
+			end := idx + len(needle)
+			if end == len(lower) {
+				return true
+			}
+			switch lower[end] {
+			case '?', '#', '&':
+				return true
+			}
+		}
+		return false
+	}
+
+	if hasImageExtension(u.Path) {
+		return true
+	}
+
+	if u.RawQuery == "" {
+		return false
+	}
+
+	query := u.Query()
+	for _, key := range []string{"format", "fm", "ext", "type"} {
+		value := strings.ToLower(query.Get(key))
+		switch value {
+		case "jpg", "jpeg", "png", "gif", "webp", "bmp", "svg", "avif", "tif", "tiff", "image":
+			return true
+		}
+	}
+
+	for _, values := range query {
+		for _, value := range values {
+			if hasImageExtension(value) {
+				return true
+			}
+		}
+	}
+
 	return false
 }
 
