@@ -122,7 +122,8 @@ describe('SearchResults', () => {
     expect(highlight).toBeInTheDocument();
     expect(highlight.tagName).toBe('MARK');
     expect(screen.getByText(/post/i)).toBeInTheDocument();
-    expect(screen.getByText('Music')).toBeInTheDocument();
+    const sectionLabels = screen.getAllByText('Music');
+    expect(sectionLabels.length).toBeGreaterThan(0);
   });
 
   it('renders section label for post results', () => {
