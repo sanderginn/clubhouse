@@ -160,7 +160,7 @@
       </span>
     </div>
 
-    {#each $searchResults as result (result.type + (result.post?.id ?? result.comment?.id ?? ''))}
+    {#each $searchResults as result (result.type === 'comment' ? `comment-${result.comment?.id ?? ''}` : `post-${result.post?.id ?? ''}`)}
       {#if result.type === 'post' && result.post}
         <PostCard post={result.post} />
       {:else if result.type === 'comment' && result.comment}

@@ -99,6 +99,7 @@ describe('SearchResults', () => {
     storeRefs.sections.set([
       { id: 'section-1', name: 'Music', type: 'music', icon: '🎵' },
     ]);
+    storeRefs.activeSection.set({ id: 'section-1', name: 'Music' });
     storeRefs.searchResults.set([
       {
         type: 'comment',
@@ -125,6 +126,7 @@ describe('SearchResults', () => {
     storeRefs.sections.set([
       { id: 'section-2', name: 'Movies', type: 'movie', icon: '🎬' },
     ]);
+    storeRefs.activeSection.set({ id: 'section-2', name: 'Movies' });
     storeRefs.searchResults.set([
       {
         type: 'post',
