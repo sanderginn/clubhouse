@@ -91,6 +91,7 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 
 	contentType := resp.Header.Get("Content-Type")
 	contentTypeLower := strings.ToLower(contentType)
+	isHTML := strings.Contains(contentTypeLower, "text/html")
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBodyBytes))
 	if err != nil {
 		return nil, fmt.Errorf("read response: %w", err)
@@ -104,7 +105,7 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 		metadata["type"] = "image"
 	}
 
-	if strings.Contains(contentTypeLower, "text/html") {
+	if isHTML {
 		metaTags, title := extractHTMLMeta(body)
 		title = firstNonEmpty(metaTags["og:title"], metaTags["twitter:title"], title)
 		description := firstNonEmpty(metaTags["og:description"], metaTags["twitter:description"], metaTags["description"])
@@ -140,7 +141,7 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 		}
 	}
 
-	if _, ok := metadata["image"]; !ok && looksLikeImageURL(u.Path) {
+	if _, ok := metadata["image"]; !ok && !isHTML && looksLikeImageURL(u) {
 		metadata["image"] = u.String()
 		metadata["type"] = "image"
 	}
@@ -237,11 +238,11 @@ func isBlockedIP(ip net.IP) bool {
 	return false
 }
 
-func looksLikeImageURL(path string) bool {
-	if path == "" {
+func looksLikeImageURL(u *url.URL) bool {
+	if u == nil {
 		return false
 	}
-	path = strings.ToLower(path)
+	path := strings.ToLower(u.Path)
 	switch {
 	case strings.HasSuffix(path, ".jpg"),
 		strings.HasSuffix(path, ".jpeg"),
@@ -254,9 +255,22 @@ func looksLikeImageURL(path string) bool {
 		strings.HasSuffix(path, ".tif"),
 		strings.HasSuffix(path, ".tiff"):
 		return true
-	default:
+	}
+
+	if u.RawQuery == "" {
 		return false
 	}
+
+	query := u.Query()
+	for _, key := range []string{"format", "fm", "ext", "type"} {
+		value := strings.ToLower(query.Get(key))
+		switch value {
+		case "jpg", "jpeg", "png", "gif", "webp", "bmp", "svg", "avif", "tif", "tiff", "image":
+			return true
+		}
+	}
+
+	return false
 }
 
 func extractHTMLMeta(body []byte) (map[string]string, string) {
