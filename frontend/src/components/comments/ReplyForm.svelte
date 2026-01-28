@@ -30,8 +30,11 @@
         content: content.trim(),
       });
       const reply = mapApiComment(response.comment);
+      const skipIncrement = commentStore.consumeSeenComment(postId, reply.id);
       commentStore.addReply(postId, parentCommentId, reply);
-      postStore.incrementCommentCount(postId, 1);
+      if (!skipIncrement) {
+        postStore.incrementCommentCount(postId, 1);
+      }
       content = '';
       dispatch('submit', reply);
     } catch (err) {
