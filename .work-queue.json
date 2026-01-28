@@ -3104,7 +3104,7 @@
     {
       "issue_number": 313,
       "title": "Bug: Duplicate error message when notifications permission denied",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -3112,7 +3112,11 @@
         "frontend",
         "pwa",
         "ui"
-      ]
+      ],
+      "assigned_to": "agent-1769586330-41974",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769586330-41974",
+      "branch": "fix/issue-313-duplicate-error-message-when-notificatio",
+      "claimed_at": "2026-01-28T07:45:30Z"
     },
     {
       "issue_number": 314,
