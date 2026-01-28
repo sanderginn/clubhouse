@@ -154,6 +154,38 @@ function createCommentStore() {
     return next;
   }
 
+  function insertReply(
+    comments: Comment[],
+    parentCommentId: string,
+    reply: Comment
+  ): { comments: Comment[]; inserted: boolean } {
+    let inserted = false;
+    const next = comments.map((comment) => {
+      if (comment.id === parentCommentId) {
+        if (hasComment(comment.replies ?? [], reply.id)) {
+          return comment;
+        }
+        inserted = true;
+        return {
+          ...comment,
+          replies: [...(comment.replies ?? []), reply],
+        };
+      }
+      if (comment.replies?.length) {
+        const nested = insertReply(comment.replies, parentCommentId, reply);
+        if (nested.inserted) {
+          inserted = true;
+          return {
+            ...comment,
+            replies: nested.comments,
+          };
+        }
+      }
+      return comment;
+    });
+    return { comments: next, inserted };
+  }
+
   return {
     subscribe,
     setThread: (postId: string, comments: Comment[], cursor: string | null, hasMore: boolean) =>
@@ -225,17 +257,9 @@ function createCommentStore() {
     addReply: (postId: string, parentCommentId: string, reply: Comment) =>
       updateThread(postId, (thread) => {
         const seenCommentIds = new Set(thread.seenCommentIds);
-        const comments = thread.comments.map((comment) =>
-          comment.id === parentCommentId
-            ? {
-                ...comment,
-                replies: hasComment(comment.replies ?? [], reply.id)
-                  ? comment.replies
-                  : [...(comment.replies ?? []), reply],
-              }
-            : comment
-        );
-        const shouldDeleteSeen = !hasComment(thread.comments, reply.id) && seenCommentIds.has(reply.id);
+        const { comments, inserted } = insertReply(thread.comments, parentCommentId, reply);
+        const shouldDeleteSeen =
+          inserted && !hasComment(thread.comments, reply.id) && seenCommentIds.has(reply.id);
         if (shouldDeleteSeen) {
           seenCommentIds.delete(reply.id);
         }
