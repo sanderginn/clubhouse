@@ -177,6 +177,7 @@
     342,
     343,
     344,
+    345,
     346,
     347,
     348,
@@ -3358,7 +3359,7 @@
     {
       "issue_number": 345,
       "title": "Enhancement: Enlarge section name pills in search results and add emoji",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769642339-76367",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769642339-76367",
       "dependencies": [],
@@ -3371,7 +3372,9 @@
         "ui"
       ],
       "branch": "feat/issue-345-enhancement-enlarge-section-name-pills-i",
-      "claimed_at": "2026-01-28T23:18:59Z"
+      "claimed_at": "2026-01-28T23:18:59Z",
+      "pr_number": 359,
+      "completed_at": "2026-01-28T23:29:28Z"
     },
     {
       "issue_number": 344,
