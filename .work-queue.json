@@ -2999,9 +2999,9 @@
     {
       "issue_number": 307,
       "title": "Bug: Nested comment replies increment comment count by 2",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769583456-78144",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769583456-78144",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -3010,7 +3010,8 @@
         "comments",
         "ui"
       ],
-      "branch": "fix/issue-307-bug--nested-comment-replies-increment-comment-count-by-2"
+      "branch": "fix/issue-307-nested-comment-replies-increment-comment",
+      "claimed_at": "2026-01-28T06:57:36Z"
     },
     {
       "issue_number": 308,
