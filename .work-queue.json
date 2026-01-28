@@ -3183,7 +3183,7 @@
     {
       "issue_number": 315,
       "title": "Enhancement: Add reaction tooltips listing reacting users",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "feature",
       "labels": [
@@ -3191,7 +3191,11 @@
         "frontend",
         "reactions",
         "ui"
-      ]
+      ],
+      "assigned_to": "agent-1769626663-59447",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769626663-59447",
+      "branch": "feat/issue-315-enhancement-add-reaction-tooltips-listin",
+      "claimed_at": "2026-01-28T18:57:43Z"
     },
     {
       "issue_number": 316,
