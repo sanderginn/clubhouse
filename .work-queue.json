@@ -2982,9 +2982,9 @@
     {
       "issue_number": 306,
       "title": "Bug: Photo upload succeeds but image not displayed",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769583446-77055",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769583446-77055",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -2993,7 +2993,8 @@
         "posts",
         "ui"
       ],
-      "branch": "fix/issue-306-bug--photo-upload-succeeds-but-image-not-displayed"
+      "branch": "fix/issue-306-photo-upload-succeeds-but-image-not-disp",
+      "claimed_at": "2026-01-28T06:57:26Z"
     },
     {
       "issue_number": 307,
