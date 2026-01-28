@@ -137,6 +137,16 @@ REVIEW_VERDICT: APPROVE
 
 Do **not** merge the PR yourself. The parent process will handle the merge.
 
+### If CI is still running or failing
+
+Do **not** mention CI status in any PR comment, even if there are other findings. Only mention CI status in your own output. If CI is pending or failing, wait to approve until it is green and no additional feedback remains. For verdicts:
+- If there are code issues, post the findings comment and use `REVIEW_VERDICT: REQUEST_CHANGES`.
+- If there are no code issues but CI is pending/failing, do not post any PR comment; report that you are waiting for CI in your output and use `REVIEW_VERDICT: REQUEST_CHANGES`.
+
+```
+REVIEW_VERDICT: REQUEST_CHANGES
+```
+
 ## Important Rules
 
 1. **Read every changed file in full** — not just the diff. Context matters.
@@ -146,4 +156,4 @@ Do **not** merge the PR yourself. The parent process will handle the merge.
 5. **Be specific** — reference file paths and line numbers in findings.
 6. **One comment** — consolidate all findings into a single PR comment, not multiple.
 7. **Existing comments matter** — factor in prior review feedback and author responses.
-8. **CI must pass** — if checks are failing or still running, note it. Do not approve with failing checks.
+8. **CI must pass** — if checks are failing or still running, never mention it in a PR comment. Note it only in your output and do not approve with failing checks.
