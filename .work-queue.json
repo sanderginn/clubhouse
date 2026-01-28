@@ -176,7 +176,8 @@
     317,
     342,
     344,
-    346
+    346,
+    347
   ],
   "issues": [
     {
@@ -3305,7 +3306,7 @@
     {
       "issue_number": 347,
       "title": "Bug: Previous section stays highlighted in sidebar when navigating to Moderation",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769639930-33565",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769639930-33565",
       "dependencies": [],
@@ -3317,7 +3318,9 @@
         "ui"
       ],
       "branch": "fix/issue-347-previous-section-stays-highlighted-in-si",
-      "claimed_at": "2026-01-28T22:38:50Z"
+      "claimed_at": "2026-01-28T22:38:50Z",
+      "pr_number": 356,
+      "completed_at": "2026-01-28T22:48:44Z"
     },
     {
       "issue_number": 346,
