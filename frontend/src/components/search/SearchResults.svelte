@@ -161,6 +161,7 @@
   type SectionGroup = {
     id: string | null;
     name: string;
+    icon: string | null;
     results: SearchResult[];
   };
 
@@ -183,9 +184,28 @@
     return section?.name ?? fallbackName;
   }
 
+  function resolveSectionIconById(
+    sectionId: string | null,
+    fallbackIcon: string | null,
+    availableSections: typeof $sections,
+  ): string | null {
+    if (!sectionId) return fallbackIcon;
+    const section = availableSections.find((item) => item.id === sectionId);
+    return section?.icon ?? fallbackIcon;
+  }
+
   function resolveSectionName(result: SearchResult, fallbackSectionId: string | null, fallbackName: string | null): string | null {
     const sectionId = resolveSectionId(result, fallbackSectionId);
     return resolveSectionNameById(sectionId, fallbackName, $sections);
+  }
+
+  function resolveSectionIcon(
+    result: SearchResult,
+    fallbackSectionId: string | null,
+    fallbackIcon: string | null,
+  ): string | null {
+    const sectionId = resolveSectionId(result, fallbackSectionId);
+    return resolveSectionIconById(sectionId, fallbackIcon, $sections);
   }
 
   function buildSectionGroups(results: SearchResult[], availableSections: typeof $sections): SectionGroup[] {
@@ -197,7 +217,8 @@
       let group = seen.get(key);
       if (!group) {
         const name = resolveSectionNameById(sectionId, null, availableSections) ?? 'Unknown section';
-        group = { id: sectionId, name, results: [] };
+        const icon = resolveSectionIconById(sectionId, '📁', availableSections);
+        group = { id: sectionId, name, icon, results: [] };
         seen.set(key, group);
         groups.push(group);
       }
@@ -205,6 +226,11 @@
     }
     return groups;
   }
+
+  const sectionPillClass =
+    'inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-100 px-3 py-1 text-sm font-semibold text-gray-600 max-w-full min-w-0';
+  const sectionPillIconClass = 'text-base leading-none';
+  const sectionPillTextClass = 'truncate';
 
   $: normalizedQuery = $searchQuery.trim();
   $: hasQuery = normalizedQuery.length > 0;
@@ -265,7 +291,12 @@
       {#each sectionGroups as group}
         <div class="border border-gray-200 rounded-lg bg-white shadow-sm">
           <div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500">{group.name}</span>
+            <span class={sectionPillClass}>
+              {#if group.icon}
+                <span class={sectionPillIconClass} aria-hidden="true">{group.icon}</span>
+              {/if}
+              <span class={sectionPillTextClass}>{group.name}</span>
+            </span>
             <span class="text-xs text-gray-400">{group.results.length} result{group.results.length === 1 ? '' : 's'}</span>
           </div>
           <div class="space-y-4 p-4">
@@ -433,11 +464,15 @@
     {:else}
       {#each $searchResults as result, index (resultKey(result, index))}
         {@const sectionName = resolveSectionName(result, $activeSection?.id ?? null, $activeSection?.name ?? null)}
+        {@const sectionIcon = resolveSectionIcon(result, $activeSection?.id ?? null, $activeSection?.icon ?? null)}
       {#if result.type === 'post' && result.post}
         {#if sectionName}
-          <div class="inline-flex items-center gap-2 text-xs font-medium text-gray-500">
-            <span class="px-2 py-0.5 rounded-full bg-gray-100 border border-gray-200">
-              {sectionName}
+          <div class="inline-flex items-center gap-2 text-gray-500 min-w-0">
+            <span class={sectionPillClass}>
+              {#if sectionIcon}
+                <span class={sectionPillIconClass} aria-hidden="true">{sectionIcon}</span>
+              {/if}
+              <span class={sectionPillTextClass}>{sectionName}</span>
             </span>
           </div>
         {/if}
@@ -452,8 +487,11 @@
                 <div class="flex items-center gap-2">
                   <span>Parent post</span>
                   {#if sectionName}
-                    <span class="px-2 py-0.5 rounded-full bg-white border border-gray-200 text-gray-500">
-                      {sectionName}
+                    <span class={sectionPillClass}>
+                      {#if sectionIcon}
+                        <span class={sectionPillIconClass} aria-hidden="true">{sectionIcon}</span>
+                      {/if}
+                      <span class={sectionPillTextClass}>{sectionName}</span>
                     </span>
                   {/if}
                 </div>
@@ -511,9 +549,12 @@
           {/if}
 
           {#if !parentPost && sectionName}
-            <div class="inline-flex items-center gap-2 text-xs font-medium text-gray-500">
-              <span class="px-2 py-0.5 rounded-full bg-gray-100 border border-gray-200">
-                {sectionName}
+            <div class="inline-flex items-center gap-2 text-gray-500 min-w-0">
+              <span class={sectionPillClass}>
+                {#if sectionIcon}
+                  <span class={sectionPillIconClass} aria-hidden="true">{sectionIcon}</span>
+                {/if}
+                <span class={sectionPillTextClass}>{sectionName}</span>
               </span>
             </div>
           {/if}
