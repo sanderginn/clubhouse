@@ -1,5 +1,5 @@
 import type { Link } from './postStore';
-import type { ApiLink, ApiUser } from './postMapper';
+import { normalizeLinkMetadata, type ApiLink, type ApiUser } from './postMapper';
 import type { Comment } from './commentStore';
 
 export interface ApiComment {
@@ -27,18 +27,7 @@ export function mapApiComment(apiComment: ApiComment): Comment {
     links: apiComment.links?.map((link): Link => ({
       id: link.id,
       url: link.url,
-      metadata: link.metadata
-        ? {
-            url: link.metadata.url ?? link.url,
-            provider: link.metadata.provider,
-            title: link.metadata.title,
-            description: link.metadata.description,
-            image: link.metadata.image,
-            author: link.metadata.author,
-            duration: link.metadata.duration,
-            embedUrl: link.metadata.embedUrl,
-          }
-        : undefined,
+      metadata: normalizeLinkMetadata(link.metadata, link.url),
     })),
     user: apiComment.user
       ? {

@@ -1,6 +1,7 @@
 import { writable, derived, get } from 'svelte/store';
 import { api } from '../services/api';
 import { activeSection } from './sectionStore';
+import { normalizeLinkMetadata } from './postMapper';
 import type { Post, Link } from './postStore';
 
 export type SearchScope = 'section' | 'global';
@@ -36,7 +37,7 @@ interface ApiUser {
 interface ApiLink {
   id?: string;
   url: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, unknown> | string | null;
 }
 
 interface ApiPost {
@@ -87,24 +88,10 @@ interface SearchState {
 }
 
 function mapApiLink(link: ApiLink): Link {
-  const metadata = link.metadata ?? {};
-  const hasMetadata = Object.keys(metadata).length > 0;
-
   return {
     id: link.id,
     url: link.url,
-    metadata: hasMetadata
-      ? {
-          url: (metadata.url as string) ?? link.url,
-          provider: metadata.provider as string | undefined,
-          title: metadata.title as string | undefined,
-          description: metadata.description as string | undefined,
-          image: metadata.image as string | undefined,
-          author: metadata.author as string | undefined,
-          duration: metadata.duration as number | undefined,
-          embedUrl: metadata.embedUrl as string | undefined,
-        }
-      : undefined,
+    metadata: normalizeLinkMetadata(link.metadata, link.url),
   };
 }
 
