@@ -89,6 +89,51 @@ describe('commentStore', () => {
     expect(state.loaded).toBe(true);
   });
 
+  it('adds a reply to a nested comment', () => {
+    resetStore();
+
+    commentStore.setThread(
+      'post-2',
+      [
+        {
+          id: 'comment-10',
+          userId: 'user-10',
+          postId: 'post-2',
+          content: 'Parent',
+          createdAt: '2025-01-01T00:00:00Z',
+          replies: [
+            {
+              id: 'reply-1',
+              userId: 'user-11',
+              postId: 'post-2',
+              parentCommentId: 'comment-10',
+              content: 'Nested parent',
+              createdAt: '2025-01-02T00:00:00Z',
+              replies: [],
+            },
+          ],
+        },
+      ],
+      null,
+      true
+    );
+
+    commentStore.addReply('post-2', 'reply-1', {
+      id: 'reply-2',
+      userId: 'user-12',
+      postId: 'post-2',
+      parentCommentId: 'reply-1',
+      content: 'Nested reply',
+      createdAt: '2025-01-03T00:00:00Z',
+    });
+
+    const state = get(commentStore)['post-2'];
+    const nestedReplies = state.comments[0].replies?.[0].replies ?? [];
+    expect(nestedReplies).toHaveLength(1);
+    expect(nestedReplies[0].id).toBe('reply-2');
+    expect(state.loaded).toBe(true);
+  });
+
   it('adds comment to top of thread', () => {
     resetStore();
 
