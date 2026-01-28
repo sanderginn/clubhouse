@@ -150,4 +150,64 @@ describe('SearchResults', () => {
     render(SearchResults);
     expect(screen.getAllByText('Movies').length).toBeGreaterThan(0);
   });
+
+  it('groups global search results by section', () => {
+    storeRefs.searchQuery.set('mix');
+    storeRefs.lastSearchQuery.set('mix');
+    storeRefs.searchScope.set('global');
+    storeRefs.sections.set([
+      { id: 'section-1', name: 'Music', type: 'music', icon: '🎵' },
+      { id: 'section-2', name: 'Movies', type: 'movie', icon: '🎬' },
+    ]);
+    storeRefs.searchResults.set([
+      {
+        type: 'post',
+        score: 2,
+        post: {
+          id: 'post-1',
+          sectionId: 'section-1',
+          content: 'Music post',
+          createdAt: '2025-01-02T00:00:00Z',
+          userId: 'user-1',
+        },
+      },
+      {
+        type: 'comment',
+        score: 1,
+        comment: {
+          id: 'comment-1',
+          postId: 'post-1',
+          sectionId: 'section-1',
+          content: 'Great tune',
+          createdAt: '2025-01-03T00:00:00Z',
+          user: { id: 'user-2', username: 'Alex' },
+        },
+        post: {
+          id: 'post-1',
+          sectionId: 'section-1',
+          content: 'Music post',
+          createdAt: '2025-01-02T00:00:00Z',
+          userId: 'user-1',
+        },
+      },
+      {
+        type: 'post',
+        score: 1,
+        post: {
+          id: 'post-2',
+          sectionId: 'section-2',
+          content: 'Movie post',
+          createdAt: '2025-01-04T00:00:00Z',
+          userId: 'user-3',
+        },
+      },
+    ]);
+
+    render(SearchResults);
+    expect(screen.getByText('Music')).toBeInTheDocument();
+    expect(screen.getByText('Movies')).toBeInTheDocument();
+    expect(screen.getByText('post-1')).toBeInTheDocument();
+    expect(screen.getByText('post-2')).toBeInTheDocument();
+    expect(screen.getByText('Parent post')).toBeInTheDocument();
+  });
 });

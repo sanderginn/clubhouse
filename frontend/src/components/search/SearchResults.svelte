@@ -157,20 +157,55 @@
     return linkId ? `link-${linkId}` : `${result.type}-${index}`;
   }
 
-  function resolveSectionName(result: SearchResult): string | null {
-    const sectionId =
+  type SectionGroup = {
+    id: string | null;
+    name: string;
+    results: SearchResult[];
+  };
+
+  function resolveSectionId(result: SearchResult, fallbackSectionId: string | null): string | null {
+    return (
       (result.type === 'post' && result.post?.sectionId) ||
-      (result.type === 'comment' && result.post?.sectionId) ||
-      $activeSection?.id ||
-      null;
-    if (!sectionId) return null;
+      (result.type === 'comment' && (result.comment?.sectionId || result.post?.sectionId)) ||
+      fallbackSectionId ||
+      null
+    );
+  }
+
+  function resolveSectionNameById(sectionId: string | null, fallbackName: string | null): string | null {
+    if (!sectionId) return fallbackName;
     const section = $sections.find((item) => item.id === sectionId);
-    return section?.name ?? $activeSection?.name ?? null;
+    return section?.name ?? fallbackName;
+  }
+
+  function resolveSectionName(result: SearchResult, fallbackSectionId: string | null, fallbackName: string | null): string | null {
+    const sectionId = resolveSectionId(result, fallbackSectionId);
+    return resolveSectionNameById(sectionId, fallbackName);
+  }
+
+  function buildSectionGroups(results: SearchResult[]): SectionGroup[] {
+    const groups: SectionGroup[] = [];
+    const seen = new Map<string, SectionGroup>();
+    for (const result of results) {
+      const sectionId = resolveSectionId(result, null);
+      const key = sectionId ?? 'unknown-section';
+      let group = seen.get(key);
+      if (!group) {
+        const name = resolveSectionNameById(sectionId, null) ?? 'Unknown section';
+        group = { id: sectionId, name, results: [] };
+        seen.set(key, group);
+        groups.push(group);
+      }
+      group.results.push(result);
+    }
+    return groups;
   }
 
   $: normalizedQuery = $searchQuery.trim();
   $: hasQuery = normalizedQuery.length > 0;
   $: showResults = $lastSearchQuery && $lastSearchQuery === normalizedQuery;
+  $: isGlobalScope = $searchScope === 'global';
+  $: sectionGroups = isGlobalScope ? buildSectionGroups($searchResults) : [];
 </script>
 
 <section class="space-y-4">
@@ -221,8 +256,178 @@
       </span>
     </div>
 
-    {#each $searchResults as result, index (resultKey(result, index))}
-      {@const sectionName = resolveSectionName(result)}
+    {#if isGlobalScope}
+      {#each sectionGroups as group}
+        <div class="border border-gray-200 rounded-lg bg-white shadow-sm">
+          <div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500">{group.name}</span>
+            <span class="text-xs text-gray-400">{group.results.length} result{group.results.length === 1 ? '' : 's'}</span>
+          </div>
+          <div class="space-y-4 p-4">
+            {#each group.results as result, index (resultKey(result, index))}
+              {#if result.type === 'post' && result.post}
+                <PostCard post={result.post} />
+              {:else if result.type === 'comment' && result.comment}
+                {@const comment = result.comment}
+                {@const parentPost = result.post}
+                <article class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 space-y-4">
+                  {#if parentPost}
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                      <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
+                        <div class="flex items-center gap-2">
+                          <span>Parent post</span>
+                        </div>
+                        <button
+                          type="button"
+                          class="text-blue-600 hover:text-blue-800 underline"
+                          on:click={() => openPostThread(parentPost)}
+                        >
+                          View full thread
+                        </button>
+                      </div>
+                      <div class="flex items-start gap-3">
+                        {#if parentPost.user?.profilePictureUrl}
+                          <img
+                            src={parentPost.user.profilePictureUrl}
+                            alt={parentPost.user.username}
+                            class="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                          />
+                        {:else}
+                          <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                            <span class="text-gray-500 text-xs font-medium">
+                              {parentPost.user?.username?.charAt(0).toUpperCase() || '?'}
+                            </span>
+                          </div>
+                        {/if}
+
+                        <div class="flex-1 min-w-0">
+                          <div class="flex items-center gap-2 mb-1">
+                            <span class="text-sm font-medium text-gray-900 truncate">
+                              {parentPost.user?.username || 'Unknown'}
+                            </span>
+                            <span class="text-gray-400 text-xs">·</span>
+                            <time class="text-gray-500 text-xs" datetime={parentPost.createdAt}>
+                              {formatDate(parentPost.createdAt)}
+                            </time>
+                          </div>
+                          <p class="text-gray-800 text-sm whitespace-pre-wrap break-words line-clamp-3">
+                            {parentPost.content}
+                          </p>
+                          {#if parentPost.links && parentPost.links.length > 0}
+                            <div class="mt-2 text-xs text-blue-600 break-all">
+                              <a
+                                href={parentPost.links[0].url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="underline"
+                              >
+                                {parentPost.links[0].url}
+                              </a>
+                            </div>
+                          {/if}
+                        </div>
+                      </div>
+                    </div>
+                  {/if}
+
+                  <div class="flex items-start gap-3">
+                    {#if comment.user?.id}
+                      <a
+                        href={buildProfileHref(comment.user.id)}
+                        class="flex-shrink-0"
+                        on:click={(event) => handleProfileNavigation(event, comment.user?.id)}
+                        aria-label={`View ${(comment.user?.username ?? 'user')}'s profile`}
+                      >
+                        {#if comment.user?.profilePictureUrl}
+                          <img
+                            src={comment.user.profilePictureUrl}
+                            alt={comment.user.username}
+                            class="w-9 h-9 rounded-full object-cover"
+                          />
+                        {:else}
+                          <div class="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center">
+                            <span class="text-gray-500 text-sm font-medium">
+                              {comment.user?.username?.charAt(0).toUpperCase() || '?'}
+                            </span>
+                          </div>
+                        {/if}
+                      </a>
+                    {:else}
+                      {#if comment.user?.profilePictureUrl}
+                        <img
+                          src={comment.user.profilePictureUrl}
+                          alt={comment.user.username}
+                          class="w-9 h-9 rounded-full object-cover flex-shrink-0"
+                        />
+                      {:else}
+                        <div class="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                          <span class="text-gray-500 text-sm font-medium">
+                            {comment.user?.username?.charAt(0).toUpperCase() || '?'}
+                          </span>
+                        </div>
+                      {/if}
+                    {/if}
+
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 mb-1">
+                        {#if comment.user?.id}
+                          <a
+                            href={buildProfileHref(comment.user.id)}
+                            class="font-medium text-gray-900 truncate hover:underline"
+                            on:click={(event) => handleProfileNavigation(event, comment.user?.id)}
+                          >
+                            {comment.user?.username || 'Unknown'}
+                          </a>
+                        {:else}
+                          <span class="font-medium text-gray-900 truncate">
+                            {comment.user?.username || 'Unknown'}
+                          </span>
+                        {/if}
+                        <span class="text-gray-400 text-sm">commented</span>
+                        <time class="text-gray-500 text-sm" datetime={comment.createdAt}>
+                          {formatDate(comment.createdAt)}
+                        </time>
+                      </div>
+
+                      <LinkifiedText
+                        text={comment.content}
+                        highlightQuery={normalizedQuery}
+                        className="text-gray-800 whitespace-pre-wrap break-words"
+                        linkClassName="text-blue-600 hover:text-blue-800 underline"
+                      />
+
+                      {#if comment.links && comment.links.length > 0}
+                        <div class="mt-2 text-sm text-blue-600 break-all">
+                          <a
+                            href={comment.links[0].url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="underline"
+                          >
+                            {comment.links[0].url}
+                          </a>
+                        </div>
+                      {/if}
+
+                      <div class="mt-3">
+                        <ReactionBar
+                          reactionCounts={comment.reactionCounts ?? {}}
+                          userReactions={new Set(comment.viewerReactions ?? [])}
+                          onToggle={(emoji) => toggleCommentReaction(comment, emoji)}
+                          commentId={comment.id}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              {/if}
+            {/each}
+          </div>
+        </div>
+      {/each}
+    {:else}
+      {#each $searchResults as result, index (resultKey(result, index))}
+        {@const sectionName = resolveSectionName(result, $activeSection?.id ?? null, $activeSection?.name ?? null)}
       {#if result.type === 'post' && result.post}
         {#if sectionName}
           <div class="inline-flex items-center gap-2 text-xs font-medium text-gray-500">
@@ -399,6 +604,7 @@
           </div>
         </article>
       {/if}
-    {/each}
+      {/each}
+    {/if}
   {/if}
 </section>
