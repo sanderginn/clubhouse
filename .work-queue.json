@@ -164,6 +164,7 @@
     306,
     307,
     308,
+    309,
     312,
     313
   ],
@@ -3059,7 +3060,7 @@
     {
       "issue_number": 309,
       "title": "Enhancement: Show section name on search results",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "feature",
       "labels": [
@@ -3071,7 +3072,9 @@
       "assigned_to": "agent-1769586708-55716",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769586708-55716",
       "branch": "feat/issue-309-enhancement-show-section-name-on-search-",
-      "claimed_at": "2026-01-28T07:51:48Z"
+      "claimed_at": "2026-01-28T07:51:48Z",
+      "pr_number": 335,
+      "completed_at": "2026-01-28T08:12:33Z"
     },
     {
       "issue_number": 310,
