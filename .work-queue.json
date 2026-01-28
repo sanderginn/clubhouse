@@ -2974,7 +2974,7 @@
     {
       "issue_number": 305,
       "title": "Bug: Link previews missing after page reload",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -2982,7 +2982,11 @@
         "frontend",
         "links",
         "ui"
-      ]
+      ],
+      "assigned_to": "agent-1769585946-33599",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769585946-33599",
+      "branch": "fix/issue-305-link-previews-missing-after-page-reload",
+      "claimed_at": "2026-01-28T07:39:06Z"
     },
     {
       "issue_number": 306,
