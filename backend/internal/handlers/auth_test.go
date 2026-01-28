@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/models"
+	"github.com/sanderginn/clubhouse/internal/services"
 )
 
 type stubAuthRateLimiter struct {
@@ -76,7 +77,7 @@ func TestLoginRateLimited(t *testing.T) {
 
 func TestLoginGenericErrorForInvalidCredentials(t *testing.T) {
 	handler := &AuthHandler{
-		userService: &stubAuthUserService{loginErr: errors.New("invalid username or password")},
+		userService: &stubAuthUserService{loginErr: services.ErrInvalidCredentials},
 	}
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(`{"username":"TestUser","password":"Password123"}`))
@@ -102,7 +103,7 @@ func TestLoginGenericErrorForInvalidCredentials(t *testing.T) {
 
 func TestLoginUnapprovedUser(t *testing.T) {
 	handler := &AuthHandler{
-		userService: &stubAuthUserService{loginErr: errors.New("user not approved")},
+		userService: &stubAuthUserService{loginErr: services.ErrUserNotApproved},
 	}
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(`{"username":"TestUser","password":"Password123"}`))

@@ -164,12 +164,12 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	user, err := h.userService.LoginUser(r.Context(), &req)
 	if err != nil {
 		// Determine appropriate error code and status
-		switch err.Error() {
-		case "username is required":
+		switch {
+		case errors.Is(err, services.ErrUsernameRequired):
 			writeError(r.Context(), w, http.StatusBadRequest, "USERNAME_REQUIRED", err.Error())
-		case "password is required":
+		case errors.Is(err, services.ErrPasswordRequired):
 			writeError(r.Context(), w, http.StatusBadRequest, "PASSWORD_REQUIRED", err.Error())
-		case "user not approved":
+		case errors.Is(err, services.ErrUserNotApproved):
 			h.logAuthEvent(r.Context(), &models.AuthEventCreate{
 				Identifier: req.Username,
 				EventType:  "login_pending_approval",
@@ -177,7 +177,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 				UserAgent:  r.UserAgent(),
 			})
 			writeError(r.Context(), w, http.StatusForbidden, "USER_NOT_APPROVED", "Your account is awaiting admin approval.")
-		case "invalid username or password":
+		case errors.Is(err, services.ErrInvalidCredentials):
 			h.logAuthEvent(r.Context(), &models.AuthEventCreate{
 				Identifier: req.Username,
 				EventType:  "login_failure",
