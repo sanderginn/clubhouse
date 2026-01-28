@@ -45,6 +45,7 @@ interface PostState {
   posts: Post[];
   isLoading: boolean;
   error: string | null;
+  paginationError: string | null;
   cursor: string | null;
   hasMore: boolean;
 }
@@ -54,6 +55,7 @@ function createPostStore() {
     posts: [],
     isLoading: false,
     error: null,
+    paginationError: null,
     cursor: null,
     hasMore: true,
   });
@@ -68,6 +70,7 @@ function createPostStore() {
         hasMore,
         isLoading: false,
         error: null,
+        paginationError: null,
       })),
     addPost: (post: Post) =>
       update((state) => {
@@ -110,6 +113,7 @@ function createPostStore() {
           hasMore,
           isLoading: false,
           error: null,
+          paginationError: null,
         };
       }),
     removePost: (postId: string) =>
@@ -181,13 +185,18 @@ function createPostStore() {
         ...state,
         isLoading,
         error: isLoading ? null : state.error,
+        paginationError: isLoading ? null : state.paginationError,
       })),
-    setError: (error: string | null) => update((state) => ({ ...state, error, isLoading: false })),
+    setError: (error: string | null) =>
+      update((state) => ({ ...state, error, isLoading: false, paginationError: null })),
+    setPaginationError: (error: string | null) =>
+      update((state) => ({ ...state, paginationError: error, isLoading: false })),
     reset: () =>
       set({
         posts: [],
         isLoading: false,
         error: null,
+        paginationError: null,
         cursor: null,
         hasMore: true,
       }),
@@ -199,4 +208,5 @@ export const postStore = createPostStore();
 export const posts = derived(postStore, ($postStore) => $postStore.posts);
 export const isLoadingPosts = derived(postStore, ($postStore) => $postStore.isLoading);
 export const postsError = derived(postStore, ($postStore) => $postStore.error);
+export const postsPaginationError = derived(postStore, ($postStore) => $postStore.paginationError);
 export const hasMorePosts = derived(postStore, ($postStore) => $postStore.hasMore);

@@ -52,6 +52,21 @@ describe('feedStore', () => {
     expect(state.isLoading).toBe(false);
   });
 
+  it('loadFeed reads meta cursor when present', async () => {
+    mapApiPost.mockImplementation((post: { id: string }) => mapPost(post.id));
+    apiGet.mockResolvedValue({
+      data: { posts: [{ id: 'post-1' }] },
+      meta: { cursor: 'cursor-2', has_more: true },
+    });
+
+    await loadFeed('section-1');
+    const state = get(postStore);
+
+    expect(state.posts).toHaveLength(1);
+    expect(state.cursor).toBe('cursor-2');
+    expect(state.hasMore).toBe(true);
+  });
+
   it('loadFeed failure sets error and stops loading', async () => {
     apiGet.mockRejectedValue(new Error('fail'));
 
@@ -90,7 +105,7 @@ describe('feedStore', () => {
     expect(state.cursor).toBe(null);
   });
 
-  it('loadMorePosts failure sets error', async () => {
+  it('loadMorePosts failure sets pagination error', async () => {
     sectionStore.setActiveSection({ id: 'section-1', name: 'Music', type: 'music', icon: '🎵' });
     postStore.setPosts([mapPost('post-0')], 'cursor-1', true);
 
@@ -98,7 +113,7 @@ describe('feedStore', () => {
 
     await loadMorePosts();
     const state = get(postStore);
-    expect(state.error).toBe('boom');
+    expect(state.paginationError).toBe('boom');
     expect(state.isLoading).toBe(false);
   });
 });

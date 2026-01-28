@@ -27,6 +27,7 @@ describe('postStore', () => {
     expect(state.hasMore).toBe(false);
     expect(state.isLoading).toBe(false);
     expect(state.error).toBeNull();
+    expect(state.paginationError).toBeNull();
   });
 
   it('setLoading clears error when starting a request', () => {
@@ -36,6 +37,7 @@ describe('postStore', () => {
     const state = get(postStore);
     expect(state.isLoading).toBe(true);
     expect(state.error).toBeNull();
+    expect(state.paginationError).toBeNull();
   });
 
   it('addPost prepends', () => {
@@ -75,6 +77,7 @@ describe('postStore', () => {
     expect(state.cursor).toBe('cursor-2');
     expect(state.hasMore).toBe(false);
     expect(state.isLoading).toBe(false);
+    expect(state.paginationError).toBeNull();
   });
 
   it('removePost removes by id', () => {
@@ -116,5 +119,6 @@ describe('postStore', () => {
     expect(state.cursor).toBeNull();
     expect(state.hasMore).toBe(true);
     expect(state.error).toBeNull();
+    expect(state.paginationError).toBeNull();
   });
 });

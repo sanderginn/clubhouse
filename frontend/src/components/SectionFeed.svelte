@@ -1,6 +1,14 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import { activeSection, posts, isLoadingPosts, postsError, hasMorePosts, postStore } from '../stores';
+  import {
+    activeSection,
+    posts,
+    isLoadingPosts,
+    postsError,
+    postsPaginationError,
+    hasMorePosts,
+    postStore,
+  } from '../stores';
   import { loadFeed, loadMorePosts } from '../stores/feedStore';
   import PostCard from './PostCard.svelte';
 
@@ -30,7 +38,7 @@
             $hasMorePosts &&
             !isLoadingMore &&
             !$isLoadingPosts &&
-            !$postsError
+            !$postsPaginationError
           ) {
             handleLoadMore();
           }
@@ -142,10 +150,13 @@
       </div>
     {/if}
 
-    {#if $postsError}
+    {#if $postsPaginationError}
       <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-700">
-        <p>Could not load more posts. {$postsError}</p>
-        <button on:click={handleLoadMore} class="mt-2 text-xs text-amber-800 underline hover:no-underline">
+        <p>Could not load more posts. {$postsPaginationError}</p>
+        <button
+          on:click={handleLoadMore}
+          class="mt-2 text-xs text-amber-800 underline hover:no-underline"
+        >
           Try again
         </button>
       </div>

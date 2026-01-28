@@ -76,7 +76,7 @@ describe('SectionFeed', () => {
       'cursor-1',
       true
     );
-    postStore.setError('Rate limit exceeded');
+    postStore.setPaginationError('Rate limit exceeded');
     await tick();
 
     expect(screen.getByText(/Could not load more posts/i)).toBeInTheDocument();
