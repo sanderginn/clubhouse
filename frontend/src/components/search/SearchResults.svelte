@@ -97,29 +97,40 @@
   function openPostThread(post: Post | undefined) {
     if (!post) return;
     const targetSection = $sections.find((section) => section.id === post.sectionId);
-    if (targetSection && $activeSection?.id !== targetSection.id) {
+    const switchingSection = targetSection && $activeSection?.id !== targetSection.id;
+    if (switchingSection) {
       sectionStore.setActiveSection(targetSection);
     }
-    let resolved = false;
-    let shouldUnsubscribe = false;
-    let unsubscribe: (() => void) | null = null;
-    const maybeUnsubscribe = () => {
-      if (unsubscribe) {
+    if (switchingSection) {
+      let resolved = false;
+      let sawLoading = false;
+      let shouldUnsubscribe = false;
+      let unsubscribe: (() => void) | null = null;
+      const maybeUnsubscribe = () => {
+        if (unsubscribe) {
+          unsubscribe();
+          unsubscribe = null;
+        } else {
+          shouldUnsubscribe = true;
+        }
+      };
+      unsubscribe = postStore.subscribe((state) => {
+        if (resolved) return;
+        if (state.isLoading) {
+          sawLoading = true;
+          return;
+        }
+        if (!sawLoading) return;
+        resolved = true;
+        postStore.upsertPost(post);
+        maybeUnsubscribe();
+      });
+      if (shouldUnsubscribe && unsubscribe) {
         unsubscribe();
         unsubscribe = null;
-      } else {
-        shouldUnsubscribe = true;
       }
-    };
-    unsubscribe = postStore.subscribe((state) => {
-      if (resolved || state.isLoading) return;
-      resolved = true;
+    } else {
       postStore.upsertPost(post);
-      maybeUnsubscribe();
-    });
-    if (shouldUnsubscribe && unsubscribe) {
-      unsubscribe();
-      unsubscribe = null;
     }
     searchStore.setQuery('');
     if (typeof window !== 'undefined') {
