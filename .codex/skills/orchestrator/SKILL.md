@@ -26,10 +26,10 @@ You must run a **foreground loop** for the entire session. Never yield or go idl
 
 ### Spawning a Worker Agent
 
-Use `spawn_agent` with `agent_type: "worker"` and the instruction `$subagent`:
+Use `spawn_agent` with `agent_type: "worker"` and the instruction `$subagent` plus a clarification that the worker should not spawn *additional* sub-agents:
 
 ```
-spawn_agent(prompt: "$subagent", agent_type: "worker")
+spawn_agent(prompt: "$subagent\n\nYou are already the subagent; do not spawn any further sub-agents. Proceed with the subagent workflow.", agent_type: "worker")
 ```
 
 The worker will autonomously claim an issue, create a worktree, implement the feature, and open a PR. It will then wait for further instructions (review feedback or rebase requests).
@@ -164,6 +164,6 @@ Update this table as events occur. Use it to route `send_input` calls to the cor
 5. **Always stay in the foreground loop** — do not yield or go idle while agents are active.
 6. **Maximum 4 concurrent workers** — do not exceed this limit.
 7. **Close agents when done** — use `close_agent` for both workers and reviewers once they are no longer needed.
-8. **Tell spawned agents they cannot spawn sub-agents** — prevent infinite recursion.
+8. **Tell spawned agents they are already the subagent and must not spawn further sub-agents** — prevent infinite recursion without blocking the workflow.
 9. **Tell spawned agents they share the environment** — workers must not interfere with each other's worktrees.
 10. **Always update the work queue after merging** — use `./scripts/complete-issue.sh`.

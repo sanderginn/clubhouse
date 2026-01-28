@@ -225,6 +225,7 @@ After rebasing, wait for the next review cycle.
 11. **No confirmation prompts** — never ask whether to run extra tests or whether to commit/create a PR; decide and proceed without asking
 12. **Worktree integrity checks** — after every change, verify you did not modify files outside your worktree. If you did, immediately move those changes into your worktree and undo the changes outside it.
 13. **Stay alive after PR** — do not exit after creating the PR. Wait for review feedback and address it until the PR is merged.
+14. **Do not spawn sub-agents** — you are already the subagent; proceed with this workflow directly.
 
 ## Troubleshooting
 
