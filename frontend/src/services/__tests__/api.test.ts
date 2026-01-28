@@ -122,6 +122,27 @@ describe('api client', () => {
     expect(response.post.userId).toBe('user-1');
   });
 
+  it('getPost maps fields', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({
+        post: {
+          id: 'post-2',
+          user_id: 'user-2',
+          section_id: 'section-9',
+          content: 'Hello',
+          created_at: '2025-01-02T00:00:00Z',
+        },
+      }),
+    });
+
+    const response = await api.getPost('post-2');
+    expect(response.post?.id).toBe('post-2');
+    expect(response.post?.userId).toBe('user-2');
+    expect(response.post?.sectionId).toBe('section-9');
+  });
+
   it('createComment maps fields', async () => {
     fetchMock.mockImplementation((url: string) => {
       if (url.endsWith('/auth/csrf')) {

@@ -1,6 +1,7 @@
 import { get } from 'svelte/store';
 import { activeSection } from '../stores/sectionStore';
 import { uiStore } from '../stores/uiStore';
+import { threadRouteStore } from '../stores/threadRouteStore';
 import { buildFeedHref, pushPath } from './routeNavigation';
 
 const PROFILE_PATH_PREFIX = '/users/';
@@ -12,11 +13,13 @@ export function buildProfileHref(userId: string): string {
 export function openUserProfile(userId: string): void {
   if (!userId) return;
   uiStore.openProfile(userId);
+  threadRouteStore.clearTarget();
   pushPath(buildProfileHref(userId));
 }
 
 export function returnToFeed(): void {
   uiStore.setActiveView('feed');
+  threadRouteStore.clearTarget();
   const sectionId = get(activeSection)?.id ?? null;
   pushPath(buildFeedHref(sectionId));
 }

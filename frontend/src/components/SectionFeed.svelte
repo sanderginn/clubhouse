@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
+  import { onDestroy, tick } from 'svelte';
   import {
     activeSection,
     posts,
@@ -8,14 +8,17 @@
     postsPaginationError,
     hasMorePosts,
     postStore,
+    threadRouteStore,
   } from '../stores';
   import { loadFeed, loadMorePosts } from '../stores/feedStore';
+  import { loadThreadTargetPost } from '../stores/threadRouteStore';
   import PostCard from './PostCard.svelte';
 
   let observer: IntersectionObserver | null = null;
   let observedElement: HTMLElement | null = null;
   let sentinel: HTMLElement;
   let isLoadingMore = false;
+  let lastScrolledPostId: string | null = null;
 
   $: if ($activeSection?.id) {
     loadFeed($activeSection.id);
@@ -72,9 +75,54 @@
   $: if (sentinel) {
     ensureObserver();
   }
+
+  $: if (!($threadRouteStore.postId)) {
+    lastScrolledPostId = null;
+  } else if (lastScrolledPostId && $threadRouteStore.postId !== lastScrolledPostId) {
+    lastScrolledPostId = null;
+  }
+
+  $: if (
+    $threadRouteStore.postId &&
+    $threadRouteStore.sectionId &&
+    $activeSection?.id === $threadRouteStore.sectionId &&
+    !$isLoadingPosts &&
+    $threadRouteStore.status === 'idle'
+  ) {
+    loadThreadTargetPost($threadRouteStore.postId, $threadRouteStore.sectionId);
+  }
+
+  $: if (
+    $threadRouteStore.postId &&
+    $threadRouteStore.sectionId &&
+    $activeSection?.id === $threadRouteStore.sectionId &&
+    $threadRouteStore.status === 'ready' &&
+    lastScrolledPostId !== $threadRouteStore.postId &&
+    typeof window !== 'undefined'
+  ) {
+    const targetPostId = $threadRouteStore.postId;
+    tick().then(() => {
+      const element = document.getElementById(`post-${targetPostId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        lastScrolledPostId = targetPostId;
+      }
+    });
+  }
 </script>
 
 <div class="space-y-4">
+  {#if $threadRouteStore.postId && $threadRouteStore.sectionId === $activeSection?.id}
+    {#if $threadRouteStore.status === 'not_found'}
+      <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+        This thread is no longer available.
+      </div>
+    {:else if $threadRouteStore.status === 'error'}
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
+        Unable to load this thread. {$threadRouteStore.error}
+      </div>
+    {/if}
+  {/if}
   {#if $isLoadingPosts && $posts.length === 0}
     <div class="flex justify-center py-8">
       <div class="flex items-center gap-2 text-gray-500">
@@ -117,7 +165,13 @@
     </div>
   {:else}
     {#each $posts as post (post.id)}
-      <PostCard {post} />
+      {@const isTarget = $threadRouteStore.postId === post.id}
+      <div
+        id={`post-${post.id}`}
+        class={`scroll-mt-24 ${isTarget ? 'ring-2 ring-blue-200 rounded-lg' : ''}`}
+      >
+        <PostCard {post} />
+      </div>
     {/each}
 
     <div bind:this={sentinel} class="h-4"></div>

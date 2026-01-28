@@ -12,13 +12,14 @@
     sections,
     sectionStore,
     uiStore,
+    threadRouteStore,
   } from '../../stores';
   import PostCard from '../PostCard.svelte';
   import ReactionBar from '../reactions/ReactionBar.svelte';
   import LinkifiedText from '../LinkifiedText.svelte';
   import { api } from '../../services/api';
   import { buildProfileHref, handleProfileNavigation } from '../../services/profileNavigation';
-  import { buildSectionHref, pushPath } from '../../services/routeNavigation';
+  import { buildThreadHref, pushPath } from '../../services/routeNavigation';
   import type { Post } from '../../stores/postStore';
   import type { CommentResult, SearchResult } from '../../stores/searchStore';
 
@@ -99,11 +100,11 @@
   function openPostThread(post: Post | undefined) {
     if (!post) return;
     const targetSection = $sections.find((section) => section.id === post.sectionId);
+    const targetSectionId = targetSection?.id ?? post.sectionId;
     const switchingSection = targetSection && $activeSection?.id !== targetSection.id;
-    if (targetSection) {
-      uiStore.setActiveView('feed');
-      pushPath(buildSectionHref(targetSection.id));
-    }
+    uiStore.setActiveView('feed');
+    threadRouteStore.setTarget(post.id, targetSectionId);
+    pushPath(buildThreadHref(targetSectionId, post.id));
     if (switchingSection) {
       sectionStore.setActiveSection(targetSection);
     }

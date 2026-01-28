@@ -3,8 +3,10 @@ import {
   buildAdminHref,
   buildFeedHref,
   buildSectionHref,
+  buildThreadHref,
   isAdminPath,
   parseSectionId,
+  parseThreadPostId,
 } from '../routeNavigation';
 
 describe('routeNavigation', () => {
@@ -15,8 +17,17 @@ describe('routeNavigation', () => {
   it('parses section ids from section paths', () => {
     expect(parseSectionId('/sections/section-1')).toBe('section-1');
     expect(parseSectionId('/sections/section-1/extra')).toBe('section-1');
+    expect(parseSectionId('/sections/section-1/posts/post-1')).toBe('section-1');
     expect(parseSectionId('/sections/')).toBeNull();
     expect(parseSectionId('/admin')).toBeNull();
+  });
+
+  it('builds and parses thread hrefs', () => {
+    expect(buildThreadHref('section-1', 'post-1')).toBe('/sections/section-1/posts/post-1');
+    expect(parseThreadPostId('/sections/section-1/posts/post-1')).toBe('post-1');
+    expect(parseThreadPostId('/sections/section-1')).toBeNull();
+    expect(parseThreadPostId('/sections/section-1/posts/')).toBeNull();
+    expect(parseThreadPostId('/admin')).toBeNull();
   });
 
   it('builds admin hrefs and recognizes admin paths', () => {

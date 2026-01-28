@@ -1,16 +1,63 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import type { Post } from '../stores/postStore';
   import { postStore } from '../stores/postStore';
   import { api } from '../services/api';
   import CommentThread from './comments/CommentThread.svelte';
   import ReactionBar from './reactions/ReactionBar.svelte';
   import { buildProfileHref, handleProfileNavigation } from '../services/profileNavigation';
+  import { buildThreadHref } from '../services/routeNavigation';
   import LinkifiedText from './LinkifiedText.svelte';
   import { getImageLinkUrl } from '../services/linkUtils';
 
   export let post: Post;
 
   $: userReactions = new Set(post.viewerReactions ?? []);
+  let copiedLink = false;
+  let copyTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  async function copyThreadLink() {
+    if (typeof window === 'undefined') return;
+    const url = new URL(buildThreadHref(post.sectionId, post.id), window.location.origin).toString();
+    let copied = false;
+
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(url);
+        copied = true;
+      } catch {
+        copied = false;
+      }
+    }
+
+    if (!copied && typeof document !== 'undefined' && typeof document.execCommand === 'function') {
+      const textarea = document.createElement('textarea');
+      textarea.value = url;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'absolute';
+      textarea.style.left = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.select();
+      copied = document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+
+    if (copied) {
+      copiedLink = true;
+      if (copyTimeout) {
+        clearTimeout(copyTimeout);
+      }
+      copyTimeout = setTimeout(() => {
+        copiedLink = false;
+      }, 2000);
+    }
+  }
+
+  onDestroy(() => {
+    if (copyTimeout) {
+      clearTimeout(copyTimeout);
+    }
+  });
 
   async function toggleReaction(emoji: string) {
     const hasReacted = userReactions.has(emoji);
@@ -231,6 +278,13 @@
           <span>💬</span>
           <span>{post.commentCount || 0}</span>
         </div>
+        <button
+          type="button"
+          class="text-xs text-blue-600 hover:text-blue-800"
+          on:click={copyThreadLink}
+        >
+          {copiedLink ? 'Copied!' : 'Copy link'}
+        </button>
       </div>
 
       <div class="mt-3">
