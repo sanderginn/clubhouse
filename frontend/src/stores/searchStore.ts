@@ -8,6 +8,7 @@ export type SearchScope = 'section' | 'global';
 export interface CommentResult {
   id: string;
   postId: string;
+  sectionId?: string;
   content: string;
   user?: {
     id: string;
@@ -57,6 +58,7 @@ interface ApiComment {
   id: string;
   user_id: string;
   post_id: string;
+  section_id?: string;
   content: string;
   links?: ApiLink[];
   user?: ApiUser;
@@ -134,6 +136,7 @@ function mapApiComment(apiComment: ApiComment): CommentResult {
   return {
     id: apiComment.id,
     postId: apiComment.post_id,
+    sectionId: apiComment.section_id,
     content: apiComment.content,
     links: apiComment.links?.map(mapApiLink),
     user: apiComment.user

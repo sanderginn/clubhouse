@@ -168,10 +168,11 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 func (s *CommentService) GetCommentByID(ctx context.Context, commentID uuid.UUID, userID uuid.UUID) (*models.Comment, error) {
 	query := `
 		SELECT
-			c.id, c.user_id, c.post_id, c.parent_comment_id, c.content,
+			c.id, c.user_id, c.post_id, p.section_id, c.parent_comment_id, c.content,
 			c.created_at, c.updated_at, c.deleted_at, c.deleted_by_user_id,
 			u.id, u.username, COALESCE(u.email, '') as email, u.profile_picture_url, u.bio, u.is_admin, u.created_at
 		FROM comments c
+		JOIN posts p ON c.post_id = p.id
 		JOIN users u ON c.user_id = u.id
 		WHERE c.id = $1 AND c.deleted_at IS NULL
 	`
@@ -179,8 +180,9 @@ func (s *CommentService) GetCommentByID(ctx context.Context, commentID uuid.UUID
 	var comment models.Comment
 	var user models.User
 
+	var sectionID uuid.UUID
 	err := s.db.QueryRowContext(ctx, query, commentID).Scan(
-		&comment.ID, &comment.UserID, &comment.PostID, &comment.ParentCommentID, &comment.Content,
+		&comment.ID, &comment.UserID, &comment.PostID, &sectionID, &comment.ParentCommentID, &comment.Content,
 		&comment.CreatedAt, &comment.UpdatedAt, &comment.DeletedAt, &comment.DeletedByUserID,
 		&user.ID, &user.Username, &user.Email, &user.ProfilePictureURL, &user.Bio, &user.IsAdmin, &user.CreatedAt,
 	)
@@ -193,6 +195,7 @@ func (s *CommentService) GetCommentByID(ctx context.Context, commentID uuid.UUID
 	}
 
 	comment.User = &user
+	comment.SectionID = &sectionID
 
 	// Fetch links for this comment
 	links, err := s.getCommentLinks(ctx, commentID)

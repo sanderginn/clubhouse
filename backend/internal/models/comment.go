@@ -11,6 +11,7 @@ type Comment struct {
 	ID              uuid.UUID      `json:"id"`
 	UserID          uuid.UUID      `json:"user_id"`
 	PostID          uuid.UUID      `json:"post_id"`
+	SectionID       *uuid.UUID     `json:"section_id,omitempty"`
 	ParentCommentID *uuid.UUID     `json:"parent_comment_id,omitempty"`
 	Content         string         `json:"content"`
 	Links           []Link         `json:"links,omitempty"`

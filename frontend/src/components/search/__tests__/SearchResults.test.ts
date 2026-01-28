@@ -13,6 +13,7 @@ const storeRefs: {
   lastSearchQuery: ReturnType<typeof writable>;
   searchScope: ReturnType<typeof writable>;
   activeSection: ReturnType<typeof writable>;
+  sections: ReturnType<typeof writable>;
 } = {} as any;
 
 vi.mock('../../../stores', () => {
@@ -23,12 +24,13 @@ vi.mock('../../../stores', () => {
   storeRefs.lastSearchQuery = writable('');
   storeRefs.searchScope = writable<'section' | 'global'>('section');
   storeRefs.activeSection = writable<{ id: string; name: string } | null>(null);
+  storeRefs.sections = writable([]);
 
   return storeRefs;
 });
 
-vi.mock('../../PostCard.svelte', () => ({
-  default: { $$render: () => '<div data-testid="post-card"></div>' },
+vi.mock('../../PostCard.svelte', async () => ({
+  default: (await import('./PostCardMock.svelte')).default,
 }));
 
 const { default: SearchResults } = await import('../SearchResults.svelte');
@@ -41,6 +43,7 @@ beforeEach(() => {
   storeRefs.lastSearchQuery.set('');
   storeRefs.searchScope.set('section');
   storeRefs.activeSection.set(null);
+  storeRefs.sections.set([]);
 });
 
 afterEach(() => {
@@ -87,6 +90,9 @@ describe('SearchResults', () => {
   it('renders comment results', () => {
     storeRefs.searchQuery.set('hello');
     storeRefs.lastSearchQuery.set('hello');
+    storeRefs.sections.set([
+      { id: 'section-1', name: 'Music', type: 'music', icon: '🎵' },
+    ]);
     storeRefs.searchResults.set([
       {
         type: 'comment',
@@ -94,6 +100,7 @@ describe('SearchResults', () => {
         comment: {
           id: 'comment-1',
           postId: 'post-1',
+          sectionId: 'section-1',
           content: 'Nice post',
           createdAt: '2025-01-01T00:00:00Z',
           user: { id: 'user-1', username: 'Sander' },
@@ -103,5 +110,30 @@ describe('SearchResults', () => {
 
     render(SearchResults);
     expect(screen.getByText('Nice post')).toBeInTheDocument();
+    expect(screen.getByText('Music')).toBeInTheDocument();
+  });
+
+  it('renders section label for post results', () => {
+    storeRefs.searchQuery.set('hello');
+    storeRefs.lastSearchQuery.set('hello');
+    storeRefs.sections.set([
+      { id: 'section-2', name: 'Movies', type: 'movie', icon: '🎬' },
+    ]);
+    storeRefs.searchResults.set([
+      {
+        type: 'post',
+        score: 1,
+        post: {
+          id: 'post-1',
+          sectionId: 'section-2',
+          content: 'New post',
+          createdAt: '2025-01-02T00:00:00Z',
+          userId: 'user-1',
+        },
+      },
+    ]);
+
+    render(SearchResults);
+    expect(screen.getByText('Movies')).toBeInTheDocument();
   });
 });

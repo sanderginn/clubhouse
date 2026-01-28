@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { searchResults, isSearching, searchError, searchQuery, lastSearchQuery, searchScope, activeSection } from '../../stores';
+  import { searchResults, isSearching, searchError, searchQuery, lastSearchQuery, searchScope, activeSection, sections } from '../../stores';
   import PostCard from '../PostCard.svelte';
   import ReactionBar from '../reactions/ReactionBar.svelte';
   import { api } from '../../services/api';
@@ -8,6 +8,7 @@
 
   // Track pending reactions to prevent double-clicks
   let pendingReactions = new Set<string>();
+  let sectionById = new Map<string, { id: string; name: string; type: string; icon: string }>();
 
   async function toggleCommentReaction(comment: CommentResult, emoji: string) {
     const key = `${comment.id}-${emoji}`;
@@ -83,6 +84,22 @@
   $: normalizedQuery = $searchQuery.trim();
   $: hasQuery = normalizedQuery.length > 0;
   $: showResults = $lastSearchQuery && $lastSearchQuery === normalizedQuery;
+  $: sectionById = new Map($sections.map((section) => [section.id, section]));
+
+  function resolveSection(sectionId?: string | null) {
+    if (sectionId) {
+      return sectionById.get(sectionId) ?? null;
+    }
+    if ($searchScope === 'section') {
+      return $activeSection ?? null;
+    }
+    return null;
+  }
+
+  function formatSectionLabel(section: { name?: string; type?: string } | null): string {
+    if (!section) return 'Section';
+    return section.name || section.type || 'Section';
+  }
 </script>
 
 <section class="space-y-4">
@@ -135,10 +152,26 @@
 
     {#each $searchResults as result (result.type + (result.post?.id ?? result.comment?.id ?? ''))}
       {#if result.type === 'post' && result.post}
-        <PostCard post={result.post} />
+        {@const section = resolveSection(result.post.sectionId)}
+        <div class="space-y-2">
+          <div class="flex items-center gap-2 text-xs text-gray-500">
+            <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5">
+              <span>{section?.icon ?? '📁'}</span>
+              <span class="capitalize">{formatSectionLabel(section)}</span>
+            </span>
+          </div>
+          <PostCard post={result.post} />
+        </div>
       {:else if result.type === 'comment' && result.comment}
         {@const comment = result.comment}
+        {@const section = resolveSection(comment.sectionId)}
         <article class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div class="flex items-center gap-2 text-xs text-gray-500 mb-2">
+            <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5">
+              <span>{section?.icon ?? '📁'}</span>
+              <span class="capitalize">{formatSectionLabel(section)}</span>
+            </span>
+          </div>
           <div class="flex items-start gap-3">
             {#if comment.user?.id}
               <a
