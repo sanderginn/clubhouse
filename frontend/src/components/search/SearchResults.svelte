@@ -172,18 +172,22 @@
     );
   }
 
-  function resolveSectionNameById(sectionId: string | null, fallbackName: string | null): string | null {
+  function resolveSectionNameById(
+    sectionId: string | null,
+    fallbackName: string | null,
+    availableSections: typeof $sections,
+  ): string | null {
     if (!sectionId) return fallbackName;
-    const section = $sections.find((item) => item.id === sectionId);
+    const section = availableSections.find((item) => item.id === sectionId);
     return section?.name ?? fallbackName;
   }
 
   function resolveSectionName(result: SearchResult, fallbackSectionId: string | null, fallbackName: string | null): string | null {
     const sectionId = resolveSectionId(result, fallbackSectionId);
-    return resolveSectionNameById(sectionId, fallbackName);
+    return resolveSectionNameById(sectionId, fallbackName, $sections);
   }
 
-  function buildSectionGroups(results: SearchResult[]): SectionGroup[] {
+  function buildSectionGroups(results: SearchResult[], availableSections: typeof $sections): SectionGroup[] {
     const groups: SectionGroup[] = [];
     const seen = new Map<string, SectionGroup>();
     for (const result of results) {
@@ -191,7 +195,7 @@
       const key = sectionId ?? 'unknown-section';
       let group = seen.get(key);
       if (!group) {
-        const name = resolveSectionNameById(sectionId, null) ?? 'Unknown section';
+        const name = resolveSectionNameById(sectionId, null, availableSections) ?? 'Unknown section';
         group = { id: sectionId, name, results: [] };
         seen.set(key, group);
         groups.push(group);
@@ -205,7 +209,7 @@
   $: hasQuery = normalizedQuery.length > 0;
   $: showResults = $lastSearchQuery && $lastSearchQuery === normalizedQuery;
   $: isGlobalScope = $searchScope === 'global';
-  $: sectionGroups = isGlobalScope ? buildSectionGroups($searchResults) : [];
+  $: sectionGroups = isGlobalScope ? buildSectionGroups($searchResults, $sections) : [];
 </script>
 
 <section class="space-y-4">
