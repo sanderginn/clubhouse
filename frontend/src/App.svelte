@@ -28,6 +28,7 @@
   let sectionsLoadedForSession = false;
   let popstateHandler: (() => void) | null = null;
   let pendingSectionId: string | null = null;
+  let pendingAdminRoute = false;
 
   onMount(() => {
     authStore.checkSession();
@@ -55,12 +56,14 @@
       unauthRoute = 'reset';
       resetToken = token;
       pendingSectionId = null;
+      pendingAdminRoute = false;
       return;
     }
     const profileUserId = parseProfileUserId(path);
     if (profileUserId) {
       uiStore.openProfile(profileUserId);
       pendingSectionId = null;
+      pendingAdminRoute = false;
     } else {
       const sectionId = parseSectionId(path);
       if (sectionId) {
@@ -79,8 +82,16 @@
           pendingSectionId = sectionId;
         }
         uiStore.setActiveView('feed');
+        pendingAdminRoute = false;
       } else if (isAdminPath(path)) {
         pendingSectionId = null;
+        if (get(authStore).isLoading) {
+          pendingAdminRoute = true;
+          resetToken = null;
+          unauthRoute = 'login';
+          return;
+        }
+        pendingAdminRoute = false;
         if (get(isAdmin)) {
           uiStore.setActiveView('admin');
         } else {
@@ -92,6 +103,7 @@
       } else {
         pendingSectionId = null;
         uiStore.setActiveView('feed');
+        pendingAdminRoute = false;
       }
     }
     resetToken = null;
@@ -114,6 +126,17 @@
   $: if (!$isAuthenticated && sectionsLoadedForSession) {
     sectionsLoadedForSession = false;
     sectionStore.setSections([]);
+  }
+
+  $: if (!$authStore.isLoading && pendingAdminRoute) {
+    pendingAdminRoute = false;
+    if ($isAdmin) {
+      uiStore.setActiveView('admin');
+    } else {
+      uiStore.setActiveView('feed');
+      const fallbackSectionId = $activeSection?.id ?? $sections[0]?.id ?? null;
+      replacePath(buildFeedHref(fallbackSectionId));
+    }
   }
 
   $: if (pendingSectionId && $sections.length > 0) {
