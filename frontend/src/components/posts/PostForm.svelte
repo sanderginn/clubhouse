@@ -26,6 +26,8 @@
   let selectedFiles: File[] = [];
 
   const URL_REGEX = /https?:\/\/[^\s<>"{}|\\^`[\]]+/gi;
+  $: hasLink = Boolean((linkMetadata && linkMetadata.url) || linkUrl.trim());
+  $: canSubmit = Boolean($activeSection) && (content.trim().length > 0 || hasLink);
 
   function extractUrls(text: string): string[] {
     const matches = text.match(URL_REGEX);
@@ -144,7 +146,11 @@
   }
 
   async function handleSubmit() {
-    if (!content.trim() || !$activeSection || !$currentUser) {
+    const trimmedContent = content.trim();
+    const linkValue = (linkMetadata?.url ?? linkUrl).trim();
+    const links = linkValue ? [{ url: linkValue }] : [];
+
+    if ((!trimmedContent && links.length === 0) || !$activeSection || !$currentUser) {
       return;
     }
 
@@ -152,11 +158,9 @@
     error = null;
 
     try {
-      const links = linkMetadata ? [{ url: linkMetadata.url }] : [];
-
       const response = await api.createPost({
         sectionId: $activeSection.id,
-        content: content.trim(),
+        content: trimmedContent,
         links: links.length > 0 ? links : undefined,
       });
 
@@ -390,7 +394,7 @@
 
     <button
       type="submit"
-      disabled={!content.trim() || isSubmitting || !$activeSection}
+      disabled={!canSubmit || isSubmitting}
       class="px-4 py-2 bg-primary text-white font-medium rounded-lg hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
     >
       {#if isSubmitting}
