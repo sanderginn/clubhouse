@@ -20,7 +20,7 @@
     uiStore,
   } from './stores';
   import { parseProfileUserId } from './services/profileNavigation';
-  import { isAdminPath, parseSectionId } from './services/routeNavigation';
+  import { buildFeedHref, isAdminPath, parseSectionId, replacePath } from './services/routeNavigation';
   import { parseResetRoute } from './services/resetLink';
 
   let unauthRoute: 'login' | 'register' | 'reset' = 'login';
@@ -67,7 +67,13 @@
         const availableSections = get(sections);
         if (availableSections.length > 0) {
           const match = availableSections.find((section) => section.id === sectionId);
-          sectionStore.setActiveSection(match ?? availableSections[0] ?? null);
+          const fallback = availableSections[0] ?? null;
+          if (match) {
+            sectionStore.setActiveSection(match);
+          } else {
+            sectionStore.setActiveSection(fallback);
+            replacePath(buildFeedHref(fallback?.id ?? null));
+          }
           pendingSectionId = null;
         } else {
           pendingSectionId = sectionId;
@@ -75,7 +81,14 @@
         uiStore.setActiveView('feed');
       } else if (isAdminPath(path)) {
         pendingSectionId = null;
-        uiStore.setActiveView('admin');
+        if (get(isAdmin)) {
+          uiStore.setActiveView('admin');
+        } else {
+          uiStore.setActiveView('feed');
+          const fallbackSectionId =
+            get(activeSection)?.id ?? get(sections)[0]?.id ?? null;
+          replacePath(buildFeedHref(fallbackSectionId));
+        }
       } else {
         pendingSectionId = null;
         uiStore.setActiveView('feed');
@@ -95,14 +108,22 @@
 
   $: if ($isAuthenticated && !sectionsLoadedForSession) {
     sectionsLoadedForSession = true;
-    const preferredSectionId = pendingSectionId;
-    pendingSectionId = null;
-    sectionStore.loadSections(preferredSectionId);
+    sectionStore.loadSections(pendingSectionId);
   }
 
   $: if (!$isAuthenticated && sectionsLoadedForSession) {
     sectionsLoadedForSession = false;
     sectionStore.setSections([]);
+  }
+
+  $: if (pendingSectionId && $sections.length > 0) {
+    const match = $sections.find((section) => section.id === pendingSectionId) ?? null;
+    const fallback = $sections[0] ?? null;
+    if (!match && $activeSection?.id !== fallback?.id) {
+      sectionStore.setActiveSection(fallback);
+    }
+    replacePath(buildFeedHref(match?.id ?? fallback?.id ?? null));
+    pendingSectionId = null;
   }
 </script>
 
