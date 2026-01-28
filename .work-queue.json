@@ -156,7 +156,8 @@
     297,
     298,
     300,
-    307
+    307,
+    308
   ],
   "issues": [
     {
@@ -3019,7 +3020,7 @@
     {
       "issue_number": 308,
       "title": "Bug: Feed pagination/infinite scroll does not limit or load more posts",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769583465-79221",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769583465-79221",
       "dependencies": [],
@@ -3031,7 +3032,9 @@
         "ui"
       ],
       "branch": "fix/issue-308-feed-paginationinfinite-scroll-does-not-",
-      "claimed_at": "2026-01-28T06:57:45Z"
+      "claimed_at": "2026-01-28T06:57:45Z",
+      "pr_number": 327,
+      "completed_at": "2026-01-28T07:08:08Z"
     },
     {
       "issue_number": 309,
