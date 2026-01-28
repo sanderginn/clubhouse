@@ -2762,20 +2762,6 @@
       "branch": "fix/issue-278-logout-no-redirect"
     },
     {
-      "issue_number": 279,
-      "title": "UAT: Manual UI flows requiring native browser prompts",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
-      "dependencies": [],
-      "phase": "uat",
-      "labels": [
-        "enhancement",
-        "ui"
-      ],
-      "branch": "chore/issue-279-uat-manual-prompts"
-    },
-    {
       "issue_number": 294,
       "title": "Bug: Login for unapproved users shows invalid credentials instead of awaiting approval",
       "status": "completed",
@@ -2910,9 +2896,9 @@
     {
       "issue_number": 301,
       "title": "Bug: Login for unapproved users shows invalid credentials instead of awaiting approval",
-      "status": "in_progress",
-      "assigned_to": "agent-1769558609-50702",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769558609-50702",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -2920,25 +2906,21 @@
         "backend",
         "frontend",
         "auth"
-      ],
-      "branch": "fix/issue-301-login-for-unapproved-users-shows-invalid",
-      "claimed_at": "2026-01-28T00:03:29Z"
+      ]
     },
     {
       "issue_number": 302,
       "title": "Bug: Password reset link routes to login instead of reset screen",
-      "status": "in_progress",
-      "assigned_to": "agent-1769558651-53234",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769558651-53234",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
       "dependencies": [],
       "phase": "bug",
       "labels": [
         "bug",
         "frontend",
         "auth"
-      ],
-      "branch": "fix/issue-302-password-reset-link-routes-to-login-inst",
-      "claimed_at": "2026-01-28T00:04:11Z"
+      ]
     },
     {
       "issue_number": 303,
@@ -2961,9 +2943,9 @@
     {
       "issue_number": 304,
       "title": "Bug: Post creation rejects URL-only posts",
-      "status": "in_progress",
-      "assigned_to": "agent-1769558958-63513",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769558958-63513",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -2972,16 +2954,14 @@
         "frontend",
         "posts",
         "links"
-      ],
-      "branch": "fix/issue-304-post-creation-rejects-urlonly-posts",
-      "claimed_at": "2026-01-28T00:09:18Z"
+      ]
     },
     {
       "issue_number": 305,
       "title": "Bug: Link previews missing after page reload",
-      "status": "in_progress",
-      "assigned_to": "agent-1769559022-66066",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769559022-66066",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
       "dependencies": [],
       "phase": "bug",
       "labels": [
@@ -2989,9 +2969,7 @@
         "frontend",
         "links",
         "ui"
-      ],
-      "branch": "fix/issue-305-link-previews-missing-after-page-reload",
-      "claimed_at": "2026-01-28T00:10:22Z"
+      ]
     },
     {
       "issue_number": 306,
