@@ -3246,9 +3246,9 @@
     {
       "issue_number": 351,
       "title": "Enhancement: Use section names instead of IDs in URL paths",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769642348-76400",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769642348-76400",
       "dependencies": [],
       "phase": "feature",
       "labels": [
@@ -3256,7 +3256,9 @@
         "frontend",
         "sections",
         "ui"
-      ]
+      ],
+      "branch": "feat/issue-351-enhancement-use-section-names-instead-of",
+      "claimed_at": "2026-01-28T23:19:08Z"
     },
     {
       "issue_number": 350,
