@@ -3445,7 +3445,7 @@
     {
       "issue_number": 362,
       "title": "Enhancement: Comprehensive audit logs system",
-      "status": "pending",
+      "status": "available",
       "assigned_to": null,
       "worktree": null,
       "dependencies": [],
@@ -3461,7 +3461,7 @@
     {
       "issue_number": 363,
       "title": "Enhancement: Post and comment editing with edit indicator",
-      "status": "pending",
+      "status": "available",
       "assigned_to": null,
       "worktree": null,
       "dependencies": [
@@ -3480,7 +3480,7 @@
     {
       "issue_number": 364,
       "title": "Bug: Image upload not working",
-      "status": "pending",
+      "status": "available",
       "assigned_to": null,
       "worktree": null,
       "dependencies": [],
@@ -3495,7 +3495,7 @@
     {
       "issue_number": 365,
       "title": "Enhancement: Promote users to admin in moderation console",
-      "status": "pending",
+      "status": "available",
       "assigned_to": null,
       "worktree": null,
       "dependencies": [
@@ -3514,7 +3514,7 @@
     {
       "issue_number": 366,
       "title": "Bug: Member names not clickable in admin toolkit members section",
-      "status": "pending",
+      "status": "available",
       "assigned_to": null,
       "worktree": null,
       "dependencies": [],
@@ -3530,7 +3530,7 @@
     {
       "issue_number": 367,
       "title": "Enhancement: User settings page with profile picture and MFA",
-      "status": "pending",
+      "status": "available",
       "assigned_to": null,
       "worktree": null,
       "dependencies": [
@@ -3549,7 +3549,7 @@
     {
       "issue_number": 368,
       "title": "Enhancement: Admin-enforced MFA requirement",
-      "status": "pending",
+      "status": "available",
       "assigned_to": null,
       "worktree": null,
       "dependencies": [
@@ -3568,7 +3568,7 @@
     {
       "issue_number": 369,
       "title": "Enhancement: Reorganize sections (rename Photos to Series, reorder)",
-      "status": "pending",
+      "status": "available",
       "assigned_to": null,
       "worktree": null,
       "dependencies": [],
@@ -3584,7 +3584,7 @@
     {
       "issue_number": 370,
       "title": "Enhancement: Remove bio from profile page",
-      "status": "pending",
+      "status": "available",
       "assigned_to": null,
       "worktree": null,
       "dependencies": [],
@@ -3600,7 +3600,7 @@
     {
       "issue_number": 371,
       "title": "Enhancement: Move search into navbar",
-      "status": "pending",
+      "status": "available",
       "assigned_to": null,
       "worktree": null,
       "dependencies": [],
@@ -3616,7 +3616,7 @@
     {
       "issue_number": 372,
       "title": "Bug: Search scope switching auto-updates results without user action",
-      "status": "pending",
+      "status": "available",
       "assigned_to": null,
       "worktree": null,
       "dependencies": [],
@@ -3631,7 +3631,7 @@
     {
       "issue_number": 373,
       "title": "Bug: Superfluous section pill on parent post in scoped search results",
-      "status": "pending",
+      "status": "available",
       "assigned_to": null,
       "worktree": null,
       "dependencies": [],
@@ -3647,7 +3647,7 @@
     {
       "issue_number": 374,
       "title": "Enhancement: Thread URL loads standalone view with back navigation",
-      "status": "pending",
+      "status": "available",
       "assigned_to": null,
       "worktree": null,
       "dependencies": [],
@@ -3662,7 +3662,7 @@
     {
       "issue_number": 375,
       "title": "Enhancement: Profile page comments show thread context with emphasis",
-      "status": "pending",
+      "status": "available",
       "assigned_to": null,
       "worktree": null,
       "dependencies": [],
@@ -3679,7 +3679,7 @@
     {
       "issue_number": 376,
       "title": "Enhancement: Timestamp hover shows exact time with configurable timezone",
-      "status": "pending",
+      "status": "available",
       "assigned_to": null,
       "worktree": null,
       "dependencies": [],
