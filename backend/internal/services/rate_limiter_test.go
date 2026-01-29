@@ -5,13 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alicebob/miniredis/v2"
-	"github.com/redis/go-redis/v9"
+	"github.com/sanderginn/clubhouse/internal/testutil"
 )
 
 func TestRateLimiterAllowsWithinLimit(t *testing.T) {
-	redisServer := miniredis.RunT(t)
-	client := redis.NewClient(&redis.Options{Addr: redisServer.Addr()})
+	client := testutil.GetTestRedis(t)
+	defer testutil.CleanupRedis(t)
+	redisServer := testutil.GetMiniredisServer(t)
 	limiter := NewRateLimiter(client, "rate:test:", RateLimitConfig{Limit: 2, Window: time.Second})
 
 	ctx := context.Background()

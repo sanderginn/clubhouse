@@ -5,13 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alicebob/miniredis/v2"
-	"github.com/redis/go-redis/v9"
+	"github.com/sanderginn/clubhouse/internal/testutil"
 )
 
 func TestAuthFailureTrackerEscalatesLockout(t *testing.T) {
-	redisServer := miniredis.RunT(t)
-	client := redis.NewClient(&redis.Options{Addr: redisServer.Addr()})
+	client := testutil.GetTestRedis(t)
+	defer testutil.CleanupRedis(t)
+	redisServer := testutil.GetMiniredisServer(t)
 	tracker := &AuthFailureTracker{
 		redis: client,
 		config: AuthFailureConfig{
@@ -55,8 +55,8 @@ func TestAuthFailureTrackerEscalatesLockout(t *testing.T) {
 }
 
 func TestAuthFailureTrackerResetClearsState(t *testing.T) {
-	redisServer := miniredis.RunT(t)
-	client := redis.NewClient(&redis.Options{Addr: redisServer.Addr()})
+	client := testutil.GetTestRedis(t)
+	defer testutil.CleanupRedis(t)
 	tracker := &AuthFailureTracker{
 		redis: client,
 		config: AuthFailureConfig{

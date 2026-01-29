@@ -5,14 +5,13 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/alicebob/miniredis/v2"
 	"github.com/google/uuid"
-	"github.com/redis/go-redis/v9"
+	"github.com/sanderginn/clubhouse/internal/testutil"
 )
 
 func TestCreateSessionTracksUserSession(t *testing.T) {
-	redisServer := miniredis.RunT(t)
-	client := redis.NewClient(&redis.Options{Addr: redisServer.Addr()})
+	client := testutil.GetTestRedis(t)
+	defer testutil.CleanupRedis(t)
 	service := NewSessionService(client)
 
 	ctx := context.Background()
@@ -34,8 +33,8 @@ func TestCreateSessionTracksUserSession(t *testing.T) {
 }
 
 func TestDeleteSessionRemovesFromUserSet(t *testing.T) {
-	redisServer := miniredis.RunT(t)
-	client := redis.NewClient(&redis.Options{Addr: redisServer.Addr()})
+	client := testutil.GetTestRedis(t)
+	defer testutil.CleanupRedis(t)
 	service := NewSessionService(client)
 
 	ctx := context.Background()
@@ -61,8 +60,8 @@ func TestDeleteSessionRemovesFromUserSet(t *testing.T) {
 }
 
 func TestDeleteAllSessionsForUser(t *testing.T) {
-	redisServer := miniredis.RunT(t)
-	client := redis.NewClient(&redis.Options{Addr: redisServer.Addr()})
+	client := testutil.GetTestRedis(t)
+	defer testutil.CleanupRedis(t)
 	service := NewSessionService(client)
 
 	ctx := context.Background()

@@ -119,6 +119,27 @@ func CleanupRedis(t *testing.T) {
 	}
 }
 
+// GetMiniredisServer returns the underlying miniredis server instance.
+// This is useful for tests that need access to miniredis-specific functionality
+// like FastForward for time manipulation.
+func GetMiniredisServer(t *testing.T) *miniredis.Miniredis {
+	t.Helper()
+
+	miniRedisOnce.Do(func() {
+		var err error
+		miniRedis, err = miniredis.Run()
+		if err != nil {
+			t.Fatalf("failed to start miniredis: %v", err)
+		}
+	})
+
+	if miniRedis == nil {
+		t.Fatal("miniredis not initialized")
+	}
+
+	return miniRedis
+}
+
 // RunMigrations applies all up migrations to the test database.
 // This should be called once during test setup.
 func RunMigrations(t *testing.T, db *sql.DB, migrationsDir string) {

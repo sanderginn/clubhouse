@@ -5,35 +5,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alicebob/miniredis/v2"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+	"github.com/sanderginn/clubhouse/internal/testutil"
 )
 
-func setupPasswordResetTestRedis(t *testing.T) (*redis.Client, func()) {
+func setupPasswordResetTestRedis(t *testing.T) *redis.Client {
 	t.Helper()
-
-	// Create in-memory Redis server for testing
-	mr, err := miniredis.Run()
-	if err != nil {
-		t.Fatalf("failed to start miniredis: %v", err)
-	}
-
-	client := redis.NewClient(&redis.Options{
-		Addr: mr.Addr(),
-	})
-
-	cleanup := func() {
-		client.Close()
-		mr.Close()
-	}
-
-	return client, cleanup
+	return testutil.GetTestRedis(t)
 }
 
 func TestPasswordResetService_GenerateToken(t *testing.T) {
-	redisClient, cleanup := setupPasswordResetTestRedis(t)
-	defer cleanup()
+	redisClient := setupPasswordResetTestRedis(t)
+	defer testutil.CleanupRedis(t)
 
 	service := NewPasswordResetService(redisClient)
 	userID := uuid.New()
@@ -61,8 +45,8 @@ func TestPasswordResetService_GenerateToken(t *testing.T) {
 }
 
 func TestPasswordResetService_GetToken(t *testing.T) {
-	redisClient, cleanup := setupPasswordResetTestRedis(t)
-	defer cleanup()
+	redisClient := setupPasswordResetTestRedis(t)
+	defer testutil.CleanupRedis(t)
 
 	service := NewPasswordResetService(redisClient)
 	userID := uuid.New()
@@ -91,8 +75,8 @@ func TestPasswordResetService_GetToken(t *testing.T) {
 }
 
 func TestPasswordResetService_GetToken_NotFound(t *testing.T) {
-	redisClient, cleanup := setupPasswordResetTestRedis(t)
-	defer cleanup()
+	redisClient := setupPasswordResetTestRedis(t)
+	defer testutil.CleanupRedis(t)
 
 	service := NewPasswordResetService(redisClient)
 
@@ -103,8 +87,8 @@ func TestPasswordResetService_GetToken_NotFound(t *testing.T) {
 }
 
 func TestPasswordResetService_MarkTokenAsUsed(t *testing.T) {
-	redisClient, cleanup := setupPasswordResetTestRedis(t)
-	defer cleanup()
+	redisClient := setupPasswordResetTestRedis(t)
+	defer testutil.CleanupRedis(t)
 
 	service := NewPasswordResetService(redisClient)
 	userID := uuid.New()
@@ -134,8 +118,8 @@ func TestPasswordResetService_MarkTokenAsUsed(t *testing.T) {
 }
 
 func TestPasswordResetService_DeleteToken(t *testing.T) {
-	redisClient, cleanup := setupPasswordResetTestRedis(t)
-	defer cleanup()
+	redisClient := setupPasswordResetTestRedis(t)
+	defer testutil.CleanupRedis(t)
 
 	service := NewPasswordResetService(redisClient)
 	userID := uuid.New()
