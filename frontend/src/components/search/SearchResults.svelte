@@ -25,6 +25,7 @@
   import { getSectionSlug } from '../../services/sectionSlug';
   import type { Post } from '../../stores/postStore';
   import type { CommentResult, SearchResult } from '../../stores/searchStore';
+  import { logError } from '../../lib/observability/logger';
 
   // Track pending reactions to prevent double-clicks
   let pendingReactions = new Set<string>();
@@ -60,7 +61,7 @@
         await api.addCommentReaction(comment.id, emoji);
       }
     } catch (e) {
-      console.error('Failed to toggle comment reaction:', e);
+      logError('Failed to toggle comment reaction', { commentId: comment.id, emoji }, e);
       // Revert on error
       if (hasReacted) {
         comment.viewerReactions = [...(comment.viewerReactions ?? []), emoji];

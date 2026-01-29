@@ -12,6 +12,7 @@
   import { getImageLinkUrl } from '../services/linkUtils';
   import { sections } from '../stores/sectionStore';
   import { getSectionSlugById } from '../services/sectionSlug';
+  import { logError } from '../lib/observability/logger';
 
   export let post: Post;
 
@@ -123,7 +124,7 @@
         await api.addPostReaction(post.id, emoji);
       }
     } catch (e) {
-      console.error('Failed to toggle reaction:', e);
+      logError('Failed to toggle reaction', { postId: post.id, emoji }, e);
       // Revert on error
       postStore.toggleReaction(post.id, emoji);
     }

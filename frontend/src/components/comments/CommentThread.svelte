@@ -6,10 +6,11 @@
   import { api } from '../../services/api';
   import { buildProfileHref, handleProfileNavigation } from '../../services/profileNavigation';
   import CommentForm from './CommentForm.svelte';
-  import EditedBadge from '../EditedBadge.svelte';
   import ReplyForm from './ReplyForm.svelte';
   import ReactionBar from '../reactions/ReactionBar.svelte';
   import LinkifiedText from '../LinkifiedText.svelte';
+  import EditedBadge from '../EditedBadge.svelte';
+  import { logError } from '../../lib/observability/logger';
 
   export let postId: string;
   export let commentCount = 0;
@@ -65,12 +66,12 @@
       } else {
         await api.addCommentReaction(commentId, emoji);
       }
-    } catch (e) {
-      console.error('Failed to toggle comment reaction:', e);
-      // Revert
-      commentStore.toggleReaction(postId, commentId, emoji);
-    }
+  } catch (e) {
+    logError('Failed to toggle comment reaction', { commentId, emoji }, e);
+    // Revert
+    commentStore.toggleReaction(postId, commentId, emoji);
   }
+}
 
   $: thread = $commentStore[postId] ?? emptyThread;
   $: shouldLoad = commentCount > 0;

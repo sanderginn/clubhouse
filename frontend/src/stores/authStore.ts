@@ -1,5 +1,7 @@
 import { writable, derived } from 'svelte/store';
 import { api } from '../services/api';
+import { logWarn } from '../lib/observability/logger';
+import { setErrorUser } from '../lib/observability/errorTracker';
 
 export interface User {
   id: string;
@@ -39,18 +41,25 @@ function createAuthStore() {
 
   return {
     subscribe,
-    setUser: (user: User | null) =>
-      update((state) => ({ ...state, user, isLoading: false, mfaChallenge: null })),
+    setUser: (user: User | null) => {
+      setErrorUser(
+        user
+          ? { id: user.id, username: user.username, email: user.email }
+          : null
+      );
+      update((state) => ({ ...state, user, isLoading: false, mfaChallenge: null }));
+    },
     setMfaChallenge: (challenge: MfaChallenge | null) =>
       update((state) => ({ ...state, mfaChallenge: challenge, isLoading: false })),
     setLoading: (isLoading: boolean) => update((state) => ({ ...state, isLoading })),
     logout: async () => {
       try {
         await api.post('/auth/logout');
-      } catch {
-        // Ignore errors - we're logging out anyway
+      } catch (error) {
+        logWarn('Logout request failed', { error });
       }
       api.clearCsrfToken();
+      setErrorUser(null);
       set({ user: null, isLoading: false, mfaChallenge: null });
     },
     checkSession: async () => {
@@ -66,10 +75,13 @@ function createAuthStore() {
           isAdmin: response.is_admin,
         };
         set({ user, isLoading: false, mfaChallenge: null });
+        setErrorUser({ id: user.id, username: user.username, email: user.email });
         void api.prefetchCsrfToken();
         return true;
-      } catch {
+      } catch (error) {
+        logWarn('Session check failed', { error });
         api.clearCsrfToken();
+        setErrorUser(null);
         set({ user: null, isLoading: false, mfaChallenge: null });
         return false;
       }

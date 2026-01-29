@@ -1,5 +1,6 @@
 import { writable, derived } from 'svelte/store';
 import { api } from '../services/api';
+import { logError, logWarn } from '../lib/observability/logger';
 
 interface PWAState {
   isInstallable: boolean;
@@ -116,7 +117,7 @@ function createPWAStore() {
             }
           });
         } catch (error) {
-          console.error('Service worker registration failed:', error);
+          logError('Service worker registration failed', { error });
         }
       }
     },
@@ -144,7 +145,7 @@ function createPWAStore() {
 
     subscribeToPush: async (): Promise<boolean> => {
       if (!serviceWorkerRegistration) {
-        console.error('Service worker not registered');
+        logWarn('Service worker not registered');
         return false;
       }
 
@@ -172,7 +173,7 @@ function createPWAStore() {
         update((state) => ({ ...state, isPushSubscribed: true }));
         return true;
       } catch (error) {
-        console.error('Failed to subscribe to push notifications:', error);
+        logError('Failed to subscribe to push notifications', { error });
         return false;
       }
     },
@@ -202,7 +203,7 @@ function createPWAStore() {
 
         return unsubscribed;
       } catch (error) {
-        console.error('Failed to unsubscribe from push notifications:', error);
+        logError('Failed to unsubscribe from push notifications', { error });
         return false;
       }
     },

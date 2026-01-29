@@ -2,6 +2,7 @@ import type { Post, CreatePostRequest, LinkMetadata } from '../stores/postStore'
 import type { CreateCommentRequest, Comment } from '../stores/commentStore';
 import { mapApiComment, type ApiComment } from '../stores/commentMapper';
 import { mapApiPost, type ApiPost } from '../stores/postMapper';
+import { logError, logWarn } from '../lib/observability/logger';
 
 const API_BASE = '/api/v1';
 const CSRF_ENDPOINT = '/auth/csrf';
@@ -60,6 +61,7 @@ class ApiClient {
       });
 
       if (!response.ok) {
+        logWarn('Failed to fetch CSRF token', { status: response.status });
         return null;
       }
 
@@ -70,7 +72,8 @@ class ApiClient {
         this.csrfToken = token;
         return token;
       }
-    } catch {
+    } catch (error) {
+      logWarn('Failed to fetch CSRF token', { error });
       return null;
     }
 
@@ -124,12 +127,18 @@ class ApiClient {
       }
     }
 
-    const response = await fetch(url, {
-      ...options,
-      method,
-      headers,
-      credentials: 'include',
-    });
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        ...options,
+        method,
+        headers,
+        credentials: 'include',
+      });
+    } catch (error) {
+      logError('API request failed', { endpoint, method, url }, error);
+      throw error;
+    }
 
     if (!response.ok) {
       const errorData: ApiError | null = await response.json().catch(() => null);
@@ -148,6 +157,18 @@ class ApiClient {
         code?: string;
       };
       error.code = errorData?.code ?? 'UNKNOWN_ERROR';
+      const logContext = {
+        endpoint,
+        method,
+        url,
+        status: response.status,
+        code: error.code,
+      };
+      if (response.status >= 500) {
+        logError('API request failed', logContext, error);
+      } else {
+        logWarn('API request failed', logContext);
+      }
       throw error;
     }
 
@@ -208,6 +229,7 @@ class ApiClient {
       };
 
       xhr.onerror = () => {
+        logError('Upload request failed', { endpoint: '/uploads', method: 'POST' });
         reject(new Error('Upload failed'));
       };
 
@@ -244,6 +266,17 @@ class ApiClient {
 
         const error = new Error(errorData?.error ?? 'Upload failed') as Error & { code?: string };
         error.code = errorData?.code ?? 'UNKNOWN_ERROR';
+        const logContext = {
+          endpoint: '/uploads',
+          method: 'POST',
+          status,
+          code: error.code,
+        };
+        if (status >= 500) {
+          logError('Upload request failed', logContext, error);
+        } else {
+          logWarn('Upload request failed', logContext);
+        }
         reject(error);
       };
 
