@@ -185,6 +185,7 @@
     350,
     351,
     364,
+    369,
     372,
     373,
     377,
@@ -3505,7 +3506,7 @@
     {
       "issue_number": 369,
       "title": "Enhancement: Reorganize sections (rename Photos to Series, reorder)",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769684907-17691",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769684907-17691",
       "dependencies": [],
@@ -3518,7 +3519,9 @@
         "sections"
       ],
       "branch": "feat/issue-369-enhancement-reorganize-sections-rename-p",
-      "claimed_at": "2026-01-29T11:08:27Z"
+      "claimed_at": "2026-01-29T11:08:27Z",
+      "pr_number": 409,
+      "completed_at": "2026-01-29T11:18:05Z"
     },
     {
       "issue_number": 370,
