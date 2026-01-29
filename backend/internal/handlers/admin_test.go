@@ -11,8 +11,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alicebob/miniredis/v2"
 	"github.com/google/uuid"
 	"github.com/pquerna/otp/totp"
+	"github.com/redis/go-redis/v9"
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/services"
 	"github.com/sanderginn/clubhouse/internal/testutil"
@@ -169,6 +171,116 @@ func TestApproveUser(t *testing.T) {
 
 	if auditCount != 1 {
 		t.Errorf("expected 1 audit log entry, but found %d", auditCount)
+	}
+}
+
+// TestPromoteUser tests promoting a user to admin
+func TestPromoteUser(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	redisServer := miniredis.RunT(t)
+	redisClient := redis.NewClient(&redis.Options{Addr: redisServer.Addr()})
+
+	// Create a test admin user
+	adminID := uuid.New()
+	_, err := db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'promoteadmin', 'promoteadmin@example.com', '$2a$12$test', true, now(), now())
+	`, adminID)
+	if err != nil {
+		t.Fatalf("failed to create admin user: %v", err)
+	}
+
+	// Create a user to promote
+	userID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'memberuser', 'member@example.com', '$2a$12$test', false, now(), now())
+	`, userID)
+	if err != nil {
+		t.Fatalf("failed to create user: %v", err)
+	}
+
+	sessionService := services.NewSessionService(redisClient)
+	session, err := sessionService.CreateSession(t.Context(), userID, "memberuser", false)
+	if err != nil {
+		t.Fatalf("failed to create session: %v", err)
+	}
+
+	handler := NewAdminHandler(db, redisClient)
+
+	req := httptest.NewRequest("POST", "/api/v1/admin/users/"+userID.String()+"/promote", nil)
+	req = req.WithContext(createTestUserContext(req.Context(), adminID, "promoteadmin", true))
+	w := httptest.NewRecorder()
+
+	handler.PromoteUser(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response models.PromoteUserResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if !response.IsAdmin {
+		t.Fatalf("expected promoted user to be admin")
+	}
+
+	var isAdmin bool
+	if err := db.QueryRow("SELECT is_admin FROM users WHERE id = $1", userID).Scan(&isAdmin); err != nil {
+		t.Fatalf("failed to query user: %v", err)
+	}
+	if !isAdmin {
+		t.Fatalf("expected user to be admin in database")
+	}
+
+	updatedSession, err := sessionService.GetSession(t.Context(), session.ID)
+	if err != nil {
+		t.Fatalf("failed to get session: %v", err)
+	}
+	if !updatedSession.IsAdmin {
+		t.Fatalf("expected session to be updated to admin")
+	}
+
+	var auditCount int
+	err = db.QueryRow(
+		"SELECT COUNT(*) FROM audit_logs WHERE action = 'promote_to_admin' AND admin_user_id = $1 AND related_user_id = $2",
+		adminID,
+		userID,
+	).Scan(&auditCount)
+	if err != nil {
+		t.Fatalf("failed to query audit log count: %v", err)
+	}
+	if auditCount != 1 {
+		t.Fatalf("expected 1 audit log entry, but found %d", auditCount)
+	}
+}
+
+func TestPromoteUserCannotPromoteSelf(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	adminID := uuid.New()
+	_, err := db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'selfadmin', 'selfadmin@example.com', '$2a$12$test', true, now(), now())
+	`, adminID)
+	if err != nil {
+		t.Fatalf("failed to create admin user: %v", err)
+	}
+
+	handler := NewAdminHandler(db, nil)
+
+	req := httptest.NewRequest("POST", "/api/v1/admin/users/"+adminID.String()+"/promote", nil)
+	req = req.WithContext(createTestUserContext(req.Context(), adminID, "selfadmin", true))
+	w := httptest.NewRecorder()
+
+	handler.PromoteUser(w, req)
+
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusForbidden, w.Code, w.Body.String())
 	}
 }
 

@@ -96,6 +96,15 @@ type ApproveUserResponse struct {
 	Message  string    `json:"message"`
 }
 
+// PromoteUserResponse represents the response from promoting a user to admin
+type PromoteUserResponse struct {
+	ID       uuid.UUID `json:"id"`
+	Username string    `json:"username"`
+	Email    string    `json:"email"`
+	IsAdmin  bool      `json:"is_admin"`
+	Message  string    `json:"message"`
+}
+
 // RejectUserResponse represents the response from rejecting a user
 type RejectUserResponse struct {
 	ID      uuid.UUID `json:"id"`

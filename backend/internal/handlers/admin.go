@@ -27,10 +27,16 @@ type AdminHandler struct {
 	commentService       *services.CommentService
 	passwordResetService *services.PasswordResetService
 	totpService          *services.TOTPService
+	sessionService       *services.SessionService
 }
 
 // NewAdminHandler creates a new admin handler
 func NewAdminHandler(db *sql.DB, redis *redis.Client) *AdminHandler {
+	var sessionService *services.SessionService
+	if redis != nil {
+		sessionService = services.NewSessionService(redis)
+	}
+
 	return &AdminHandler{
 		db:                   db,
 		userService:          services.NewUserService(db),
@@ -38,6 +44,7 @@ func NewAdminHandler(db *sql.DB, redis *redis.Client) *AdminHandler {
 		commentService:       services.NewCommentService(db),
 		passwordResetService: services.NewPasswordResetService(redis),
 		totpService:          services.NewTOTPService(db),
+		sessionService:       sessionService,
 	}
 }
 
@@ -136,6 +143,75 @@ func (h *AdminHandler) ApproveUser(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(approveResponse); err != nil {
 		observability.LogError(r.Context(), observability.ErrorLog{
 			Message:    "failed to encode approve user response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}
+
+// PromoteUser promotes a user to admin (admin only)
+func (h *AdminHandler) PromoteUser(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		return
+	}
+
+	adminUserID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
+		return
+	}
+
+	userIDStr := strings.TrimPrefix(r.URL.Path, "/api/v1/admin/users/")
+	userIDStr = strings.TrimSuffix(userIDStr, "/promote")
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_USER_ID", "Invalid user ID format")
+		return
+	}
+
+	if userID == adminUserID {
+		writeError(r.Context(), w, http.StatusForbidden, "CANNOT_PROMOTE_SELF", "Cannot promote yourself")
+		return
+	}
+
+	promoteResponse, err := h.userService.PromoteUserToAdmin(r.Context(), userID, adminUserID)
+	if err != nil {
+		switch err.Error() {
+		case "user not found":
+			writeError(r.Context(), w, http.StatusNotFound, "USER_NOT_FOUND", err.Error())
+		case "user already admin":
+			writeError(r.Context(), w, http.StatusConflict, "USER_ALREADY_ADMIN", err.Error())
+		case "user has been deleted":
+			writeError(r.Context(), w, http.StatusGone, "USER_DELETED", err.Error())
+		case "cannot promote self":
+			writeError(r.Context(), w, http.StatusForbidden, "CANNOT_PROMOTE_SELF", err.Error())
+		default:
+			writeError(r.Context(), w, http.StatusInternalServerError, "PROMOTION_FAILED", "Failed to promote user")
+		}
+		return
+	}
+
+	if h.sessionService != nil {
+		if err := h.sessionService.UpdateUserAdminStatus(r.Context(), userID, true); err != nil {
+			observability.LogError(r.Context(), observability.ErrorLog{
+				Message:    "failed to update user sessions after promotion",
+				Code:       "SESSION_UPDATE_FAILED",
+				StatusCode: http.StatusInternalServerError,
+				Err:        err,
+			})
+			writeError(r.Context(), w, http.StatusInternalServerError, "SESSION_UPDATE_FAILED", "Failed to update user sessions")
+			return
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(promoteResponse); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode promote user response",
 			Code:       "ENCODE_FAILED",
 			StatusCode: http.StatusOK,
 			Err:        err,

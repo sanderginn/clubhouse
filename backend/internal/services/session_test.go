@@ -103,3 +103,42 @@ func TestDeleteAllSessionsForUser(t *testing.T) {
 		t.Fatalf("expected user session set to be deleted")
 	}
 }
+
+func TestUpdateUserAdminStatusUpdatesSessions(t *testing.T) {
+	redisServer := miniredis.RunT(t)
+	client := redis.NewClient(&redis.Options{Addr: redisServer.Addr()})
+	service := NewSessionService(client)
+
+	ctx := context.Background()
+	userID := uuid.New()
+	otherUserID := uuid.New()
+
+	session, err := service.CreateSession(ctx, userID, "member", false)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	otherSession, err := service.CreateSession(ctx, otherUserID, "other", false)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := service.UpdateUserAdminStatus(ctx, userID, true); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	updated, err := service.GetSession(ctx, session.ID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !updated.IsAdmin {
+		t.Fatalf("expected session to be updated to admin")
+	}
+
+	otherUpdated, err := service.GetSession(ctx, otherSession.ID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if otherUpdated.IsAdmin {
+		t.Fatalf("expected other session to remain non-admin")
+	}
+}

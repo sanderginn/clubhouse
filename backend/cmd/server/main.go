@@ -288,10 +288,14 @@ func main() {
 	mux.Handle("/api/v1/admin/users", requireAdmin(http.HandlerFunc(adminHandler.ListPendingUsers)))
 	mux.Handle("/api/v1/admin/users/approved", requireAdmin(http.HandlerFunc(adminHandler.ListApprovedUsers)))
 	mux.Handle("/api/v1/admin/users/", requireAdminCSRF(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.Contains(r.URL.Path, "/approve") {
+		if strings.Contains(r.URL.Path, "/promote") {
+			adminHandler.PromoteUser(w, r)
+		} else if strings.Contains(r.URL.Path, "/approve") {
 			adminHandler.ApproveUser(w, r)
-		} else {
+		} else if r.Method == http.MethodDelete {
 			adminHandler.RejectUser(w, r)
+		} else {
+			writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
 		}
 	})))
 

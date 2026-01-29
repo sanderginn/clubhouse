@@ -480,6 +480,80 @@ func (s *UserService) ApproveUser(ctx context.Context, userID uuid.UUID, adminUs
 	}, nil
 }
 
+// PromoteUserToAdmin grants admin privileges to a user (admin-only operation).
+func (s *UserService) PromoteUserToAdmin(ctx context.Context, userID uuid.UUID, adminUserID uuid.UUID) (*models.PromoteUserResponse, error) {
+	if userID == adminUserID {
+		return nil, fmt.Errorf("cannot promote self")
+	}
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	query := `
+		SELECT id, username, COALESCE(email, '') as email, is_admin, deleted_at
+		FROM users
+		WHERE id = $1
+	`
+
+	var user models.User
+	err = tx.QueryRowContext(ctx, query, userID).
+		Scan(&user.ID, &user.Username, &user.Email, &user.IsAdmin, &user.DeletedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	if user.DeletedAt != nil {
+		return nil, fmt.Errorf("user has been deleted")
+	}
+	if user.IsAdmin {
+		return nil, fmt.Errorf("user already admin")
+	}
+
+	updateQuery := `
+		UPDATE users
+		SET is_admin = true, updated_at = now()
+		WHERE id = $1
+		RETURNING id, username, COALESCE(email, '') as email, is_admin
+	`
+
+	var promotedUser models.User
+	err = tx.QueryRowContext(ctx, updateQuery, userID).
+		Scan(&promotedUser.ID, &promotedUser.Username, &promotedUser.Email, &promotedUser.IsAdmin)
+	if err != nil {
+		return nil, fmt.Errorf("failed to promote user: %w", err)
+	}
+
+	auditService := NewAuditService(tx)
+	metadata := map[string]interface{}{
+		"target_user_id":    userID.String(),
+		"target_username":   promotedUser.Username,
+		"previous_is_admin": user.IsAdmin,
+	}
+	if err := auditService.LogAuditWithMetadata(ctx, "promote_to_admin", adminUserID, userID, metadata); err != nil {
+		return nil, fmt.Errorf("failed to create audit log: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return &models.PromoteUserResponse{
+		ID:       promotedUser.ID,
+		Username: promotedUser.Username,
+		Email:    promotedUser.Email,
+		IsAdmin:  promotedUser.IsAdmin,
+		Message:  "User promoted to admin",
+	}, nil
+}
+
 // RejectUser hard-deletes a pending user (must not be approved yet)
 func (s *UserService) RejectUser(ctx context.Context, userID uuid.UUID, adminUserID uuid.UUID) (*models.RejectUserResponse, error) {
 	tx, err := s.db.BeginTx(ctx, nil)

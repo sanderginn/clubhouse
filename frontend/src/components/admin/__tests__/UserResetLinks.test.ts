@@ -93,6 +93,43 @@ describe('UserResetLinks', () => {
     expect(screen.getByText(/Single-use link/)).toBeInTheDocument();
   });
 
+  it('promotes a user to admin with confirmation', async () => {
+    apiGet.mockResolvedValue([
+      {
+        id: 'user-3',
+        username: 'sasha',
+        email: 'sasha@example.com',
+        is_admin: false,
+        approved_at: '2024-03-01T00:00:00Z',
+        created_at: '2024-02-20T00:00:00Z',
+      },
+    ]);
+    apiPost.mockResolvedValue({
+      id: 'user-3',
+      username: 'sasha',
+      email: 'sasha@example.com',
+      is_admin: true,
+      message: 'User promoted to admin',
+    });
+
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    render(UserResetLinks);
+    await fireEvent.click(screen.getByText('Refresh'));
+    await flushUsersLoad();
+
+    expect(screen.queryByText('Admin')).not.toBeInTheDocument();
+
+    const promoteButton = await screen.findByText('Promote to admin');
+    await fireEvent.click(promoteButton);
+    await tick();
+
+    expect(apiPost).toHaveBeenCalledWith('/admin/users/user-3/promote');
+    expect(await screen.findByText('Admin')).toBeInTheDocument();
+
+    confirmSpy.mockRestore();
+  });
+
   it('treats a null response as no approved users', async () => {
     apiGet.mockResolvedValue(null);
 
