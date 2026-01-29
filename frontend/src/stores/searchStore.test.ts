@@ -31,6 +31,7 @@ describe('searchStore', () => {
     const state = get(searchStore);
     expect(state.results).toHaveLength(0);
     expect(state.lastSearched).toBe('');
+    expect(state.lastSearchedScope).toBeNull();
   });
 
   it('searches within the active section by default', async () => {
@@ -85,6 +86,7 @@ describe('searchStore', () => {
     expect(state.results[0].type).toBe('post');
     expect(state.results[1].type).toBe('comment');
     expect(state.results[1].post?.id).toBe('post-1');
+    expect(state.lastSearchedScope).toBe('section');
   });
 
   it('searches globally when scope is global', async () => {
@@ -97,6 +99,9 @@ describe('searchStore', () => {
     const request = apiGet.mock.calls[0][0] as string;
     expect(request).toContain('scope=global');
     expect(request).not.toContain('section_id=');
+
+    const state = get(searchStore);
+    expect(state.lastSearchedScope).toBe('global');
   });
 
   it('sets error when searching section scope without active section', async () => {
@@ -122,6 +127,7 @@ describe('searchStore', () => {
     expect(state.isLoading).toBe(false);
     expect(state.error).toBeNull();
     expect(state.lastSearched).toBe('');
+    expect(state.lastSearchedScope).toBeNull();
   });
 
   it('clears section search when active section changes', async () => {
@@ -137,6 +143,7 @@ describe('searchStore', () => {
     expect(state.query).toBe('');
     expect(state.results).toHaveLength(0);
     expect(state.lastSearched).toBe('');
+    expect(state.lastSearchedScope).toBeNull();
     expect(state.error).toBeNull();
     expect(state.isLoading).toBe(false);
   });

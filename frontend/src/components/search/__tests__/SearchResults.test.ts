@@ -11,6 +11,7 @@ const storeRefs: {
   searchError: ReturnType<typeof writable>;
   searchQuery: ReturnType<typeof writable>;
   lastSearchQuery: ReturnType<typeof writable>;
+  lastSearchScope: ReturnType<typeof writable>;
   searchScope: ReturnType<typeof writable>;
   activeSection: ReturnType<typeof writable>;
   sections: ReturnType<typeof writable>;
@@ -27,6 +28,7 @@ vi.mock('../../../stores', () => {
   storeRefs.searchError = writable<string | null>(null);
   storeRefs.searchQuery = writable('');
   storeRefs.lastSearchQuery = writable('');
+  storeRefs.lastSearchScope = writable<'section' | 'global' | null>(null);
   storeRefs.searchScope = writable<'section' | 'global'>('section');
   storeRefs.activeSection = writable<{ id: string; name: string } | null>(null);
   storeRefs.sections = writable([]);
@@ -51,6 +53,7 @@ beforeEach(() => {
   storeRefs.searchError.set(null);
   storeRefs.searchQuery.set('');
   storeRefs.lastSearchQuery.set('');
+  storeRefs.lastSearchScope.set(null);
   storeRefs.searchScope.set('section');
   storeRefs.activeSection.set(null);
   storeRefs.sections.set([]);
@@ -69,6 +72,7 @@ describe('SearchResults', () => {
   it('shows loading state', () => {
     storeRefs.searchQuery.set('hello');
     storeRefs.lastSearchQuery.set('hello');
+    storeRefs.lastSearchScope.set('section');
     storeRefs.isSearching.set(true);
     render(SearchResults);
     expect(screen.getByText('Searching...')).toBeInTheDocument();
@@ -77,6 +81,7 @@ describe('SearchResults', () => {
   it('shows error state', () => {
     storeRefs.searchQuery.set('hello');
     storeRefs.lastSearchQuery.set('hello');
+    storeRefs.lastSearchScope.set('section');
     storeRefs.searchError.set('boom');
     render(SearchResults);
     expect(screen.getByText('boom')).toBeInTheDocument();
@@ -85,6 +90,7 @@ describe('SearchResults', () => {
   it('shows no results state', () => {
     storeRefs.searchQuery.set('hello');
     storeRefs.lastSearchQuery.set('hello');
+    storeRefs.lastSearchScope.set('section');
     storeRefs.searchResults.set([]);
     render(SearchResults);
     expect(screen.getByText('No results for "hello".')).toBeInTheDocument();
@@ -93,6 +99,7 @@ describe('SearchResults', () => {
   it('hides results when query changes', () => {
     storeRefs.searchQuery.set('new');
     storeRefs.lastSearchQuery.set('old');
+    storeRefs.lastSearchScope.set('section');
     render(SearchResults);
     expect(screen.getByText('Press Search to see results.')).toBeInTheDocument();
   });
@@ -100,6 +107,7 @@ describe('SearchResults', () => {
   it('renders comment results', () => {
     storeRefs.searchQuery.set('nice');
     storeRefs.lastSearchQuery.set('nice');
+    storeRefs.lastSearchScope.set('section');
     storeRefs.sections.set([
       { id: 'section-1', name: 'Music', type: 'music', icon: '🎵', slug: 'music' },
     ]);
@@ -131,6 +139,7 @@ describe('SearchResults', () => {
   it('renders section label for post results', () => {
     storeRefs.searchQuery.set('hello');
     storeRefs.lastSearchQuery.set('hello');
+    storeRefs.lastSearchScope.set('section');
     storeRefs.sections.set([
       { id: 'section-2', name: 'Movies', type: 'movie', icon: '🎬', slug: 'movies' },
     ]);
@@ -192,6 +201,7 @@ describe('SearchResults', () => {
   it('groups global search results by section', () => {
     storeRefs.searchQuery.set('mix');
     storeRefs.lastSearchQuery.set('mix');
+    storeRefs.lastSearchScope.set('global');
     storeRefs.searchScope.set('global');
     storeRefs.sections.set([
       { id: 'section-1', name: 'Music', type: 'music', icon: '🎵', slug: 'music' },
