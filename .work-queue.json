@@ -3441,41 +3441,6 @@
       "completed_at": "2026-01-28T22:45:14Z"
     },
     {
-      "issue_number": 362,
-      "title": "Enhancement: Comprehensive audit logs system",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
-      "dependencies": [],
-      "phase": "feature",
-      "priority": 1,
-      "labels": [
-        "enhancement",
-        "backend",
-        "frontend",
-        "admin"
-      ]
-    },
-    {
-      "issue_number": 363,
-      "title": "Enhancement: Post and comment editing with edit indicator",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
-      "dependencies": [
-        362
-      ],
-      "phase": "feature",
-      "priority": 1,
-      "labels": [
-        "enhancement",
-        "backend",
-        "frontend",
-        "posts",
-        "comments"
-      ]
-    },
-    {
       "issue_number": 364,
       "title": "Bug: Image upload not working",
       "status": "available",
@@ -3497,7 +3462,7 @@
       "assigned_to": null,
       "worktree": null,
       "dependencies": [
-        362
+        378
       ],
       "phase": "feature",
       "priority": 2,
@@ -3523,44 +3488,6 @@
         "frontend",
         "admin",
         "ui"
-      ]
-    },
-    {
-      "issue_number": 367,
-      "title": "Enhancement: User settings page with profile picture and MFA",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
-      "dependencies": [
-        362
-      ],
-      "phase": "feature",
-      "priority": 2,
-      "labels": [
-        "enhancement",
-        "backend",
-        "frontend",
-        "users",
-        "auth"
-      ]
-    },
-    {
-      "issue_number": 368,
-      "title": "Enhancement: Admin-enforced MFA requirement",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
-      "dependencies": [
-        367
-      ],
-      "phase": "feature",
-      "priority": 2,
-      "labels": [
-        "enhancement",
-        "backend",
-        "frontend",
-        "admin",
-        "auth"
       ]
     },
     {
@@ -3596,22 +3523,6 @@
       ]
     },
     {
-      "issue_number": 371,
-      "title": "Enhancement: Move search into navbar",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
-      "dependencies": [],
-      "phase": "feature",
-      "priority": 4,
-      "labels": [
-        "enhancement",
-        "frontend",
-        "search",
-        "ui"
-      ]
-    },
-    {
       "issue_number": 372,
       "title": "Bug: Search scope switching auto-updates results without user action",
       "status": "available",
@@ -3643,21 +3554,6 @@
       ]
     },
     {
-      "issue_number": 374,
-      "title": "Enhancement: Thread URL loads standalone view with back navigation",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
-      "dependencies": [],
-      "phase": "feature",
-      "priority": 4,
-      "labels": [
-        "enhancement",
-        "frontend",
-        "ui"
-      ]
-    },
-    {
       "issue_number": 375,
       "title": "Enhancement: Profile page comments show thread context with emphasis",
       "status": "available",
@@ -3675,8 +3571,356 @@
       ]
     },
     {
-      "issue_number": 376,
-      "title": "Enhancement: Timestamp hover shows exact time with configurable timezone",
+      "issue_number": 377,
+      "title": "Backend: Extend audit_logs table schema with metadata support",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 1,
+      "labels": [
+        "enhancement",
+        "backend",
+        "db",
+        "admin"
+      ]
+    },
+    {
+      "issue_number": 378,
+      "title": "Backend: Add audit helper with metadata support",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        377
+      ],
+      "phase": "feature",
+      "priority": 1,
+      "labels": [
+        "enhancement",
+        "backend",
+        "admin"
+      ]
+    },
+    {
+      "issue_number": 379,
+      "title": "Backend: Add audit events for user management actions",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        378
+      ],
+      "phase": "feature",
+      "priority": 1,
+      "labels": [
+        "enhancement",
+        "backend",
+        "admin",
+        "users"
+      ]
+    },
+    {
+      "issue_number": 380,
+      "title": "Backend: Add audit events for content moderation actions",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        378
+      ],
+      "phase": "feature",
+      "priority": 1,
+      "labels": [
+        "enhancement",
+        "backend",
+        "admin",
+        "posts",
+        "comments"
+      ]
+    },
+    {
+      "issue_number": 381,
+      "title": "Backend: Add audit events for settings and auth actions",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        378
+      ],
+      "phase": "feature",
+      "priority": 1,
+      "labels": [
+        "enhancement",
+        "backend",
+        "admin",
+        "auth"
+      ]
+    },
+    {
+      "issue_number": 382,
+      "title": "Frontend: Improve audit log display with full context",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        378
+      ],
+      "phase": "feature",
+      "priority": 1,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "admin",
+        "ui"
+      ]
+    },
+    {
+      "issue_number": 383,
+      "title": "Frontend: Add audit log filtering by type, date, and user",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        382
+      ],
+      "phase": "feature",
+      "priority": 1,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "admin",
+        "ui"
+      ]
+    },
+    {
+      "issue_number": 384,
+      "title": "Docs: Add audit logging guidelines to CLAUDE.md",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 1,
+      "labels": [
+        "enhancement",
+        "documentation"
+      ]
+    },
+    {
+      "issue_number": 385,
+      "title": "Backend: Add PATCH endpoints for editing posts and comments",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 1,
+      "labels": [
+        "enhancement",
+        "backend",
+        "posts",
+        "comments"
+      ]
+    },
+    {
+      "issue_number": 386,
+      "title": "Frontend: Add edit UI for posts and comments",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        385
+      ],
+      "phase": "feature",
+      "priority": 1,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "posts",
+        "comments",
+        "ui"
+      ]
+    },
+    {
+      "issue_number": 387,
+      "title": "Frontend: Display edited indicator with hover tooltip",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        385
+      ],
+      "phase": "feature",
+      "priority": 1,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "posts",
+        "comments",
+        "ui"
+      ]
+    },
+    {
+      "issue_number": 388,
+      "title": "Frontend: Create user settings page skeleton",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 2,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "users",
+        "ui"
+      ]
+    },
+    {
+      "issue_number": 389,
+      "title": "Frontend: Add profile picture upload to settings page",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        388
+      ],
+      "phase": "feature",
+      "priority": 2,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "users",
+        "ui"
+      ]
+    },
+    {
+      "issue_number": 390,
+      "title": "Backend + Frontend: MFA enrollment for regular users",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        388
+      ],
+      "phase": "feature",
+      "priority": 2,
+      "labels": [
+        "enhancement",
+        "backend",
+        "frontend",
+        "users",
+        "auth"
+      ]
+    },
+    {
+      "issue_number": 391,
+      "title": "Backend: MFA requirement config and login enforcement",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        390
+      ],
+      "phase": "feature",
+      "priority": 2,
+      "labels": [
+        "enhancement",
+        "backend",
+        "admin",
+        "auth"
+      ]
+    },
+    {
+      "issue_number": 392,
+      "title": "Frontend: Admin MFA requirement toggle and user status display",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        391
+      ],
+      "phase": "feature",
+      "priority": 2,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "admin",
+        "auth",
+        "ui"
+      ]
+    },
+    {
+      "issue_number": 393,
+      "title": "Frontend: Add search component to navbar",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 4,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "search",
+        "ui"
+      ]
+    },
+    {
+      "issue_number": 394,
+      "title": "Frontend: Remove old search location and add polish",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        393
+      ],
+      "phase": "feature",
+      "priority": 4,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "search",
+        "ui"
+      ]
+    },
+    {
+      "issue_number": 395,
+      "title": "Frontend: Create standalone thread view route",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 4,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ui"
+      ]
+    },
+    {
+      "issue_number": 396,
+      "title": "Frontend: Add back navigation from standalone thread view",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        395
+      ],
+      "phase": "feature",
+      "priority": 4,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ui"
+      ]
+    },
+    {
+      "issue_number": 397,
+      "title": "Frontend: Add timestamp hover tooltip with exact time",
       "status": "available",
       "assigned_to": null,
       "worktree": null,
@@ -3686,7 +3930,39 @@
       "labels": [
         "enhancement",
         "frontend",
+        "ui"
+      ]
+    },
+    {
+      "issue_number": 398,
+      "title": "Backend: Add admin timezone configuration endpoint",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 5,
+      "labels": [
+        "enhancement",
         "backend",
+        "admin"
+      ]
+    },
+    {
+      "issue_number": 399,
+      "title": "Frontend: Apply configured timezone to all timestamp displays",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        397,
+        398
+      ],
+      "phase": "feature",
+      "priority": 5,
+      "labels": [
+        "enhancement",
+        "frontend",
         "admin",
         "ui"
       ]
