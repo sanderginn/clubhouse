@@ -191,6 +191,7 @@
     373,
     377,
     378,
+    379,
     380,
     381,
     384,
@@ -3648,7 +3649,7 @@
     {
       "issue_number": 379,
       "title": "Backend: Add audit events for user management actions",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769685712-55427",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769685712-55427",
       "dependencies": [
@@ -3663,7 +3664,9 @@
         "users"
       ],
       "branch": "feat/issue-379-backend-add-audit-events-for-user-manage",
-      "claimed_at": "2026-01-29T11:21:52Z"
+      "claimed_at": "2026-01-29T11:21:52Z",
+      "pr_number": 414,
+      "completed_at": "2026-01-29T11:38:52Z"
     },
     {
       "issue_number": 380,
