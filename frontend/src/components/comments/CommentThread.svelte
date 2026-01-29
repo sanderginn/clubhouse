@@ -8,6 +8,7 @@
   import ReplyForm from './ReplyForm.svelte';
   import ReactionBar from '../reactions/ReactionBar.svelte';
   import LinkifiedText from '../LinkifiedText.svelte';
+  import EditedBadge from '../EditedBadge.svelte';
 
   export let postId: string;
   export let commentCount = 0;
@@ -252,6 +253,7 @@
                 <time class="text-gray-500 text-xs" datetime={comment.createdAt}>
                   {formatDate(comment.createdAt)}
                 </time>
+                <EditedBadge createdAt={comment.createdAt} updatedAt={comment.updatedAt} />
               </div>
 
               <LinkifiedText
@@ -407,6 +409,7 @@
                           <time class="text-gray-500 text-xs" datetime={reply.createdAt}>
                             {formatDate(reply.createdAt)}
                           </time>
+                          <EditedBadge createdAt={reply.createdAt} updatedAt={reply.updatedAt} />
                         </div>
                         <LinkifiedText
                           text={reply.content}

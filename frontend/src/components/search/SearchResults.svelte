@@ -18,6 +18,7 @@
   import PostCard from '../PostCard.svelte';
   import ReactionBar from '../reactions/ReactionBar.svelte';
   import LinkifiedText from '../LinkifiedText.svelte';
+  import EditedBadge from '../EditedBadge.svelte';
   import { api } from '../../services/api';
   import { buildProfileHref, handleProfileNavigation } from '../../services/profileNavigation';
   import { buildThreadHref, pushPath } from '../../services/routeNavigation';
@@ -361,6 +362,7 @@
                             <time class="text-gray-500 text-xs" datetime={parentPost.createdAt}>
                               {formatDate(parentPost.createdAt)}
                             </time>
+                            <EditedBadge createdAt={parentPost.createdAt} updatedAt={parentPost.updatedAt} />
                           </div>
                           <p class="text-gray-800 text-sm whitespace-pre-wrap break-words line-clamp-3">
                             {parentPost.content}
@@ -439,6 +441,7 @@
                         <time class="text-gray-500 text-sm" datetime={comment.createdAt}>
                           {formatDate(comment.createdAt)}
                         </time>
+                        <EditedBadge createdAt={comment.createdAt} updatedAt={comment.updatedAt} />
                       </div>
 
                       <LinkifiedText
@@ -543,6 +546,7 @@
                     <time class="text-gray-500 text-xs" datetime={parentPost.createdAt}>
                       {formatDate(parentPost.createdAt)}
                     </time>
+                    <EditedBadge createdAt={parentPost.createdAt} updatedAt={parentPost.updatedAt} />
                   </div>
                   <p class="text-gray-800 text-sm whitespace-pre-wrap break-words line-clamp-3">
                     {parentPost.content}
@@ -632,6 +636,7 @@
                 <time class="text-gray-500 text-sm" datetime={comment.createdAt}>
                   {formatDate(comment.createdAt)}
                 </time>
+                <EditedBadge createdAt={comment.createdAt} updatedAt={comment.updatedAt} />
               </div>
 
               <LinkifiedText
