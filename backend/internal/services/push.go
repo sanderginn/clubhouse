@@ -34,6 +34,29 @@ type PushService struct {
 	db *sql.DB
 }
 
+// PushDeliveryError carries a coarse error classification for push delivery failures.
+type PushDeliveryError struct {
+	Type string
+	Err  error
+}
+
+func (e *PushDeliveryError) Error() string {
+	if e == nil {
+		return ""
+	}
+	if e.Err != nil {
+		return e.Err.Error()
+	}
+	return e.Type
+}
+
+func (e *PushDeliveryError) Unwrap() error {
+	if e == nil {
+		return nil
+	}
+	return e.Err
+}
+
 // NewPushService creates a push service with shared VAPID config.
 func NewPushService(db *sql.DB) *PushService {
 	pushConfigOnce.Do(func() {
@@ -129,7 +152,7 @@ func (s *PushService) SendNotification(ctx context.Context, userID uuid.UUID, pa
 
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
-		return err
+		return &PushDeliveryError{Type: "payload_error", Err: err}
 	}
 
 	rows, err := s.db.QueryContext(ctx, `
@@ -167,15 +190,18 @@ func (s *PushService) SendNotification(ctx context.Context, userID uuid.UUID, pa
 		})
 		if err != nil {
 			if sendErr == nil {
-				sendErr = err
+				sendErr = &PushDeliveryError{Type: "send_error", Err: err}
 			}
 			continue
 		}
 		if resp != nil {
 			if resp.StatusCode == http.StatusGone || resp.StatusCode == http.StatusNotFound {
 				_ = s.markSubscriptionDeleted(ctx, endpoint)
+				if sendErr == nil {
+					sendErr = &PushDeliveryError{Type: "subscription_gone", Err: errors.New(resp.Status)}
+				}
 			} else if resp.StatusCode >= http.StatusBadRequest && sendErr == nil {
-				sendErr = errors.New(resp.Status)
+				sendErr = &PushDeliveryError{Type: "http_error", Err: errors.New(resp.Status)}
 			}
 			_ = resp.Body.Close()
 		}

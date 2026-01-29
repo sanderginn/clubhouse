@@ -2,6 +2,7 @@ package observability
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"time"
 
@@ -496,7 +497,7 @@ func RecordNotificationDelivered(ctx context.Context, channel string, count int6
 }
 
 // RecordNotificationDeliveryFailed increments the notification delivery failure counter.
-func RecordNotificationDeliveryFailed(ctx context.Context, channel string, count int64) {
+func RecordNotificationDeliveryFailed(ctx context.Context, channel string, errorType string, count int64) {
 	if count <= 0 {
 		return
 	}
@@ -504,7 +505,13 @@ func RecordNotificationDeliveryFailed(ctx context.Context, channel string, count
 	if m == nil {
 		return
 	}
-	m.notificationsFailed.Add(ctx, count, metric.WithAttributes(attribute.String("channel", channel)))
+	attrs := []attribute.KeyValue{
+		attribute.String("channel", channel),
+	}
+	if strings.TrimSpace(errorType) != "" {
+		attrs = append(attrs, attribute.String("error_type", errorType))
+	}
+	m.notificationsFailed.Add(ctx, count, metric.WithAttributes(attrs...))
 }
 
 // RecordLinkMetadataFetchAttempt increments the link metadata fetch attempt counter.
