@@ -14,7 +14,8 @@ type TOTPVerifyRequest struct {
 
 // TOTPVerifyResponse represents the response from verifying TOTP.
 type TOTPVerifyResponse struct {
-	Message string `json:"message"`
+	Message     string   `json:"message"`
+	BackupCodes []string `json:"backup_codes,omitempty"`
 }
 
 // TOTPDisableResponse represents the response from disabling TOTP.

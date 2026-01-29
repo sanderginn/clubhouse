@@ -340,7 +340,13 @@ func (h *UserHandler) VerifyMFA(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.totpService.VerifyUser(r.Context(), session.UserID, req.Code); err != nil {
+	backupCodes, err := services.GenerateBackupCodes()
+	if err != nil {
+		writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_BACKUP_FAILED", "Failed to generate backup codes")
+		return
+	}
+
+	if err := h.totpService.EnableUserWithBackupCodes(r.Context(), session.UserID, req.Code, backupCodes); err != nil {
 		switch {
 		case errors.Is(err, services.ErrTOTPRequired):
 			writeError(r.Context(), w, http.StatusBadRequest, "TOTP_REQUIRED", "TOTP code required")
@@ -361,7 +367,8 @@ func (h *UserHandler) VerifyMFA(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := models.TOTPVerifyResponse{
-		Message: "TOTP enabled",
+		Message:     "TOTP enabled",
+		BackupCodes: backupCodes,
 	}
 	h.logUserAudit(r.Context(), "enable_mfa", session.UserID, map[string]interface{}{
 		"method": "totp",

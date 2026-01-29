@@ -1261,6 +1261,17 @@ func TestUserMFAEnrollVerifyDisable(t *testing.T) {
 	if verifyBody.Message == "" {
 		t.Fatalf("expected verify message to be set")
 	}
+	if len(verifyBody.BackupCodes) == 0 {
+		t.Fatalf("expected backup codes to be returned")
+	}
+
+	var backupCount int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM mfa_backup_codes WHERE user_id = $1`, userID).Scan(&backupCount); err != nil {
+		t.Fatalf("failed to query backup codes: %v", err)
+	}
+	if backupCount != len(verifyBody.BackupCodes) {
+		t.Fatalf("expected %d backup codes, got %d", len(verifyBody.BackupCodes), backupCount)
+	}
 
 	var enabled bool
 	var secret []byte
