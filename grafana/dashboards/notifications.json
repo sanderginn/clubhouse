@@ -848,13 +848,13 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum by (channel) (increase(clubhouse_notifications_delivery_failed_total{channel=~\"$delivery_channel\"}[1h]))",
-          "legendFormat": "{{channel}}",
+          "expr": "sum(increase(clubhouse_notifications_delivery_failed_total{channel=\"push\"}[1h]))",
+          "legendFormat": "push",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Push Errors by Type",
+      "title": "Push Delivery Failures (1h)",
       "type": "timeseries"
     }
   ],
