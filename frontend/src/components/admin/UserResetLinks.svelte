@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import { api } from '../../services/api';
+  import { buildProfileHref, handleProfileNavigation } from '../../services/profileNavigation';
 
   interface AdminUser {
     id: string;
@@ -197,7 +198,14 @@
           <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div class="flex flex-wrap items-center gap-2">
-                <p class="text-lg font-semibold text-slate-900">{user.username}</p>
+                <a
+                  href={buildProfileHref(user.id)}
+                  on:click={(event) => handleProfileNavigation(event, user.id)}
+                  class="cursor-pointer text-lg font-semibold text-slate-900 transition hover:text-amber-700 hover:underline"
+                  aria-label={`View ${user.username}'s profile`}
+                >
+                  {user.username}
+                </a>
                 {#if user.is_admin}
                   <span class="rounded-full bg-indigo-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-600">
                     Admin
