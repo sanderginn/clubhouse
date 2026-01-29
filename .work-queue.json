@@ -184,6 +184,7 @@
     349,
     350,
     351,
+    364,
     372,
     373,
     400
@@ -3446,7 +3447,7 @@
     {
       "issue_number": 364,
       "title": "Bug: Image upload not working",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769676766-52175",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769676766-52175",
       "dependencies": [],
@@ -3458,7 +3459,9 @@
         "frontend"
       ],
       "branch": "fix/issue-364-image-upload-not-working",
-      "claimed_at": "2026-01-29T08:52:46Z"
+      "claimed_at": "2026-01-29T08:52:46Z",
+      "pr_number": 404,
+      "completed_at": "2026-01-29T10:59:25Z"
     },
     {
       "issue_number": 365,
