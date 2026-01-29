@@ -7,6 +7,7 @@
   "completed_issues": [
     366,
     378,
+    382,
     385,
     388
   ],
@@ -91,7 +92,7 @@
     {
       "issue_number": 382,
       "title": "Frontend: Improve audit log display with full context",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769693960-50160",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769693960-50160",
       "dependencies": [
@@ -106,7 +107,9 @@
         "ui"
       ],
       "branch": "feat/issue-382-frontend-improve-audit-log-display-with-",
-      "claimed_at": "2026-01-29T13:39:20Z"
+      "claimed_at": "2026-01-29T13:39:20Z",
+      "pr_number": 446,
+      "completed_at": "2026-01-29T13:51:41Z"
     },
     {
       "issue_number": 383,
