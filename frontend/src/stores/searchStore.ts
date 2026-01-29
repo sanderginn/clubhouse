@@ -210,6 +210,38 @@ function createSearchStore() {
         lastSearchedScope: null,
       });
     },
+    updateUserProfilePicture: (userId: string, profilePictureUrl?: string) => {
+      update((state) => ({
+        ...state,
+        results: state.results.map((result) => {
+          if (result.type === 'post' && result.post?.user?.id === userId) {
+            return {
+              ...result,
+              post: {
+                ...result.post,
+                user: {
+                  ...result.post.user,
+                  profilePictureUrl,
+                },
+              },
+            };
+          }
+          if (result.type === 'comment' && result.comment?.user?.id === userId) {
+            return {
+              ...result,
+              comment: {
+                ...result.comment,
+                user: {
+                  ...result.comment.user,
+                  profilePictureUrl,
+                },
+              },
+            };
+          }
+          return result;
+        }),
+      }));
+    },
     search: async () => {
       const currentToken = requestToken + 1;
       requestToken = currentToken;

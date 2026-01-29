@@ -259,4 +259,41 @@ describe('commentStore', () => {
     expect(state.comments[0].replies?.[0].id).toBe('reply-1');
     expect(state.comments[1].id).toBe('comment-31');
   });
+
+  it('updateUserProfilePicture updates matching comment users', () => {
+    resetStore();
+
+    commentStore.setThread(
+      'post-6',
+      [
+        {
+          id: 'comment-50',
+          userId: 'user-1',
+          postId: 'post-6',
+          content: 'Hello',
+          createdAt: '2025-01-01T00:00:00Z',
+          user: { id: 'user-1', username: 'sander', profilePictureUrl: 'old-url' },
+          replies: [
+            {
+              id: 'reply-50',
+              userId: 'user-2',
+              postId: 'post-6',
+              parentCommentId: 'comment-50',
+              content: 'Reply',
+              createdAt: '2025-01-02T00:00:00Z',
+              user: { id: 'user-2', username: 'alex', profilePictureUrl: 'keep-url' },
+            },
+          ],
+        },
+      ],
+      null,
+      true
+    );
+
+    commentStore.updateUserProfilePicture('user-1', 'new-url');
+
+    const state = get(commentStore)['post-6'];
+    expect(state.comments[0].user?.profilePictureUrl).toBe('new-url');
+    expect(state.comments[0].replies?.[0].user?.profilePictureUrl).toBe('keep-url');
+  });
 });

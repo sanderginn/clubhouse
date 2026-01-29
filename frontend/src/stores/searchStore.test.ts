@@ -159,4 +159,45 @@ describe('searchStore', () => {
     expect(state.error).toBe('boom');
     expect(state.isLoading).toBe(false);
   });
+
+  it('updateUserProfilePicture updates matching search result users', async () => {
+    searchStore.setQuery('hello');
+    searchStore.setScope('global');
+    apiGet.mockResolvedValue({
+      results: [
+        {
+          type: 'post',
+          score: 0.9,
+          post: {
+            id: 'post-1',
+            user_id: 'user-1',
+            section_id: 'section-1',
+            content: 'hello world',
+            created_at: '2024-01-01T00:00:00Z',
+            comment_count: 0,
+            user: { id: 'user-1', username: 'sander', profile_picture_url: 'old-url' },
+          },
+        },
+        {
+          type: 'comment',
+          score: 0.7,
+          comment: {
+            id: 'comment-1',
+            user_id: 'user-2',
+            post_id: 'post-1',
+            content: 'nice post',
+            created_at: '2024-01-01T01:00:00Z',
+            user: { id: 'user-2', username: 'alex', profile_picture_url: 'keep-url' },
+          },
+        },
+      ],
+    });
+
+    await searchStore.search();
+    searchStore.updateUserProfilePicture('user-1', 'new-url');
+
+    const state = get(searchStore);
+    expect(state.results[0].post?.user?.profilePictureUrl).toBe('new-url');
+    expect(state.results[1].comment?.user?.profilePictureUrl).toBe('keep-url');
+  });
 });
