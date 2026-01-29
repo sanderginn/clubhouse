@@ -191,6 +191,7 @@
     377,
     378,
     384,
+    388,
     400
   ],
   "issues": [
@@ -3807,7 +3808,7 @@
     {
       "issue_number": 388,
       "title": "Frontend: Create user settings page skeleton",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769684486-3182",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769684486-3182",
       "dependencies": [],
@@ -3820,7 +3821,9 @@
         "ui"
       ],
       "branch": "feat/issue-388-frontend-create-user-settings-page-skele",
-      "claimed_at": "2026-01-29T11:01:26Z"
+      "claimed_at": "2026-01-29T11:01:26Z",
+      "pr_number": 407,
+      "completed_at": "2026-01-29T11:21:26Z"
     },
     {
       "issue_number": 389,
