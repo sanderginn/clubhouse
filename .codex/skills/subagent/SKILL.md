@@ -121,9 +121,55 @@ models.ErrorResponse{Error: "message", Code: "ERROR_CODE"}
 
 **Standard error codes:** `INVALID_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `INTERNAL_ERROR`
 
+### Add Audit Logging (When Required)
+
+**All state-changing operations must emit an audit event.** This applies to:
+- Admin actions (approve/reject user, hard delete, restore, toggle settings)
+- User actions that mutate persistent state (delete post/comment, restore own content)
+
+**Audit event format:**
+- **action**: snake_case action name (e.g., `delete_post`, `approve_user`, `toggle_link_metadata`)
+- **target_user_id**: user affected by the action (nullable; use the closest related user)
+- **metadata**: JSON map with relevant IDs and context
+
+**Common action names (use these for consistency):**
+`approve_user`, `reject_user`, `delete_post`, `hard_delete_post`, `restore_post`, `delete_comment`, `hard_delete_comment`, `restore_comment`, `generate_password_reset_token`, `toggle_link_metadata`, `update_section`, `delete_section`
+
+**Example:**
+```go
+auditQuery := `
+    INSERT INTO audit_logs (admin_user_id, action, related_comment_id, related_user_id, created_at)
+    VALUES ($1, 'delete_comment', $2, $3, now())`
+_, err := tx.ExecContext(ctx, auditQuery, adminUserID, commentID, commentUserID)
+```
+
+See AGENTS.md "Audit Logging" section for full details.
+
+### Add Observability (When Required)
+
+**New endpoints and operations must include OpenTelemetry signals** per DESIGN.md Section 9:
+
+**Traces:**
+- Every new HTTP endpoint should be traced
+- Include span attributes: `user_id`, `section_id`, `post_id`, error details
+- Database queries should be traced
+
+**Metrics:**
+- Business operations (posts created, comments added, deletes, etc.) should emit metrics
+- HTTP request counts and durations (usually handled by middleware)
+
+**Logs:**
+- Use `internal/observability` functions: `LogDebug`, `LogInfo`, `LogWarn`, `LogError`
+- Never use `fmt.Println` or standard `log` package
+- Include structured key-value pairs
+
+If your implementation adds new endpoints or business operations, follow existing patterns in handlers/services for observability.
+
 ### Add Tests (When It Makes Sense)
 
 If you change or add backend logic, add or update **unit tests** (services/) and **handler tests** (handlers/) where applicable. If you change frontend logic, add **frontend unit tests** (stores/services) and **component tests** (Svelte) where reasonable. If the change affects critical user flows, add or extend **E2E tests** (Playwright) to cover the new behavior. If tests are not reasonable for the change, state why in the PR description.
+
+**If you added audit logging**, add/extend tests to verify audit logs are written when expected.
 
 Tests should pass before finalizing an issue. If you're explicitly instructed that tests may fail, **create follow-up issues per failing domain** and link them in the PR description.
 
@@ -217,15 +263,17 @@ After rebasing, wait for the next review cycle.
 3. **Use the file location table above** — don't explore; go directly to the right files
 4. **Copy existing patterns** — check one similar handler/service, not multiple
 5. **Add tests when it makes sense** — include frontend tests; explain in PR if you didn't add tests
-6. **Failing tests policy** — tests must pass unless explicitly told otherwise; if allowed to fail, file follow-up issues and link them in the PR
-7. **Don't skip dependencies** — the script handles this automatically
-8. **Rebase if asked** — rebase on `main` when the reviewer requests it; never merge main into your branch
-9. **Minimize exploration** — see "What NOT to Explore" section
-10. **Start immediately** — once in the worktree, begin work without waiting for more user input; keep going until the PR is opened
-11. **No confirmation prompts** — never ask whether to run extra tests or whether to commit/create a PR; decide and proceed without asking
-12. **Worktree integrity checks** — after every change, verify you did not modify files outside your worktree. If you did, immediately move those changes into your worktree and undo the changes outside it.
-13. **Stay alive after PR** — do not exit after creating the PR. Wait for review feedback and address it until the PR is merged.
-14. **Do not spawn sub-agents** — you are already the subagent; proceed with this workflow directly.
+6. **Add audit logging for state-changing operations** — see "Add Audit Logging" section above
+7. **Add observability signals for new endpoints** — see "Add Observability" section above
+8. **Failing tests policy** — tests must pass unless explicitly told otherwise; if allowed to fail, file follow-up issues and link them in the PR
+9. **Don't skip dependencies** — the script handles this automatically
+10. **Rebase if asked** — rebase on `main` when the reviewer requests it; never merge main into your branch
+11. **Minimize exploration** — see "What NOT to Explore" section
+12. **Start immediately** — once in the worktree, begin work without waiting for more user input; keep going until the PR is opened
+13. **No confirmation prompts** — never ask whether to run extra tests or whether to commit/create a PR; decide and proceed without asking
+14. **Worktree integrity checks** — after every change, verify you did not modify files outside your worktree. If you did, immediately move those changes into your worktree and undo the changes outside it.
+15. **Stay alive after PR** — do not exit after creating the PR. Wait for review feedback and address it until the PR is merged.
+16. **Do not spawn sub-agents** — you are already the subagent; proceed with this workflow directly.
 
 ## Troubleshooting
 

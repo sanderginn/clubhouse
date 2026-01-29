@@ -26,11 +26,13 @@ You must run a **foreground loop** for the entire session. Never yield or go idl
 
 ### Spawning a Worker Agent
 
-Use `spawn_agent` with `agent_type: "worker"` and the instruction `$subagent` plus a clarification that the worker should not spawn *additional* sub-agents:
+Use `spawn_agent` with `agent_type: "worker"` and invoke the **repository-local** subagent skill (not the global one):
 
 ```
-spawn_agent(prompt: "$subagent\n\nYou are already the subagent; do not spawn any further sub-agents. Proceed with the subagent workflow.", agent_type: "worker")
+spawn_agent(prompt: ".codex/skills/subagent\n\nYou are already the subagent; do not spawn any further sub-agents. Proceed with the subagent workflow.", agent_type: "worker")
 ```
+
+**Important:** Use `.codex/skills/subagent` (repository path) instead of `$subagent` (global) to ensure the worker uses the project-specific skill with all Clubhouse-specific instructions.
 
 The worker will autonomously claim an issue, create a worktree, implement the feature, and open a PR. It will then wait for further instructions (review feedback or rebase requests).
 
@@ -51,11 +53,13 @@ When a worker reports it is done, follow this sequence:
 
 ### Step 1: Spawn a Reviewer
 
-Spawn a review agent with the `$reviewer` skill:
+Spawn a review agent with the **repository-local** reviewer skill:
 
 ```
-spawn_agent(prompt: "$reviewer <PR_NUMBER>", agent_type: "worker")
+spawn_agent(prompt: ".codex/skills/reviewer <PR_NUMBER>", agent_type: "worker")
 ```
+
+**Important:** Use `.codex/skills/reviewer` (repository path) to ensure the reviewer uses the project-specific checklist including audit logging and observability verification.
 
 Use `wait` to block until the reviewer finishes.
 

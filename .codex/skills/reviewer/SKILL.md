@@ -67,6 +67,18 @@ Evaluate the PR against every item below. For each item, note whether it passes,
 - [ ] Frontend components use PascalCase, stores use camelCase
 - [ ] Svelte components use Tailwind CSS or component-scoped CSS
 
+### Audit Logging
+- [ ] State-changing operations include audit events (admin actions, deletes, restores, setting changes)
+- [ ] Audit action names use standard naming scheme (see AGENTS.md: `delete_post`, `approve_user`, etc.)
+- [ ] Audit logs capture key IDs (target_user_id, related_post_id, related_comment_id, metadata)
+- [ ] Tests verify audit logs are written when expected
+
+### Observability
+- [ ] New HTTP endpoints include traces (following existing handler patterns)
+- [ ] Business operations emit metrics where appropriate (posts created, comments added, etc.)
+- [ ] Trace spans include relevant attributes (user_id, section_id, post_id, error details)
+- [ ] Logging uses structured key-value pairs with appropriate context
+
 ### Testing
 - [ ] Backend logic changes have handler tests and/or service tests
 - [ ] Frontend changes have unit/component tests (Vitest + Testing Library)
@@ -151,9 +163,11 @@ REVIEW_VERDICT: REQUEST_CHANGES
 
 1. **Read every changed file in full** — not just the diff. Context matters.
 2. **Check migrations** — if the PR touches SQL, verify column names against `backend/migrations/`.
-3. **Never merge** — only review. Signal your verdict via the `REVIEW_VERDICT` line.
-4. **Real newlines only** — never use literal `\n` in `gh` comment bodies. Always use heredocs.
-5. **Be specific** — reference file paths and line numbers in findings.
-6. **One comment** — consolidate all findings into a single PR comment, not multiple.
-7. **Existing comments matter** — factor in prior review feedback and author responses.
-8. **CI must pass** — if checks are failing or still running, never mention it in a PR comment. Note it only in your output and do not approve with failing checks.
+3. **Verify audit logging** — confirm state-changing operations include audit events (see checklist above).
+4. **Verify observability** — confirm new endpoints/operations include traces, metrics, and proper logging (see checklist above).
+5. **Never merge** — only review. Signal your verdict via the `REVIEW_VERDICT` line.
+6. **Real newlines only** — never use literal `\n` in `gh` comment bodies. Always use heredocs.
+7. **Be specific** — reference file paths and line numbers in findings.
+8. **One comment** — consolidate all findings into a single PR comment, not multiple.
+9. **Existing comments matter** — factor in prior review feedback and author responses.
+10. **CI must pass** — if checks are failing or still running, never mention it in a PR comment. Note it only in your output and do not approve with failing checks.
