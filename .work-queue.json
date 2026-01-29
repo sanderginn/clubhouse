@@ -254,9 +254,9 @@
     {
       "issue_number": 390,
       "title": "Backend + Frontend: MFA enrollment for regular users",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769703795-87269",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769703795-87269",
       "dependencies": [
         388
       ],
@@ -268,7 +268,9 @@
         "frontend",
         "users",
         "auth"
-      ]
+      ],
+      "branch": "feat/issue-390-backend-frontend-mfa-enrollment-for-regu",
+      "claimed_at": "2026-01-29T16:23:15Z"
     },
     {
       "issue_number": 391,
