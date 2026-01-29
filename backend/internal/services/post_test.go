@@ -2,6 +2,8 @@ package services
 
 import (
 	"context"
+	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -228,16 +230,29 @@ func TestAdminRestorePostCreatesAuditLog(t *testing.T) {
 	}
 
 	var count int
+	var metadataBytes []byte
 	err = db.QueryRow(`
-		SELECT COUNT(*)
+		SELECT COUNT(*), metadata
 		FROM audit_logs
 		WHERE admin_user_id = $1 AND action = 'restore_post' AND related_post_id = $2
-	`, adminID, postID).Scan(&count)
+		GROUP BY metadata
+	`, adminID, postID).Scan(&count, &metadataBytes)
 	if err != nil {
 		t.Fatalf("failed to query audit log: %v", err)
 	}
 	if count != 1 {
 		t.Errorf("expected 1 audit log entry, got %d", count)
+	}
+
+	var metadata map[string]interface{}
+	if err := json.Unmarshal(metadataBytes, &metadata); err != nil {
+		t.Fatalf("failed to unmarshal metadata: %v", err)
+	}
+	if metadata["restored_by_user_id"] != adminID {
+		t.Errorf("expected restored_by_user_id %s, got %v", adminID, metadata["restored_by_user_id"])
+	}
+	if metadata["post_id"] != postID {
+		t.Errorf("expected post_id %s, got %v", postID, metadata["post_id"])
 	}
 }
 
@@ -273,6 +288,58 @@ func TestHardDeletePostCreatesAuditLog(t *testing.T) {
 	}
 	if auditCount != 1 {
 		t.Errorf("expected 1 audit log entry, got %d", auditCount)
+	}
+}
+
+func TestAdminDeletePostCreatesAuditLogWithMetadata(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "moderateduser", "moderateduser@test.com", false, true)
+	adminID := testutil.CreateTestUser(t, db, "moderatoradmin", "moderatoradmin@test.com", true, true)
+	sectionID := testutil.CreateTestSection(t, db, "Moderation Section", "general")
+	content := strings.Repeat("a", 150)
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, content)
+
+	service := NewPostService(db)
+	_, err := service.DeletePost(context.Background(), uuid.MustParse(postID), uuid.MustParse(adminID), true)
+	if err != nil {
+		t.Fatalf("DeletePost failed: %v", err)
+	}
+
+	var relatedPostID uuid.UUID
+	var metadataBytes []byte
+	err = db.QueryRow(`
+		SELECT related_post_id, metadata
+		FROM audit_logs
+		WHERE admin_user_id = $1 AND action = 'delete_post'
+	`, adminID).Scan(&relatedPostID, &metadataBytes)
+	if err != nil {
+		t.Fatalf("failed to query audit log: %v", err)
+	}
+	if relatedPostID.String() != postID {
+		t.Errorf("expected related_post_id %s, got %s", postID, relatedPostID.String())
+	}
+
+	var metadata map[string]interface{}
+	if err := json.Unmarshal(metadataBytes, &metadata); err != nil {
+		t.Fatalf("failed to unmarshal metadata: %v", err)
+	}
+	if metadata["post_id"] != postID {
+		t.Errorf("expected post_id %s, got %v", postID, metadata["post_id"])
+	}
+	if metadata["section_id"] != sectionID {
+		t.Errorf("expected section_id %s, got %v", sectionID, metadata["section_id"])
+	}
+	if metadata["deleted_by_user_id"] != adminID {
+		t.Errorf("expected deleted_by_user_id %s, got %v", adminID, metadata["deleted_by_user_id"])
+	}
+	excerpt, ok := metadata["content_excerpt"].(string)
+	if !ok {
+		t.Fatalf("expected content_excerpt to be string, got %T", metadata["content_excerpt"])
+	}
+	if len([]rune(excerpt)) != auditExcerptLimit {
+		t.Errorf("expected content_excerpt length %d, got %d", auditExcerptLimit, len([]rune(excerpt)))
 	}
 }
 

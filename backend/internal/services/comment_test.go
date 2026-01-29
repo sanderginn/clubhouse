@@ -2,6 +2,8 @@ package services
 
 import (
 	"context"
+	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -160,6 +162,102 @@ func TestValidateCreateCommentInput(t *testing.T) {
 				t.Errorf("validateCreateCommentInput() error message = %q, want %q", err.Error(), tt.errMsg)
 			}
 		})
+	}
+}
+
+func TestAdminDeleteCommentCreatesAuditLogWithMetadata(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "commentmoduser", "commentmoduser@test.com", false, true)
+	adminID := testutil.CreateTestUser(t, db, "commentmodadmin", "commentmodadmin@test.com", true, true)
+	sectionID := testutil.CreateTestSection(t, db, "Comment Section", "general")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Post for comment moderation")
+	content := strings.Repeat("c", 140)
+	commentID := testutil.CreateTestComment(t, db, userID, postID, content)
+
+	service := NewCommentService(db)
+	_, err := service.DeleteComment(context.Background(), uuid.MustParse(commentID), uuid.MustParse(adminID), true)
+	if err != nil {
+		t.Fatalf("DeleteComment failed: %v", err)
+	}
+
+	var relatedCommentID uuid.UUID
+	var metadataBytes []byte
+	err = db.QueryRow(`
+		SELECT related_comment_id, metadata
+		FROM audit_logs
+		WHERE admin_user_id = $1 AND action = 'delete_comment'
+	`, adminID).Scan(&relatedCommentID, &metadataBytes)
+	if err != nil {
+		t.Fatalf("failed to query audit log: %v", err)
+	}
+	if relatedCommentID.String() != commentID {
+		t.Errorf("expected related_comment_id %s, got %s", commentID, relatedCommentID.String())
+	}
+
+	var metadata map[string]interface{}
+	if err := json.Unmarshal(metadataBytes, &metadata); err != nil {
+		t.Fatalf("failed to unmarshal metadata: %v", err)
+	}
+	if metadata["comment_id"] != commentID {
+		t.Errorf("expected comment_id %s, got %v", commentID, metadata["comment_id"])
+	}
+	if metadata["post_id"] != postID {
+		t.Errorf("expected post_id %s, got %v", postID, metadata["post_id"])
+	}
+	if metadata["deleted_by_user_id"] != adminID {
+		t.Errorf("expected deleted_by_user_id %s, got %v", adminID, metadata["deleted_by_user_id"])
+	}
+	excerpt, ok := metadata["content_excerpt"].(string)
+	if !ok {
+		t.Fatalf("expected content_excerpt to be string, got %T", metadata["content_excerpt"])
+	}
+	if len([]rune(excerpt)) != auditExcerptLimit {
+		t.Errorf("expected content_excerpt length %d, got %d", auditExcerptLimit, len([]rune(excerpt)))
+	}
+}
+
+func TestAdminRestoreCommentCreatesAuditLogWithMetadata(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "commentrestoreuser", "commentrestoreuser@test.com", false, true)
+	adminID := testutil.CreateTestUser(t, db, "commentrestoreadmin", "commentrestoreadmin@test.com", true, true)
+	sectionID := testutil.CreateTestSection(t, db, "Restore Comment Section", "general")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Post for comment restore")
+	commentID := testutil.CreateTestComment(t, db, userID, postID, "Comment to restore")
+
+	service := NewCommentService(db)
+	_, err := service.DeleteComment(context.Background(), uuid.MustParse(commentID), uuid.MustParse(userID), false)
+	if err != nil {
+		t.Fatalf("DeleteComment failed: %v", err)
+	}
+
+	_, err = service.AdminRestoreComment(context.Background(), uuid.MustParse(commentID), uuid.MustParse(adminID))
+	if err != nil {
+		t.Fatalf("AdminRestoreComment failed: %v", err)
+	}
+
+	var metadataBytes []byte
+	err = db.QueryRow(`
+		SELECT metadata
+		FROM audit_logs
+		WHERE admin_user_id = $1 AND action = 'restore_comment' AND related_comment_id = $2
+	`, adminID, commentID).Scan(&metadataBytes)
+	if err != nil {
+		t.Fatalf("failed to query audit log: %v", err)
+	}
+
+	var metadata map[string]interface{}
+	if err := json.Unmarshal(metadataBytes, &metadata); err != nil {
+		t.Fatalf("failed to unmarshal metadata: %v", err)
+	}
+	if metadata["comment_id"] != commentID {
+		t.Errorf("expected comment_id %s, got %v", commentID, metadata["comment_id"])
+	}
+	if metadata["restored_by_user_id"] != adminID {
+		t.Errorf("expected restored_by_user_id %s, got %v", adminID, metadata["restored_by_user_id"])
 	}
 }
 
