@@ -3966,6 +3966,22 @@
         "admin",
         "ui"
       ]
+    },
+    {
+      "issue_number": 400,
+      "title": "Bug: WebSocket connection loop causes repeated reconnections every few seconds",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 0,
+      "labels": [
+        "bug",
+        "frontend",
+        "backend",
+        "websocket"
+      ]
     }
   ]
 }
