@@ -110,7 +110,7 @@ npm run dev
 Optional frontend environment variables:
 - `VITE_SENTRY_DSN`: Sentry DSN for client error tracking (leave unset to disable).
 - `VITE_APP_VERSION`: Release identifier for error tracking.
-- `VITE_OTEL_EXPORTER_OTLP_ENDPOINT`: OTLP/HTTP traces endpoint for browser telemetry (leave unset to disable).
+- `VITE_OTEL_EXPORTER_OTLP_ENDPOINT`: OTLP/HTTP traces endpoint for browser telemetry (in dev defaults to `http://localhost:4318/v1/traces`; leave unset in prod to disable).
 - `VITE_OTEL_SERVICE_NAME`: Service name used in frontend traces (defaults to `clubhouse-frontend`).
 
 ## Architecture
