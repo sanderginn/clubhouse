@@ -5,6 +5,7 @@
     "description": "Work queue for parallel issue assignment with dependency tracking"
   },
   "completed_issues": [
+    365,
     366,
     378,
     382,
@@ -19,7 +20,7 @@
     {
       "issue_number": 365,
       "title": "Enhancement: Promote users to admin in moderation console",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769695813-2458",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769695813-2458",
       "dependencies": [
@@ -35,7 +36,9 @@
         "users"
       ],
       "branch": "feat/issue-365-enhancement-promote-users-to-admin-in-mo",
-      "claimed_at": "2026-01-29T14:10:13Z"
+      "claimed_at": "2026-01-29T14:10:13Z",
+      "pr_number": 451,
+      "completed_at": "2026-01-29T16:06:14Z"
     },
     {
       "issue_number": 366,
