@@ -58,9 +58,11 @@
             on:click|stopPropagation={toggleMenu}
             aria-haspopup="true"
             aria-expanded={menuOpen}
+            aria-label={`Open user menu for ${$currentUser.username}`}
             type="button"
           >
             <span class="hidden sm:block font-medium">{$currentUser.username}</span>
+            <span class="sr-only">{$currentUser.username}</span>
             {#if $currentUser.profilePictureUrl}
               <img
                 src={$currentUser.profilePictureUrl}
