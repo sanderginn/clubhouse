@@ -439,11 +439,8 @@ func (s *UserService) ApproveUser(ctx context.Context, userID uuid.UUID, adminUs
 	}
 
 	// Create audit log entry
-	_, err = tx.ExecContext(ctx, `
-		INSERT INTO audit_logs (admin_user_id, action, related_user_id, created_at)
-		VALUES ($1, 'approve_user', $2, now())
-	`, adminUserID, userID)
-	if err != nil {
+	auditService := NewAuditService(tx)
+	if err := auditService.LogAudit(ctx, "approve_user", adminUserID, userID); err != nil {
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
@@ -493,11 +490,8 @@ func (s *UserService) RejectUser(ctx context.Context, userID uuid.UUID, adminUse
 	}
 
 	// Create audit log entry BEFORE deleting the user (FK constraint)
-	_, err = tx.ExecContext(ctx, `
-		INSERT INTO audit_logs (admin_user_id, action, related_user_id, created_at)
-		VALUES ($1, 'reject_user', $2, now())
-	`, adminUserID, userID)
-	if err != nil {
+	auditService := NewAuditService(tx)
+	if err := auditService.LogAudit(ctx, "reject_user", adminUserID, userID); err != nil {
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
