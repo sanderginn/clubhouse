@@ -16,6 +16,7 @@
     388,
     389,
     426,
+    427,
     441
   ],
   "issues": [
@@ -624,7 +625,7 @@
     {
       "issue_number": 427,
       "title": "[Medium] Add frontend performance monitoring (Web Vitals)",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769703798-87422",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769703798-87422",
       "dependencies": [
@@ -637,7 +638,9 @@
         "frontend"
       ],
       "branch": "feat/issue-427-medium-add-frontend-performance-monitori",
-      "claimed_at": "2026-01-29T16:23:18Z"
+      "claimed_at": "2026-01-29T16:23:18Z",
+      "pr_number": 453,
+      "completed_at": "2026-01-29T16:44:54Z"
     },
     {
       "issue_number": 428,
