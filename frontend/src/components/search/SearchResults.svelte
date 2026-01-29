@@ -5,6 +5,7 @@
     searchError,
     searchQuery,
     lastSearchQuery,
+    lastSearchScope,
     searchScope,
     activeSection,
     searchStore,
@@ -237,8 +238,9 @@
   $: normalizedQuery = $searchQuery.trim();
   $: hasQuery = normalizedQuery.length > 0;
   $: showResults = $lastSearchQuery && $lastSearchQuery === normalizedQuery;
-  $: isGlobalScope = $searchScope === 'global';
-  $: showParentSectionPill = $searchScope === 'global';
+  $: displayScope = showResults && $lastSearchScope ? $lastSearchScope : $searchScope;
+  $: isGlobalScope = displayScope === 'global';
+  $: showParentSectionPill = displayScope === 'global';
   $: sectionGroups = isGlobalScope ? buildSectionGroups($searchResults, $sections) : [];
 </script>
 
@@ -272,6 +274,11 @@
   {:else if !showResults}
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
       <p class="text-gray-500">Press Search to see results.</p>
+      {#if $lastSearchScope && $lastSearchScope !== $searchScope}
+        <p class="text-sm text-gray-400 mt-2">
+          Scope changed to {$searchScope === 'global' ? 'Everywhere' : 'current section'}.
+        </p>
+      {/if}
     </div>
   {:else}
     <div class="flex items-center justify-between text-sm text-gray-500">
@@ -280,7 +287,7 @@
         "{$lastSearchQuery}"
       </span>
       <span>
-        {#if $searchScope === 'global'}
+        {#if displayScope === 'global'}
           All sections
         {:else if $activeSection}
           {$activeSection.name}
@@ -289,6 +296,12 @@
         {/if}
       </span>
     </div>
+
+    {#if $lastSearchScope && $lastSearchScope !== $searchScope}
+      <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-700">
+        Scope changed to {$searchScope === 'global' ? 'Everywhere' : 'current section'}. Press Search to refresh.
+      </div>
+    {/if}
 
     {#if isGlobalScope}
       {#each sectionGroups as group}

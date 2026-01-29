@@ -87,6 +87,7 @@ interface SearchState {
   isLoading: boolean;
   error: string | null;
   lastSearched: string;
+  lastSearchedScope: SearchScope | null;
 }
 
 function mapApiLink(link: ApiLink): Link {
@@ -147,6 +148,7 @@ function createSearchStore() {
     isLoading: false,
     error: null,
     lastSearched: '',
+    lastSearchedScope: null,
   });
   const { subscribe, update, set } = store;
   let requestToken = 0;
@@ -176,6 +178,7 @@ function createSearchStore() {
           isLoading: false,
           error: null,
           lastSearched: '',
+          lastSearchedScope: null,
         };
       });
     }
@@ -202,6 +205,7 @@ function createSearchStore() {
         isLoading: false,
         error: null,
         lastSearched: '',
+        lastSearchedScope: null,
       });
     },
     search: async () => {
@@ -216,6 +220,7 @@ function createSearchStore() {
           error: null,
           isLoading: false,
           lastSearched: '',
+          lastSearchedScope: null,
         }));
         return;
       }
@@ -276,6 +281,7 @@ function createSearchStore() {
           isLoading: false,
           error: null,
           lastSearched: query,
+          lastSearchedScope: scope,
         }));
       } catch (err) {
         if (currentToken !== requestToken) {
@@ -299,3 +305,4 @@ export const searchResults = derived(searchStore, ($searchStore) => $searchStore
 export const searchError = derived(searchStore, ($searchStore) => $searchStore.error);
 export const isSearching = derived(searchStore, ($searchStore) => $searchStore.isLoading);
 export const lastSearchQuery = derived(searchStore, ($searchStore) => $searchStore.lastSearched);
+export const lastSearchScope = derived(searchStore, ($searchStore) => $searchStore.lastSearchedScope);
