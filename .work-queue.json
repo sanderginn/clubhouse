@@ -183,7 +183,8 @@
     348,
     349,
     350,
-    351
+    351,
+    373
   ],
   "issues": [
     {
@@ -3546,7 +3547,7 @@
     {
       "issue_number": 373,
       "title": "Bug: Superfluous section pill on parent post in scoped search results",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769676801-52908",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769676801-52908",
       "dependencies": [],
@@ -3559,7 +3560,9 @@
         "ui"
       ],
       "branch": "fix/issue-373-superfluous-section-pill-on-parent-post-",
-      "claimed_at": "2026-01-29T08:53:21Z"
+      "claimed_at": "2026-01-29T08:53:21Z",
+      "pr_number": 401,
+      "completed_at": "2026-01-29T09:00:21Z"
     },
     {
       "issue_number": 375,
