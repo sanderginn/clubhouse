@@ -3717,16 +3717,18 @@
     {
       "issue_number": 384,
       "title": "Docs: Add audit logging guidelines to CLAUDE.md",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769684478-2712",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769684478-2712",
       "dependencies": [],
       "phase": "feature",
       "priority": 0,
       "labels": [
         "enhancement",
         "documentation"
-      ]
+      ],
+      "branch": "feat/issue-384-docs-add-audit-logging-guidelines-to-cla",
+      "claimed_at": "2026-01-29T11:01:18Z"
     },
     {
       "issue_number": 385,
