@@ -3505,9 +3505,9 @@
     {
       "issue_number": 369,
       "title": "Enhancement: Reorganize sections (rename Photos to Series, reorder)",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769684907-17691",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769684907-17691",
       "dependencies": [],
       "phase": "feature",
       "priority": 3,
@@ -3516,7 +3516,9 @@
         "backend",
         "db",
         "sections"
-      ]
+      ],
+      "branch": "feat/issue-369-enhancement-reorganize-sections-rename-p",
+      "claimed_at": "2026-01-29T11:08:27Z"
     },
     {
       "issue_number": 370,
