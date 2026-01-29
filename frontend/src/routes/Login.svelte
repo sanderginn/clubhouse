@@ -16,6 +16,7 @@
     username: string;
     email?: string | null;
     is_admin: boolean;
+    totp_enabled: boolean;
     message: string;
   }
 
@@ -83,6 +84,7 @@
           username: response.username,
           email: response.email ?? '',
           isAdmin: response.is_admin,
+          totpEnabled: response.totp_enabled,
         };
         authStore.setUser(user);
         totpAttempted = false;

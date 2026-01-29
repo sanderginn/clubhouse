@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -16,15 +18,19 @@ import (
 
 // UserHandler handles user endpoints
 type UserHandler struct {
+	db          *sql.DB
 	userService *services.UserService
 	postService *services.PostService
+	totpService *services.TOTPService
 }
 
 // NewUserHandler creates a new user handler
 func NewUserHandler(db *sql.DB) *UserHandler {
 	return &UserHandler{
+		db:          db,
 		userService: services.NewUserService(db),
 		postService: services.NewPostService(db),
+		totpService: services.NewTOTPService(db),
 	}
 }
 
@@ -246,6 +252,222 @@ func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request) {
 		observability.LogError(r.Context(), observability.ErrorLog{
 			Message:    "failed to encode update me response",
 			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}
+
+// EnrollMFA handles POST /api/v1/users/me/mfa/enable
+func (h *UserHandler) EnrollMFA(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		return
+	}
+
+	if h.totpService == nil {
+		writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_UNAVAILABLE", "TOTP service unavailable")
+		return
+	}
+
+	session, err := middleware.GetUserFromContext(r.Context())
+	if err != nil {
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
+		return
+	}
+
+	enrollment, err := h.totpService.EnrollUser(r.Context(), session.UserID, session.Username)
+	if err != nil {
+		switch {
+		case errors.Is(err, services.ErrTOTPKeyMissing), errors.Is(err, services.ErrTOTPKeyInvalid):
+			writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_CONFIG_MISSING", "TOTP configuration missing")
+		case errors.Is(err, services.ErrTOTPAlreadyEnabled):
+			writeError(r.Context(), w, http.StatusConflict, "TOTP_ALREADY_ENABLED", "TOTP already enabled")
+		case errors.Is(err, services.ErrTOTPUserNotFound):
+			writeError(r.Context(), w, http.StatusNotFound, "USER_NOT_FOUND", "User not found")
+		default:
+			writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_ENROLL_FAILED", "Failed to enroll TOTP")
+		}
+		return
+	}
+
+	response := models.TOTPEnrollResponse{
+		Secret:     enrollment.Secret,
+		OtpAuthURL: enrollment.URL,
+		Message:    "TOTP enrollment created",
+	}
+	h.logUserAudit(r.Context(), "enroll_mfa", session.UserID, map[string]interface{}{
+		"method": "totp",
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode totp enroll response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}
+
+// VerifyMFA handles POST /api/v1/users/me/mfa/verify
+func (h *UserHandler) VerifyMFA(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		return
+	}
+
+	if h.totpService == nil {
+		writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_UNAVAILABLE", "TOTP service unavailable")
+		return
+	}
+
+	session, err := middleware.GetUserFromContext(r.Context())
+	if err != nil {
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
+		return
+	}
+
+	var req models.TOTPVerifyRequest
+	if err := decodeJSONBody(w, r, &req); err != nil {
+		if isRequestBodyTooLarge(err) {
+			writeError(r.Context(), w, http.StatusRequestEntityTooLarge, "REQUEST_TOO_LARGE", "Request body too large")
+			return
+		}
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		return
+	}
+
+	backupCodes, err := services.GenerateBackupCodes()
+	if err != nil {
+		writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_BACKUP_FAILED", "Failed to generate backup codes")
+		return
+	}
+
+	if err := h.totpService.VerifyUser(r.Context(), session.UserID, req.Code); err != nil {
+		switch {
+		case errors.Is(err, services.ErrTOTPRequired):
+			writeError(r.Context(), w, http.StatusBadRequest, "TOTP_REQUIRED", "TOTP code required")
+		case errors.Is(err, services.ErrTOTPInvalid):
+			writeError(r.Context(), w, http.StatusUnauthorized, "INVALID_TOTP", "Invalid TOTP code")
+		case errors.Is(err, services.ErrTOTPNotEnrolled):
+			writeError(r.Context(), w, http.StatusConflict, "TOTP_NOT_ENROLLED", "TOTP enrollment required")
+		case errors.Is(err, services.ErrTOTPAlreadyEnabled):
+			writeError(r.Context(), w, http.StatusConflict, "TOTP_ALREADY_ENABLED", "TOTP already enabled")
+		case errors.Is(err, services.ErrTOTPUserNotFound):
+			writeError(r.Context(), w, http.StatusNotFound, "USER_NOT_FOUND", "User not found")
+		case errors.Is(err, services.ErrTOTPKeyMissing), errors.Is(err, services.ErrTOTPKeyInvalid):
+			writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_CONFIG_MISSING", "TOTP configuration missing")
+		default:
+			writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_VERIFY_FAILED", "Failed to verify TOTP")
+		}
+		return
+	}
+
+	response := models.TOTPVerifyResponse{
+		Message:     "TOTP enabled",
+		BackupCodes: backupCodes,
+	}
+	h.logUserAudit(r.Context(), "enable_mfa", session.UserID, map[string]interface{}{
+		"method": "totp",
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode totp verify response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}
+
+// DisableMFA handles POST /api/v1/users/me/mfa/disable
+func (h *UserHandler) DisableMFA(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
+		return
+	}
+
+	if h.totpService == nil {
+		writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_UNAVAILABLE", "TOTP service unavailable")
+		return
+	}
+
+	session, err := middleware.GetUserFromContext(r.Context())
+	if err != nil {
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
+		return
+	}
+
+	var req models.TOTPVerifyRequest
+	if err := decodeJSONBody(w, r, &req); err != nil {
+		if isRequestBodyTooLarge(err) {
+			writeError(r.Context(), w, http.StatusRequestEntityTooLarge, "REQUEST_TOO_LARGE", "Request body too large")
+			return
+		}
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		return
+	}
+
+	if err := h.totpService.DisableUser(r.Context(), session.UserID, req.Code); err != nil {
+		switch {
+		case errors.Is(err, services.ErrTOTPRequired):
+			writeError(r.Context(), w, http.StatusBadRequest, "TOTP_REQUIRED", "TOTP code required")
+		case errors.Is(err, services.ErrTOTPInvalid):
+			writeError(r.Context(), w, http.StatusUnauthorized, "INVALID_TOTP", "Invalid TOTP code")
+		case errors.Is(err, services.ErrTOTPNotEnabled):
+			writeError(r.Context(), w, http.StatusConflict, "TOTP_NOT_ENABLED", "TOTP is not enabled")
+		case errors.Is(err, services.ErrTOTPNotEnrolled):
+			writeError(r.Context(), w, http.StatusConflict, "TOTP_NOT_ENROLLED", "TOTP enrollment required")
+		case errors.Is(err, services.ErrTOTPUserNotFound):
+			writeError(r.Context(), w, http.StatusNotFound, "USER_NOT_FOUND", "User not found")
+		case errors.Is(err, services.ErrTOTPKeyMissing), errors.Is(err, services.ErrTOTPKeyInvalid):
+			writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_CONFIG_MISSING", "TOTP configuration missing")
+		default:
+			writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_DISABLE_FAILED", "Failed to disable TOTP")
+		}
+		return
+	}
+
+	response := models.TOTPDisableResponse{
+		Message: "TOTP disabled",
+	}
+	h.logUserAudit(r.Context(), "disable_mfa", session.UserID, map[string]interface{}{
+		"method": "totp",
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode totp disable response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}
+
+func (h *UserHandler) logUserAudit(ctx context.Context, action string, targetUserID uuid.UUID, metadata map[string]interface{}) {
+	if h == nil || h.db == nil {
+		return
+	}
+
+	userID, err := middleware.GetUserIDFromContext(ctx)
+	if err != nil {
+		return
+	}
+
+	auditService := services.NewAuditService(h.db)
+	if err := auditService.LogAuditWithMetadata(ctx, action, userID, targetUserID, metadata); err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to create audit log",
+			Code:       "AUDIT_LOG_FAILED",
 			StatusCode: http.StatusOK,
 			Err:        err,
 		})

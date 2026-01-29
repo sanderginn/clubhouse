@@ -24,6 +24,7 @@ function setAuthenticated() {
     username: 'sander',
     email: 'sander@example.com',
     isAdmin: false,
+    totpEnabled: false,
   });
 }
 

@@ -71,6 +71,7 @@
     unsuspend_user: 'Unsuspended user',
     enroll_mfa: 'Enrolled MFA',
     enable_mfa: 'Enabled MFA',
+    disable_mfa: 'Disabled MFA',
     generate_password_reset_token: 'Generated password reset token',
   };
 
@@ -83,6 +84,7 @@
     'update_profile',
     'enroll_mfa',
     'enable_mfa',
+    'disable_mfa',
     'generate_password_reset_token',
   ]);
 

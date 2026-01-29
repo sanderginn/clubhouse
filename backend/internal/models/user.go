@@ -47,11 +47,12 @@ type LoginRequest struct {
 
 // LoginResponse represents the login response
 type LoginResponse struct {
-	ID       uuid.UUID `json:"id"`
-	Username string    `json:"username"`
-	Email    string    `json:"email"`
-	IsAdmin  bool      `json:"is_admin"`
-	Message  string    `json:"message"`
+	ID          uuid.UUID `json:"id"`
+	Username    string    `json:"username"`
+	Email       string    `json:"email"`
+	IsAdmin     bool      `json:"is_admin"`
+	TotpEnabled bool      `json:"totp_enabled"`
+	Message     string    `json:"message"`
 }
 
 // LogoutResponse represents the logout response
@@ -119,6 +120,7 @@ type MeResponse struct {
 	ProfilePictureUrl *string   `json:"profile_picture_url,omitempty"`
 	Bio               *string   `json:"bio,omitempty"`
 	IsAdmin           bool      `json:"is_admin"`
+	TotpEnabled       bool      `json:"totp_enabled"`
 }
 
 // UserStats represents user activity statistics

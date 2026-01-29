@@ -28,6 +28,7 @@ describe('Login', () => {
       username: 'sander',
       email: 'sander@example.com',
       is_admin: false,
+      totp_enabled: false,
       message: 'ok',
     });
 
@@ -56,6 +57,7 @@ describe('Login', () => {
         username: 'sander',
         email: 'sander@example.com',
         isAdmin: false,
+        totpEnabled: false,
       })
     );
   });
@@ -94,6 +96,7 @@ describe('Login', () => {
         username: 'sander',
         email: 'sander@example.com',
         is_admin: true,
+        totp_enabled: true,
         message: 'ok',
       });
 
@@ -138,6 +141,7 @@ describe('Login', () => {
         username: 'sander',
         email: 'sander@example.com',
         isAdmin: true,
+        totpEnabled: true,
       })
     );
   });

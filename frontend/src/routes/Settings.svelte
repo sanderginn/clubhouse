@@ -5,6 +5,7 @@
   import { api } from '../services/api';
   import { authStore } from '../stores/authStore';
   import { currentUser } from '../stores/authStore';
+  import MfaSetup from '../components/settings/MfaSetup.svelte';
   import { postStore } from '../stores/postStore';
   import { commentStore } from '../stores/commentStore';
   import { searchStore } from '../stores/searchStore';
@@ -322,11 +323,14 @@
       </div>
     </div>
 
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-      <h2 class="text-lg font-semibold text-gray-900">Security</h2>
-      <p class="text-sm text-gray-600 mt-1">
-        Password reset, MFA setup, and active sessions. MFA will land in a future update.
-      </p>
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 space-y-4">
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900">Security</h2>
+        <p class="text-sm text-gray-600 mt-1">
+          Keep your account safe with multi-factor authentication.
+        </p>
+      </div>
+      <MfaSetup />
     </div>
 
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5">

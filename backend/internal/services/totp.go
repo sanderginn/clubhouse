@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 	"os"
 	"strings"
 	"time"
@@ -20,10 +21,12 @@ import (
 )
 
 const (
-	totpIssuer          = "Clubhouse"
-	totpCodeLength      = 6
-	totpEncryptionEnv   = "CLUBHOUSE_TOTP_ENCRYPTION_KEY"
-	totpEncryptionBytes = 32
+	totpIssuer           = "Clubhouse"
+	totpCodeLength       = 6
+	totpEncryptionEnv    = "CLUBHOUSE_TOTP_ENCRYPTION_KEY"
+	totpEncryptionBytes  = 32
+	totpBackupCodeCount  = 8
+	totpBackupCodeDigits = 8
 )
 
 var (
@@ -33,6 +36,7 @@ var (
 	ErrTOTPInvalid          = errors.New("invalid totp code")
 	ErrTOTPNotEnrolled      = errors.New("totp not enrolled")
 	ErrTOTPAlreadyEnabled   = errors.New("totp already enabled")
+	ErrTOTPNotEnabled       = errors.New("totp not enabled")
 	ErrTOTPUserNotFound     = errors.New("user not found")
 	ErrTOTPAdminRequired    = errors.New("admin required")
 	ErrTOTPSecretCorrupted  = errors.New("totp secret corrupted")
@@ -123,6 +127,63 @@ func (s *TOTPService) EnrollAdmin(ctx context.Context, userID uuid.UUID, usernam
 	}, nil
 }
 
+// EnrollUser generates a new TOTP secret for a user and stores it encrypted.
+func (s *TOTPService) EnrollUser(ctx context.Context, userID uuid.UUID, username string) (*TOTPEnrollment, error) {
+	if err := s.requireKey(); err != nil {
+		return nil, err
+	}
+
+	username = strings.TrimSpace(username)
+	if username == "" {
+		return nil, fmt.Errorf("username is required")
+	}
+
+	var enabled bool
+	err := s.db.QueryRowContext(ctx, `
+		SELECT totp_enabled
+		FROM users
+		WHERE id = $1 AND deleted_at IS NULL
+	`, userID).Scan(&enabled)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrTOTPUserNotFound
+		}
+		return nil, fmt.Errorf("failed to load totp status: %w", err)
+	}
+	if enabled {
+		return nil, ErrTOTPAlreadyEnabled
+	}
+
+	key, err := totp.Generate(totp.GenerateOpts{
+		Issuer:      totpIssuer,
+		AccountName: username,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate totp secret: %w", err)
+	}
+
+	encryptedSecret, err := encryptTOTPSecret(s.key, key.Secret())
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = s.db.ExecContext(ctx, `
+		UPDATE users
+		SET totp_secret_encrypted = $1,
+			totp_enabled = false,
+			updated_at = now()
+		WHERE id = $2 AND deleted_at IS NULL
+	`, encryptedSecret, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to store totp secret: %w", err)
+	}
+
+	return &TOTPEnrollment{
+		Secret: key.Secret(),
+		URL:    key.URL(),
+	}, nil
+}
+
 // VerifyAdmin verifies a TOTP code and enables MFA for the admin.
 func (s *TOTPService) VerifyAdmin(ctx context.Context, userID uuid.UUID, code string) error {
 	code = strings.TrimSpace(code)
@@ -178,6 +239,127 @@ func (s *TOTPService) VerifyAdmin(ctx context.Context, userID uuid.UUID, code st
 	`, userID)
 	if err != nil {
 		return fmt.Errorf("failed to enable totp: %w", err)
+	}
+
+	return nil
+}
+
+// VerifyUser verifies a TOTP code and enables MFA for a user.
+func (s *TOTPService) VerifyUser(ctx context.Context, userID uuid.UUID, code string) error {
+	code = strings.TrimSpace(code)
+	if code == "" {
+		return ErrTOTPRequired
+	}
+	if len(code) != totpCodeLength {
+		return ErrTOTPInvalid
+	}
+
+	var encrypted []byte
+	var enabled bool
+	err := s.db.QueryRowContext(ctx, `
+		SELECT totp_secret_encrypted, totp_enabled
+		FROM users
+		WHERE id = $1 AND deleted_at IS NULL
+	`, userID).Scan(&encrypted, &enabled)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrTOTPUserNotFound
+		}
+		return fmt.Errorf("failed to load totp secret: %w", err)
+	}
+	if enabled {
+		return ErrTOTPAlreadyEnabled
+	}
+	if len(encrypted) == 0 {
+		return ErrTOTPNotEnrolled
+	}
+
+	if err := s.requireKey(); err != nil {
+		return err
+	}
+
+	secret, err := decryptTOTPSecret(s.key, encrypted)
+	if err != nil {
+		return err
+	}
+
+	valid, err := validateTOTP(secret, code)
+	if err != nil {
+		return err
+	}
+	if !valid {
+		return ErrTOTPInvalid
+	}
+
+	_, err = s.db.ExecContext(ctx, `
+		UPDATE users
+		SET totp_enabled = true,
+			updated_at = now()
+		WHERE id = $1 AND deleted_at IS NULL
+	`, userID)
+	if err != nil {
+		return fmt.Errorf("failed to enable totp: %w", err)
+	}
+
+	return nil
+}
+
+// DisableUser disables MFA after verifying a TOTP code.
+func (s *TOTPService) DisableUser(ctx context.Context, userID uuid.UUID, code string) error {
+	code = strings.TrimSpace(code)
+	if code == "" {
+		return ErrTOTPRequired
+	}
+	if len(code) != totpCodeLength {
+		return ErrTOTPInvalid
+	}
+
+	var encrypted []byte
+	var enabled bool
+	err := s.db.QueryRowContext(ctx, `
+		SELECT totp_secret_encrypted, totp_enabled
+		FROM users
+		WHERE id = $1 AND deleted_at IS NULL
+	`, userID).Scan(&encrypted, &enabled)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrTOTPUserNotFound
+		}
+		return fmt.Errorf("failed to load totp settings: %w", err)
+	}
+	if !enabled {
+		return ErrTOTPNotEnabled
+	}
+	if len(encrypted) == 0 {
+		return ErrTOTPNotEnrolled
+	}
+
+	if err := s.requireKey(); err != nil {
+		return err
+	}
+
+	secret, err := decryptTOTPSecret(s.key, encrypted)
+	if err != nil {
+		return err
+	}
+
+	valid, err := validateTOTP(secret, code)
+	if err != nil {
+		return err
+	}
+	if !valid {
+		return ErrTOTPInvalid
+	}
+
+	_, err = s.db.ExecContext(ctx, `
+		UPDATE users
+		SET totp_enabled = false,
+			totp_secret_encrypted = NULL,
+			updated_at = now()
+		WHERE id = $1 AND deleted_at IS NULL
+	`, userID)
+	if err != nil {
+		return fmt.Errorf("failed to disable totp: %w", err)
 	}
 
 	return nil
@@ -314,4 +496,26 @@ func validateTOTP(secret, code string) (bool, error) {
 		Digits:    otp.DigitsSix,
 		Algorithm: otp.AlgorithmSHA1,
 	})
+}
+
+// GenerateBackupCodes creates a set of backup codes for MFA enrollment.
+func GenerateBackupCodes() ([]string, error) {
+	codes := make([]string, 0, totpBackupCodeCount)
+	max := int64(1)
+	for i := 0; i < totpBackupCodeDigits; i++ {
+		max *= 10
+	}
+	for i := 0; i < totpBackupCodeCount; i++ {
+		n, err := rand.Int(rand.Reader, big.NewInt(max))
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate backup code: %w", err)
+		}
+		raw := fmt.Sprintf("%0*d", totpBackupCodeDigits, n.Int64())
+		code := raw
+		if len(raw) > 4 {
+			code = fmt.Sprintf("%s-%s", raw[:4], raw[4:])
+		}
+		codes = append(codes, code)
+	}
+	return codes, nil
 }

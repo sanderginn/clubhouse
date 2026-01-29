@@ -204,7 +204,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user.IsAdmin {
+	if user.TotpEnabled {
 		if h.totpService == nil {
 			writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_UNAVAILABLE", "TOTP service unavailable")
 			return
@@ -265,11 +265,12 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, cookie)
 
 	response := models.LoginResponse{
-		ID:       user.ID,
-		Username: user.Username,
-		Email:    user.Email,
-		IsAdmin:  user.IsAdmin,
-		Message:  "Login successful",
+		ID:          user.ID,
+		Username:    user.Username,
+		Email:       user.Email,
+		IsAdmin:     user.IsAdmin,
+		TotpEnabled: user.TotpEnabled,
+		Message:     "Login successful",
 	}
 
 	userID := user.ID
@@ -332,6 +333,7 @@ func (h *AuthHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 		ProfilePictureUrl: user.ProfilePictureURL,
 		Bio:               user.Bio,
 		IsAdmin:           user.IsAdmin,
+		TotpEnabled:       user.TotpEnabled,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -160,6 +160,22 @@ func main() {
 
 	// User routes (protected - requires auth)
 	userRouteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/api/v1/users/me/mfa/") {
+			switch r.URL.Path {
+			case "/api/v1/users/me/mfa/enable":
+				requireAuthCSRF(http.HandlerFunc(userHandler.EnrollMFA)).ServeHTTP(w, r)
+				return
+			case "/api/v1/users/me/mfa/verify":
+				requireAuthCSRF(http.HandlerFunc(userHandler.VerifyMFA)).ServeHTTP(w, r)
+				return
+			case "/api/v1/users/me/mfa/disable":
+				requireAuthCSRF(http.HandlerFunc(userHandler.DisableMFA)).ServeHTTP(w, r)
+				return
+			default:
+				writeJSONBytes(r.Context(), w, http.StatusNotFound, []byte(`{"error":"Not found","code":"NOT_FOUND"}`))
+				return
+			}
+		}
 		if strings.HasPrefix(r.URL.Path, "/api/v1/users/me/section-subscriptions") {
 			if r.Method == http.MethodGet && r.URL.Path == "/api/v1/users/me/section-subscriptions" {
 				requireAuth(http.HandlerFunc(userHandler.GetMySectionSubscriptions)).ServeHTTP(w, r)

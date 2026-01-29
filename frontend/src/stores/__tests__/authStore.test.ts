@@ -34,6 +34,7 @@ describe('authStore', () => {
       profile_picture_url: 'https://example.com/avatar.png',
       bio: 'hello',
       is_admin: true,
+      totp_enabled: true,
     });
 
     const result = await authStore.checkSession();
@@ -48,6 +49,7 @@ describe('authStore', () => {
       profilePictureUrl: 'https://example.com/avatar.png',
       bio: 'hello',
       isAdmin: true,
+      totpEnabled: true,
     });
     expect(apiPrefetchCsrfToken).toHaveBeenCalledTimes(1);
   });
@@ -58,6 +60,7 @@ describe('authStore', () => {
       username: 'old',
       email: 'old@example.com',
       isAdmin: false,
+      totpEnabled: false,
     });
     apiGet.mockRejectedValue(new Error('nope'));
 
@@ -76,6 +79,7 @@ describe('authStore', () => {
       username: 'sander',
       email: 'sander@example.com',
       isAdmin: false,
+      totpEnabled: false,
     });
     apiPost.mockResolvedValue({});
 
@@ -93,6 +97,7 @@ describe('authStore', () => {
       username: 'alex',
       email: 'alex@example.com',
       isAdmin: false,
+      totpEnabled: false,
     });
     apiPost.mockRejectedValue(new Error('fail'));
 
@@ -111,6 +116,7 @@ describe('authStore', () => {
       email: 'sander@example.com',
       isAdmin: false,
       profilePictureUrl: 'https://example.com/old.png',
+      totpEnabled: false,
     });
 
     authStore.updateUser({ profilePictureUrl: 'https://example.com/new.png' });
@@ -132,6 +138,7 @@ describe('authStore', () => {
       username: 'admin',
       email: 'admin@example.com',
       isAdmin: true,
+      totpEnabled: false,
     });
 
     expect(get(isAuthenticated)).toBe(true);
@@ -150,6 +157,7 @@ describe('authStore', () => {
       username: 'admin',
       email: 'admin@example.com',
       isAdmin: true,
+      totpEnabled: false,
     });
 
     expect(get(isMfaRequired)).toBe(false);

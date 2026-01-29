@@ -10,6 +10,7 @@ export interface User {
   profilePictureUrl?: string;
   bio?: string;
   isAdmin: boolean;
+  totpEnabled: boolean;
 }
 
 interface AuthState {
@@ -25,6 +26,7 @@ interface MeResponse {
   profile_picture_url?: string;
   bio?: string;
   is_admin: boolean;
+  totp_enabled: boolean;
 }
 
 export interface MfaChallenge {
@@ -80,6 +82,7 @@ function createAuthStore() {
           profilePictureUrl: response.profile_picture_url,
           bio: response.bio,
           isAdmin: response.is_admin,
+          totpEnabled: response.totp_enabled,
         };
         set({ user, isLoading: false, mfaChallenge: null });
         setErrorUser({ id: user.id, username: user.username, email: user.email });
