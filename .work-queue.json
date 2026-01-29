@@ -88,9 +88,9 @@
     {
       "issue_number": 382,
       "title": "Frontend: Improve audit log display with full context",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769693960-50160",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769693960-50160",
       "dependencies": [
         378
       ],
@@ -101,7 +101,9 @@
         "frontend",
         "admin",
         "ui"
-      ]
+      ],
+      "branch": "feat/issue-382-frontend-improve-audit-log-display-with-",
+      "claimed_at": "2026-01-29T13:39:20Z"
     },
     {
       "issue_number": 383,
