@@ -182,7 +182,8 @@
     347,
     348,
     349,
-    350
+    350,
+    351
   ],
   "issues": [
     {
@@ -3249,7 +3250,7 @@
     {
       "issue_number": 351,
       "title": "Enhancement: Use section names instead of IDs in URL paths",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769642348-76400",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769642348-76400",
       "dependencies": [],
@@ -3261,7 +3262,9 @@
         "ui"
       ],
       "branch": "feat/issue-351-enhancement-use-section-names-instead-of",
-      "claimed_at": "2026-01-28T23:19:08Z"
+      "claimed_at": "2026-01-28T23:19:08Z",
+      "pr_number": 361,
+      "completed_at": "2026-01-29T00:00:12Z"
     },
     {
       "issue_number": 350,
