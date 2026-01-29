@@ -202,8 +202,6 @@ func (h *AdminHandler) PromoteUser(w http.ResponseWriter, r *http.Request) {
 				StatusCode: http.StatusInternalServerError,
 				Err:        err,
 			})
-			writeError(r.Context(), w, http.StatusInternalServerError, "SESSION_UPDATE_FAILED", "Failed to update user sessions")
-			return
 		}
 	}
 
