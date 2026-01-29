@@ -4054,6 +4054,228 @@
       "claimed_at": "2026-01-29T08:52:43Z",
       "pr_number": 402,
       "completed_at": "2026-01-29T09:06:15Z"
+    },
+    {
+      "issue_number": 415,
+      "title": "[Critical] Fix duplicate function definitions in post/comment handlers and services",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 0,
+      "labels": [
+        "observability",
+        "backend",
+        "bug"
+      ]
+    },
+    {
+      "issue_number": 416,
+      "title": "[High] Replace fmt.Println with observability logging in main.go",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        415
+      ],
+      "phase": "observability",
+      "priority": 1,
+      "labels": [
+        "observability",
+        "backend"
+      ]
+    },
+    {
+      "issue_number": 417,
+      "title": "[High] Add Redis instrumentation for distributed tracing",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        415
+      ],
+      "phase": "observability",
+      "priority": 1,
+      "labels": [
+        "observability",
+        "backend"
+      ]
+    },
+    {
+      "issue_number": 418,
+      "title": "[High] Add distributed tracing spans to service layer",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        415
+      ],
+      "phase": "observability",
+      "priority": 1,
+      "labels": [
+        "observability",
+        "backend"
+      ]
+    },
+    {
+      "issue_number": 419,
+      "title": "[High] Add authentication and rate limiting metrics",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        415
+      ],
+      "phase": "observability",
+      "priority": 1,
+      "labels": [
+        "observability",
+        "backend"
+      ]
+    },
+    {
+      "issue_number": 420,
+      "title": "[Medium] Add audit logging for user self-delete operations",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        415
+      ],
+      "phase": "observability",
+      "priority": 2,
+      "labels": [
+        "observability",
+        "backend"
+      ]
+    },
+    {
+      "issue_number": 421,
+      "title": "[Medium] Add audit logging for reaction operations",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        415
+      ],
+      "phase": "observability",
+      "priority": 2,
+      "labels": [
+        "observability",
+        "backend"
+      ]
+    },
+    {
+      "issue_number": 422,
+      "title": "[Medium] Add missing metrics (search, cache, uploads, admin actions)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        415
+      ],
+      "phase": "observability",
+      "priority": 2,
+      "labels": [
+        "observability",
+        "backend"
+      ]
+    },
+    {
+      "issue_number": 423,
+      "title": "[Medium] Implement suspend_user and unsuspend_user functionality",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        415
+      ],
+      "phase": "feature",
+      "priority": 2,
+      "labels": [
+        "observability",
+        "backend"
+      ]
+    },
+    {
+      "issue_number": 424,
+      "title": "[Medium] Migrate update_post/update_comment audit logging to audit service",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        415
+      ],
+      "phase": "observability",
+      "priority": 2,
+      "labels": [
+        "observability",
+        "backend"
+      ]
+    },
+    {
+      "issue_number": 425,
+      "title": "[Low] Add success logging (LogInfo) for CRUD operations",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        415,
+        416
+      ],
+      "phase": "observability",
+      "priority": 3,
+      "labels": [
+        "observability",
+        "backend"
+      ]
+    },
+    {
+      "issue_number": 426,
+      "title": "[High] Implement frontend error tracking infrastructure",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "observability",
+      "priority": 1,
+      "labels": [
+        "observability",
+        "frontend"
+      ]
+    },
+    {
+      "issue_number": 427,
+      "title": "[Medium] Add frontend performance monitoring (Web Vitals)",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        426
+      ],
+      "phase": "observability",
+      "priority": 2,
+      "labels": [
+        "observability",
+        "frontend"
+      ]
+    },
+    {
+      "issue_number": 428,
+      "title": "[Low] Add frontend OpenTelemetry integration",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        426
+      ],
+      "phase": "observability",
+      "priority": 3,
+      "labels": [
+        "observability",
+        "frontend"
+      ]
     }
   ]
 }
