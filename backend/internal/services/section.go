@@ -18,7 +18,20 @@ func NewSectionService(db *sql.DB) *SectionService {
 }
 
 func (s *SectionService) ListSections(ctx context.Context) ([]models.Section, error) {
-	query := `SELECT id, name, type FROM sections ORDER BY name ASC`
+	query := `
+		SELECT id, name, type
+		FROM sections
+		ORDER BY CASE type
+			WHEN 'general' THEN 1
+			WHEN 'music' THEN 2
+			WHEN 'movie' THEN 3
+			WHEN 'series' THEN 4
+			WHEN 'recipe' THEN 5
+			WHEN 'book' THEN 6
+			WHEN 'event' THEN 7
+			ELSE 100
+		END,
+		name ASC`
 
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {

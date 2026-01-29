@@ -11,10 +11,10 @@ CREATE INDEX idx_sections_type ON sections(type);
 
 -- Insert default sections
 INSERT INTO sections (name, type) VALUES
+  ('General', 'general'),
   ('Music', 'music'),
-  ('Photos', 'photo'),
-  ('Events', 'event'),
+  ('Movies', 'movie'),
+  ('Series', 'series'),
   ('Recipes', 'recipe'),
   ('Books', 'book'),
-  ('Movies', 'movie'),
-  ('General', 'general');
+  ('Events', 'event');

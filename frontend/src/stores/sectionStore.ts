@@ -10,11 +10,11 @@ export interface Section {
   slug: string;
 }
 
-export type SectionType = 'music' | 'photo' | 'event' | 'recipe' | 'book' | 'movie' | 'general';
+export type SectionType = 'music' | 'series' | 'event' | 'recipe' | 'book' | 'movie' | 'general';
 
 const sectionIcons: Record<SectionType, string> = {
   music: '🎵',
-  photo: '📷',
+  series: '📺',
   event: '📅',
   recipe: '🍳',
   book: '📚',
@@ -34,17 +34,36 @@ interface SectionState {
   isLoading: boolean;
 }
 
-function isGeneralSection(section: { type?: SectionType; name?: string }): boolean {
+const sectionOrder: SectionType[] = [
+  'general',
+  'music',
+  'movie',
+  'series',
+  'recipe',
+  'book',
+  'event',
+];
+
+function getSectionOrderIndex(section: { type?: SectionType; name?: string }): number {
   if (section.type) {
-    return section.type === 'general';
+    const index = sectionOrder.indexOf(section.type);
+    if (index !== -1) return index;
   }
-  return section.name?.toLowerCase() === 'general';
+  if (section.name?.toLowerCase() === 'general') {
+    return sectionOrder.indexOf('general');
+  }
+  return 100;
 }
 
 function orderSections<T extends { type?: SectionType; name?: string }>(sections: T[]): T[] {
-  const general = sections.filter((section) => isGeneralSection(section));
-  const rest = sections.filter((section) => !isGeneralSection(section));
-  return [...general, ...rest];
+  return [...sections].sort((a, b) => {
+    const aIndex = getSectionOrderIndex(a);
+    const bIndex = getSectionOrderIndex(b);
+    if (aIndex !== bIndex) return aIndex - bIndex;
+    const aName = a.name?.toLowerCase() ?? '';
+    const bName = b.name?.toLowerCase() ?? '';
+    return aName.localeCompare(bName);
+  });
 }
 
 function createSectionStore() {
