@@ -38,9 +38,20 @@ type CreateCommentResponse struct {
 	Comment Comment `json:"comment"`
 }
 
+// UpdateCommentRequest represents the request body for updating a comment
+type UpdateCommentRequest struct {
+	Content string         `json:"content"`
+	Links   *[]LinkRequest `json:"links,omitempty"`
+}
+
 // GetCommentResponse represents the response for getting a single comment
 type GetCommentResponse struct {
 	Comment *Comment `json:"comment"`
+}
+
+// UpdateCommentResponse represents the response for updating a comment
+type UpdateCommentResponse struct {
+	Comment Comment `json:"comment"`
 }
 
 // PageMeta represents pagination metadata

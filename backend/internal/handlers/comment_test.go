@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/models"
@@ -326,6 +327,55 @@ func TestDeleteCommentHandlerMissingUserID(t *testing.T) {
 
 	if errResp.Code != "UNAUTHORIZED" {
 		t.Errorf("handler returned wrong error code: got %v want UNAUTHORIZED", errResp.Code)
+	}
+}
+
+func TestUpdateCommentForbidden(t *testing.T) {
+	db, mock, err := setupMockDB(t)
+	if err != nil {
+		t.Fatalf("failed to setup mock db: %v", err)
+	}
+	defer db.Close()
+
+	handler := NewCommentHandler(db, nil, nil)
+	userID := uuid.New()
+	commentID := uuid.New()
+
+	body, err := json.Marshal(models.UpdateCommentRequest{Content: "Updated comment"})
+	if err != nil {
+		t.Fatalf("failed to marshal body: %v", err)
+	}
+
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT user_id").
+		WithArgs(commentID).
+		WillReturnRows(sqlmock.NewRows([]string{"user_id"}).AddRow(uuid.New()))
+	mock.ExpectRollback()
+
+	req, err := http.NewRequest(http.MethodPatch, "/api/v1/comments/"+commentID.String(), bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req = req.WithContext(createTestUserContext(req.Context(), userID, "testuser", false))
+
+	rr := httptest.NewRecorder()
+	handler.UpdateComment(rr, req)
+
+	if status := rr.Code; status != http.StatusForbidden {
+		t.Fatalf("expected status %v, got %v", http.StatusForbidden, status)
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if response.Code != "FORBIDDEN" {
+		t.Fatalf("expected code FORBIDDEN, got %s", response.Code)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unfulfilled expectations: %v", err)
 	}
 }
 

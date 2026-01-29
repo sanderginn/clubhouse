@@ -46,6 +46,12 @@ type LinkRequest struct {
 	URL string `json:"url"`
 }
 
+// UpdatePostRequest represents the request body for updating a post
+type UpdatePostRequest struct {
+	Content string         `json:"content"`
+	Links   *[]LinkRequest `json:"links,omitempty"`
+}
+
 // CreatePostResponse represents the response for creating a post
 type CreatePostResponse struct {
 	Post Post `json:"post"`
@@ -54,6 +60,11 @@ type CreatePostResponse struct {
 // GetPostResponse represents the response for getting a single post
 type GetPostResponse struct {
 	Post *Post `json:"post"`
+}
+
+// UpdatePostResponse represents the response for updating a post
+type UpdatePostResponse struct {
+	Post Post `json:"post"`
 }
 
 // FeedResponse represents the paginated feed response

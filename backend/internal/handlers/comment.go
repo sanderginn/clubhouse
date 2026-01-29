@@ -122,6 +122,89 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// UpdateComment handles PATCH /api/v1/comments/{id}
+func (h *CommentHandler) UpdateComment(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPatch {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only PATCH requests are allowed")
+		return
+	}
+
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
+		return
+	}
+
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 5 {
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Comment ID is required")
+		return
+	}
+
+	commentIDStr := pathParts[4]
+	commentID, err := uuid.Parse(commentIDStr)
+	if err != nil {
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_COMMENT_ID", "Invalid comment ID format")
+		return
+	}
+
+	var req models.UpdateCommentRequest
+	if err := decodeJSONBody(w, r, &req); err != nil {
+		if isRequestBodyTooLarge(err) {
+			writeError(r.Context(), w, http.StatusRequestEntityTooLarge, "REQUEST_TOO_LARGE", "Request body too large")
+			return
+		}
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		return
+	}
+
+	comment, err := h.commentService.UpdateComment(r.Context(), commentID, userID, &req)
+	if err != nil {
+		switch err.Error() {
+		case "comment not found":
+			writeError(r.Context(), w, http.StatusNotFound, "COMMENT_NOT_FOUND", "Comment not found")
+		case "unauthorized to edit this comment":
+			writeError(r.Context(), w, http.StatusForbidden, "FORBIDDEN", "You can only edit your own comments")
+		case "content is required":
+			writeError(r.Context(), w, http.StatusBadRequest, "CONTENT_REQUIRED", err.Error())
+		case "content must be less than 5000 characters":
+			writeError(r.Context(), w, http.StatusBadRequest, "CONTENT_TOO_LONG", err.Error())
+		case "link url cannot be empty":
+			writeError(r.Context(), w, http.StatusBadRequest, "LINK_URL_REQUIRED", err.Error())
+		case "link url must be less than 2048 characters":
+			writeError(r.Context(), w, http.StatusBadRequest, "LINK_URL_TOO_LONG", err.Error())
+		default:
+			writeError(r.Context(), w, http.StatusInternalServerError, "COMMENT_UPDATE_FAILED", "Failed to update comment")
+		}
+		return
+	}
+
+	response := models.UpdateCommentResponse{
+		Comment: *comment,
+	}
+
+	publishCtx, cancel := publishContext()
+	mentionedUserIDs, _ := resolveMentionedUserIDs(publishCtx, h.userService, comment.Content, userID)
+	if comment.SectionID != nil {
+		_ = h.notify.CreateMentionNotifications(publishCtx, mentionedUserIDs, userID, *comment.SectionID, comment.PostID, &comment.ID)
+	} else if sectionID, err := h.postService.GetSectionIDByPostID(publishCtx, comment.PostID); err == nil {
+		_ = h.notify.CreateMentionNotifications(publishCtx, mentionedUserIDs, userID, sectionID, comment.PostID, &comment.ID)
+	}
+	_ = publishMentions(publishCtx, h.redis, mentionedUserIDs, userID, &comment.PostID, &comment.ID)
+	cancel()
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode update comment response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}
+
 // GetComment handles GET /api/v1/comments/{id}
 func (h *CommentHandler) GetComment(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {

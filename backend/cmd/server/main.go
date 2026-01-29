@@ -216,6 +216,9 @@ func main() {
 			// DELETE /api/v1/comments/{id}/reactions/{emoji}
 			reactionAuthHandler := requireAuthCSRF(http.HandlerFunc(reactionHandler.RemoveReactionFromComment))
 			reactionAuthHandler.ServeHTTP(w, r)
+		} else if r.Method == http.MethodPatch {
+			updateHandler := requireAuthCSRF(http.HandlerFunc(commentHandler.UpdateComment))
+			updateHandler.ServeHTTP(w, r)
 		} else if r.Method == http.MethodGet {
 			requireAuth(http.HandlerFunc(commentHandler.GetComment)).ServeHTTP(w, r)
 		} else if r.Method == http.MethodDelete {
@@ -235,6 +238,7 @@ func main() {
 		removeReactionFromPost: reactionHandler.RemoveReactionFromPost,
 		getReactions:           reactionHandler.GetPostReactions,
 		getPost:                postHandler.GetPost,
+		updatePost:             postHandler.UpdatePost,
 		deletePost:             postHandler.DeletePost,
 	})
 	mux.Handle("/api/v1/posts/", postRouteHandler)

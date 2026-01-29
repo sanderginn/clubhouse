@@ -37,6 +37,9 @@ func TestPostRouteHandlerDeletePost(t *testing.T) {
 		getPost: func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("getPost should not be called")
 		},
+		updatePost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("updatePost should not be called")
+		},
 		deletePost: func(w http.ResponseWriter, r *http.Request) {
 			deleteCalled = true
 			w.WriteHeader(http.StatusOK)
@@ -63,6 +66,68 @@ func TestPostRouteHandlerDeletePost(t *testing.T) {
 	}
 }
 
+func TestPostRouteHandlerUpdatePost(t *testing.T) {
+	authCalled := false
+	updateCalled := false
+
+	requireAuth := func(next http.Handler) http.Handler {
+		return next
+	}
+	requireAuthCSRF := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authCalled = true
+			next.ServeHTTP(w, r)
+		})
+	}
+
+	deps := postRouteDeps{
+		getThread: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getThread should not be called")
+		},
+		restorePost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("restorePost should not be called")
+		},
+		addReactionToPost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("addReactionToPost should not be called")
+		},
+		removeReactionFromPost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("removeReactionFromPost should not be called")
+		},
+		getReactions: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getReactions should not be called")
+		},
+		getPost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPost should not be called")
+		},
+		updatePost: func(w http.ResponseWriter, r *http.Request) {
+			updateCalled = true
+			w.WriteHeader(http.StatusOK)
+		},
+		deletePost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("deletePost should not be called")
+		},
+	}
+
+	handler := newPostRouteHandler(requireAuth, requireAuthCSRF, deps)
+	postID := uuid.New()
+	req := httptest.NewRequest(http.MethodPatch, "/api/v1/posts/"+postID.String(), nil)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Fatalf("expected status %v, got %v", http.StatusOK, status)
+	}
+
+	if !authCalled {
+		t.Fatal("expected auth middleware to be called")
+	}
+
+	if !updateCalled {
+		t.Fatal("expected update handler to be called")
+	}
+}
+
 func TestPostRouteHandlerMethodNotAllowed(t *testing.T) {
 	requireAuth := func(next http.Handler) http.Handler {
 		return next
@@ -84,6 +149,9 @@ func TestPostRouteHandlerMethodNotAllowed(t *testing.T) {
 		getPost: func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("getPost should not be called")
 		},
+		updatePost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("updatePost should not be called")
+		},
 		deletePost: func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("deletePost should not be called")
 		},
@@ -91,7 +159,7 @@ func TestPostRouteHandlerMethodNotAllowed(t *testing.T) {
 
 	handler := newPostRouteHandler(requireAuth, requireAuth, deps)
 	postID := uuid.New()
-	req := httptest.NewRequest(http.MethodPatch, "/api/v1/posts/"+postID.String(), nil)
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/posts/"+postID.String(), nil)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
@@ -136,6 +204,9 @@ func TestPostRouteHandlerDeletePostReactionsMissingEmoji(t *testing.T) {
 		},
 		getPost: func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("getPost should not be called")
+		},
+		updatePost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("updatePost should not be called")
 		},
 		deletePost: func(w http.ResponseWriter, r *http.Request) {
 			deleteCalled = true
@@ -190,6 +261,9 @@ func TestPostRouteHandlerDeletePostCommentsPath(t *testing.T) {
 		getPost: func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("getPost should not be called")
 		},
+		updatePost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("updatePost should not be called")
+		},
 		deletePost: func(w http.ResponseWriter, r *http.Request) {
 			deleteCalled = true
 			w.WriteHeader(http.StatusOK)
@@ -241,6 +315,9 @@ func TestPostRouteHandlerGetThreadRequiresAuth(t *testing.T) {
 		},
 		getPost: func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("getPost should not be called")
+		},
+		updatePost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("updatePost should not be called")
 		},
 		deletePost: func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("deletePost should not be called")

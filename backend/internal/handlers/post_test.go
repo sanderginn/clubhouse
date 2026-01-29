@@ -737,6 +737,55 @@ func TestRestorePostPermanentlyDeleted(t *testing.T) {
 	}
 }
 
+func TestUpdatePostForbidden(t *testing.T) {
+	db, mock, err := setupMockDB(t)
+	if err != nil {
+		t.Fatalf("failed to setup mock db: %v", err)
+	}
+	defer db.Close()
+
+	handler := NewPostHandler(db, nil, nil)
+	userID := uuid.New()
+	postID := uuid.New()
+
+	body, err := json.Marshal(models.UpdatePostRequest{Content: "Updated content"})
+	if err != nil {
+		t.Fatalf("failed to marshal body: %v", err)
+	}
+
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT user_id").
+		WithArgs(postID).
+		WillReturnRows(sqlmock.NewRows([]string{"user_id"}).AddRow(uuid.New()))
+	mock.ExpectRollback()
+
+	req, err := http.NewRequest(http.MethodPatch, "/api/v1/posts/"+postID.String(), bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req = req.WithContext(createTestUserContext(req.Context(), userID, "testuser", false))
+
+	rr := httptest.NewRecorder()
+	handler.UpdatePost(rr, req)
+
+	if status := rr.Code; status != http.StatusForbidden {
+		t.Fatalf("expected status %v, got %v", http.StatusForbidden, status)
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if response.Code != "FORBIDDEN" {
+		t.Fatalf("expected code FORBIDDEN, got %s", response.Code)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unfulfilled expectations: %v", err)
+	}
+}
+
 // setupMockDB creates a mock database connection for testing
 func setupMockDB(t *testing.T) (*sql.DB, sqlmock.Sqlmock, error) {
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherRegexp))
