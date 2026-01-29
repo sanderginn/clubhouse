@@ -156,9 +156,10 @@ function connect() {
   console.log(`[WebSocket] Attempting to connect to ${wsUrl} (attempt ${reconnectAttempts + 1})`);
   status.set('connecting');
 
-  socket = new WebSocket(wsUrl);
+  const socketRef = new WebSocket(wsUrl);
+  socket = socketRef;
 
-  socket.addEventListener('open', () => {
+  socketRef.addEventListener('open', () => {
     console.log('[WebSocket] Connection established');
     reconnectAttempts = 0;
     lastError.set(null);
@@ -168,7 +169,7 @@ function connect() {
     }
   });
 
-  socket.addEventListener('message', (event) => {
+  socketRef.addEventListener('message', (event) => {
     if (typeof event.data !== 'string') {
       return;
     }
@@ -259,7 +260,10 @@ function connect() {
     }
   });
 
-  socket.addEventListener('close', (event) => {
+  socketRef.addEventListener('close', (event) => {
+    if (socketRef !== socket) {
+      return;
+    }
     console.log(`[WebSocket] Connection closed (code: ${event.code}, reason: ${event.reason || 'none'})`);
     socket = null;
     status.set('disconnected');
@@ -288,7 +292,7 @@ function connect() {
     scheduleReconnect();
   });
 
-  socket.addEventListener('error', (event) => {
+  socketRef.addEventListener('error', (event) => {
     console.error('[WebSocket] Connection error:', event);
     const error: WebSocketError = {
       message: 'WebSocket connection error - check authentication and network connectivity',
@@ -296,7 +300,7 @@ function connect() {
       reconnectAttempt: reconnectAttempts,
     };
     lastError.set(error);
-    socket?.close();
+    socketRef.close();
   });
 }
 
