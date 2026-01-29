@@ -4276,6 +4276,242 @@
         "observability",
         "frontend"
       ]
+    },
+    {
+      "issue_number": 429,
+      "title": "Grafana: Create authentication and security metrics dashboard",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        419
+      ],
+      "phase": "observability",
+      "priority": 3,
+      "labels": [
+        "observability",
+        "grafana",
+        "dashboard"
+      ]
+    },
+    {
+      "issue_number": 430,
+      "title": "Grafana: Create notifications and delivery dashboard",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "observability",
+      "priority": 3,
+      "labels": [
+        "observability",
+        "grafana",
+        "dashboard"
+      ]
+    },
+    {
+      "issue_number": 431,
+      "title": "Grafana: Create link metadata fetching dashboard",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "observability",
+      "priority": 3,
+      "labels": [
+        "observability",
+        "grafana",
+        "dashboard"
+      ]
+    },
+    {
+      "issue_number": 432,
+      "title": "Grafana: Create cache performance dashboard",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        422
+      ],
+      "phase": "observability",
+      "priority": 3,
+      "labels": [
+        "observability",
+        "grafana",
+        "dashboard"
+      ]
+    },
+    {
+      "issue_number": 433,
+      "title": "Prometheus: Add HTTP and API alerting rules",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        441
+      ],
+      "phase": "observability",
+      "priority": 3,
+      "labels": [
+        "observability",
+        "prometheus",
+        "alerting"
+      ]
+    },
+    {
+      "issue_number": 434,
+      "title": "Prometheus: Add authentication security alerting rules",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        419,
+        441
+      ],
+      "phase": "observability",
+      "priority": 3,
+      "labels": [
+        "observability",
+        "prometheus",
+        "alerting"
+      ]
+    },
+    {
+      "issue_number": 435,
+      "title": "Prometheus: Add database health alerting rules",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        441
+      ],
+      "phase": "observability",
+      "priority": 3,
+      "labels": [
+        "observability",
+        "prometheus",
+        "alerting"
+      ]
+    },
+    {
+      "issue_number": 436,
+      "title": "Prometheus: Add WebSocket health alerting rules",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        441
+      ],
+      "phase": "observability",
+      "priority": 3,
+      "labels": [
+        "observability",
+        "prometheus",
+        "alerting"
+      ]
+    },
+    {
+      "issue_number": 437,
+      "title": "Loki: Create error log exploration dashboard",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "observability",
+      "priority": 3,
+      "labels": [
+        "observability",
+        "grafana",
+        "loki",
+        "dashboard"
+      ]
+    },
+    {
+      "issue_number": 438,
+      "title": "Loki: Create audit log visualization dashboard",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "observability",
+      "priority": 3,
+      "labels": [
+        "observability",
+        "grafana",
+        "loki",
+        "dashboard"
+      ]
+    },
+    {
+      "issue_number": 439,
+      "title": "Tempo: Configure service map and trace exploration",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        417,
+        418
+      ],
+      "phase": "observability",
+      "priority": 3,
+      "labels": [
+        "observability",
+        "grafana",
+        "tempo",
+        "tracing"
+      ]
+    },
+    {
+      "issue_number": 440,
+      "title": "Grafana: Create frontend errors dashboard",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        426
+      ],
+      "phase": "observability",
+      "priority": 3,
+      "labels": [
+        "observability",
+        "grafana",
+        "frontend",
+        "dashboard"
+      ]
+    },
+    {
+      "issue_number": 441,
+      "title": "Prometheus: Set up alerting infrastructure and Alertmanager",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "observability",
+      "priority": 2,
+      "labels": [
+        "observability",
+        "prometheus",
+        "alerting",
+        "infrastructure"
+      ]
+    },
+    {
+      "issue_number": 442,
+      "title": "Grafana: Create admin operations dashboard",
+      "status": "available",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        422
+      ],
+      "phase": "observability",
+      "priority": 3,
+      "labels": [
+        "observability",
+        "grafana",
+        "dashboard",
+        "admin"
+      ]
     }
   ]
 }
