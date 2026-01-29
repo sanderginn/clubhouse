@@ -36,7 +36,7 @@ export function captureError(error: unknown, context?: CaptureContext): void {
     initErrorTracker();
   }
 
-  Sentry.withScope((scope) => {
+  Sentry.withScope((scope: Sentry.Scope) => {
     if (context?.tags) {
       scope.setTags(context.tags);
     }
@@ -65,7 +65,7 @@ export function captureMessage(message: string, context?: CaptureContext): void 
     initErrorTracker();
   }
 
-  Sentry.withScope((scope) => {
+  Sentry.withScope((scope: Sentry.Scope) => {
     if (context?.tags) {
       scope.setTags(context.tags);
     }

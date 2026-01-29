@@ -4,6 +4,7 @@ import { mapApiComment, type ApiComment } from '../stores/commentMapper';
 import { mapApiPost, type ApiPost } from '../stores/postMapper';
 import { logError, logWarn } from '../lib/observability/logger';
 import { recordApiTiming } from '../lib/observability/performance';
+import { context, propagation, trace, SpanStatusCode } from '@opentelemetry/api';
 
 const API_BASE = '/api/v1';
 const CSRF_ENDPOINT = '/auth/csrf';
@@ -40,6 +41,7 @@ export interface ApiReactionGroup {
 }
 
 class ApiClient {
+  private tracer = trace.getTracer('clubhouse-frontend');
   private csrfToken: string | null = null;
   private csrfTokenPromise: Promise<string | null> | null = null;
 
@@ -122,69 +124,105 @@ class ApiClient {
     const headers = new Headers(options.headers ?? {});
     headers.set('Content-Type', 'application/json');
 
-    if (this.shouldAttachCsrf(method, endpoint)) {
-      const csrfToken = await this.ensureCsrfToken();
-      if (csrfToken) {
-        headers.set(CSRF_HEADER, csrfToken);
-      }
-    }
+    const span = this.tracer.startSpan(`api ${method} ${endpoint}`, {
+      attributes: {
+        'http.method': method,
+        'http.url': url,
+        'http.target': endpoint,
+      },
+    });
+    let spanEnded = false;
+    const endSpan = () => {
+      if (spanEnded) return;
+      spanEnded = true;
+      span.end();
+    };
 
-    let response: Response;
-    try {
-      response = await fetch(url, {
-        ...options,
-        method,
-        headers,
-        credentials: 'include',
+    return context.with(trace.setSpan(context.active(), span), async () => {
+      if (this.shouldAttachCsrf(method, endpoint)) {
+        const csrfToken = await this.ensureCsrfToken();
+        if (csrfToken) {
+          headers.set(CSRF_HEADER, csrfToken);
+        }
+      }
+
+      propagation.inject(context.active(), headers, {
+        set: (carrier, key, value) => {
+          carrier.set(key, value);
+        },
       });
-    } catch (error) {
+
+      let response: Response;
+      try {
+        response = await fetch(url, {
+          ...options,
+          method,
+          headers,
+          credentials: 'include',
+        });
+      } catch (error) {
+        if (startTime !== null) {
+          recordApiTiming(endpoint, method, 0, performance.now() - startTime);
+        }
+        span.recordException(error as Error);
+        span.setStatus({ code: SpanStatusCode.ERROR });
+        logError('API request failed', { endpoint, method, url }, error);
+        endSpan();
+        throw error;
+      }
+
       if (startTime !== null) {
-        recordApiTiming(endpoint, method, 0, performance.now() - startTime);
-      }
-      logError('API request failed', { endpoint, method, url }, error);
-      throw error;
-    }
-    if (startTime !== null) {
-      recordApiTiming(endpoint, method, response.status, performance.now() - startTime);
-    }
-
-    if (!response.ok) {
-      const errorData: ApiError | null = await response.json().catch(() => null);
-      if (
-        retry &&
-        this.shouldAttachCsrf(method, endpoint) &&
-        (response.status === 403 ||
-          response.status === 419 ||
-          (errorData?.code ? CSRF_ERROR_CODES.has(errorData.code) : false))
-      ) {
-        await this.refreshCsrfToken();
-        return this.request<T>(endpoint, options, false);
+        recordApiTiming(endpoint, method, response.status, performance.now() - startTime);
       }
 
-      const error = new Error(errorData?.error ?? 'An unexpected error occurred') as Error & {
-        code?: string;
-      };
-      error.code = errorData?.code ?? 'UNKNOWN_ERROR';
-      const logContext = {
-        endpoint,
-        method,
-        url,
-        status: response.status,
-        code: error.code,
-      };
-      if (response.status >= 500) {
-        logError('API request failed', logContext, error);
-      } else {
-        logWarn('API request failed', logContext);
+      span.setAttribute('http.status_code', response.status);
+
+      if (!response.ok) {
+        span.setStatus({ code: SpanStatusCode.ERROR });
+        const errorData: ApiError | null = await response.json().catch(() => null);
+        if (
+          retry &&
+          this.shouldAttachCsrf(method, endpoint) &&
+          (response.status === 403 ||
+            response.status === 419 ||
+            (errorData?.code ? CSRF_ERROR_CODES.has(errorData.code) : false))
+        ) {
+          endSpan();
+          await this.refreshCsrfToken();
+          return this.request<T>(endpoint, options, false);
+        }
+
+        const error = new Error(errorData?.error ?? 'An unexpected error occurred') as Error & {
+          code?: string;
+        };
+        error.code = errorData?.code ?? 'UNKNOWN_ERROR';
+        const logContext = {
+          endpoint,
+          method,
+          url,
+          status: response.status,
+          code: error.code,
+        };
+        if (response.status >= 500) {
+          logError('API request failed', logContext, error);
+        } else {
+          logWarn('API request failed', logContext);
+        }
+        endSpan();
+        throw error;
       }
-      throw error;
-    }
 
-    if (response.status === 204) {
-      return {} as T;
-    }
+      if (response.status === 204) {
+        endSpan();
+        return {} as T;
+      }
 
-    return response.json();
+      try {
+        return await response.json();
+      } finally {
+        endSpan();
+      }
+    });
   }
 
   async get<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -223,81 +261,106 @@ class ApiClient {
   ): Promise<{ url: string }> {
     const csrfToken = await this.ensureCsrfToken();
     const startTime = typeof performance !== 'undefined' ? performance.now() : null;
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', `${API_BASE}/uploads`);
-      xhr.withCredentials = true;
-      if (csrfToken) {
-        xhr.setRequestHeader(CSRF_HEADER, csrfToken);
-      }
+    const span = this.tracer.startSpan('api POST /uploads', {
+      attributes: {
+        'http.method': 'POST',
+        'http.url': `${API_BASE}/uploads`,
+        'http.target': '/uploads',
+      },
+    });
 
-      xhr.upload.onprogress = (event) => {
-        if (!onProgress || !event.lengthComputable) return;
-        const percent = Math.round((event.loaded / event.total) * 100);
-        onProgress(Math.min(100, Math.max(0, percent)));
-      };
-
-      xhr.onerror = () => {
-        if (startTime !== null) {
-          recordApiTiming('/uploads', 'POST', 0, performance.now() - startTime);
-        }
-        logError('Upload request failed', { endpoint: '/uploads', method: 'POST' });
-        reject(new Error('Upload failed'));
-      };
-
-      xhr.onload = async () => {
-        const status = xhr.status;
-        if (startTime !== null) {
-          recordApiTiming('/uploads', 'POST', status, performance.now() - startTime);
-        }
-        const responseText = xhr.responseText || '{}';
-        if (status >= 200 && status < 300) {
-          try {
-            const data = JSON.parse(responseText) as { url: string };
-            resolve(data);
-          } catch {
-            reject(new Error('Upload failed'));
-          }
-          return;
+    return context.with(trace.setSpan(context.active(), span), () => {
+      return new Promise<{ url: string }>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `${API_BASE}/uploads`);
+        xhr.withCredentials = true;
+        if (csrfToken) {
+          xhr.setRequestHeader(CSRF_HEADER, csrfToken);
         }
 
-        let errorData: ApiError | null = null;
-        try {
-          errorData = JSON.parse(responseText) as ApiError;
-        } catch {
-          errorData = null;
-        }
+        const traceHeaders: Record<string, string> = {};
+        propagation.inject(context.active(), traceHeaders);
+        Object.entries(traceHeaders).forEach(([key, value]) => {
+          xhr.setRequestHeader(key, value);
+        });
 
-        if (
-          retry &&
-          (status === 403 ||
-            status === 419 ||
-            (errorData?.code ? CSRF_ERROR_CODES.has(errorData.code) : false))
-        ) {
-          await this.refreshCsrfToken();
-          this.uploadWithRetry(file, onProgress, false).then(resolve).catch(reject);
-          return;
-        }
-
-        const error = new Error(errorData?.error ?? 'Upload failed') as Error & { code?: string };
-        error.code = errorData?.code ?? 'UNKNOWN_ERROR';
-        const logContext = {
-          endpoint: '/uploads',
-          method: 'POST',
-          status,
-          code: error.code,
+        xhr.upload.onprogress = (event) => {
+          if (!onProgress || !event.lengthComputable) return;
+          const percent = Math.round((event.loaded / event.total) * 100);
+          onProgress(Math.min(100, Math.max(0, percent)));
         };
-        if (status >= 500) {
-          logError('Upload request failed', logContext, error);
-        } else {
-          logWarn('Upload request failed', logContext);
-        }
-        reject(error);
-      };
 
-      const formData = new FormData();
-      formData.append('file', file);
-      xhr.send(formData);
+        xhr.onerror = () => {
+          if (startTime !== null) {
+            recordApiTiming('/uploads', 'POST', 0, performance.now() - startTime);
+          }
+          span.setStatus({ code: SpanStatusCode.ERROR });
+          logError('Upload request failed', { endpoint: '/uploads', method: 'POST' });
+          span.end();
+          reject(new Error('Upload failed'));
+        };
+
+        xhr.onload = async () => {
+          const status = xhr.status;
+          if (startTime !== null) {
+            recordApiTiming('/uploads', 'POST', status, performance.now() - startTime);
+          }
+          const responseText = xhr.responseText || '{}';
+          span.setAttribute('http.status_code', status);
+          if (status >= 200 && status < 300) {
+            try {
+              const data = JSON.parse(responseText) as { url: string };
+              span.end();
+              resolve(data);
+            } catch {
+              span.setStatus({ code: SpanStatusCode.ERROR });
+              span.end();
+              reject(new Error('Upload failed'));
+            }
+            return;
+          }
+
+          let errorData: ApiError | null = null;
+          try {
+            errorData = JSON.parse(responseText) as ApiError;
+          } catch {
+            errorData = null;
+          }
+
+          if (
+            retry &&
+            (status === 403 ||
+              status === 419 ||
+              (errorData?.code ? CSRF_ERROR_CODES.has(errorData.code) : false))
+          ) {
+            span.end();
+            await this.refreshCsrfToken();
+            this.uploadWithRetry(file, onProgress, false).then(resolve).catch(reject);
+            return;
+          }
+
+          span.setStatus({ code: SpanStatusCode.ERROR });
+          const error = new Error(errorData?.error ?? 'Upload failed') as Error & { code?: string };
+          error.code = errorData?.code ?? 'UNKNOWN_ERROR';
+          const logContext = {
+            endpoint: '/uploads',
+            method: 'POST',
+            status,
+            code: error.code,
+          };
+          if (status >= 500) {
+            logError('Upload request failed', logContext, error);
+          } else {
+            logWarn('Upload request failed', logContext);
+          }
+          span.end();
+          reject(error);
+        };
+
+        const formData = new FormData();
+        formData.append('file', file);
+        xhr.send(formData);
+      });
     });
   }
 
