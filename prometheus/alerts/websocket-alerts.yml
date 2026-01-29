@@ -1,0 +1,11 @@
+groups:
+  - name: websocket-alerts
+    rules:
+      - alert: ClubhouseWebsocketUnavailable
+        expr: up{job="clubhouse"} == 0
+        for: 2m
+        labels:
+          severity: high
+        annotations:
+          summary: "Clubhouse WebSocket unavailable"
+          description: "Backend scrape is failing; WebSocket traffic is likely impacted."

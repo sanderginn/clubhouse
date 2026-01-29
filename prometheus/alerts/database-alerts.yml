@@ -1,0 +1,11 @@
+groups:
+  - name: database-alerts
+    rules:
+      - alert: ClubhouseDatabaseUnavailable
+        expr: up{job="clubhouse"} == 0
+        for: 5m
+        labels:
+          severity: high
+        annotations:
+          summary: "Clubhouse database unavailable"
+          description: "Backend has been unreachable for 5 minutes. Verify database connectivity."

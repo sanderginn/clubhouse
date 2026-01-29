@@ -35,3 +35,13 @@ datasources:
         enabled: true
       lokiSearch:
         datasourceUid: loki
+
+  - name: Alertmanager
+    type: alertmanager
+    uid: alertmanager
+    url: http://alertmanager:9093
+    isDefault: false
+    editable: true
+    access: proxy
+    jsonData:
+      implementation: prometheus

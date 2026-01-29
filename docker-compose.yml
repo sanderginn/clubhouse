@@ -63,12 +63,27 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/alerts:/etc/prometheus/alerts:ro
       - prometheus_data:/prometheus
     networks:
       - clubhouse
     depends_on:
       - loki
       - backend
+      - alertmanager
+
+  # Alertmanager (Alert Routing)
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: clubhouse-alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    networks:
+      - clubhouse
 
   # Tempo (Traces)
   tempo:
@@ -111,6 +126,7 @@ services:
       - loki
       - prometheus
       - tempo
+      - alertmanager
 
   # Backend API
   backend:

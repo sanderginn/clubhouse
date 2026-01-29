@@ -1,0 +1,11 @@
+groups:
+  - name: http-alerts
+    rules:
+      - alert: ClubhouseAPIDown
+        expr: up{job="clubhouse"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Clubhouse API is down"
+          description: "Prometheus has not scraped the Clubhouse API for 2 minutes."
