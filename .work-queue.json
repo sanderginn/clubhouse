@@ -3643,9 +3643,9 @@
     {
       "issue_number": 379,
       "title": "Backend: Add audit events for user management actions",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769685712-55427",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769685712-55427",
       "dependencies": [
         378
       ],
@@ -3656,7 +3656,9 @@
         "backend",
         "admin",
         "users"
-      ]
+      ],
+      "branch": "feat/issue-379-backend-add-audit-events-for-user-manage",
+      "claimed_at": "2026-01-29T11:21:52Z"
     },
     {
       "issue_number": 380,
