@@ -4,7 +4,7 @@
   import './styles/globals.css';
   import { Layout, PostForm, SectionFeed, SearchBar, SearchResults, InstallPrompt } from './components';
   import UserProfile from './components/UserProfile.svelte';
-  import { Login, Register, AdminPanel, PasswordReset } from './routes';
+  import { Login, Register, AdminPanel, PasswordReset, Settings } from './routes';
   import {
     authStore,
     isAuthenticated,
@@ -25,6 +25,7 @@
     buildFeedHref,
     buildThreadHref,
     isAdminPath,
+    isSettingsPath,
     parseSectionSlug,
     parseThreadPostId,
     replacePath,
@@ -117,6 +118,11 @@
           pendingSectionIdentifier = sectionIdentifier;
         }
         uiStore.setActiveView('feed');
+      } else if (isSettingsPath(path)) {
+        pendingSectionIdentifier = null;
+        pendingThreadPostId = null;
+        threadRouteStore.clearTarget();
+        uiStore.setActiveView('settings');
       } else if (isAdminPath(path)) {
         pendingSectionIdentifier = null;
         pendingThreadPostId = null;
@@ -232,6 +238,8 @@
             <p class="text-gray-600">We couldn’t load that profile. Try selecting a user again.</p>
           </div>
         {/if}
+      {:else if $activeView === 'settings'}
+        <Settings />
       {:else if sectionNotFound}
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h1 class="text-xl font-semibold text-gray-900 mb-2">Section not found</h1>
