@@ -11,7 +11,6 @@
 
   interface TotpVerifyResponse {
     message?: string;
-    backup_codes?: string[];
   }
 
   interface TotpDisableResponse {
@@ -29,7 +28,6 @@
   let qrCode = '';
   let manualKey = '';
   let otpauthUrl = '';
-  let backupCodes: string[] = [];
 
   const buildQrCode = async (value: string) => {
     if (!value) return '';
@@ -51,7 +49,6 @@
     manualKey = '';
     otpauthUrl = '';
     code = '';
-    backupCodes = [];
   };
 
   const resetEnrollment = () => {
@@ -91,7 +88,6 @@
     try {
       const response = await api.post<TotpVerifyResponse>('/users/me/mfa/verify', { code: trimmed });
       successMessage = response.message || 'Multi-factor authentication enabled.';
-      backupCodes = response.backup_codes ?? [];
       authStore.updateUser({ totpEnabled: true });
       code = '';
     } catch (error) {
@@ -265,22 +261,6 @@
     </div>
   {/if}
 
-  {#if backupCodes.length > 0}
-    <div class="rounded-2xl border border-gray-200 bg-white p-5">
-      <h4 class="text-sm font-semibold text-gray-900">Backup codes</h4>
-      <p class="mt-1 text-sm text-gray-600">
-        Store these codes in a safe place. Each code can be used once if you lose access to your
-        authenticator.
-      </p>
-      <div class="mt-3 grid gap-2 sm:grid-cols-2">
-        {#each backupCodes as backup}
-          <div class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 font-mono text-xs text-gray-800">
-            {backup}
-          </div>
-        {/each}
-      </div>
-    </div>
-  {/if}
 
   {#if $currentUser?.totpEnabled}
     <div class="rounded-2xl border border-gray-200 bg-white p-5">

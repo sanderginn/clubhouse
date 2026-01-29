@@ -1258,8 +1258,8 @@ func TestUserMFAEnrollVerifyDisable(t *testing.T) {
 	if err := json.NewDecoder(verifyRes.Body).Decode(&verifyBody); err != nil {
 		t.Fatalf("failed to decode verify response: %v", err)
 	}
-	if len(verifyBody.BackupCodes) == 0 {
-		t.Fatalf("expected backup codes to be returned")
+	if verifyBody.Message == "" {
+		t.Fatalf("expected verify message to be set")
 	}
 
 	var enabled bool

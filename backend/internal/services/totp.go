@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math/big"
 	"os"
 	"strings"
 	"time"
@@ -21,12 +20,10 @@ import (
 )
 
 const (
-	totpIssuer           = "Clubhouse"
-	totpCodeLength       = 6
-	totpEncryptionEnv    = "CLUBHOUSE_TOTP_ENCRYPTION_KEY"
-	totpEncryptionBytes  = 32
-	totpBackupCodeCount  = 8
-	totpBackupCodeDigits = 8
+	totpIssuer          = "Clubhouse"
+	totpCodeLength      = 6
+	totpEncryptionEnv   = "CLUBHOUSE_TOTP_ENCRYPTION_KEY"
+	totpEncryptionBytes = 32
 )
 
 var (
@@ -496,26 +493,4 @@ func validateTOTP(secret, code string) (bool, error) {
 		Digits:    otp.DigitsSix,
 		Algorithm: otp.AlgorithmSHA1,
 	})
-}
-
-// GenerateBackupCodes creates a set of backup codes for MFA enrollment.
-func GenerateBackupCodes() ([]string, error) {
-	codes := make([]string, 0, totpBackupCodeCount)
-	max := int64(1)
-	for i := 0; i < totpBackupCodeDigits; i++ {
-		max *= 10
-	}
-	for i := 0; i < totpBackupCodeCount; i++ {
-		n, err := rand.Int(rand.Reader, big.NewInt(max))
-		if err != nil {
-			return nil, fmt.Errorf("failed to generate backup code: %w", err)
-		}
-		raw := fmt.Sprintf("%0*d", totpBackupCodeDigits, n.Int64())
-		code := raw
-		if len(raw) > 4 {
-			code = fmt.Sprintf("%s-%s", raw[:4], raw[4:])
-		}
-		codes = append(codes, code)
-	}
-	return codes, nil
 }
