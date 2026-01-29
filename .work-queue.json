@@ -9,6 +9,7 @@
     378,
     382,
     385,
+    387,
     388
   ],
   "issues": [
@@ -175,7 +176,7 @@
     {
       "issue_number": 387,
       "title": "Frontend: Display edited indicator with hover tooltip",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769693965-50266",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769693965-50266",
       "dependencies": [
@@ -191,7 +192,9 @@
         "ui"
       ],
       "branch": "feat/issue-387-frontend-display-edited-indicator-with-h",
-      "claimed_at": "2026-01-29T13:39:25Z"
+      "claimed_at": "2026-01-29T13:39:25Z",
+      "pr_number": 445,
+      "completed_at": "2026-01-29T13:59:36Z"
     },
     {
       "issue_number": 388,
