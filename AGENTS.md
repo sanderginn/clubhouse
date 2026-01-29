@@ -216,6 +216,41 @@ observability.LogError(ctx, observability.ErrorLog{
 **Log level configuration:**
 Set via `LOG_LEVEL` environment variable: `debug`, `info`, `warn`, `error` (defaults to `info`)
 
+### Audit Logging
+
+All state-changing operations must emit an audit event (create/update/delete/restore/approve/reject/toggle settings). This applies to admin actions and any user action that mutates persistent state.
+
+**Audit event format:**
+- **action**: snake_case action name (see common actions below)
+- **target_user_id**: user affected by the action (nullable; use the closest related user)
+- **metadata**: JSON map with relevant IDs and context (post_id, comment_id, section_id, reason, previous_state, etc.)
+
+When recording audit logs, include the acting admin/user ID and map `target_user_id` to `related_user_id` in `audit_logs`. If metadata storage isn't available yet, capture the most important IDs in `related_*` columns and document what would go into metadata.
+
+**Common audit action names (use these for consistency):**
+- `approve_user`
+- `reject_user`
+- `suspend_user`
+- `unsuspend_user`
+- `delete_post`
+- `hard_delete_post`
+- `restore_post`
+- `delete_comment`
+- `hard_delete_comment`
+- `restore_comment`
+- `toggle_link_metadata`
+- `update_section`
+- `delete_section`
+
+**Example (admin deletes a comment):**
+```go
+auditQuery := `
+    INSERT INTO audit_logs (admin_user_id, action, related_comment_id, related_user_id, created_at)
+    VALUES ($1, 'delete_comment', $2, $3, now())
+`
+_, err := tx.ExecContext(ctx, auditQuery, adminUserID, commentID, commentUserID)
+```
+
 ### Svelte
 - **Component naming**: PascalCase (PostCard.svelte)
 - **Store naming**: camelCase (authStore.ts)
@@ -278,6 +313,16 @@ PRs targeting `main` run Buildkite using `.buildkite/pipeline.yml`. Ensure backe
 ### Writing GitHub Comments/Issues/PRs
 
 - Never use literal `\\n` in GitHub issues, PRs, or comments. Use real newlines instead.
+
+## Agent Checklists
+
+### Subagent Checklist
+- Add audit events for all state-changing operations (action, target_user_id, metadata).
+- Add/extend tests that verify audit logs are written when expected.
+
+### Reviewer Checklist
+- Confirm every state-changing operation includes audit logging.
+- Verify action names use the common naming scheme and metadata captures key IDs.
 
 ## Deployment
 
@@ -351,5 +396,5 @@ Always check `backend/migrations/` for the actual schema before writing queries.
 
 ---
 
-**Last Updated**: January 27, 2026
-**Version**: 1.2
+**Last Updated**: January 29, 2026
+**Version**: 1.3
