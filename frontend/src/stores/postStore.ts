@@ -97,6 +97,18 @@ function createPostStore() {
           posts: updated,
         };
       }),
+    updatePostContent: (postId: string, content: string) =>
+      update((state) => ({
+        ...state,
+        posts: state.posts.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                content,
+              }
+            : post
+        ),
+      })),
     appendPosts: (posts: Post[], cursor: string | null, hasMore: boolean) =>
       update((state) => {
         const seen = new Set(state.posts.map((post) => post.id));

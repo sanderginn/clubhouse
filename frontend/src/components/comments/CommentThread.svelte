@@ -1,14 +1,15 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import { commentStore, type CommentThreadState } from '../../stores/commentStore';
+  import { currentUser } from '../../stores';
   import { loadThreadComments, loadMoreThreadComments } from '../../stores/commentFeedStore';
   import { api } from '../../services/api';
   import { buildProfileHref, handleProfileNavigation } from '../../services/profileNavigation';
   import CommentForm from './CommentForm.svelte';
+  import EditedBadge from '../EditedBadge.svelte';
   import ReplyForm from './ReplyForm.svelte';
   import ReactionBar from '../reactions/ReactionBar.svelte';
   import LinkifiedText from '../LinkifiedText.svelte';
-  import EditedBadge from '../EditedBadge.svelte';
 
   export let postId: string;
   export let commentCount = 0;
@@ -27,6 +28,11 @@
   let rootEl: HTMLElement | null = null;
   let observer: IntersectionObserver | null = null;
   let isVisible = false;
+  let openMenuFor: string | null = null;
+  let editingCommentId: string | null = null;
+  let editCommentContent = '';
+  let editCommentError: string | null = null;
+  let isSavingComment = false;
 
   function getUserReactions(comment: { viewerReactions?: string[] }): Set<string> {
     return new Set(comment.viewerReactions ?? []);
@@ -79,6 +85,48 @@
 
   function closeReply(commentId: string) {
     openReplies = new Set([...openReplies].filter((id) => id !== commentId));
+  }
+
+  function toggleMenu(commentId: string) {
+    openMenuFor = openMenuFor === commentId ? null : commentId;
+  }
+
+  function closeMenus() {
+    openMenuFor = null;
+  }
+
+  function startEdit(commentId: string, content: string) {
+    editingCommentId = commentId;
+    editCommentContent = content;
+    editCommentError = null;
+    closeMenus();
+  }
+
+  function cancelEdit() {
+    editingCommentId = null;
+    editCommentContent = '';
+    editCommentError = null;
+  }
+
+  async function saveEdit(commentId: string) {
+    const trimmed = editCommentContent.trim();
+    if (!trimmed) {
+      editCommentError = 'Content is required.';
+      return;
+    }
+
+    isSavingComment = true;
+    editCommentError = null;
+
+    try {
+      const response = await api.updateComment(commentId, { content: trimmed });
+      commentStore.updateComment(postId, response.comment);
+      editingCommentId = null;
+    } catch (err) {
+      editCommentError = err instanceof Error ? err.message : 'Failed to update comment';
+    } finally {
+      isSavingComment = false;
+    }
   }
 
   function formatDate(dateString: string): string {
@@ -157,6 +205,8 @@
     loadThreadComments(postId);
   }
 </script>
+
+<svelte:window on:click={closeMenus} />
 
 <div class="space-y-4" bind:this={rootEl}>
   <div class="border border-gray-200 rounded-lg p-3 bg-gray-50">
@@ -254,15 +304,77 @@
                   {formatDate(comment.createdAt)}
                 </time>
                 <EditedBadge createdAt={comment.createdAt} updatedAt={comment.updatedAt} />
+                {#if $currentUser?.id === comment.userId}
+                  <div class="ml-auto relative">
+                    <button
+                      type="button"
+                      class="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                      aria-haspopup="true"
+                      aria-expanded={openMenuFor === comment.id}
+                      aria-label="Open comment actions"
+                      on:click|stopPropagation={() => toggleMenu(comment.id)}
+                    >
+                      <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
+                      </svg>
+                    </button>
+                    {#if openMenuFor === comment.id}
+                      <div
+                        class="absolute right-0 mt-2 w-28 rounded-lg border border-gray-200 bg-white shadow-lg py-1 z-20"
+                        role="menu"
+                      >
+                        <button
+                          type="button"
+                          class="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                          on:click={() => startEdit(comment.id, comment.content)}
+                          role="menuitem"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    {/if}
+                  </div>
+                {/if}
               </div>
 
-              <LinkifiedText
-                text={comment.content}
-                className="text-gray-800 text-sm whitespace-pre-wrap break-words"
-                linkClassName="text-blue-600 hover:text-blue-800 underline"
-              />
+              {#if editingCommentId === comment.id}
+                <div class="space-y-2">
+                  <textarea
+                    class="w-full rounded-lg border border-gray-300 p-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    rows="3"
+                    bind:value={editCommentContent}
+                  />
+                  {#if editCommentError}
+                    <div class="text-sm text-red-600">{editCommentError}</div>
+                  {/if}
+                  <div class="flex items-center gap-2">
+                    <button
+                      type="button"
+                      class="px-3 py-1.5 rounded-md bg-blue-600 text-white text-xs hover:bg-blue-700 disabled:opacity-60"
+                      on:click={() => saveEdit(comment.id)}
+                      disabled={isSavingComment}
+                    >
+                      {isSavingComment ? 'Saving...' : 'Save'}
+                    </button>
+                    <button
+                      type="button"
+                      class="px-3 py-1.5 rounded-md border border-gray-300 text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                      on:click={cancelEdit}
+                      disabled={isSavingComment}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              {:else}
+                <LinkifiedText
+                  text={comment.content}
+                  className="text-gray-800 text-sm whitespace-pre-wrap break-words"
+                  linkClassName="text-blue-600 hover:text-blue-800 underline"
+                />
+              {/if}
 
-              {#if comment.links?.length}
+              {#if editingCommentId !== comment.id && comment.links?.length}
                 {#each comment.links as link (link.url)}
                   <div class="mt-2">
                     {#if link.metadata}
@@ -319,14 +431,16 @@
                 {/each}
               {/if}
 
-              <div class="mt-2">
-                <ReactionBar
-                  reactionCounts={comment.reactionCounts ?? {}}
-                  userReactions={getUserReactions(comment)}
-                  onToggle={(emoji) => toggleCommentReaction(comment.id, emoji)}
-                  commentId={comment.id}
-                />
-              </div>
+              {#if editingCommentId !== comment.id}
+                <div class="mt-2">
+                  <ReactionBar
+                    reactionCounts={comment.reactionCounts ?? {}}
+                    userReactions={getUserReactions(comment)}
+                    onToggle={(emoji) => toggleCommentReaction(comment.id, emoji)}
+                    commentId={comment.id}
+                  />
+                </div>
+              {/if}
 
               <div class="mt-2">
                 <button
@@ -410,20 +524,82 @@
                             {formatDate(reply.createdAt)}
                           </time>
                           <EditedBadge createdAt={reply.createdAt} updatedAt={reply.updatedAt} />
+                          {#if $currentUser?.id === reply.userId}
+                            <div class="ml-auto relative">
+                              <button
+                                type="button"
+                                class="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                                aria-haspopup="true"
+                                aria-expanded={openMenuFor === reply.id}
+                                aria-label="Open comment actions"
+                                on:click|stopPropagation={() => toggleMenu(reply.id)}
+                              >
+                                <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                                  <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
+                                </svg>
+                              </button>
+                              {#if openMenuFor === reply.id}
+                                <div
+                                  class="absolute right-0 mt-2 w-28 rounded-lg border border-gray-200 bg-white shadow-lg py-1 z-20"
+                                  role="menu"
+                                >
+                                  <button
+                                    type="button"
+                                    class="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                                    on:click={() => startEdit(reply.id, reply.content)}
+                                    role="menuitem"
+                                  >
+                                    Edit
+                                  </button>
+                                </div>
+                              {/if}
+                            </div>
+                          {/if}
                         </div>
-                        <LinkifiedText
-                          text={reply.content}
-                          className="text-gray-800 text-sm whitespace-pre-wrap break-words"
-                          linkClassName="text-blue-600 hover:text-blue-800 underline"
-                        />
-                        <div class="mt-2">
-                          <ReactionBar
-                            reactionCounts={reply.reactionCounts ?? {}}
-                            userReactions={getUserReactions(reply)}
-                            onToggle={(emoji) => toggleCommentReaction(reply.id, emoji)}
-                            commentId={reply.id}
+                        {#if editingCommentId === reply.id}
+                          <div class="space-y-2">
+                            <textarea
+                              class="w-full rounded-lg border border-gray-300 p-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                              rows="3"
+                              bind:value={editCommentContent}
+                            />
+                            {#if editCommentError}
+                              <div class="text-sm text-red-600">{editCommentError}</div>
+                            {/if}
+                            <div class="flex items-center gap-2">
+                              <button
+                                type="button"
+                                class="px-3 py-1.5 rounded-md bg-blue-600 text-white text-xs hover:bg-blue-700 disabled:opacity-60"
+                                on:click={() => saveEdit(reply.id)}
+                                disabled={isSavingComment}
+                              >
+                                {isSavingComment ? 'Saving...' : 'Save'}
+                              </button>
+                              <button
+                                type="button"
+                                class="px-3 py-1.5 rounded-md border border-gray-300 text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                                on:click={cancelEdit}
+                                disabled={isSavingComment}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        {:else}
+                          <LinkifiedText
+                            text={reply.content}
+                            className="text-gray-800 text-sm whitespace-pre-wrap break-words"
+                            linkClassName="text-blue-600 hover:text-blue-800 underline"
                           />
-                        </div>
+                          <div class="mt-2">
+                            <ReactionBar
+                              reactionCounts={reply.reactionCounts ?? {}}
+                              userReactions={getUserReactions(reply)}
+                              onToggle={(emoji) => toggleCommentReaction(reply.id, emoji)}
+                              commentId={reply.id}
+                            />
+                          </div>
+                        {/if}
                       </div>
                     </div>
                   {/each}

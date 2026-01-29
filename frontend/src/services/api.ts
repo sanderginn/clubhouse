@@ -1,6 +1,6 @@
 import type { Post, CreatePostRequest, LinkMetadata } from '../stores/postStore';
-import type { CreateCommentRequest } from '../stores/commentStore';
-import type { ApiComment } from '../stores/commentMapper';
+import type { CreateCommentRequest, Comment } from '../stores/commentStore';
+import { mapApiComment, type ApiComment } from '../stores/commentMapper';
 import { mapApiPost, type ApiPost } from '../stores/postMapper';
 
 const API_BASE = '/api/v1';
@@ -285,6 +285,17 @@ class ApiClient {
     return this.delete(`/posts/${postId}`);
   }
 
+  async updatePost(
+    postId: string,
+    data: { content: string; links?: { url: string }[] | null }
+  ): Promise<{ post: Post }> {
+    const response = await this.patch<{ post: ApiPost }>(`/posts/${postId}`, {
+      content: data.content,
+      links: data.links ?? undefined,
+    });
+    return { post: mapApiPost(response.post) };
+  }
+
   async previewLink(url: string): Promise<{ metadata: LinkMetadata }> {
     return this.post('/links/preview', { url });
   }
@@ -310,6 +321,17 @@ class ApiClient {
 
   async getComment(commentId: string): Promise<{ comment: ApiComment }> {
     return this.get(`/comments/${commentId}`);
+  }
+
+  async updateComment(
+    commentId: string,
+    data: { content: string; links?: { url: string }[] | null }
+  ): Promise<{ comment: Comment }> {
+    const response = await this.patch<{ comment: ApiComment }>(`/comments/${commentId}`, {
+      content: data.content,
+      links: data.links ?? undefined,
+    });
+    return { comment: mapApiComment(response.comment) };
   }
 
   async addPostReaction(postId: string, emoji: string): Promise<void> {

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup, fireEvent } from '@testing-library/svelte';
+import { render, screen, cleanup } from '@testing-library/svelte';
 import type { Post } from '../../stores/postStore';
+import { authStore } from '../../stores';
 
 const loadThreadComments = vi.hoisted(() => vi.fn());
 const loadMoreThreadComments = vi.hoisted(() => vi.fn());
@@ -27,6 +28,7 @@ const basePost: Post = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  authStore.setUser(null);
 });
 
 afterEach(() => {
@@ -99,17 +101,27 @@ describe('PostCard', () => {
     expect(link).toHaveAttribute('href', '/users/user-1');
   });
 
-  it('shows edited badge with tooltip when updated', async () => {
-    const editedPost: Post = {
-      ...basePost,
-      updatedAt: '2025-01-02T08:47:31',
-    };
+  it('shows edit action for own post', async () => {
+    authStore.setUser({
+      id: 'user-1',
+      username: 'Sander',
+      email: 'sander@example.com',
+      isAdmin: false,
+    });
 
-    render(PostCard, { post: editedPost });
-    const editedButton = screen.getByRole('button', { name: '(edited)' });
-    expect(editedButton).toBeInTheDocument();
+    render(PostCard, { post: basePost });
+    expect(screen.getByRole('button', { name: 'Open post actions' })).toBeInTheDocument();
+  });
 
-    await fireEvent.mouseEnter(editedButton);
-    expect(screen.getByText(/Edited Jan 2, 2025/)).toBeInTheDocument();
+  it('hides edit action for other users', () => {
+    authStore.setUser({
+      id: 'user-2',
+      username: 'Other',
+      email: 'other@example.com',
+      isAdmin: false,
+    });
+
+    render(PostCard, { post: basePost });
+    expect(screen.queryByRole('button', { name: 'Open post actions' })).not.toBeInTheDocument();
   });
 });

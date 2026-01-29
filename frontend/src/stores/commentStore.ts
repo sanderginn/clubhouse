@@ -186,6 +186,51 @@ function createCommentStore() {
     return { comments: next, inserted };
   }
 
+  function updateCommentContent(
+    comments: Comment[],
+    commentId: string,
+    content: string
+  ): Comment[] {
+    return comments.map((comment) => {
+      if (comment.id === commentId) {
+        return {
+          ...comment,
+          content,
+        };
+      }
+      if (comment.replies?.length) {
+        return {
+          ...comment,
+          replies: updateCommentContent(comment.replies, commentId, content),
+        };
+      }
+      return comment;
+    });
+  }
+
+  function updateCommentById(comments: Comment[], updated: Comment): Comment[] {
+    return comments.map((comment) => {
+      if (comment.id === updated.id) {
+        const mergedReplies =
+          updated.replies && updated.replies.length > 0
+            ? updated.replies
+            : comment.replies ?? [];
+        return {
+          ...comment,
+          ...updated,
+          replies: mergedReplies,
+        };
+      }
+      if (comment.replies?.length) {
+        return {
+          ...comment,
+          replies: updateCommentById(comment.replies, updated),
+        };
+      }
+      return comment;
+    });
+  }
+
   return {
     subscribe,
     setThread: (postId: string, comments: Comment[], cursor: string | null, hasMore: boolean) =>
@@ -295,6 +340,16 @@ function createCommentStore() {
       updateThread(postId, (thread) => ({
         ...thread,
         comments: toggleReactions(thread.comments, commentId, emoji),
+      })),
+    updateContent: (postId: string, commentId: string, content: string) =>
+      updateThread(postId, (thread) => ({
+        ...thread,
+        comments: updateCommentContent(thread.comments, commentId, content),
+      })),
+    updateComment: (postId: string, comment: Comment) =>
+      updateThread(postId, (thread) => ({
+        ...thread,
+        comments: updateCommentById(thread.comments, comment),
       })),
   };
 }
