@@ -147,6 +147,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 }
 
 // UpdatePost updates a post's content and links (author only).
+
 func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID uuid.UUID, req *models.UpdatePostRequest) (*models.Post, error) {
 	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.UpdatePost")
 	span.SetAttributes(
@@ -162,6 +163,20 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 	}
 
 	trimmedContent := strings.TrimSpace(req.Content)
+	var linkMetadata []models.JSONMap
+	linksChanged := false
+
+	if req.Links != nil {
+		existingURLs, err := getPostLinkURLs(ctx, s.db, postID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch post links: %w", err)
+		}
+
+		linksChanged = !linkRequestsMatchURLs(existingURLs, *req.Links)
+		if linksChanged && len(*req.Links) > 0 {
+			linkMetadata = fetchLinkMetadata(ctx, *req.Links)
+		}
+	}
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -197,37 +212,37 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 		return nil, fmt.Errorf("failed to update post: %w", err)
 	}
 
-	if req.Links != nil {
-		existingURLs, err := getPostLinkURLs(ctx, tx, postID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch post links: %w", err)
+	if req.Links != nil && linksChanged {
+		if _, err := tx.ExecContext(ctx, "DELETE FROM links WHERE post_id = $1", postID); err != nil {
+			return nil, fmt.Errorf("failed to delete post links: %w", err)
 		}
 
-		if !linkRequestsMatchURLs(existingURLs, *req.Links) {
-			if _, err := tx.ExecContext(ctx, "DELETE FROM links WHERE post_id = $1", postID); err != nil {
-				return nil, fmt.Errorf("failed to delete post links: %w", err)
-			}
+		if len(*req.Links) > 0 {
+			for i, linkReq := range *req.Links {
+				linkID := uuid.New()
 
-			if len(*req.Links) > 0 {
-				linkMetadata := fetchLinkMetadata(ctx, *req.Links)
-				for i, linkReq := range *req.Links {
-					linkID := uuid.New()
+				metadataValue := interface{}(nil)
+				if len(linkMetadata) > i && len(linkMetadata[i]) > 0 {
+					metadataValue = linkMetadata[i]
+				}
 
-					metadataValue := interface{}(nil)
-					if len(linkMetadata) > i && len(linkMetadata[i]) > 0 {
-						metadataValue = linkMetadata[i]
-					}
-
-					_, err := tx.ExecContext(ctx, `
-						INSERT INTO links (id, post_id, url, metadata, created_at)
-						VALUES ($1, $2, $3, $4, now())
-					`, linkID, postID, linkReq.URL, metadataValue)
-					if err != nil {
-						return nil, fmt.Errorf("failed to create link: %w", err)
-					}
+				_, err := tx.ExecContext(ctx, `
+					INSERT INTO links (id, post_id, url, metadata, created_at)
+					VALUES ($1, $2, $3, $4, now())
+				`, linkID, postID, linkReq.URL, metadataValue)
+				if err != nil {
+					return nil, fmt.Errorf("failed to create link: %w", err)
 				}
 			}
 		}
+	}
+
+	_, err = tx.ExecContext(ctx, `
+		INSERT INTO audit_logs (admin_user_id, action, related_post_id, created_at)
+		VALUES ($1, 'update_post', $2, now())
+	`, userID, postID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -333,8 +348,10 @@ func (s *PostService) getPostLinks(ctx context.Context, postID uuid.UUID) ([]mod
 	return links, nil
 }
 
-func getPostLinkURLs(ctx context.Context, tx *sql.Tx, postID uuid.UUID) ([]string, error) {
-	rows, err := tx.QueryContext(ctx, `
+func getPostLinkURLs(ctx context.Context, queryer interface {
+	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
+}, postID uuid.UUID) ([]string, error) {
+	rows, err := queryer.QueryContext(ctx, `
 		SELECT url
 		FROM links
 		WHERE post_id = $1
