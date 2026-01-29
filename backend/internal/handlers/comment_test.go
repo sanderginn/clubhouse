@@ -351,9 +351,9 @@ func TestUpdateCommentSuccess(t *testing.T) {
 		t.Fatalf("failed to marshal body: %v", err)
 	}
 
-	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT user_id").WithArgs(commentID).
 		WillReturnRows(sqlmock.NewRows([]string{"user_id"}).AddRow(userID))
+	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE comments").WithArgs("Updated comment", commentID).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectExec("INSERT INTO audit_logs").WithArgs(userID, commentID, userID).
@@ -463,11 +463,9 @@ func TestUpdateCommentForbidden(t *testing.T) {
 		t.Fatalf("failed to marshal body: %v", err)
 	}
 
-	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT user_id").
 		WithArgs(commentID).
 		WillReturnRows(sqlmock.NewRows([]string{"user_id"}).AddRow(uuid.New()))
-	mock.ExpectRollback()
 
 	req, err := http.NewRequest(http.MethodPatch, "/api/v1/comments/"+commentID.String(), bytes.NewReader(body))
 	if err != nil {

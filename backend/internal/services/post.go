@@ -166,6 +166,23 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 	var linkMetadata []models.JSONMap
 	linksChanged := false
 
+	var ownerID uuid.UUID
+	err := s.db.QueryRowContext(ctx, `
+		SELECT user_id
+		FROM posts
+		WHERE id = $1 AND deleted_at IS NULL
+	`, postID).Scan(&ownerID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("post not found")
+		}
+		return nil, fmt.Errorf("failed to fetch post owner: %w", err)
+	}
+
+	if ownerID != userID {
+		return nil, errors.New("unauthorized to edit this post")
+	}
+
 	if req.Links != nil {
 		existingURLs, err := getPostLinkURLs(ctx, s.db, postID)
 		if err != nil {
@@ -185,23 +202,6 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 	defer func() {
 		_ = tx.Rollback()
 	}()
-
-	var ownerID uuid.UUID
-	err = tx.QueryRowContext(ctx, `
-		SELECT user_id
-		FROM posts
-		WHERE id = $1 AND deleted_at IS NULL
-	`, postID).Scan(&ownerID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("post not found")
-		}
-		return nil, fmt.Errorf("failed to fetch post owner: %w", err)
-	}
-
-	if ownerID != userID {
-		return nil, errors.New("unauthorized to edit this post")
-	}
 
 	_, err = tx.ExecContext(ctx, `
 		UPDATE posts

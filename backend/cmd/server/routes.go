@@ -96,3 +96,12 @@ func isPostIDPath(path string) bool {
 	}
 	return parts[1] == "api" && parts[2] == "v1" && parts[3] == "posts" && parts[4] != ""
 }
+
+func isCommentIDPath(path string) bool {
+	trimmed := strings.TrimSuffix(path, "/")
+	parts := strings.Split(trimmed, "/")
+	if len(parts) != 5 {
+		return false
+	}
+	return parts[1] == "api" && parts[2] == "v1" && parts[3] == "comments" && parts[4] != ""
+}

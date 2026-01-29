@@ -184,6 +184,23 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 	var linkMetadata []models.JSONMap
 	linksChanged := false
 
+	var ownerID uuid.UUID
+	err := s.db.QueryRowContext(ctx, `
+		SELECT user_id
+		FROM comments
+		WHERE id = $1 AND deleted_at IS NULL
+	`, commentID).Scan(&ownerID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("comment not found")
+		}
+		return nil, fmt.Errorf("failed to fetch comment owner: %w", err)
+	}
+
+	if ownerID != userID {
+		return nil, errors.New("unauthorized to edit this comment")
+	}
+
 	if req.Links != nil {
 		existingURLs, err := getCommentLinkURLs(ctx, s.db, commentID)
 		if err != nil {
@@ -203,23 +220,6 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 	defer func() {
 		_ = tx.Rollback()
 	}()
-
-	var ownerID uuid.UUID
-	err = tx.QueryRowContext(ctx, `
-		SELECT user_id
-		FROM comments
-		WHERE id = $1 AND deleted_at IS NULL
-	`, commentID).Scan(&ownerID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("comment not found")
-		}
-		return nil, fmt.Errorf("failed to fetch comment owner: %w", err)
-	}
-
-	if ownerID != userID {
-		return nil, errors.New("unauthorized to edit this comment")
-	}
 
 	_, err = tx.ExecContext(ctx, `
 		UPDATE comments

@@ -755,9 +755,9 @@ func TestUpdatePostSuccess(t *testing.T) {
 		t.Fatalf("failed to marshal body: %v", err)
 	}
 
-	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT user_id").WithArgs(postID).
 		WillReturnRows(sqlmock.NewRows([]string{"user_id"}).AddRow(userID))
+	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE posts").WithArgs("Updated content", postID).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectExec("INSERT INTO audit_logs").WithArgs(userID, postID, userID).
@@ -869,11 +869,9 @@ func TestUpdatePostForbidden(t *testing.T) {
 		t.Fatalf("failed to marshal body: %v", err)
 	}
 
-	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT user_id").
 		WithArgs(postID).
 		WillReturnRows(sqlmock.NewRows([]string{"user_id"}).AddRow(uuid.New()))
-	mock.ExpectRollback()
 
 	req, err := http.NewRequest(http.MethodPatch, "/api/v1/posts/"+postID.String(), bytes.NewReader(body))
 	if err != nil {
