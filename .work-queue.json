@@ -3440,5 +3440,258 @@
       "pr_number": 354,
       "completed_at": "2026-01-28T22:45:14Z"
     }
+  ],
+  "queue": [
+    {
+      "issue_number": 362,
+      "title": "Enhancement: Comprehensive audit logs system",
+      "status": "pending",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 1,
+      "labels": [
+        "enhancement",
+        "backend",
+        "frontend",
+        "admin"
+      ]
+    },
+    {
+      "issue_number": 363,
+      "title": "Enhancement: Post and comment editing with edit indicator",
+      "status": "pending",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        362
+      ],
+      "phase": "feature",
+      "priority": 1,
+      "labels": [
+        "enhancement",
+        "backend",
+        "frontend",
+        "posts",
+        "comments"
+      ]
+    },
+    {
+      "issue_number": 364,
+      "title": "Bug: Image upload not working",
+      "status": "pending",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "priority": 1,
+      "labels": [
+        "bug",
+        "backend",
+        "frontend"
+      ]
+    },
+    {
+      "issue_number": 365,
+      "title": "Enhancement: Promote users to admin in moderation console",
+      "status": "pending",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        362
+      ],
+      "phase": "feature",
+      "priority": 2,
+      "labels": [
+        "enhancement",
+        "backend",
+        "frontend",
+        "admin",
+        "users"
+      ]
+    },
+    {
+      "issue_number": 366,
+      "title": "Bug: Member names not clickable in admin toolkit members section",
+      "status": "pending",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "priority": 2,
+      "labels": [
+        "bug",
+        "frontend",
+        "admin",
+        "ui"
+      ]
+    },
+    {
+      "issue_number": 367,
+      "title": "Enhancement: User settings page with profile picture and MFA",
+      "status": "pending",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        362
+      ],
+      "phase": "feature",
+      "priority": 2,
+      "labels": [
+        "enhancement",
+        "backend",
+        "frontend",
+        "users",
+        "auth"
+      ]
+    },
+    {
+      "issue_number": 368,
+      "title": "Enhancement: Admin-enforced MFA requirement",
+      "status": "pending",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [
+        367
+      ],
+      "phase": "feature",
+      "priority": 2,
+      "labels": [
+        "enhancement",
+        "backend",
+        "frontend",
+        "admin",
+        "auth"
+      ]
+    },
+    {
+      "issue_number": 369,
+      "title": "Enhancement: Reorganize sections (rename Photos to Series, reorder)",
+      "status": "pending",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 3,
+      "labels": [
+        "enhancement",
+        "backend",
+        "db",
+        "sections"
+      ]
+    },
+    {
+      "issue_number": 370,
+      "title": "Enhancement: Remove bio from profile page",
+      "status": "pending",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 3,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "users",
+        "ui"
+      ]
+    },
+    {
+      "issue_number": 371,
+      "title": "Enhancement: Move search into navbar",
+      "status": "pending",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 4,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "search",
+        "ui"
+      ]
+    },
+    {
+      "issue_number": 372,
+      "title": "Bug: Search scope switching auto-updates results without user action",
+      "status": "pending",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "priority": 4,
+      "labels": [
+        "bug",
+        "frontend",
+        "search"
+      ]
+    },
+    {
+      "issue_number": 373,
+      "title": "Bug: Superfluous section pill on parent post in scoped search results",
+      "status": "pending",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "priority": 4,
+      "labels": [
+        "bug",
+        "frontend",
+        "search",
+        "ui"
+      ]
+    },
+    {
+      "issue_number": 374,
+      "title": "Enhancement: Thread URL loads standalone view with back navigation",
+      "status": "pending",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 4,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ui"
+      ]
+    },
+    {
+      "issue_number": 375,
+      "title": "Enhancement: Profile page comments show thread context with emphasis",
+      "status": "pending",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 4,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "users",
+        "comments",
+        "ui"
+      ]
+    },
+    {
+      "issue_number": 376,
+      "title": "Enhancement: Timestamp hover shows exact time with configurable timezone",
+      "status": "pending",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 5,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "backend",
+        "admin",
+        "ui"
+      ]
+    }
   ]
 }
