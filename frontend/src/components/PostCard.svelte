@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import type { Post } from '../stores/postStore';
   import { postStore, currentUser } from '../stores';
   import { api } from '../services/api';
@@ -13,6 +13,7 @@
   import { sections } from '../stores/sectionStore';
   import { getSectionSlugById } from '../services/sectionSlug';
   import { logError } from '../lib/observability/logger';
+  import { recordComponentRender } from '../lib/observability/performance';
 
   export let post: Post;
 
@@ -182,6 +183,14 @@
     imageLoadFailed = false;
     lastImageUrl = imageUrl;
   }
+
+  const renderStart = typeof performance !== 'undefined' ? performance.now() : null;
+  onMount(() => {
+    if (renderStart === null) {
+      return;
+    }
+    recordComponentRender('PostCard', performance.now() - renderStart);
+  });
 </script>
 
 <svelte:window on:click={closeMenu} />

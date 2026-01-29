@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import { commentStore, type CommentThreadState } from '../../stores/commentStore';
   import { currentUser } from '../../stores';
   import { loadThreadComments, loadMoreThreadComments } from '../../stores/commentFeedStore';
@@ -11,6 +11,7 @@
   import LinkifiedText from '../LinkifiedText.svelte';
   import EditedBadge from '../EditedBadge.svelte';
   import { logError } from '../../lib/observability/logger';
+  import { recordComponentRender } from '../../lib/observability/performance';
 
   export let postId: string;
   export let commentCount = 0;
@@ -34,6 +35,8 @@
   let editCommentContent = '';
   let editCommentError: string | null = null;
   let isSavingComment = false;
+
+  const renderStart = typeof performance !== 'undefined' ? performance.now() : null;
 
   function getUserReactions(comment: { viewerReactions?: string[] }): Set<string> {
     return new Set(comment.viewerReactions ?? []);
@@ -66,12 +69,12 @@
       } else {
         await api.addCommentReaction(commentId, emoji);
       }
-  } catch (e) {
-    logError('Failed to toggle comment reaction', { commentId, emoji }, e);
-    // Revert
-    commentStore.toggleReaction(postId, commentId, emoji);
+    } catch (e) {
+      logError('Failed to toggle comment reaction', { commentId, emoji }, e);
+      // Revert
+      commentStore.toggleReaction(postId, commentId, emoji);
+    }
   }
-}
 
   $: thread = $commentStore[postId] ?? emptyThread;
   $: shouldLoad = commentCount > 0;
@@ -196,6 +199,13 @@
 
   onDestroy(() => {
     observer?.disconnect();
+  });
+
+  onMount(() => {
+    if (renderStart === null) {
+      return;
+    }
+    recordComponentRender('CommentThread', performance.now() - renderStart);
   });
 
   $: if (rootEl && shouldLoad) {

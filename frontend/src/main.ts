@@ -1,8 +1,10 @@
 import App from './App.svelte';
 import { initErrorTracker, captureError } from './lib/observability/errorTracker';
 import { setFatalError } from './lib/observability/errorState';
+import { initPerformanceMonitoring } from './lib/observability/performance';
 
 initErrorTracker();
+initPerformanceMonitoring();
 
 if (typeof window !== 'undefined') {
   window.onerror = (message, source, lineno, colno, error) => {
