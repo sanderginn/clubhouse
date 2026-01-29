@@ -121,7 +121,7 @@ services:
       - clubhouse
 
   prometheus:
-    image: prom/prometheus:2.54.1
+    image: prom/prometheus:v2.54.1
     container_name: clubhouse-prometheus
     restart: unless-stopped
     command:
