@@ -119,7 +119,7 @@
 
     try {
       const response = await api.updateComment(commentId, { content: trimmed });
-      commentStore.updateContent(postId, commentId, response.comment.content);
+      commentStore.updateComment(postId, response.comment);
       editingCommentId = null;
     } catch (err) {
       editCommentError = err instanceof Error ? err.message : 'Failed to update comment';
