@@ -1,23 +1,35 @@
 #!/bin/bash
 
 # claim-issue.sh - Atomically claim the next available issue from work queue
-# Usage: ./scripts/claim-issue.sh <agent_name>
+# Usage: ./scripts/claim-issue.sh [--dry-run] <agent_name>
 
 set -e
 
+# Parse flags
+DRY_RUN=false
+if [ "$1" == "--dry-run" ]; then
+  DRY_RUN=true
+  shift
+fi
+
 if [ -z "$1" ]; then
-  echo "Usage: ./scripts/claim-issue.sh <agent_name>"
+  echo "Usage: ./scripts/claim-issue.sh [--dry-run] <agent_name>"
   echo "Example: ./scripts/claim-issue.sh agent-1"
+  echo "         ./scripts/claim-issue.sh --dry-run agent-1"
   exit 1
 fi
 
 AGENT_NAME=$1
 WORK_QUEUE=".work-queue.json"
 
-# Ensure we're on main and up to date
-echo "Syncing with main branch..."
-git checkout main
-git pull origin main
+# Ensure we're on main and up to date (skip in dry run)
+if [ "$DRY_RUN" = false ]; then
+  echo "Syncing with main branch..."
+  git checkout main
+  git pull origin main
+else
+  echo "[DRY RUN] Skipping git sync..."
+fi
 
 # Find first available issue (sorted by priority - lower number = higher priority)
 # Issues without a priority field are assigned priority 999 (picked last)
@@ -32,13 +44,33 @@ fi
 echo "Found available issue: #$AVAILABLE_ISSUE"
 
 # Check if someone else claimed it in the meantime (race condition protection)
-# by re-pulling and checking again
-git pull origin main 2>/dev/null || true
-STILL_AVAILABLE=$(jq -r ".issues[] | select(.issue_number == $AVAILABLE_ISSUE) | .status" "$WORK_QUEUE")
+# by re-pulling and checking again (skip in dry run)
+if [ "$DRY_RUN" = false ]; then
+  git pull origin main 2>/dev/null || true
+  STILL_AVAILABLE=$(jq -r ".issues[] | select(.issue_number == $AVAILABLE_ISSUE) | .status" "$WORK_QUEUE")
 
-if [ "$STILL_AVAILABLE" != "available" ]; then
-  echo "Issue #$AVAILABLE_ISSUE was claimed by another agent. Trying again..."
-  ./scripts/claim-issue.sh "$AGENT_NAME"
+  if [ "$STILL_AVAILABLE" != "available" ]; then
+    echo "Issue #$AVAILABLE_ISSUE was claimed by another agent. Trying again..."
+    ./scripts/claim-issue.sh "$AGENT_NAME"
+    exit 0
+  fi
+fi
+
+# Get issue details
+ISSUE_TITLE=$(jq -r ".issues[] | select(.issue_number == $AVAILABLE_ISSUE) | .title" "$WORK_QUEUE")
+BRANCH_NAME=$(jq -r ".issues[] | select(.issue_number == $AVAILABLE_ISSUE) | .branch" "$WORK_QUEUE")
+
+if [ "$DRY_RUN" = true ]; then
+  # Dry run mode - just show what would be claimed
+  echo ""
+  echo "[DRY RUN] Would claim issue #$AVAILABLE_ISSUE"
+  echo ""
+  echo "Issue: $ISSUE_TITLE"
+  echo "Branch: $BRANCH_NAME"
+  echo "Agent: $AGENT_NAME"
+  echo ""
+  echo "No changes made to work queue or git repository."
+  echo ""
   exit 0
 fi
 
@@ -58,10 +90,6 @@ if ! git push origin main; then
   ./scripts/claim-issue.sh "$AGENT_NAME"
   exit 0
 fi
-
-# Get issue details
-ISSUE_TITLE=$(jq -r ".issues[] | select(.issue_number == $AVAILABLE_ISSUE) | .title" "$WORK_QUEUE")
-BRANCH_NAME=$(jq -r ".issues[] | select(.issue_number == $AVAILABLE_ISSUE) | .branch" "$WORK_QUEUE")
 
 echo ""
 echo "✓ Successfully claimed issue #$AVAILABLE_ISSUE"
