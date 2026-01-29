@@ -3578,7 +3578,7 @@
       "worktree": null,
       "dependencies": [],
       "phase": "feature",
-      "priority": 1,
+      "priority": 0,
       "labels": [
         "enhancement",
         "backend",
@@ -3596,7 +3596,7 @@
         377
       ],
       "phase": "feature",
-      "priority": 1,
+      "priority": 0,
       "labels": [
         "enhancement",
         "backend",
@@ -3613,7 +3613,7 @@
         378
       ],
       "phase": "feature",
-      "priority": 1,
+      "priority": 0,
       "labels": [
         "enhancement",
         "backend",
@@ -3631,7 +3631,7 @@
         378
       ],
       "phase": "feature",
-      "priority": 1,
+      "priority": 0,
       "labels": [
         "enhancement",
         "backend",
@@ -3650,7 +3650,7 @@
         378
       ],
       "phase": "feature",
-      "priority": 1,
+      "priority": 0,
       "labels": [
         "enhancement",
         "backend",
@@ -3668,7 +3668,7 @@
         378
       ],
       "phase": "feature",
-      "priority": 1,
+      "priority": 0,
       "labels": [
         "enhancement",
         "frontend",
@@ -3686,7 +3686,7 @@
         382
       ],
       "phase": "feature",
-      "priority": 1,
+      "priority": 0,
       "labels": [
         "enhancement",
         "frontend",
@@ -3702,7 +3702,7 @@
       "worktree": null,
       "dependencies": [],
       "phase": "feature",
-      "priority": 1,
+      "priority": 0,
       "labels": [
         "enhancement",
         "documentation"
