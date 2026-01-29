@@ -859,9 +859,9 @@
     {
       "issue_number": 441,
       "title": "Prometheus: Set up alerting infrastructure and Alertmanager",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769703800-87627",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769703800-87627",
       "dependencies": [],
       "phase": "observability",
       "priority": 2,
@@ -870,7 +870,9 @@
         "prometheus",
         "alerting",
         "infrastructure"
-      ]
+      ],
+      "branch": "feat/issue-441-prometheus-set-up-alerting-infrastructur",
+      "claimed_at": "2026-01-29T16:23:20Z"
     },
     {
       "issue_number": 442,
