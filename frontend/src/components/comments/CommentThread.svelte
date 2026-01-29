@@ -69,12 +69,12 @@
       } else {
         await api.addCommentReaction(commentId, emoji);
       }
-  } catch (e) {
-    logError('Failed to toggle comment reaction', { commentId, emoji }, e);
-    // Revert
-    commentStore.toggleReaction(postId, commentId, emoji);
+    } catch (e) {
+      logError('Failed to toggle comment reaction', { commentId, emoji }, e);
+      // Revert
+      commentStore.toggleReaction(postId, commentId, emoji);
+    }
   }
-}
 
   $: thread = $commentStore[postId] ?? emptyThread;
   $: shouldLoad = commentCount > 0;
