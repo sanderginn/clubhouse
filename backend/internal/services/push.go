@@ -34,6 +34,12 @@ type PushService struct {
 	db *sql.DB
 }
 
+// PushDeliveryResult captures delivery outcomes for a push send attempt.
+type PushDeliveryResult struct {
+	Delivered    int64
+	FailedByType map[string]int64
+}
+
 // PushDeliveryError carries a coarse error classification for push delivery failures.
 type PushDeliveryError struct {
 	Type string
@@ -55,6 +61,27 @@ func (e *PushDeliveryError) Unwrap() error {
 		return nil
 	}
 	return e.Err
+}
+
+func pushFailureTypeForStatus(statusCode int) (string, bool) {
+	switch {
+	case statusCode == http.StatusGone || statusCode == http.StatusNotFound:
+		return "subscription_gone", true
+	case statusCode >= http.StatusBadRequest:
+		return "http_error", true
+	default:
+		return "", false
+	}
+}
+
+func recordPushFailure(result *PushDeliveryResult, failureType string) {
+	if result == nil || strings.TrimSpace(failureType) == "" {
+		return
+	}
+	if result.FailedByType == nil {
+		result.FailedByType = make(map[string]int64)
+	}
+	result.FailedByType[failureType]++
 }
 
 // NewPushService creates a push service with shared VAPID config.
@@ -145,14 +172,16 @@ func (s *PushService) DeleteSubscriptions(ctx context.Context, userID uuid.UUID)
 }
 
 // SendNotification delivers a push notification to all active subscriptions for a user.
-func (s *PushService) SendNotification(ctx context.Context, userID uuid.UUID, payload models.PushNotificationPayload) error {
+func (s *PushService) SendNotification(ctx context.Context, userID uuid.UUID, payload models.PushNotificationPayload) (PushDeliveryResult, error) {
+	result := PushDeliveryResult{}
 	if !pushConfigData.enabled {
-		return nil
+		return result, nil
 	}
 
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
-		return &PushDeliveryError{Type: "payload_error", Err: err}
+		recordPushFailure(&result, "payload_error")
+		return result, &PushDeliveryError{Type: "payload_error", Err: err}
 	}
 
 	rows, err := s.db.QueryContext(ctx, `
@@ -161,7 +190,7 @@ func (s *PushService) SendNotification(ctx context.Context, userID uuid.UUID, pa
 		WHERE user_id = $1 AND deleted_at IS NULL
 	`, userID)
 	if err != nil {
-		return err
+		return result, err
 	}
 	defer rows.Close()
 
@@ -171,7 +200,7 @@ func (s *PushService) SendNotification(ctx context.Context, userID uuid.UUID, pa
 		var authKey string
 		var p256dhKey string
 		if err := rows.Scan(&endpoint, &authKey, &p256dhKey); err != nil {
-			return err
+			return result, err
 		}
 
 		subscription := &webpush.Subscription{
@@ -189,40 +218,52 @@ func (s *PushService) SendNotification(ctx context.Context, userID uuid.UUID, pa
 			TTL:             60,
 		})
 		if err != nil {
+			recordPushFailure(&result, "send_error")
 			if sendErr == nil {
 				sendErr = &PushDeliveryError{Type: "send_error", Err: err}
 			}
 			continue
 		}
 		if resp != nil {
-			if resp.StatusCode == http.StatusGone || resp.StatusCode == http.StatusNotFound {
-				_ = s.markSubscriptionDeleted(ctx, endpoint)
-				if sendErr == nil {
-					sendErr = &PushDeliveryError{Type: "subscription_gone", Err: errors.New(resp.Status)}
+			if failureType, isFailure := pushFailureTypeForStatus(resp.StatusCode); isFailure {
+				recordPushFailure(&result, failureType)
+				if resp.StatusCode == http.StatusGone || resp.StatusCode == http.StatusNotFound {
+					_ = s.markSubscriptionDeleted(ctx, endpoint)
+				} else if sendErr == nil {
+					sendErr = &PushDeliveryError{Type: failureType, Err: errors.New(resp.Status)}
 				}
-			} else if resp.StatusCode >= http.StatusBadRequest && sendErr == nil {
-				sendErr = &PushDeliveryError{Type: "http_error", Err: errors.New(resp.Status)}
+			} else {
+				result.Delivered++
 			}
 			_ = resp.Body.Close()
 		}
 	}
 
 	if err := rows.Err(); err != nil {
-		return err
+		return result, err
 	}
 
-	return sendErr
+	return result, sendErr
 }
 
 // SendNotificationToUsers delivers the same push payload to multiple users.
-func (s *PushService) SendNotificationToUsers(ctx context.Context, userIDs []uuid.UUID, payload models.PushNotificationPayload) error {
+func (s *PushService) SendNotificationToUsers(ctx context.Context, userIDs []uuid.UUID, payload models.PushNotificationPayload) (PushDeliveryResult, error) {
+	result := PushDeliveryResult{}
 	var sendErr error
 	for _, userID := range userIDs {
-		if err := s.SendNotification(ctx, userID, payload); err != nil && sendErr == nil {
+		userResult, err := s.SendNotification(ctx, userID, payload)
+		result.Delivered += userResult.Delivered
+		for failureType, count := range userResult.FailedByType {
+			if result.FailedByType == nil {
+				result.FailedByType = make(map[string]int64)
+			}
+			result.FailedByType[failureType] += count
+		}
+		if err != nil && sendErr == nil {
 			sendErr = err
 		}
 	}
-	return sendErr
+	return result, sendErr
 }
 
 func (s *PushService) markSubscriptionDeleted(ctx context.Context, endpoint string) error {
