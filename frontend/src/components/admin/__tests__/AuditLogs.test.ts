@@ -29,6 +29,8 @@ describe('AuditLogs', () => {
           admin_user_id: 'admin-1',
           admin_username: 'sander',
           action: 'approve_user',
+          target_user_id: 'user-1',
+          target_username: 'johndoe',
           created_at: '2024-01-01T00:00:00Z',
         },
       ],
@@ -40,7 +42,7 @@ describe('AuditLogs', () => {
     await tick();
 
     expect(apiGet).toHaveBeenCalledWith('/admin/audit-logs');
-    expect(screen.getByText('Approved user')).toBeInTheDocument();
+    expect(screen.getByText('Approved user johndoe')).toBeInTheDocument();
     expect(screen.getByText(/sander/i)).toBeInTheDocument();
   });
 
@@ -52,6 +54,8 @@ describe('AuditLogs', () => {
           admin_user_id: 'admin-1',
           admin_username: 'sander',
           action: 'approve_user',
+          target_user_id: 'user-1',
+          target_username: 'johndoe',
           created_at: '2024-01-01T00:00:00Z',
         },
       ],
@@ -66,6 +70,8 @@ describe('AuditLogs', () => {
           admin_user_id: 'admin-1',
           admin_username: 'sander',
           action: 'reject_user',
+          target_user_id: 'user-2',
+          target_username: 'janedoe',
           created_at: '2024-01-02T00:00:00Z',
         },
       ],
@@ -88,6 +94,6 @@ describe('AuditLogs', () => {
     await tick();
 
     expect(apiGet).toHaveBeenCalledWith('/admin/audit-logs?cursor=cursor-1');
-    expect(screen.getByText('Rejected user')).toBeInTheDocument();
+    expect(screen.getByText('Rejected user janedoe')).toBeInTheDocument();
   });
 });

@@ -957,11 +957,21 @@ func TestGetAuditLogs(t *testing.T) {
 		t.Fatalf("failed to create admin user: %v", err)
 	}
 
+	// Create a target user
+	targetID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, approved_at, created_at)
+		VALUES ($1, 'audittarget', 'audittarget@example.com', '$2a$12$test', now(), now())
+	`, targetID)
+	if err != nil {
+		t.Fatalf("failed to create target user: %v", err)
+	}
+
 	// Create some audit log entries
 	_, err = db.Exec(`
-		INSERT INTO audit_logs (id, admin_user_id, action, created_at)
-		VALUES ($1, $2, 'test_action_1', now())
-	`, uuid.New(), adminID)
+		INSERT INTO audit_logs (id, admin_user_id, action, target_user_id, metadata, created_at)
+		VALUES ($1, $2, 'test_action_1', $3, $4::jsonb, now())
+	`, uuid.New(), adminID, targetID, `{"note":"hello"}`)
 	if err != nil {
 		t.Fatalf("failed to create audit log 1: %v", err)
 	}
@@ -1004,6 +1014,24 @@ func TestGetAuditLogs(t *testing.T) {
 		if log.AdminUsername == "" {
 			t.Errorf("expected admin username to be populated")
 		}
+	}
+
+	// Verify target user and metadata are populated for test_action_1
+	var matched bool
+	for _, log := range response.Logs {
+		if log.Action != "test_action_1" {
+			continue
+		}
+		matched = true
+		if log.TargetUsername != "audittarget" {
+			t.Errorf("expected target username to be populated, got %q", log.TargetUsername)
+		}
+		if log.Metadata == nil || log.Metadata["note"] != "hello" {
+			t.Errorf("expected metadata to include note")
+		}
+	}
+	if !matched {
+		t.Errorf("expected to find test_action_1 in response logs")
 	}
 }
 

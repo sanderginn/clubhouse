@@ -619,13 +619,25 @@ func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Query audit logs with admin username, ordered by created_at DESC
+	// Query audit logs with usernames and metadata, ordered by created_at DESC
 	query := `
 		SELECT
-			a.id, a.admin_user_id, u.username, a.action,
-			a.related_post_id, a.related_comment_id, a.related_user_id, a.created_at
+			a.id,
+			a.admin_user_id,
+			admin.username,
+			a.action,
+			a.related_post_id,
+			a.related_comment_id,
+			a.related_user_id,
+			related.username,
+			a.target_user_id,
+			target.username,
+			a.metadata,
+			a.created_at
 		FROM audit_logs a
-		LEFT JOIN users u ON a.admin_user_id = u.id
+		LEFT JOIN users admin ON a.admin_user_id = admin.id
+		LEFT JOIN users related ON a.related_user_id = related.id
+		LEFT JOIN users target ON a.target_user_id = target.id
 		WHERE (
 			$1::timestamp IS NULL
 			OR ($2::uuid IS NULL AND a.created_at < $1)
@@ -647,9 +659,24 @@ func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 		var log models.AuditLog
 		var adminUserID uuid.NullUUID
 		var adminUsername sql.NullString
+		var relatedUserID uuid.NullUUID
+		var relatedUsername sql.NullString
+		var targetUserID uuid.NullUUID
+		var targetUsername sql.NullString
+		var metadataBytes []byte
 		err := rows.Scan(
-			&log.ID, &adminUserID, &adminUsername, &log.Action,
-			&log.RelatedPostID, &log.RelatedCommentID, &log.RelatedUserID, &log.CreatedAt,
+			&log.ID,
+			&adminUserID,
+			&adminUsername,
+			&log.Action,
+			&log.RelatedPostID,
+			&log.RelatedCommentID,
+			&relatedUserID,
+			&relatedUsername,
+			&targetUserID,
+			&targetUsername,
+			&metadataBytes,
+			&log.CreatedAt,
 		)
 		if err != nil {
 			writeError(r.Context(), w, http.StatusInternalServerError, "SCAN_FAILED", "Failed to parse audit log")
@@ -660,6 +687,24 @@ func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 		}
 		if adminUsername.Valid {
 			log.AdminUsername = adminUsername.String
+		}
+		if relatedUserID.Valid {
+			log.RelatedUserID = &relatedUserID.UUID
+		}
+		if relatedUsername.Valid {
+			log.RelatedUsername = relatedUsername.String
+		}
+		if targetUserID.Valid {
+			log.TargetUserID = &targetUserID.UUID
+		}
+		if targetUsername.Valid {
+			log.TargetUsername = targetUsername.String
+		}
+		if len(metadataBytes) > 0 {
+			if err := json.Unmarshal(metadataBytes, &log.Metadata); err != nil {
+				writeError(r.Context(), w, http.StatusInternalServerError, "SCAN_FAILED", "Failed to parse audit log")
+				return
+			}
 		}
 		logs = append(logs, &log)
 	}
