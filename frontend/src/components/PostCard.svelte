@@ -1,14 +1,13 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import type { Post } from '../stores/postStore';
-  import { postStore } from '../stores/postStore';
+  import { postStore, currentUser } from '../stores';
   import { api } from '../services/api';
   import CommentThread from './comments/CommentThread.svelte';
   import ReactionBar from './reactions/ReactionBar.svelte';
   import { buildProfileHref, handleProfileNavigation } from '../services/profileNavigation';
   import { buildThreadHref } from '../services/routeNavigation';
   import LinkifiedText from './LinkifiedText.svelte';
-  import EditedBadge from './EditedBadge.svelte';
   import { getImageLinkUrl } from '../services/linkUtils';
   import { sections } from '../stores/sectionStore';
   import { getSectionSlugById } from '../services/sectionSlug';
@@ -19,6 +18,11 @@
   $: sectionSlug = getSectionSlugById($sections, post.sectionId) ?? post.sectionId;
   let copiedLink = false;
   let copyTimeout: ReturnType<typeof setTimeout> | null = null;
+  let menuOpen = false;
+  let isEditing = false;
+  let editContent = '';
+  let editError: string | null = null;
+  let isSaving = false;
 
   async function copyThreadLink() {
     if (typeof window === 'undefined') return;
@@ -62,6 +66,49 @@
       clearTimeout(copyTimeout);
     }
   });
+
+  function toggleMenu() {
+    menuOpen = !menuOpen;
+  }
+
+  function closeMenu() {
+    menuOpen = false;
+  }
+
+  function startEdit() {
+    editContent = post.content;
+    editError = null;
+    isEditing = true;
+    closeMenu();
+  }
+
+  function cancelEdit() {
+    isEditing = false;
+    editContent = post.content;
+    editError = null;
+  }
+
+  async function saveEdit() {
+    const trimmed = editContent.trim();
+    if (!trimmed) {
+      editError = 'Content is required.';
+      return;
+    }
+
+    isSaving = true;
+    editError = null;
+
+    try {
+      const response = await api.updatePost(post.id, { content: trimmed });
+      postStore.upsertPost(response.post);
+      post = { ...post, ...response.post };
+      isEditing = false;
+    } catch (err) {
+      editError = err instanceof Error ? err.message : 'Failed to update post';
+    } finally {
+      isSaving = false;
+    }
+  }
 
   async function toggleReaction(emoji: string) {
     const hasReacted = userReactions.has(emoji);
@@ -125,6 +172,7 @@
   $: link = post.links?.[0];
   $: metadata = link?.metadata;
   $: imageUrl = getImageLinkUrl(link);
+  $: canEdit = $currentUser?.id === post.userId;
 
   let imageLoadFailed = false;
   let lastImageUrl: string | undefined;
@@ -133,6 +181,8 @@
     lastImageUrl = imageUrl;
   }
 </script>
+
+<svelte:window on:click={closeMenu} />
 
 <article class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
   <div class="flex items-start gap-3">
@@ -192,12 +242,76 @@
         <time class="text-gray-500 text-sm" datetime={post.createdAt}>
           {formatDate(post.createdAt)}
         </time>
-        <EditedBadge createdAt={post.createdAt} updatedAt={post.updatedAt} />
+        {#if canEdit}
+          <div class="ml-auto relative">
+            <button
+              type="button"
+              class="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              aria-haspopup="true"
+              aria-expanded={menuOpen}
+              aria-label="Open post actions"
+              on:click|stopPropagation={toggleMenu}
+            >
+              <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
+              </svg>
+            </button>
+            {#if menuOpen}
+              <div
+                class="absolute right-0 mt-2 w-28 rounded-lg border border-gray-200 bg-white shadow-lg py-1 z-20"
+                role="menu"
+              >
+                <button
+                  type="button"
+                  class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  on:click={startEdit}
+                  role="menuitem"
+                >
+                  Edit
+                </button>
+              </div>
+            {/if}
+          </div>
+        {/if}
       </div>
 
-      <LinkifiedText text={post.content} className="text-gray-800 whitespace-pre-wrap break-words mb-3" />
+      {#if isEditing}
+        <div class="mb-3 space-y-2">
+          <textarea
+            class="w-full rounded-lg border border-gray-300 p-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            rows="4"
+            bind:value={editContent}
+          />
+          {#if editError}
+            <div class="text-sm text-red-600">{editError}</div>
+          {/if}
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-60"
+              on:click={saveEdit}
+              disabled={isSaving}
+            >
+              {isSaving ? 'Saving...' : 'Save'}
+            </button>
+            <button
+              type="button"
+              class="px-3 py-1.5 rounded-md border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              on:click={cancelEdit}
+              disabled={isSaving}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      {:else}
+        <LinkifiedText
+          text={post.content}
+          className="text-gray-800 whitespace-pre-wrap break-words mb-3"
+        />
+      {/if}
 
-      {#if link && imageUrl}
+      {#if !isEditing && link && imageUrl}
         <div class="mb-3 rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
           {#if imageLoadFailed}
             <div class="flex items-center justify-center px-4 py-6 text-sm text-gray-500">
@@ -224,7 +338,7 @@
           <span>🔗</span>
           <span class="underline">{link.url}</span>
         </a>
-      {:else if link && metadata}
+      {:else if !isEditing && link && metadata}
         <a
           href={link.url}
           target="_blank"
@@ -266,7 +380,7 @@
             </div>
           </div>
         </a>
-      {:else if link}
+      {:else if !isEditing && link}
         <a
           href={link.url}
           target="_blank"

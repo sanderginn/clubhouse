@@ -186,6 +186,28 @@ function createCommentStore() {
     return { comments: next, inserted };
   }
 
+  function updateCommentContent(
+    comments: Comment[],
+    commentId: string,
+    content: string
+  ): Comment[] {
+    return comments.map((comment) => {
+      if (comment.id === commentId) {
+        return {
+          ...comment,
+          content,
+        };
+      }
+      if (comment.replies?.length) {
+        return {
+          ...comment,
+          replies: updateCommentContent(comment.replies, commentId, content),
+        };
+      }
+      return comment;
+    });
+  }
+
   return {
     subscribe,
     setThread: (postId: string, comments: Comment[], cursor: string | null, hasMore: boolean) =>
@@ -295,6 +317,11 @@ function createCommentStore() {
       updateThread(postId, (thread) => ({
         ...thread,
         comments: toggleReactions(thread.comments, commentId, emoji),
+      })),
+    updateContent: (postId: string, commentId: string, content: string) =>
+      updateThread(postId, (thread) => ({
+        ...thread,
+        comments: updateCommentContent(thread.comments, commentId, content),
       })),
   };
 }

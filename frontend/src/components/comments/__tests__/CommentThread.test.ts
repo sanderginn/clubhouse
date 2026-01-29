@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent, screen, cleanup } from '@testing-library/svelte';
 import { tick } from 'svelte';
-import { commentStore } from '../../../stores';
+import { commentStore, authStore } from '../../../stores';
 import { afterEach } from 'vitest';
 
 const loadThreadComments = vi.hoisted(() => vi.fn());
@@ -17,6 +17,7 @@ const { default: CommentThread } = await import('../CommentThread.svelte');
 beforeEach(() => {
   loadThreadComments.mockReset();
   loadMoreThreadComments.mockReset();
+  authStore.setUser(null);
   const state = commentStore as unknown as { resetThread: (postId: string) => void };
   if (state.resetThread) {
     state.resetThread('post-1');
@@ -109,5 +110,29 @@ describe('CommentThread', () => {
     const replyButton = screen.getByText('Reply');
     await fireEvent.click(replyButton);
     expect(screen.getByPlaceholderText('Write a reply...')).toBeInTheDocument();
+  });
+
+  it('shows edit action for own comment', () => {
+    authStore.setUser({
+      id: 'user-1',
+      username: 'Sander',
+      email: 'sander@example.com',
+      isAdmin: false,
+    });
+
+    commentStore.setThread('post-1', [
+      {
+        id: 'comment-1',
+        postId: 'post-1',
+        userId: 'user-1',
+        content: 'Hello',
+        createdAt: 'now',
+        user: { id: 'user-1', username: 'Sander' },
+        replies: [],
+      },
+    ], null, false);
+
+    render(CommentThread, { postId: 'post-1', commentCount: 1 });
+    expect(screen.getByRole('button', { name: 'Open comment actions' })).toBeInTheDocument();
   });
 });
