@@ -238,9 +238,9 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 	}
 
 	_, err = tx.ExecContext(ctx, `
-		INSERT INTO audit_logs (admin_user_id, action, related_post_id, created_at)
-		VALUES ($1, 'update_post', $2, now())
-	`, userID, postID)
+		INSERT INTO audit_logs (admin_user_id, action, related_post_id, related_user_id, created_at)
+		VALUES ($1, 'update_post', $2, $3, now())
+	`, userID, postID, ownerID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}

@@ -256,9 +256,9 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 	}
 
 	_, err = tx.ExecContext(ctx, `
-		INSERT INTO audit_logs (admin_user_id, action, related_comment_id, created_at)
-		VALUES ($1, 'update_comment', $2, now())
-	`, userID, commentID)
+		INSERT INTO audit_logs (admin_user_id, action, related_comment_id, related_user_id, created_at)
+		VALUES ($1, 'update_comment', $2, $3, now())
+	`, userID, commentID, ownerID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}

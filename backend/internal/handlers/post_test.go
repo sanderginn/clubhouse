@@ -760,7 +760,7 @@ func TestUpdatePostSuccess(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"user_id"}).AddRow(userID))
 	mock.ExpectExec("UPDATE posts").WithArgs("Updated content", postID).
 		WillReturnResult(sqlmock.NewResult(0, 1))
-	mock.ExpectExec("INSERT INTO audit_logs").WithArgs(userID, postID).
+	mock.ExpectExec("INSERT INTO audit_logs").WithArgs(userID, postID, userID).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
