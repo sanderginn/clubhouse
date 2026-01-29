@@ -46,7 +46,8 @@ describe('UserResetLinks', () => {
     await fireEvent.click(screen.getByText('Refresh'));
     await flushUsersLoad();
 
-    expect(await screen.findByText('lena')).toBeInTheDocument();
+    const profileLink = await screen.findByRole('link', { name: "View lena's profile" });
+    expect(profileLink).toHaveAttribute('href', '/users/user-1');
     expect(screen.getByText('lena@example.com')).toBeInTheDocument();
     if (typeof AbortController === 'undefined') {
       expect(apiGet).toHaveBeenCalledWith('/admin/users/approved');
