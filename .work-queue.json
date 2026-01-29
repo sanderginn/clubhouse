@@ -15,7 +15,8 @@
     387,
     388,
     389,
-    426
+    426,
+    441
   ],
   "issues": [
     {
@@ -861,7 +862,7 @@
     {
       "issue_number": 441,
       "title": "Prometheus: Set up alerting infrastructure and Alertmanager",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769703800-87627",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769703800-87627",
       "dependencies": [],
@@ -874,7 +875,9 @@
         "infrastructure"
       ],
       "branch": "feat/issue-441-prometheus-set-up-alerting-infrastructur",
-      "claimed_at": "2026-01-29T16:23:20Z"
+      "claimed_at": "2026-01-29T16:23:20Z",
+      "pr_number": 452,
+      "completed_at": "2026-01-29T16:32:49Z"
     },
     {
       "issue_number": 442,
