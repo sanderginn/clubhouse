@@ -184,7 +184,8 @@
     349,
     350,
     351,
-    373
+    373,
+    400
   ],
   "issues": [
     {
@@ -3981,7 +3982,7 @@
     {
       "issue_number": 400,
       "title": "Bug: WebSocket connection loop causes repeated reconnections every few seconds",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769676763-52060",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769676763-52060",
       "dependencies": [],
@@ -3994,7 +3995,9 @@
         "websocket"
       ],
       "branch": "fix/issue-400-websocket-connection-loop-causes-repeate",
-      "claimed_at": "2026-01-29T08:52:43Z"
+      "claimed_at": "2026-01-29T08:52:43Z",
+      "pr_number": 402,
+      "completed_at": "2026-01-29T09:06:15Z"
     }
   ]
 }
