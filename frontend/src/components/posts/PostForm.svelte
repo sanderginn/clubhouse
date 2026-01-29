@@ -23,11 +23,52 @@
   let linkInputRef: HTMLInputElement | null = null;
 
   let fileInput: HTMLInputElement;
-  let selectedFiles: File[] = [];
+  type UploadItem = {
+    id: string;
+    file: File;
+    progress: number;
+    status: 'pending' | 'uploading' | 'done' | 'error';
+    error?: string | null;
+    url?: string;
+  };
+
+  const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+  const MAX_UPLOAD_LABEL = '10 MB';
+
+  let selectedFiles: UploadItem[] = [];
 
   const URL_REGEX = /https?:\/\/[^\s<>"{}|\\^`[\]]+/gi;
   $: hasLink = Boolean((linkMetadata && linkMetadata.url) || linkUrl.trim());
-  $: canSubmit = Boolean($activeSection) && (content.trim().length > 0 || hasLink);
+  $: hasUploads = selectedFiles.some((item) => item.status !== 'error');
+  $: canSubmit = Boolean($activeSection) && (content.trim().length > 0 || hasLink || hasUploads);
+
+  function createUploadId(): string {
+    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+      return crypto.randomUUID();
+    }
+    return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+
+  function isLikelyImageFile(file: File): boolean {
+    if (file.type && file.type.startsWith('image/')) {
+      return true;
+    }
+    return /\.(jpg|jpeg|png|gif|webp|bmp|svg|avif|tif|tiff)$/i.test(file.name);
+  }
+
+  function validateFile(file: File): string | null {
+    if (!isLikelyImageFile(file)) {
+      return 'Only image files are supported.';
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      return `Images must be ${MAX_UPLOAD_LABEL} or smaller.`;
+    }
+    return null;
+  }
+
+  function updateUpload(id: string, patch: Partial<UploadItem>) {
+    selectedFiles = selectedFiles.map((item) => (item.id === id ? { ...item, ...patch } : item));
+  }
 
   function extractUrls(text: string): string[] {
     const matches = text.match(URL_REGEX);
@@ -130,7 +171,17 @@
   function handleFileSelect(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files) {
-      selectedFiles = [...selectedFiles, ...Array.from(input.files)];
+      const next = Array.from(input.files).map((file) => {
+        const validationError = validateFile(file);
+        return {
+          id: createUploadId(),
+          file,
+          progress: 0,
+          status: validationError ? 'error' : 'pending',
+          error: validationError,
+        } as UploadItem;
+      });
+      selectedFiles = [...selectedFiles, ...next];
     }
     input.value = '';
   }
@@ -148,9 +199,13 @@
   async function handleSubmit() {
     const trimmedContent = content.trim();
     const linkValue = (linkMetadata?.url ?? linkUrl).trim();
-    const links = linkValue ? [{ url: linkValue }] : [];
 
-    if ((!trimmedContent && links.length === 0) || !$activeSection || !$currentUser) {
+    if ((!trimmedContent && !hasLink && !hasUploads) || !$activeSection || !$currentUser) {
+      return;
+    }
+
+    if (selectedFiles.some((item) => item.status === 'error')) {
+      error = 'Remove invalid files before posting.';
       return;
     }
 
@@ -158,18 +213,56 @@
     error = null;
 
     try {
+      const uploadedUrls: string[] = [];
+
+      for (const item of selectedFiles) {
+        if (item.status === 'done' && item.url) {
+          uploadedUrls.push(item.url);
+          continue;
+        }
+        if (item.status !== 'pending') {
+          continue;
+        }
+
+        updateUpload(item.id, { status: 'uploading', progress: 0, error: null });
+
+        try {
+          const response = await api.uploadImage(item.file, (progress) =>
+            updateUpload(item.id, { progress })
+          );
+          updateUpload(item.id, { status: 'done', progress: 100, url: response.url });
+          uploadedUrls.push(response.url);
+        } catch (err) {
+          updateUpload(item.id, {
+            status: 'error',
+            error: err instanceof Error ? err.message : 'Upload failed',
+          });
+        }
+      }
+
+      if (selectedFiles.some((item) => item.status === 'error')) {
+        error = 'Some uploads failed. Remove the failed files and try again.';
+        return;
+      }
+
+      const links = [
+        ...uploadedUrls.map((url) => ({ url })),
+        ...(linkValue ? [{ url: linkValue }] : []),
+      ];
+
       const response = await api.createPost({
         sectionId: $activeSection.id,
         content: trimmedContent,
         links: links.length > 0 ? links : undefined,
       });
 
-      const createdPost = linkMetadata
-        ? {
-            ...response.post,
-            links: mergeLinkMetadata(response.post.links, linkMetadata),
-          }
-        : response.post;
+      const createdPost =
+        linkMetadata && uploadedUrls.length === 0
+          ? {
+              ...response.post,
+              links: mergeLinkMetadata(response.post.links, linkMetadata),
+            }
+          : response.post;
 
       postStore.addPost(createdPost);
 
@@ -299,7 +392,7 @@
 
   {#if selectedFiles.length > 0}
     <div class="space-y-2">
-      {#each selectedFiles as file, index}
+      {#each selectedFiles as item, index}
         <div
           class="flex items-center justify-between p-2 bg-gray-50 border border-gray-200 rounded"
         >
@@ -317,15 +410,23 @@
                 d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
               />
             </svg>
-            <span class="text-sm text-gray-700 truncate">{file.name}</span>
+            <span class="text-sm text-gray-700 truncate">{item.file.name}</span>
             <span class="text-xs text-gray-500 flex-shrink-0">
-              ({formatFileSize(file.size)})
+              ({formatFileSize(item.file.size)})
             </span>
+            {#if item.status === 'uploading'}
+              <span class="text-xs text-gray-400 flex-shrink-0">{item.progress}%</span>
+            {:else if item.status === 'done'}
+              <span class="text-xs text-green-600 flex-shrink-0">Uploaded</span>
+            {:else if item.status === 'error'}
+              <span class="text-xs text-red-600 flex-shrink-0">Error</span>
+            {/if}
           </div>
           <button
             type="button"
             on:click={() => removeFile(index)}
-            class="p-1 text-gray-400 hover:text-gray-600"
+            class="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50"
+            disabled={item.status === 'uploading'}
             aria-label="Remove file"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -338,6 +439,16 @@
             </svg>
           </button>
         </div>
+        {#if item.status === 'uploading'}
+          <div class="h-1 w-full bg-gray-200 rounded">
+            <div
+              class="h-1 bg-primary rounded"
+              style={`width: ${item.progress}%`}
+            ></div>
+          </div>
+        {:else if item.status === 'error' && item.error}
+          <p class="text-xs text-red-600">{item.error}</p>
+        {/if}
       {/each}
     </div>
   {/if}

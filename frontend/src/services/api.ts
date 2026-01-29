@@ -187,6 +187,76 @@ class ApiClient {
     return this.request<T>(endpoint, { method: 'DELETE' });
   }
 
+  private async uploadWithRetry(
+    file: File,
+    onProgress?: (progress: number) => void,
+    retry = true
+  ): Promise<{ url: string }> {
+    const csrfToken = await this.ensureCsrfToken();
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${API_BASE}/uploads`);
+      xhr.withCredentials = true;
+      if (csrfToken) {
+        xhr.setRequestHeader(CSRF_HEADER, csrfToken);
+      }
+
+      xhr.upload.onprogress = (event) => {
+        if (!onProgress || !event.lengthComputable) return;
+        const percent = Math.round((event.loaded / event.total) * 100);
+        onProgress(Math.min(100, Math.max(0, percent)));
+      };
+
+      xhr.onerror = () => {
+        reject(new Error('Upload failed'));
+      };
+
+      xhr.onload = async () => {
+        const status = xhr.status;
+        const responseText = xhr.responseText || '{}';
+        if (status >= 200 && status < 300) {
+          try {
+            const data = JSON.parse(responseText) as { url: string };
+            resolve(data);
+          } catch {
+            reject(new Error('Upload failed'));
+          }
+          return;
+        }
+
+        let errorData: ApiError | null = null;
+        try {
+          errorData = JSON.parse(responseText) as ApiError;
+        } catch {
+          errorData = null;
+        }
+
+        if (
+          retry &&
+          (status === 403 ||
+            status === 419 ||
+            (errorData?.code ? CSRF_ERROR_CODES.has(errorData.code) : false))
+        ) {
+          await this.refreshCsrfToken();
+          this.uploadWithRetry(file, onProgress, false).then(resolve).catch(reject);
+          return;
+        }
+
+        const error = new Error(errorData?.error ?? 'Upload failed') as Error & { code?: string };
+        error.code = errorData?.code ?? 'UNKNOWN_ERROR';
+        reject(error);
+      };
+
+      const formData = new FormData();
+      formData.append('file', file);
+      xhr.send(formData);
+    });
+  }
+
+  async uploadImage(file: File, onProgress?: (progress: number) => void): Promise<{ url: string }> {
+    return this.uploadWithRetry(file, onProgress);
+  }
+
   async createPost(data: CreatePostRequest): Promise<{ post: Post }> {
     const response = await this.post<{ post: ApiPost }>('/posts', {
       section_id: data.sectionId,
