@@ -10,26 +10,17 @@ import (
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/sanderginn/clubhouse/internal/services"
+	"github.com/sanderginn/clubhouse/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func setupTestRedisForMiddleware(t *testing.T) *redis.Client {
-	client := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-		DB:   2, // Use a different DB for middleware tests
-	})
+	client := testutil.GetTestRedis(t)
 
-	// Ping to ensure connection
-	ctx := context.Background()
-	if err := client.Ping(ctx).Err(); err != nil {
-		t.Skipf("Redis not available: %v", err)
-	}
-
-	// Clean up test data
+	// Clean up test data after each test
 	t.Cleanup(func() {
-		client.FlushDB(ctx)
-		client.Close()
+		testutil.CleanupRedis(t)
 	})
 
 	return client
