@@ -46,6 +46,14 @@ func (s *UserService) RegisterUser(ctx context.Context, req *models.RegisterRequ
 		return nil, err
 	}
 
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
 	// Hash password
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcryptCost)
 	if err != nil {
@@ -68,7 +76,7 @@ func (s *UserService) RegisterUser(ctx context.Context, req *models.RegisterRequ
 	`
 
 	var user models.User
-	err = s.db.QueryRowContext(ctx, query, userID, req.Username, email, string(passwordHash)).
+	err = tx.QueryRowContext(ctx, query, userID, req.Username, email, string(passwordHash)).
 		Scan(&user.ID, &user.Username, &user.Email, &user.IsAdmin, &user.CreatedAt)
 
 	if err != nil {
@@ -82,6 +90,19 @@ func (s *UserService) RegisterUser(ctx context.Context, req *models.RegisterRequ
 			}
 		}
 		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+
+	auditService := NewAuditService(tx)
+	metadata := map[string]interface{}{
+		"username": user.Username,
+		"email":    user.Email,
+	}
+	if err := auditService.LogAuditWithMetadata(ctx, "register_user", uuid.Nil, user.ID, metadata); err != nil {
+		return nil, fmt.Errorf("failed to create audit log: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return &user, nil
@@ -440,7 +461,10 @@ func (s *UserService) ApproveUser(ctx context.Context, userID uuid.UUID, adminUs
 
 	// Create audit log entry
 	auditService := NewAuditService(tx)
-	if err := auditService.LogAudit(ctx, "approve_user", adminUserID, userID); err != nil {
+	metadata := map[string]interface{}{
+		"target_user_id": userID.String(),
+	}
+	if err := auditService.LogAuditWithMetadata(ctx, "approve_user", adminUserID, userID, metadata); err != nil {
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
@@ -491,7 +515,10 @@ func (s *UserService) RejectUser(ctx context.Context, userID uuid.UUID, adminUse
 
 	// Create audit log entry BEFORE deleting the user (FK constraint)
 	auditService := NewAuditService(tx)
-	if err := auditService.LogAudit(ctx, "reject_user", adminUserID, userID); err != nil {
+	metadata := map[string]interface{}{
+		"target_user_id": userID.String(),
+	}
+	if err := auditService.LogAuditWithMetadata(ctx, "reject_user", adminUserID, userID, metadata); err != nil {
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
@@ -720,6 +747,28 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *
 		return nil, fmt.Errorf("at least one field (bio or profile_picture_url) is required")
 	}
 
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	var currentBio sql.NullString
+	var currentProfilePictureURL sql.NullString
+	currentQuery := `
+		SELECT bio, profile_picture_url
+		FROM users
+		WHERE id = $1 AND deleted_at IS NULL
+	`
+	if err := tx.QueryRowContext(ctx, currentQuery, userID).Scan(&currentBio, &currentProfilePictureURL); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, fmt.Errorf("failed to load current profile: %w", err)
+	}
+
 	// Build dynamic UPDATE query based on provided fields
 	setClauses := []string{"updated_at = now()"}
 	args := []interface{}{}
@@ -747,7 +796,7 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *
 	`, strings.Join(setClauses, ", "), argIndex)
 
 	var response models.UpdateUserResponse
-	err := s.db.QueryRowContext(ctx, query, args...).
+	err = tx.QueryRowContext(ctx, query, args...).
 		Scan(&response.ID, &response.Username, &response.Email,
 			&response.ProfilePictureUrl, &response.Bio, &response.IsAdmin)
 
@@ -756,6 +805,54 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *
 			return nil, fmt.Errorf("user not found")
 		}
 		return nil, fmt.Errorf("failed to update profile: %w", err)
+	}
+
+	changes := map[string]interface{}{}
+	changedFields := []string{}
+	if req.Bio != nil {
+		newBio := *req.Bio
+		if !currentBio.Valid || currentBio.String != newBio {
+			var oldValue interface{}
+			if currentBio.Valid {
+				oldValue = currentBio.String
+			}
+			changes["bio"] = map[string]interface{}{
+				"old": oldValue,
+				"new": newBio,
+			}
+			changedFields = append(changedFields, "bio")
+		}
+	}
+
+	if req.ProfilePictureUrl != nil {
+		newProfilePicture := *req.ProfilePictureUrl
+		if !currentProfilePictureURL.Valid || currentProfilePictureURL.String != newProfilePicture {
+			var oldValue interface{}
+			if currentProfilePictureURL.Valid {
+				oldValue = currentProfilePictureURL.String
+			}
+			changes["profile_picture_url"] = map[string]interface{}{
+				"old": oldValue,
+				"new": newProfilePicture,
+			}
+			changedFields = append(changedFields, "profile_picture_url")
+		}
+	}
+
+	metadata := map[string]interface{}{
+		"changed_fields": changedFields,
+	}
+	if len(changes) > 0 {
+		metadata["changes"] = changes
+	}
+
+	auditService := NewAuditService(tx)
+	if err := auditService.LogAuditWithMetadata(ctx, "update_profile", uuid.Nil, userID, metadata); err != nil {
+		return nil, fmt.Errorf("failed to create audit log: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return &response, nil

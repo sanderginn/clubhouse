@@ -9,7 +9,7 @@ import (
 // AuditLog represents an audit log entry for admin actions
 type AuditLog struct {
 	ID               uuid.UUID  `json:"id"`
-	AdminUserID      uuid.UUID  `json:"admin_user_id"`
+	AdminUserID      *uuid.UUID `json:"admin_user_id,omitempty"`
 	AdminUsername    string     `json:"admin_username,omitempty"`
 	Action           string     `json:"action"`
 	RelatedPostID    *uuid.UUID `json:"related_post_id,omitempty"`
