@@ -138,3 +138,57 @@ func (s *SessionService) DeleteAllSessionsForUser(ctx context.Context, userID uu
 
 	return nil
 }
+
+// UpdateUserAdminStatus updates cached session admin status for all of a user's sessions.
+func (s *SessionService) UpdateUserAdminStatus(ctx context.Context, userID uuid.UUID, isAdmin bool) error {
+	if s == nil || s.redis == nil {
+		return fmt.Errorf("session service is not configured")
+	}
+
+	userKey := UserSessionSetPrefix + userID.String()
+	sessionIDs, err := s.redis.SMembers(ctx, userKey).Result()
+	if err != nil {
+		return fmt.Errorf("failed to list user sessions: %w", err)
+	}
+	if len(sessionIDs) == 0 {
+		return nil
+	}
+
+	pipe := s.redis.TxPipeline()
+	for _, sessionID := range sessionIDs {
+		key := SessionKeyPrefix + sessionID
+		sessionJSON, err := s.redis.Get(ctx, key).Result()
+		if err != nil {
+			if err == redis.Nil {
+				continue
+			}
+			return fmt.Errorf("failed to get session: %w", err)
+		}
+
+		var session Session
+		if err := json.Unmarshal([]byte(sessionJSON), &session); err != nil {
+			return fmt.Errorf("failed to unmarshal session: %w", err)
+		}
+
+		session.IsAdmin = isAdmin
+		updatedJSON, err := json.Marshal(&session)
+		if err != nil {
+			return fmt.Errorf("failed to marshal session: %w", err)
+		}
+
+		ttl, err := s.redis.TTL(ctx, key).Result()
+		if err != nil {
+			return fmt.Errorf("failed to get session ttl: %w", err)
+		}
+		if ttl <= 0 {
+			ttl = SessionDuration
+		}
+		pipe.Set(ctx, key, updatedJSON, ttl)
+	}
+
+	if _, err := pipe.Exec(ctx); err != nil {
+		return fmt.Errorf("failed to update user sessions: %w", err)
+	}
+
+	return nil
+}

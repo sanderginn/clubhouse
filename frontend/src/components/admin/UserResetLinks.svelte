@@ -24,9 +24,18 @@
     copied: boolean;
   }
 
+  interface PromoteResponse {
+    id: string;
+    username: string;
+    email: string;
+    is_admin: boolean;
+    message: string;
+  }
+
   let users: AdminUser[] = [];
   let isLoading = true;
   let errorMessage = '';
+  let successMessage = '';
   let actionUserId: string | null = null;
   let resetLinks: Record<string, ResetLinkState> = {};
   let usersAbortController: AbortController | null = null;
@@ -50,6 +59,7 @@
 
     isLoading = true;
     errorMessage = '';
+    successMessage = '';
 
     if (controller) {
       usersTimeoutId = setTimeout(() => controller.abort(), 10000);
@@ -93,6 +103,7 @@
   const generateResetLink = async (userId: string) => {
     actionUserId = userId;
     errorMessage = '';
+    successMessage = '';
     try {
       const response = await api.post<ResetLinkResponse>('/admin/password-reset/generate', {
         user_id: userId,
@@ -152,6 +163,35 @@
     resetLinks = remaining;
   };
 
+  const confirmPromotion = (username: string) => {
+    if (typeof window === 'undefined') {
+      return true;
+    }
+    return window.confirm(
+      `Promote ${username} to admin? This grants moderation access.`
+    );
+  };
+
+  const promoteUser = async (user: AdminUser) => {
+    if (user.is_admin) return;
+    if (!confirmPromotion(user.username)) return;
+
+    actionUserId = user.id;
+    errorMessage = '';
+    successMessage = '';
+    try {
+      await api.post<PromoteResponse>(`/admin/users/${user.id}/promote`);
+      users = users.map((entry) =>
+        entry.id === user.id ? { ...entry, is_admin: true } : entry
+      );
+      successMessage = `${user.username} is now an admin.`;
+    } catch (error) {
+      errorMessage = error instanceof Error ? error.message : 'Failed to promote user.';
+    } finally {
+      actionUserId = null;
+    }
+  };
+
   onMount(() => {
     loadUsers();
   });
@@ -178,6 +218,12 @@
       Refresh
     </button>
   </div>
+
+  {#if successMessage}
+    <div class="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+      {successMessage}
+    </div>
+  {/if}
 
   {#if isLoading}
     <div class="mt-6 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
@@ -218,6 +264,15 @@
               </p>
             </div>
             <div class="flex items-center gap-2">
+              {#if !user.is_admin}
+                <button
+                  class="rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-60"
+                  on:click={() => promoteUser(user)}
+                  disabled={actionUserId === user.id}
+                >
+                  Promote to admin
+                </button>
+              {/if}
               <button
                 class="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 disabled:opacity-60"
                 on:click={() => generateResetLink(user.id)}
