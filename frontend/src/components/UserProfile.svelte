@@ -8,6 +8,7 @@
   import PostCard from './PostCard.svelte';
   import ReactionBar from './reactions/ReactionBar.svelte';
   import LinkifiedText from './LinkifiedText.svelte';
+  import EditedBadge from './EditedBadge.svelte';
   import { buildProfileHref, handleProfileNavigation, returnToFeed } from '../services/profileNavigation';
 
   export let userId: string | null;
@@ -567,6 +568,7 @@
                       <time class="text-gray-500 text-sm" datetime={comment.createdAt}>
                         {formatRelative(comment.createdAt)}
                       </time>
+                      <EditedBadge createdAt={comment.createdAt} updatedAt={comment.updatedAt} />
                     </div>
 
                     <LinkifiedText

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/svelte';
+import { render, screen, cleanup, fireEvent } from '@testing-library/svelte';
 import type { Post } from '../../stores/postStore';
 
 const loadThreadComments = vi.hoisted(() => vi.fn());
@@ -97,5 +97,19 @@ describe('PostCard', () => {
     render(PostCard, { post: basePost });
     const link = screen.getByRole('link', { name: 'Sander' });
     expect(link).toHaveAttribute('href', '/users/user-1');
+  });
+
+  it('shows edited badge with tooltip when updated', async () => {
+    const editedPost: Post = {
+      ...basePost,
+      updatedAt: '2025-01-02T08:47:31',
+    };
+
+    render(PostCard, { post: editedPost });
+    const editedButton = screen.getByRole('button', { name: '(edited)' });
+    expect(editedButton).toBeInTheDocument();
+
+    await fireEvent.mouseEnter(editedButton);
+    expect(screen.getByText(/Edited Jan 2, 2025/)).toBeInTheDocument();
   });
 });

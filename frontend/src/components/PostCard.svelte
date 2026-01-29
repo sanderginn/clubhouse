@@ -8,6 +8,7 @@
   import { buildProfileHref, handleProfileNavigation } from '../services/profileNavigation';
   import { buildThreadHref } from '../services/routeNavigation';
   import LinkifiedText from './LinkifiedText.svelte';
+  import EditedBadge from './EditedBadge.svelte';
   import { getImageLinkUrl } from '../services/linkUtils';
   import { sections } from '../stores/sectionStore';
   import { getSectionSlugById } from '../services/sectionSlug';
@@ -191,6 +192,7 @@
         <time class="text-gray-500 text-sm" datetime={post.createdAt}>
           {formatDate(post.createdAt)}
         </time>
+        <EditedBadge createdAt={post.createdAt} updatedAt={post.updatedAt} />
       </div>
 
       <LinkifiedText text={post.content} className="text-gray-800 whitespace-pre-wrap break-words mb-3" />

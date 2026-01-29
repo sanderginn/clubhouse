@@ -20,6 +20,7 @@ export interface CommentResult {
   reactionCounts?: Record<string, number>;
   viewerReactions?: string[];
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface SearchResult {
@@ -137,6 +138,7 @@ function mapApiComment(apiComment: ApiComment): CommentResult {
     reactionCounts: apiComment.reaction_counts,
     viewerReactions: apiComment.viewer_reactions,
     createdAt: apiComment.created_at,
+    updatedAt: apiComment.updated_at,
   };
 }
 
