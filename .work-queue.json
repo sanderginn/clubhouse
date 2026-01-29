@@ -114,9 +114,9 @@
     {
       "issue_number": 383,
       "title": "Frontend: Add audit log filtering by type, date, and user",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769694719-73900",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769694719-73900",
       "dependencies": [
         382
       ],
@@ -127,7 +127,9 @@
         "frontend",
         "admin",
         "ui"
-      ]
+      ],
+      "branch": "feat/issue-383-frontend-add-audit-log-filtering-by-type",
+      "claimed_at": "2026-01-29T13:51:59Z"
     },
     {
       "issue_number": 385,
