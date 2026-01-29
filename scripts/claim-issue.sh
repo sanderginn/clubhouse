@@ -33,11 +33,38 @@ fi
 
 # Find first available issue (sorted by priority - lower number = higher priority)
 # Issues without a priority field are assigned priority 999 (picked last)
+# Only select issues whose dependencies are all completed
 echo "Searching for available issues..."
-AVAILABLE_ISSUE=$(jq -r '[.issues[] | select(.status == "available")] | sort_by(.priority // 999) | .[0].issue_number // empty' "$WORK_QUEUE")
+
+# Build list of completed issue numbers
+COMPLETED_ISSUES=$(jq -r '[.completed_issues[], (.issues[] | select(.status == "completed") | .issue_number)] | unique' "$WORK_QUEUE")
+
+# Find available issues where all dependencies are in the completed list
+AVAILABLE_ISSUE=$(jq -r --argjson completed "$COMPLETED_ISSUES" '
+  [.issues[] | select(
+    .status == "available" and
+    ((.dependencies // []) | all(. as $dep | $completed | index($dep) != null))
+  )] | sort_by(.priority // 999) | .[0].issue_number // empty
+' "$WORK_QUEUE")
 
 if [ -z "$AVAILABLE_ISSUE" ]; then
   echo "No available issues found in work queue"
+  echo ""
+  # Show issues that are blocked by dependencies
+  BLOCKED_ISSUES=$(jq -r --argjson completed "$COMPLETED_ISSUES" '
+    [.issues[] | select(
+      .status == "available" and
+      ((.dependencies // []) | any(. as $dep | $completed | index($dep) == null))
+    )] | if length > 0 then
+      "Blocked issues (waiting for dependencies):\n" +
+      (map("  #\(.issue_number) - blocked by: \([.dependencies[] | select(. as $dep | $completed | index($dep) == null)] | map("#\(.)") | join(", "))") | join("\n"))
+    else
+      empty
+    end
+  ' "$WORK_QUEUE")
+  if [ -n "$BLOCKED_ISSUES" ]; then
+    echo -e "$BLOCKED_ISSUES"
+  fi
   exit 1
 fi
 

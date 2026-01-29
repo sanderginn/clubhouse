@@ -106,11 +106,29 @@ show_completed() {
 }
 
 show_summary() {
-    local total available in_progress completed
+    local total in_progress completed ready blocked
     total=$(jq '.issues | length' "$WORK_QUEUE")
-    available=$(jq '[.issues[] | select(.status == "available")] | length' "$WORK_QUEUE")
     in_progress=$(jq '[.issues[] | select(.status == "in_progress")] | length' "$WORK_QUEUE")
     completed=$(jq '.completed_issues | length' "$WORK_QUEUE")
+
+    # Get completed issues for dependency checking
+    local completed_issues
+    completed_issues=$(jq -r '[.completed_issues[], (.issues[] | select(.status == "completed") | .issue_number)] | unique' "$WORK_QUEUE")
+
+    # Count ready (available with all deps satisfied) and blocked (available with unmet deps)
+    ready=$(jq -r --argjson completed "$completed_issues" '
+      [.issues[] | select(
+        .status == "available" and
+        ((.dependencies // []) | all(. as $dep | $completed | index($dep) != null))
+      )] | length
+    ' "$WORK_QUEUE")
+
+    blocked=$(jq -r --argjson completed "$completed_issues" '
+      [.issues[] | select(
+        .status == "available" and
+        ((.dependencies // []) | any(. as $dep | $completed | index($dep) == null))
+      )] | length
+    ' "$WORK_QUEUE")
 
     echo "════════════════════════════════════════════════════════════════"
     echo "                    CLUBHOUSE WORK QUEUE STATUS"
@@ -118,8 +136,8 @@ show_summary() {
     echo ""
     echo -e "  ${GREEN}Completed:${NC}   $completed"
     echo -e "  ${BLUE}In Progress:${NC} $in_progress"
-    echo -e "  ${GREEN}Available:${NC}   $(jq -r '[.issues[] | select(.status == "available")] | map(select(.issue_number as $n | [.dependencies[] | . as $d | $n] | all(. as $check | '$REPO_ROOT' | false))) | length' "$WORK_QUEUE" 2>/dev/null || echo "?")"
-    echo -e "  ${YELLOW}Blocked:${NC}     ?"
+    echo -e "  ${GREEN}Ready:${NC}       $ready"
+    echo -e "  ${YELLOW}Blocked:${NC}     $blocked"
     echo -e "  ${CYAN}Total:${NC}       $total"
     echo ""
 }
