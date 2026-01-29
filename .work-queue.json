@@ -3724,7 +3724,7 @@
         378
       ],
       "phase": "feature",
-      "priority": 0,
+      "priority": 1,
       "labels": [
         "enhancement",
         "frontend",
@@ -3742,7 +3742,7 @@
         382
       ],
       "phase": "feature",
-      "priority": 0,
+      "priority": 1,
       "labels": [
         "enhancement",
         "frontend",
