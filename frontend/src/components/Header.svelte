@@ -1,15 +1,30 @@
 <script lang="ts">
   import { uiStore, currentUser, isAuthenticated, authStore } from '../stores';
   import { buildProfileHref, handleProfileNavigation } from '../services/profileNavigation';
+  import { buildSettingsHref } from '../services/routeNavigation';
+  import { handleSettingsNavigation } from '../services/settingsNavigation';
+
+  let menuOpen = false;
 
   function toggleSidebar() {
     uiStore.toggleSidebar();
   }
 
+  function toggleMenu() {
+    menuOpen = !menuOpen;
+  }
+
+  function closeMenu() {
+    menuOpen = false;
+  }
+
   async function handleLogout() {
+    menuOpen = false;
     await authStore.logout();
   }
 </script>
+
+<svelte:window on:click={closeMenu} />
 
 <header class="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200">
   <div class="flex items-center justify-between h-16 px-4">
@@ -37,20 +52,17 @@
 
     <div class="flex items-center gap-4">
       {#if $isAuthenticated && $currentUser}
-        <div class="flex items-center gap-3">
-          <a
-            href={buildProfileHref($currentUser.id)}
-            class="text-sm text-gray-700 hidden sm:block hover:underline"
-            on:click={(event) => handleProfileNavigation(event, $currentUser.id)}
+        <div class="relative">
+          <button
+            class="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900"
+            on:click|stopPropagation={toggleMenu}
+            aria-haspopup="true"
+            aria-expanded={menuOpen}
+            aria-label={`Open user menu for ${$currentUser.username}`}
+            type="button"
           >
-            {$currentUser.username}
-          </a>
-          <a
-            href={buildProfileHref($currentUser.id)}
-            class="flex items-center"
-            on:click={(event) => handleProfileNavigation(event, $currentUser.id)}
-            aria-label="View profile"
-          >
+            <span class="hidden sm:block font-medium">{$currentUser.username}</span>
+            <span class="sr-only">{$currentUser.username}</span>
             {#if $currentUser.profilePictureUrl}
               <img
                 src={$currentUser.profilePictureUrl}
@@ -64,21 +76,53 @@
                 {$currentUser.username.charAt(0).toUpperCase()}
               </div>
             {/if}
-          </a>
-          <button
-            on:click={handleLogout}
-            class="text-sm font-medium text-gray-600 hover:text-gray-900 ml-2"
-            title="Logout"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
               <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                fill-rule="evenodd"
+                d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z"
+                clip-rule="evenodd"
               />
             </svg>
           </button>
+
+          {#if menuOpen}
+            <div
+              class="absolute right-0 mt-2 w-48 rounded-lg border border-gray-200 bg-white shadow-lg py-2 z-50"
+              role="menu"
+            >
+              <a
+                href={buildProfileHref($currentUser.id)}
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                on:click={(event) => {
+                  closeMenu();
+                  handleProfileNavigation(event, $currentUser.id);
+                }}
+                role="menuitem"
+              >
+                Profile
+              </a>
+              <a
+                href={buildSettingsHref()}
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                on:click={(event) => {
+                  closeMenu();
+                  handleSettingsNavigation(event);
+                }}
+                role="menuitem"
+              >
+                Settings
+              </a>
+              <div class="my-2 border-t border-gray-100"></div>
+              <button
+                on:click={handleLogout}
+                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                role="menuitem"
+                type="button"
+              >
+                Log out
+              </button>
+            </div>
+          {/if}
         </div>
       {/if}
     </div>

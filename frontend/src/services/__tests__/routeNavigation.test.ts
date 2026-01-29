@@ -3,8 +3,10 @@ import {
   buildAdminHref,
   buildFeedHref,
   buildSectionHref,
+  buildSettingsHref,
   buildThreadHref,
   isAdminPath,
+  isSettingsPath,
   parseSectionSlug,
   parseThreadPostId,
 } from '../routeNavigation';
@@ -35,6 +37,13 @@ describe('routeNavigation', () => {
     expect(isAdminPath('/admin')).toBe(true);
     expect(isAdminPath('/admin/tools')).toBe(true);
     expect(isAdminPath('/sections/section-1')).toBe(false);
+  });
+
+  it('builds settings hrefs and recognizes settings paths', () => {
+    expect(buildSettingsHref()).toBe('/settings');
+    expect(isSettingsPath('/settings')).toBe(true);
+    expect(isSettingsPath('/settings/profile')).toBe(true);
+    expect(isSettingsPath('/admin')).toBe(false);
   });
 
   it('builds feed hrefs from section slugs', () => {

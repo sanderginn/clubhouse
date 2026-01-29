@@ -1,6 +1,7 @@
 const SECTION_PATH_PREFIX = '/sections/';
 const THREAD_PATH_SEGMENT = '/posts/';
 const ADMIN_PATH = '/admin';
+const SETTINGS_PATH = '/settings';
 
 export function buildSectionHref(sectionSlug: string): string {
   return `${SECTION_PATH_PREFIX}${encodeURIComponent(sectionSlug)}`;
@@ -42,8 +43,16 @@ export function buildAdminHref(): string {
   return ADMIN_PATH;
 }
 
+export function buildSettingsHref(): string {
+  return SETTINGS_PATH;
+}
+
 export function isAdminPath(pathname: string): boolean {
   return pathname === ADMIN_PATH || pathname.startsWith(`${ADMIN_PATH}/`);
+}
+
+export function isSettingsPath(pathname: string): boolean {
+  return pathname === SETTINGS_PATH || pathname.startsWith(`${SETTINGS_PATH}/`);
 }
 
 export function buildFeedHref(sectionSlug?: string | null): string {

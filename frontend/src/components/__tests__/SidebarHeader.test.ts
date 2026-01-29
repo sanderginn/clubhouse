@@ -52,7 +52,10 @@ describe('Header', () => {
 
     render(Header);
 
-    const logoutButton = screen.getByTitle('Logout');
+    const menuButton = screen.getByRole('button', { name: /Sander/i });
+    await fireEvent.click(menuButton);
+
+    const logoutButton = screen.getByRole('menuitem', { name: 'Log out' });
     await fireEvent.click(logoutButton);
 
     expect(logoutSpy).toHaveBeenCalled();
