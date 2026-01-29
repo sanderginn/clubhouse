@@ -274,6 +274,31 @@ describe('PostForm', () => {
     expect(createPost).not.toHaveBeenCalled();
   });
 
+  it('blocks svg uploads on the client', async () => {
+    setAuthenticated();
+    setActiveSection();
+
+    const { container } = render(PostForm);
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['<svg></svg>'], 'icon.svg', { type: 'image/svg+xml' });
+
+    await fireEvent.change(fileInput, { target: { files: [file] } });
+    expect(screen.getByText('Only image files are supported.')).toBeInTheDocument();
+  });
+
+  it('rejects oversized uploads before submit', async () => {
+    setAuthenticated();
+    setActiveSection();
+
+    const { container } = render(PostForm);
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['image'], 'large.png', { type: 'image/png' });
+    Object.defineProperty(file, 'size', { value: 11 * 1024 * 1024 });
+
+    await fireEvent.change(fileInput, { target: { files: [file] } });
+    expect(screen.getByText('Images must be 10 MB or smaller.')).toBeInTheDocument();
+  });
+
   it('uploads an image and includes it in the post links', async () => {
     setAuthenticated();
     setActiveSection();
@@ -304,6 +329,45 @@ describe('PostForm', () => {
       links: [{ url: '/api/v1/uploads/user-1/photo.png' }],
     });
     expect(screen.getByText('Uploaded')).toBeInTheDocument();
+  });
+
+  it('shows upload progress while uploading', async () => {
+    setAuthenticated();
+    setActiveSection();
+
+    let resolveUpload: ((value: { url: string }) => void) | null = null;
+    uploadImage.mockImplementation(async (_file: File, onProgress?: (progress: number) => void) => {
+      onProgress?.(35);
+      return new Promise((resolve) => {
+        resolveUpload = resolve;
+      });
+    });
+    createPost.mockResolvedValue({
+      post: { id: 'post-1', userId: 'user-1', sectionId: 'section-1', content: '', createdAt: 'now' },
+    });
+
+    const { container } = render(PostForm);
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['image'], 'photo.png', { type: 'image/png' });
+
+    await fireEvent.change(fileInput, { target: { files: [file] } });
+
+    const form = container.querySelector('form');
+    if (!form) throw new Error('form not found');
+    await fireEvent.submit(form);
+    await tick();
+
+    expect(screen.getByText('35%')).toBeInTheDocument();
+
+    if (!resolveUpload) {
+      throw new Error('upload resolver not set');
+    }
+    resolveUpload({ url: '/api/v1/uploads/user-1/photo.png' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await tick();
+    await tick();
+
+    expect(createPost).toHaveBeenCalled();
   });
 
   it('shows upload failure messaging', async () => {

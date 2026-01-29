@@ -49,11 +49,26 @@
     return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   }
 
+  const ALLOWED_IMAGE_MIME_TYPES = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'image/bmp',
+    'image/avif',
+    'image/tiff',
+  ];
+  const ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'avif', 'tif', 'tiff'];
+  const ACCEPTED_IMAGE_TYPES = [
+    ...ALLOWED_IMAGE_MIME_TYPES,
+    ...ALLOWED_IMAGE_EXTENSIONS.map((ext) => `.${ext}`),
+  ].join(',');
+
   function isLikelyImageFile(file: File): boolean {
-    if (file.type && file.type.startsWith('image/')) {
+    if (file.type && ALLOWED_IMAGE_MIME_TYPES.includes(file.type)) {
       return true;
     }
-    return /\.(jpg|jpeg|png|gif|webp|bmp|svg|avif|tif|tiff)$/i.test(file.name);
+    return new RegExp(`\\.(${ALLOWED_IMAGE_EXTENSIONS.join('|')})$`, 'i').test(file.name);
   }
 
   function validateFile(file: File): string | null {
@@ -466,7 +481,7 @@
         bind:this={fileInput}
         on:change={handleFileSelect}
         multiple
-        accept="image/*"
+        accept={ACCEPTED_IMAGE_TYPES}
         class="hidden"
       />
       <button
