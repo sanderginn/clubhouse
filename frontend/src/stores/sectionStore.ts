@@ -1,11 +1,13 @@
 import { writable, derived } from 'svelte/store';
 import { api } from '../services/api';
+import { slugifySectionName } from '../services/sectionSlug';
 
 export interface Section {
   id: string;
   name: string;
   type: SectionType;
   icon: string;
+  slug: string;
 }
 
 export type SectionType = 'music' | 'photo' | 'event' | 'recipe' | 'book' | 'movie' | 'general';
@@ -60,6 +62,7 @@ function createSectionStore() {
         const mapped = ordered.map((section) => ({
           ...section,
           icon: sectionIcons[section.type] || '📁',
+          slug: slugifySectionName(section.name) || section.id,
         }));
         let active = null;
         if (state.activeSection) {
@@ -90,6 +93,7 @@ function createSectionStore() {
           name: section.name,
           type: section.type,
           icon: sectionIcons[section.type] || '📁',
+          slug: slugifySectionName(section.name) || section.id,
         }));
         const preferred =
           preferredSectionId && sections.length > 0

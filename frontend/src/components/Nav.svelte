@@ -8,7 +8,7 @@
     sectionStore.setActiveSection(section);
     uiStore.setActiveView('feed');
     threadRouteStore.clearTarget();
-    pushPath(buildSectionHref(section.id));
+    pushPath(buildSectionHref(section.slug));
   }
 
   function handleAdminClick() {

@@ -23,18 +23,22 @@
   import { parseProfileUserId } from './services/profileNavigation';
   import {
     buildFeedHref,
+    buildThreadHref,
     isAdminPath,
-    parseSectionId,
+    parseSectionSlug,
     parseThreadPostId,
     replacePath,
   } from './services/routeNavigation';
   import { parseResetRoute } from './services/resetLink';
+  import { findSectionByIdentifier, getSectionSlug } from './services/sectionSlug';
 
   let unauthRoute: 'login' | 'register' | 'reset' = 'login';
   let resetToken: string | null = null;
   let sectionsLoadedForSession = false;
   let popstateHandler: (() => void) | null = null;
-  let pendingSectionId: string | null = null;
+  let pendingSectionIdentifier: string | null = null;
+  let pendingThreadPostId: string | null = null;
+  let sectionNotFound: string | null = null;
 
   onMount(() => {
     authStore.checkSession();
@@ -57,54 +61,79 @@
   function syncRouteFromLocation() {
     if (typeof window === 'undefined') return;
     const path = window.location.pathname;
+    sectionNotFound = null;
     const { isReset, token } = parseResetRoute(window.location);
     if (isReset) {
       unauthRoute = 'reset';
       resetToken = token;
-      pendingSectionId = null;
+      pendingSectionIdentifier = null;
+      pendingThreadPostId = null;
       return;
     }
     const profileUserId = parseProfileUserId(path);
     if (profileUserId) {
       uiStore.openProfile(profileUserId);
       threadRouteStore.clearTarget();
-      pendingSectionId = null;
+      pendingSectionIdentifier = null;
+      pendingThreadPostId = null;
     } else {
       const threadPostId = parseThreadPostId(path);
-      const sectionId = parseSectionId(path);
-      if (threadPostId && sectionId) {
-        threadRouteStore.setTarget(threadPostId, sectionId);
+      const sectionIdentifier = parseSectionSlug(path);
+      if (threadPostId && sectionIdentifier) {
+        const availableSections = get(sections);
+        if (availableSections.length > 0) {
+          const match = findSectionByIdentifier(availableSections, sectionIdentifier);
+          if (match) {
+            threadRouteStore.setTarget(threadPostId, match.id);
+          } else {
+            threadRouteStore.clearTarget();
+            sectionNotFound = sectionIdentifier;
+          }
+          pendingThreadPostId = null;
+        } else {
+          pendingThreadPostId = threadPostId;
+        }
       } else {
         threadRouteStore.clearTarget();
       }
-      if (sectionId) {
+      if (sectionIdentifier) {
         const availableSections = get(sections);
         if (availableSections.length > 0) {
-          const match = availableSections.find((section) => section.id === sectionId);
-          const fallback = availableSections[0] ?? null;
+          const match = findSectionByIdentifier(availableSections, sectionIdentifier);
           if (match) {
             sectionStore.setActiveSection(match);
+            const slug = getSectionSlug(match);
+            if (sectionIdentifier !== slug) {
+              const targetPath = threadPostId
+                ? buildThreadHref(slug, threadPostId)
+                : buildFeedHref(slug);
+              replacePath(targetPath);
+            }
           } else {
-            sectionStore.setActiveSection(fallback);
-            replacePath(buildFeedHref(fallback?.id ?? null));
+            sectionNotFound = sectionIdentifier;
           }
-          pendingSectionId = null;
+          pendingSectionIdentifier = null;
         } else {
-          pendingSectionId = sectionId;
+          pendingSectionIdentifier = sectionIdentifier;
         }
         uiStore.setActiveView('feed');
       } else if (isAdminPath(path)) {
-        pendingSectionId = null;
+        pendingSectionIdentifier = null;
+        pendingThreadPostId = null;
         if (get(isAdmin)) {
           uiStore.setActiveView('admin');
         } else {
           uiStore.setActiveView('feed');
           const fallbackSectionId =
             get(activeSection)?.id ?? get(sections)[0]?.id ?? null;
-          replacePath(buildFeedHref(fallbackSectionId));
+          const fallbackSection = get(sections).find(
+            (section) => section.id === fallbackSectionId
+          );
+          replacePath(buildFeedHref(fallbackSection ? getSectionSlug(fallbackSection) : null));
         }
       } else {
-        pendingSectionId = null;
+        pendingSectionIdentifier = null;
+        pendingThreadPostId = null;
         uiStore.setActiveView('feed');
       }
     }
@@ -122,7 +151,7 @@
 
   $: if ($isAuthenticated && !sectionsLoadedForSession) {
     sectionsLoadedForSession = true;
-    sectionStore.loadSections(pendingSectionId);
+    sectionStore.loadSections();
   }
 
   $: if (!$isAuthenticated && sectionsLoadedForSession) {
@@ -130,23 +159,34 @@
     sectionStore.setSections([]);
   }
 
-  $: if (pendingSectionId && $sections.length > 0) {
-    const match = $sections.find((section) => section.id === pendingSectionId) ?? null;
-    const fallback = $sections[0] ?? null;
-    if (!match && $activeSection?.id !== fallback?.id) {
-      sectionStore.setActiveSection(fallback);
-    }
+  $: if (pendingSectionIdentifier && $sections.length > 0) {
+    const match = findSectionByIdentifier($sections, pendingSectionIdentifier) ?? null;
     const hasThreadTarget =
-      $threadRouteStore.postId && $threadRouteStore.sectionId === pendingSectionId;
-    if (hasThreadTarget && match) {
-      // Preserve thread deep-link URL once sections are loaded.
-    } else {
-      if (hasThreadTarget && !match) {
-        threadRouteStore.clearTarget();
+      $threadRouteStore.postId && $threadRouteStore.sectionId === match?.id;
+    if (match) {
+      sectionStore.setActiveSection(match);
+      if (pendingThreadPostId) {
+        threadRouteStore.setTarget(pendingThreadPostId, match.id);
+        replacePath(buildThreadHref(getSectionSlug(match), pendingThreadPostId));
+        pendingThreadPostId = null;
+      } else if (!hasThreadTarget) {
+        replacePath(buildFeedHref(getSectionSlug(match)));
       }
-      replacePath(buildFeedHref(match?.id ?? fallback?.id ?? null));
+    } else {
+      sectionNotFound = pendingSectionIdentifier;
+      if (pendingThreadPostId) {
+        threadRouteStore.clearTarget();
+        pendingThreadPostId = null;
+      }
     }
-    pendingSectionId = null;
+    pendingSectionIdentifier = null;
+  }
+
+  $: if (sectionNotFound && $activeSection && typeof window !== 'undefined') {
+    const activeSlug = getSectionSlug($activeSection);
+    if (window.location.pathname.startsWith(`/sections/${activeSlug}`)) {
+      sectionNotFound = null;
+    }
   }
 </script>
 
@@ -192,6 +232,14 @@
             <p class="text-gray-600">We couldn’t load that profile. Try selecting a user again.</p>
           </div>
         {/if}
+      {:else if sectionNotFound}
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h1 class="text-xl font-semibold text-gray-900 mb-2">Section not found</h1>
+          <p class="text-gray-600">
+            We couldn’t find a section named “{sectionNotFound}”. Check the URL or pick a section
+            from the sidebar.
+          </p>
+        </div>
       {:else if $activeSection}
         <div class="flex items-center gap-3">
           <span class="text-3xl">{$activeSection.icon}</span>

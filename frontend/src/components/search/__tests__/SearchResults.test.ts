@@ -101,9 +101,9 @@ describe('SearchResults', () => {
     storeRefs.searchQuery.set('nice');
     storeRefs.lastSearchQuery.set('nice');
     storeRefs.sections.set([
-      { id: 'section-1', name: 'Music', type: 'music', icon: '🎵' },
+      { id: 'section-1', name: 'Music', type: 'music', icon: '🎵', slug: 'music' },
     ]);
-    storeRefs.activeSection.set({ id: 'section-1', name: 'Music' });
+    storeRefs.activeSection.set({ id: 'section-1', name: 'Music', slug: 'music' });
     storeRefs.searchResults.set([
       {
         type: 'comment',
@@ -132,9 +132,9 @@ describe('SearchResults', () => {
     storeRefs.searchQuery.set('hello');
     storeRefs.lastSearchQuery.set('hello');
     storeRefs.sections.set([
-      { id: 'section-2', name: 'Movies', type: 'movie', icon: '🎬' },
+      { id: 'section-2', name: 'Movies', type: 'movie', icon: '🎬', slug: 'movies' },
     ]);
-    storeRefs.activeSection.set({ id: 'section-2', name: 'Movies' });
+    storeRefs.activeSection.set({ id: 'section-2', name: 'Movies', slug: 'movies' });
     storeRefs.searchResults.set([
       {
         type: 'post',
@@ -158,8 +158,8 @@ describe('SearchResults', () => {
     storeRefs.lastSearchQuery.set('mix');
     storeRefs.searchScope.set('global');
     storeRefs.sections.set([
-      { id: 'section-1', name: 'Music', type: 'music', icon: '🎵' },
-      { id: 'section-2', name: 'Movies', type: 'movie', icon: '🎬' },
+      { id: 'section-1', name: 'Music', type: 'music', icon: '🎵', slug: 'music' },
+      { id: 'section-2', name: 'Movies', type: 'movie', icon: '🎬', slug: 'movies' },
     ]);
     storeRefs.searchResults.set([
       {

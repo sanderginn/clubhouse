@@ -2,20 +2,27 @@ const SECTION_PATH_PREFIX = '/sections/';
 const THREAD_PATH_SEGMENT = '/posts/';
 const ADMIN_PATH = '/admin';
 
-export function buildSectionHref(sectionId: string): string {
-  return `${SECTION_PATH_PREFIX}${sectionId}`;
+export function buildSectionHref(sectionSlug: string): string {
+  return `${SECTION_PATH_PREFIX}${encodeURIComponent(sectionSlug)}`;
 }
 
-export function buildThreadHref(sectionId: string, postId: string): string {
-  return `${buildSectionHref(sectionId)}${THREAD_PATH_SEGMENT}${postId}`;
+export function buildThreadHref(sectionSlug: string, postId: string): string {
+  return `${buildSectionHref(sectionSlug)}${THREAD_PATH_SEGMENT}${postId}`;
 }
 
-export function parseSectionId(pathname: string): string | null {
+export function parseSectionSlug(pathname: string): string | null {
   if (!pathname.startsWith(SECTION_PATH_PREFIX)) {
     return null;
   }
-  const id = pathname.slice(SECTION_PATH_PREFIX.length).split('/')[0]?.trim();
-  return id ? id : null;
+  const slug = pathname.slice(SECTION_PATH_PREFIX.length).split('/')[0]?.trim();
+  if (!slug) {
+    return null;
+  }
+  try {
+    return decodeURIComponent(slug);
+  } catch {
+    return slug;
+  }
 }
 
 export function parseThreadPostId(pathname: string): string | null {
@@ -23,8 +30,8 @@ export function parseThreadPostId(pathname: string): string | null {
     return null;
   }
   const remainder = pathname.slice(SECTION_PATH_PREFIX.length);
-  const [sectionId, segment, postId] = remainder.split('/');
-  if (!sectionId || segment !== THREAD_PATH_SEGMENT.slice(1, -1)) {
+  const [sectionSlug, segment, postId] = remainder.split('/');
+  if (!sectionSlug || segment !== THREAD_PATH_SEGMENT.slice(1, -1)) {
     return null;
   }
   const trimmed = postId?.trim();
@@ -39,8 +46,8 @@ export function isAdminPath(pathname: string): boolean {
   return pathname === ADMIN_PATH || pathname.startsWith(`${ADMIN_PATH}/`);
 }
 
-export function buildFeedHref(sectionId?: string | null): string {
-  return sectionId ? buildSectionHref(sectionId) : '/';
+export function buildFeedHref(sectionSlug?: string | null): string {
+  return sectionSlug ? buildSectionHref(sectionSlug) : '/';
 }
 
 export function pushPath(path: string): void {

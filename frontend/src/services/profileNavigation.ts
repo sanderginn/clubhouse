@@ -3,6 +3,7 @@ import { activeSection } from '../stores/sectionStore';
 import { uiStore } from '../stores/uiStore';
 import { threadRouteStore } from '../stores/threadRouteStore';
 import { buildFeedHref, pushPath } from './routeNavigation';
+import { getSectionSlug } from './sectionSlug';
 
 const PROFILE_PATH_PREFIX = '/users/';
 
@@ -20,8 +21,9 @@ export function openUserProfile(userId: string): void {
 export function returnToFeed(): void {
   uiStore.setActiveView('feed');
   threadRouteStore.clearTarget();
-  const sectionId = get(activeSection)?.id ?? null;
-  pushPath(buildFeedHref(sectionId));
+  const section = get(activeSection);
+  const sectionSlug = section ? getSectionSlug(section) : null;
+  pushPath(buildFeedHref(sectionSlug));
 }
 
 export function handleProfileNavigation(event: MouseEvent, userId?: string | null): void {

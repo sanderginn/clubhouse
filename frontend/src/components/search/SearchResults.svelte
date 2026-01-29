@@ -20,6 +20,7 @@
   import { api } from '../../services/api';
   import { buildProfileHref, handleProfileNavigation } from '../../services/profileNavigation';
   import { buildThreadHref, pushPath } from '../../services/routeNavigation';
+  import { getSectionSlug } from '../../services/sectionSlug';
   import type { Post } from '../../stores/postStore';
   import type { CommentResult, SearchResult } from '../../stores/searchStore';
 
@@ -101,10 +102,11 @@
     if (!post) return;
     const targetSection = $sections.find((section) => section.id === post.sectionId);
     const targetSectionId = targetSection?.id ?? post.sectionId;
+    const targetSectionSlug = targetSection ? getSectionSlug(targetSection) : post.sectionId;
     const switchingSection = targetSection && $activeSection?.id !== targetSection.id;
     uiStore.setActiveView('feed');
     threadRouteStore.setTarget(post.id, targetSectionId);
-    pushPath(buildThreadHref(targetSectionId, post.id));
+    pushPath(buildThreadHref(targetSectionSlug, post.id));
     if (switchingSection) {
       sectionStore.setActiveSection(targetSection);
     }

@@ -9,16 +9,19 @@
   import { buildThreadHref } from '../services/routeNavigation';
   import LinkifiedText from './LinkifiedText.svelte';
   import { getImageLinkUrl } from '../services/linkUtils';
+  import { sections } from '../stores/sectionStore';
+  import { getSectionSlugById } from '../services/sectionSlug';
 
   export let post: Post;
 
   $: userReactions = new Set(post.viewerReactions ?? []);
+  $: sectionSlug = getSectionSlugById($sections, post.sectionId) ?? post.sectionId;
   let copiedLink = false;
   let copyTimeout: ReturnType<typeof setTimeout> | null = null;
 
   async function copyThreadLink() {
     if (typeof window === 'undefined') return;
-    const url = new URL(buildThreadHref(post.sectionId, post.id), window.location.origin).toString();
+    const url = new URL(buildThreadHref(sectionSlug, post.id), window.location.origin).toString();
     let copied = false;
 
     if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {

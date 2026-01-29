@@ -31,6 +31,7 @@ function setActiveSection() {
     name: 'Music',
     type: 'music',
     icon: '🎵',
+    slug: 'music',
   });
 }
 
