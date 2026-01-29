@@ -8,6 +8,7 @@
     366,
     378,
     382,
+    383,
     385,
     387,
     388
@@ -115,7 +116,7 @@
     {
       "issue_number": 383,
       "title": "Frontend: Add audit log filtering by type, date, and user",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769694719-73900",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769694719-73900",
       "dependencies": [
@@ -130,7 +131,9 @@
         "ui"
       ],
       "branch": "feat/issue-383-frontend-add-audit-log-filtering-by-type",
-      "claimed_at": "2026-01-29T13:51:59Z"
+      "claimed_at": "2026-01-29T13:51:59Z",
+      "pr_number": 449,
+      "completed_at": "2026-01-29T14:09:49Z"
     },
     {
       "issue_number": 385,
