@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -229,6 +230,9 @@ func (h *AdminHandler) EnrollTOTP(w http.ResponseWriter, r *http.Request) {
 		OtpAuthURL: enrollment.URL,
 		Message:    "TOTP enrollment created",
 	}
+	h.logAdminAudit(r.Context(), "enroll_mfa", session.UserID, map[string]interface{}{
+		"method": "totp",
+	})
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -293,6 +297,9 @@ func (h *AdminHandler) VerifyTOTP(w http.ResponseWriter, r *http.Request) {
 	response := models.TOTPVerifyResponse{
 		Message: "TOTP enabled",
 	}
+	h.logAdminAudit(r.Context(), "enable_mfa", session.UserID, map[string]interface{}{
+		"method": "totp",
+	})
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -560,7 +567,15 @@ func (h *AdminHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	configService := services.GetConfigService()
+	previousConfig := configService.GetConfig()
 	config := configService.UpdateConfig(req.LinkMetadataEnabled)
+	if req.LinkMetadataEnabled != nil && previousConfig.LinkMetadataEnabled != config.LinkMetadataEnabled {
+		h.logAdminAudit(r.Context(), "toggle_link_metadata", uuid.Nil, map[string]interface{}{
+			"setting":   "link_metadata_enabled",
+			"old_value": previousConfig.LinkMetadataEnabled,
+			"new_value": config.LinkMetadataEnabled,
+		})
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -672,6 +687,27 @@ func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 		observability.LogError(r.Context(), observability.ErrorLog{
 			Message:    "failed to encode audit logs response",
 			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}
+
+func (h *AdminHandler) logAdminAudit(ctx context.Context, action string, targetUserID uuid.UUID, metadata map[string]interface{}) {
+	if h == nil || h.db == nil {
+		return
+	}
+
+	adminUserID, err := middleware.GetUserIDFromContext(ctx)
+	if err != nil {
+		return
+	}
+
+	auditService := services.NewAuditService(h.db)
+	if err := auditService.LogAuditWithMetadata(ctx, action, adminUserID, targetUserID, metadata); err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to create audit log",
+			Code:       "AUDIT_LOG_FAILED",
 			StatusCode: http.StatusOK,
 			Err:        err,
 		})
@@ -856,6 +892,7 @@ func (h *AdminHandler) GeneratePasswordResetToken(w http.ResponseWriter, r *http
 		UserID:    token.UserID,
 		ExpiresAt: token.ExpiresAt,
 	}
+	h.logAdminAudit(r.Context(), "generate_password_reset_token", req.UserID, nil)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

@@ -238,6 +238,9 @@ When recording audit logs, include the acting admin/user ID and map `target_user
 - `delete_comment`
 - `hard_delete_comment`
 - `restore_comment`
+- `enroll_mfa`
+- `enable_mfa`
+- `generate_password_reset_token`
 - `toggle_link_metadata`
 - `update_section`
 - `delete_section`
