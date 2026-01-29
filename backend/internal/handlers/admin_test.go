@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pquerna/otp/totp"
 	"github.com/sanderginn/clubhouse/internal/models"
+	"github.com/sanderginn/clubhouse/internal/services"
 	"github.com/sanderginn/clubhouse/internal/testutil"
 )
 
@@ -841,6 +843,61 @@ func TestUpdateConfig(t *testing.T) {
 	}
 }
 
+func TestUpdateConfigAuditLog(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	adminID := uuid.MustParse(testutil.CreateTestUser(t, db, "configadmin", "configadmin@example.com", true, true))
+	handler := NewAdminHandler(db, nil)
+
+	configService := services.GetConfigService()
+	current := configService.GetConfig().LinkMetadataEnabled
+	t.Cleanup(func() {
+		restore := current
+		configService.UpdateConfig(&restore)
+	})
+
+	next := !current
+	body := fmt.Sprintf(`{"linkMetadataEnabled": %t}`, next)
+	req := httptest.NewRequest("PATCH", "/api/v1/admin/config", strings.NewReader(body))
+	req = req.WithContext(createTestUserContext(req.Context(), adminID, "configadmin", true))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.UpdateConfig(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var metadataBytes []byte
+	err := db.QueryRow(`
+		SELECT metadata
+		FROM audit_logs
+		WHERE admin_user_id = $1 AND action = 'toggle_link_metadata'
+		ORDER BY created_at DESC
+		LIMIT 1
+	`, adminID).Scan(&metadataBytes)
+	if err != nil {
+		t.Fatalf("failed to query audit log: %v", err)
+	}
+
+	var metadata map[string]interface{}
+	if err := json.Unmarshal(metadataBytes, &metadata); err != nil {
+		t.Fatalf("failed to unmarshal metadata: %v", err)
+	}
+
+	if metadata["setting"] != "link_metadata_enabled" {
+		t.Errorf("expected setting 'link_metadata_enabled', got %v", metadata["setting"])
+	}
+	if metadata["old_value"] != current {
+		t.Errorf("expected old_value %v, got %v", current, metadata["old_value"])
+	}
+	if metadata["new_value"] != next {
+		t.Errorf("expected new_value %v, got %v", next, metadata["new_value"])
+	}
+}
+
 // TestUpdateConfigMethodNotAllowed tests that GET to UpdateConfig is rejected
 func TestUpdateConfigMethodNotAllowed(t *testing.T) {
 	handler := NewAdminHandler(nil, nil)
@@ -983,6 +1040,8 @@ func TestGeneratePasswordResetToken(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
+	adminID := uuid.MustParse(testutil.CreateTestUser(t, db, "resetadmin", "resetadmin@example.com", true, true))
+
 	userID := uuid.New()
 	_, err := db.Exec(`
 		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
@@ -999,6 +1058,7 @@ func TestGeneratePasswordResetToken(t *testing.T) {
 
 	reqBody := `{"user_id":"` + userID.String() + `"}`
 	req := httptest.NewRequest("POST", "/api/v1/admin/password-reset/generate", strings.NewReader(reqBody))
+	req = req.WithContext(createTestUserContext(req.Context(), adminID, "resetadmin", true))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -1023,6 +1083,19 @@ func TestGeneratePasswordResetToken(t *testing.T) {
 
 	if response.ExpiresAt.IsZero() {
 		t.Error("expected non-zero expiration time")
+	}
+
+	var auditCount int
+	err = db.QueryRow(`
+		SELECT COUNT(*)
+		FROM audit_logs
+		WHERE admin_user_id = $1 AND action = 'generate_password_reset_token' AND related_user_id = $2
+	`, adminID, userID).Scan(&auditCount)
+	if err != nil {
+		t.Fatalf("failed to query audit logs: %v", err)
+	}
+	if auditCount != 1 {
+		t.Errorf("expected 1 audit log entry, got %d", auditCount)
 	}
 }
 
@@ -1134,6 +1207,25 @@ func TestAdminTOTPEnrollAndVerify(t *testing.T) {
 		t.Fatalf("expected secret and otpauth url to be set")
 	}
 
+	var enrollMetadataBytes []byte
+	if err := db.QueryRow(`
+		SELECT metadata
+		FROM audit_logs
+		WHERE admin_user_id = $1 AND action = 'enroll_mfa'
+		ORDER BY created_at DESC
+		LIMIT 1
+	`, adminID).Scan(&enrollMetadataBytes); err != nil {
+		t.Fatalf("failed to query enroll audit log: %v", err)
+	}
+
+	var enrollMetadata map[string]interface{}
+	if err := json.Unmarshal(enrollMetadataBytes, &enrollMetadata); err != nil {
+		t.Fatalf("failed to unmarshal enroll metadata: %v", err)
+	}
+	if enrollMetadata["method"] != "totp" {
+		t.Errorf("expected enroll method 'totp', got %v", enrollMetadata["method"])
+	}
+
 	code, err := totp.GenerateCode(enrollBody.Secret, time.Now().UTC())
 	if err != nil {
 		t.Fatalf("failed to generate totp code: %v", err)
@@ -1165,5 +1257,24 @@ func TestAdminTOTPEnrollAndVerify(t *testing.T) {
 	}
 	if len(secret) == 0 {
 		t.Fatalf("expected encrypted secret to be stored")
+	}
+
+	var verifyMetadataBytes []byte
+	if err := db.QueryRow(`
+		SELECT metadata
+		FROM audit_logs
+		WHERE admin_user_id = $1 AND action = 'enable_mfa'
+		ORDER BY created_at DESC
+		LIMIT 1
+	`, adminID).Scan(&verifyMetadataBytes); err != nil {
+		t.Fatalf("failed to query enable audit log: %v", err)
+	}
+
+	var verifyMetadata map[string]interface{}
+	if err := json.Unmarshal(verifyMetadataBytes, &verifyMetadata); err != nil {
+		t.Fatalf("failed to unmarshal enable metadata: %v", err)
+	}
+	if verifyMetadata["method"] != "totp" {
+		t.Errorf("expected enable method 'totp', got %v", verifyMetadata["method"])
 	}
 }
