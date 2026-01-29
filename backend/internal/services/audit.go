@@ -37,8 +37,10 @@ func (s *AuditService) LogAuditWithMetadata(
 	if action == "" {
 		return fmt.Errorf("audit action is required")
 	}
-	if adminUserID == uuid.Nil {
-		return fmt.Errorf("admin user id is required")
+
+	var adminUserValue interface{}
+	if adminUserID != uuid.Nil {
+		adminUserValue = adminUserID
 	}
 
 	var targetUserValue interface{}
@@ -57,7 +59,7 @@ func (s *AuditService) LogAuditWithMetadata(
 		INSERT INTO audit_logs (admin_user_id, action, related_user_id, target_user_id, metadata, created_at)
 		VALUES ($1, $2, $3, $4, $5, now())
 	`
-	_, err := s.exec.ExecContext(ctx, query, adminUserID, action, relatedUserValue, targetUserValue, metadataValue)
+	_, err := s.exec.ExecContext(ctx, query, adminUserValue, action, relatedUserValue, targetUserValue, metadataValue)
 	if err != nil {
 		return fmt.Errorf("failed to create audit log: %w", err)
 	}

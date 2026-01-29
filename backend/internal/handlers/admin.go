@@ -610,7 +610,7 @@ func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 			a.id, a.admin_user_id, u.username, a.action,
 			a.related_post_id, a.related_comment_id, a.related_user_id, a.created_at
 		FROM audit_logs a
-		JOIN users u ON a.admin_user_id = u.id
+		LEFT JOIN users u ON a.admin_user_id = u.id
 		WHERE (
 			$1::timestamp IS NULL
 			OR ($2::uuid IS NULL AND a.created_at < $1)
@@ -630,13 +630,21 @@ func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 	var logs []*models.AuditLog
 	for rows.Next() {
 		var log models.AuditLog
+		var adminUserID uuid.NullUUID
+		var adminUsername sql.NullString
 		err := rows.Scan(
-			&log.ID, &log.AdminUserID, &log.AdminUsername, &log.Action,
+			&log.ID, &adminUserID, &adminUsername, &log.Action,
 			&log.RelatedPostID, &log.RelatedCommentID, &log.RelatedUserID, &log.CreatedAt,
 		)
 		if err != nil {
 			writeError(r.Context(), w, http.StatusInternalServerError, "SCAN_FAILED", "Failed to parse audit log")
 			return
+		}
+		if adminUserID.Valid {
+			log.AdminUserID = &adminUserID.UUID
+		}
+		if adminUsername.Valid {
+			log.AdminUsername = adminUsername.String
 		}
 		logs = append(logs, &log)
 	}
