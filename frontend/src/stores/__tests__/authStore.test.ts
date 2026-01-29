@@ -104,6 +104,22 @@ describe('authStore', () => {
     expect(apiClearCsrfToken).toHaveBeenCalledTimes(1);
   });
 
+  it('updateUser merges updates when user is set', () => {
+    authStore.setUser({
+      id: 'user-1',
+      username: 'sander',
+      email: 'sander@example.com',
+      isAdmin: false,
+      profilePictureUrl: 'https://example.com/old.png',
+    });
+
+    authStore.updateUser({ profilePictureUrl: 'https://example.com/new.png' });
+
+    const state = get(authStore);
+    expect(state.user?.profilePictureUrl).toBe('https://example.com/new.png');
+    expect(state.user?.username).toBe('sander');
+  });
+
   it('derived stores reflect auth state', () => {
     authStore.setUser(null);
     expect(get(isAuthenticated)).toBe(false);

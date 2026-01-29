@@ -210,6 +210,60 @@ function createSearchStore() {
         lastSearchedScope: null,
       });
     },
+    updateUserProfilePicture: (userId: string, profilePictureUrl?: string) => {
+      update((state) => ({
+        ...state,
+        results: state.results.map((result) => {
+          if (result.type === 'post' && result.post?.user?.id === userId) {
+            return {
+              ...result,
+              post: {
+                ...result.post,
+                user: {
+                  ...result.post.user,
+                  profilePictureUrl,
+                },
+              },
+            };
+          }
+          if (result.type === 'comment') {
+            let updatedComment = result.comment;
+            let updatedPost = result.post;
+
+            if (result.comment?.user && result.comment.user.id === userId) {
+              updatedComment = {
+                ...result.comment,
+                user: {
+                  ...result.comment.user,
+                  profilePictureUrl,
+                },
+              };
+            }
+
+            if (result.post?.user && result.post.user.id === userId) {
+              updatedPost = {
+                ...result.post,
+                user: {
+                  ...result.post.user,
+                  profilePictureUrl,
+                },
+              };
+            }
+
+            if (updatedComment === result.comment && updatedPost === result.post) {
+              return result;
+            }
+
+            return {
+              ...result,
+              comment: updatedComment,
+              post: updatedPost,
+            };
+          }
+          return result;
+        }),
+      }));
+    },
     search: async () => {
       const currentToken = requestToken + 1;
       requestToken = currentToken;

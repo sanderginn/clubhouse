@@ -213,6 +213,24 @@ function createPostStore() {
         cursor: null,
         hasMore: true,
       }),
+    updateUserProfilePicture: (userId: string, profilePictureUrl?: string) =>
+      update((state) => ({
+        ...state,
+        posts: state.posts.map((post) => {
+          const shouldUpdate =
+            post.user?.id === userId || (!post.user && post.userId === userId);
+          if (!shouldUpdate || !post.user) {
+            return post;
+          }
+          return {
+            ...post,
+            user: {
+              ...post.user,
+              profilePictureUrl,
+            },
+          };
+        }),
+      })),
   };
 }
 

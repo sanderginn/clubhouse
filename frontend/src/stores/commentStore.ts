@@ -231,6 +231,33 @@ function createCommentStore() {
     });
   }
 
+  function updateProfilePictures(
+    comments: Comment[],
+    userId: string,
+    profilePictureUrl?: string
+  ): Comment[] {
+    return comments.map((comment) => {
+      const nextReplies = comment.replies?.length
+        ? updateProfilePictures(comment.replies, userId, profilePictureUrl)
+        : comment.replies;
+      let nextUser = comment.user;
+      if (comment.user?.id === userId) {
+        nextUser = {
+          ...comment.user,
+          profilePictureUrl,
+        };
+      }
+      if (nextReplies !== comment.replies || nextUser !== comment.user) {
+        return {
+          ...comment,
+          user: nextUser,
+          replies: nextReplies,
+        };
+      }
+      return comment;
+    });
+  }
+
   return {
     subscribe,
     setThread: (postId: string, comments: Comment[], cursor: string | null, hasMore: boolean) =>
@@ -351,6 +378,17 @@ function createCommentStore() {
         ...thread,
         comments: updateCommentById(thread.comments, comment),
       })),
+    updateUserProfilePicture: (userId: string, profilePictureUrl?: string) =>
+      update((state) => {
+        const nextState: CommentStoreState = {};
+        for (const [postId, thread] of Object.entries(state)) {
+          nextState[postId] = {
+            ...thread,
+            comments: updateProfilePictures(thread.comments, userId, profilePictureUrl),
+          };
+        }
+        return nextState;
+      }),
   };
 }
 

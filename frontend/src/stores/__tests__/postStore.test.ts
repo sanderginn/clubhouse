@@ -121,4 +121,29 @@ describe('postStore', () => {
     expect(state.error).toBeNull();
     expect(state.paginationError).toBeNull();
   });
+
+  it('updateUserProfilePicture updates matching post users', () => {
+    postStore.setPosts(
+      [
+        {
+          ...basePost,
+          user: { id: 'user-1', username: 'sander', profilePictureUrl: 'old-url' },
+        },
+        {
+          ...basePost,
+          id: 'post-2',
+          userId: 'user-2',
+          user: { id: 'user-2', username: 'alex', profilePictureUrl: 'keep-url' },
+        },
+      ],
+      null,
+      true
+    );
+
+    postStore.updateUserProfilePicture('user-1', 'new-url');
+
+    const state = get(postStore);
+    expect(state.posts[0].user?.profilePictureUrl).toBe('new-url');
+    expect(state.posts[1].user?.profilePictureUrl).toBe('keep-url');
+  });
 });

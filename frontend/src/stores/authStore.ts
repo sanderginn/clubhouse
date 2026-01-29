@@ -49,6 +49,13 @@ function createAuthStore() {
       );
       update((state) => ({ ...state, user, isLoading: false, mfaChallenge: null }));
     },
+    updateUser: (updates: Partial<User>) =>
+      update((state) => {
+        if (!state.user) {
+          return state;
+        }
+        return { ...state, user: { ...state.user, ...updates } };
+      }),
     setMfaChallenge: (challenge: MfaChallenge | null) =>
       update((state) => ({ ...state, mfaChallenge: challenge, isLoading: false })),
     setLoading: (isLoading: boolean) => update((state) => ({ ...state, isLoading })),

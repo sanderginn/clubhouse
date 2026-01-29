@@ -104,8 +104,8 @@ func TestDeleteAllSessionsForUser(t *testing.T) {
 }
 
 func TestUpdateUserAdminStatusUpdatesSessions(t *testing.T) {
-	redisServer := miniredis.RunT(t)
-	client := redis.NewClient(&redis.Options{Addr: redisServer.Addr()})
+	client := testutil.GetTestRedis(t)
+	defer testutil.CleanupRedis(t)
 	service := NewSessionService(client)
 
 	ctx := context.Background()
