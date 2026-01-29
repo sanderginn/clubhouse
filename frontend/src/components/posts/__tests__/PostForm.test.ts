@@ -6,11 +6,13 @@ import { afterEach } from 'vitest';
 
 const createPost = vi.hoisted(() => vi.fn());
 const previewLink = vi.hoisted(() => vi.fn());
+const uploadImage = vi.hoisted(() => vi.fn());
 
 vi.mock('../../../services/api', () => ({
   api: {
     createPost,
     previewLink,
+    uploadImage,
   },
 }));
 
@@ -38,6 +40,7 @@ function setActiveSection() {
 beforeEach(() => {
   createPost.mockReset();
   previewLink.mockReset();
+  uploadImage.mockReset();
   authStore.setUser(null);
   sectionStore.setActiveSection(null);
   postStore.reset();
@@ -238,13 +241,153 @@ describe('PostForm', () => {
 
     const { container } = render(PostForm);
     const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
-    const file = new File(['hello'], 'hello.txt', { type: 'text/plain' });
+    const file = new File(['hello'], 'hello.png', { type: 'image/png' });
 
     await fireEvent.change(fileInput, { target: { files: [file] } });
-    expect(screen.getByText('hello.txt')).toBeInTheDocument();
+    expect(screen.getByText('hello.png')).toBeInTheDocument();
 
     const removeButtons = screen.getAllByLabelText('Remove file');
     await fireEvent.click(removeButtons[0]);
-    expect(screen.queryByText('hello.txt')).not.toBeInTheDocument();
+    expect(screen.queryByText('hello.png')).not.toBeInTheDocument();
+  });
+
+  it('blocks non-image files and prevents submit', async () => {
+    setAuthenticated();
+    setActiveSection();
+
+    const { container } = render(PostForm);
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['hello'], 'hello.txt', { type: 'text/plain' });
+
+    await fireEvent.change(fileInput, { target: { files: [file] } });
+    expect(screen.getByText('Only image files are supported.')).toBeInTheDocument();
+
+    const textarea = screen.getByLabelText('Post content');
+    await fireEvent.input(textarea, { target: { value: 'Hello' } });
+
+    const form = container.querySelector('form');
+    if (!form) throw new Error('form not found');
+    await fireEvent.submit(form);
+    await tick();
+
+    expect(screen.getByText('Remove invalid files before posting.')).toBeInTheDocument();
+    expect(createPost).not.toHaveBeenCalled();
+  });
+
+  it('blocks svg uploads on the client', async () => {
+    setAuthenticated();
+    setActiveSection();
+
+    const { container } = render(PostForm);
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['<svg></svg>'], 'icon.svg', { type: 'image/svg+xml' });
+
+    await fireEvent.change(fileInput, { target: { files: [file] } });
+    expect(screen.getByText('Only image files are supported.')).toBeInTheDocument();
+  });
+
+  it('rejects oversized uploads before submit', async () => {
+    setAuthenticated();
+    setActiveSection();
+
+    const { container } = render(PostForm);
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['image'], 'large.png', { type: 'image/png' });
+    Object.defineProperty(file, 'size', { value: 11 * 1024 * 1024 });
+
+    await fireEvent.change(fileInput, { target: { files: [file] } });
+    expect(screen.getByText('Images must be 10 MB or smaller.')).toBeInTheDocument();
+  });
+
+  it('uploads an image and includes it in the post links', async () => {
+    setAuthenticated();
+    setActiveSection();
+    uploadImage.mockImplementation(async (_file: File, onProgress?: (progress: number) => void) => {
+      onProgress?.(35);
+      onProgress?.(100);
+      return { url: '/api/v1/uploads/user-1/photo.png' };
+    });
+    createPost.mockResolvedValue({
+      post: { id: 'post-1', userId: 'user-1', sectionId: 'section-1', content: '', createdAt: 'now' },
+    });
+
+    const { container } = render(PostForm);
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['image'], 'photo.png', { type: 'image/png' });
+
+    await fireEvent.change(fileInput, { target: { files: [file] } });
+
+    const form = container.querySelector('form');
+    if (!form) throw new Error('form not found');
+    await fireEvent.submit(form);
+    await tick();
+
+    expect(uploadImage).toHaveBeenCalled();
+    expect(createPost).toHaveBeenCalledWith({
+      sectionId: 'section-1',
+      content: '',
+      links: [{ url: '/api/v1/uploads/user-1/photo.png' }],
+    });
+    expect(screen.getByText('Uploaded')).toBeInTheDocument();
+  });
+
+  it('shows upload progress while uploading', async () => {
+    setAuthenticated();
+    setActiveSection();
+
+    let resolveUpload: ((value: { url: string }) => void) | null = null;
+    uploadImage.mockImplementation(async (_file: File, onProgress?: (progress: number) => void) => {
+      onProgress?.(35);
+      return new Promise((resolve) => {
+        resolveUpload = resolve;
+      });
+    });
+    createPost.mockResolvedValue({
+      post: { id: 'post-1', userId: 'user-1', sectionId: 'section-1', content: '', createdAt: 'now' },
+    });
+
+    const { container } = render(PostForm);
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['image'], 'photo.png', { type: 'image/png' });
+
+    await fireEvent.change(fileInput, { target: { files: [file] } });
+
+    const form = container.querySelector('form');
+    if (!form) throw new Error('form not found');
+    await fireEvent.submit(form);
+    await tick();
+
+    expect(screen.getByText('35%')).toBeInTheDocument();
+
+    if (!resolveUpload) {
+      throw new Error('upload resolver not set');
+    }
+    resolveUpload({ url: '/api/v1/uploads/user-1/photo.png' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await tick();
+    await tick();
+
+    expect(createPost).toHaveBeenCalled();
+  });
+
+  it('shows upload failure messaging', async () => {
+    setAuthenticated();
+    setActiveSection();
+    uploadImage.mockRejectedValue(new Error('Upload failed'));
+
+    const { container } = render(PostForm);
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['image'], 'photo.png', { type: 'image/png' });
+
+    await fireEvent.change(fileInput, { target: { files: [file] } });
+
+    const form = container.querySelector('form');
+    if (!form) throw new Error('form not found');
+    await fireEvent.submit(form);
+    await tick();
+
+    expect(screen.getByText('Upload failed')).toBeInTheDocument();
+    expect(screen.getByText('Some uploads failed. Remove the failed files and try again.')).toBeInTheDocument();
+    expect(createPost).not.toHaveBeenCalled();
   });
 });

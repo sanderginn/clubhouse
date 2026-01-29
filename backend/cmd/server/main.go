@@ -130,6 +130,7 @@ func main() {
 	wsHandler := handlers.NewWebSocketHandler(redisConn)
 	linkHandler := handlers.NewLinkHandler()
 	pushHandler := handlers.NewPushHandler(dbConn, pushService)
+	uploadHandler := handlers.NewUploadHandler()
 	requireAuth := middleware.RequireAuth(redisConn)
 	requireCSRF := middleware.RequireCSRF(redisConn)
 	requireAuthCSRF := func(h http.Handler) http.Handler {
@@ -273,6 +274,11 @@ func main() {
 		}
 		writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
 	})))
+
+	// Upload routes (protected)
+	mux.Handle("/api/v1/uploads", requireAuthCSRF(http.HandlerFunc(uploadHandler.UploadImage)))
+	uploadsFileServer := http.StripPrefix("/api/v1/uploads/", http.FileServer(http.Dir(uploadHandler.UploadDir())))
+	mux.Handle("/api/v1/uploads/", requireAuth(uploadsFileServer))
 
 	// Admin routes (protected by RequireAdmin middleware)
 	mux.Handle("/api/v1/admin/users", requireAdmin(http.HandlerFunc(adminHandler.ListPendingUsers)))

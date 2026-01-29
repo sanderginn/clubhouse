@@ -133,8 +133,12 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: tempo:4317
       OTEL_EXPORTER_OTLP_INSECURE: true
       CLUBHOUSE_TOTP_ENCRYPTION_KEY: ${CLUBHOUSE_TOTP_ENCRYPTION_KEY-}
+      CLUBHOUSE_UPLOAD_DIR: /data/uploads
+      CLUBHOUSE_UPLOAD_MAX_BYTES: ${CLUBHOUSE_UPLOAD_MAX_BYTES:-10485760}
     ports:
       - "8080:8080"
+    volumes:
+      - uploads_data:/data/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -167,6 +171,7 @@ volumes:
   prometheus_data:
   tempo_data:
   grafana_data:
+  uploads_data:
 
 networks:
   clubhouse:
