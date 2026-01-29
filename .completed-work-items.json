@@ -1,0 +1,3678 @@
+{
+  "metadata": {
+    "description": "Archived completed work items",
+    "created_at": "2026-01-29T13:07:57Z",
+    "last_updated": "2026-01-29T13:07:57Z"
+  },
+  "archived_issues": [
+    {
+      "issue_number": 1,
+      "title": "Phase 1: Initialize Go project structure",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 2,
+      "title": "Phase 1: Setup Docker Compose for local development",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 3,
+      "title": "Phase 1: Setup pre-commit hooks",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 4,
+      "title": "Phase 1: Create database migrations (users, sections, posts)",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 5,
+      "title": "Phase 1: Create database migrations (comments, reactions, links)",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 6,
+      "title": "Phase 1: Create database migrations (mentions, notifications, audit logs)",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 7,
+      "title": "Phase 1: Implement user registration endpoint",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 8,
+      "title": "Phase 1: Implement user login endpoint",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 9,
+      "title": "Phase 1: Implement user logout endpoint",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 10,
+      "title": "Phase 1: Implement auth middleware",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 11,
+      "title": "Phase 1: Implement admin user approval flow",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 12,
+      "title": "Phase 2: Implement create post endpoint",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": []
+    },
+    {
+      "issue_number": 13,
+      "title": "Phase 2: Implement get post endpoint",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": []
+    },
+    {
+      "issue_number": 14,
+      "title": "Phase 2: Implement get feed endpoint",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": []
+    },
+    {
+      "issue_number": 15,
+      "title": "Phase 2: Implement soft delete post endpoint",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": []
+    },
+    {
+      "issue_number": 16,
+      "title": "Phase 2: Implement restore post endpoint",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": []
+    },
+    {
+      "issue_number": 17,
+      "title": "Phase 2: Implement create comment endpoint",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": []
+    },
+    {
+      "issue_number": 18,
+      "title": "Phase 2: Implement get thread endpoint",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": []
+    },
+    {
+      "issue_number": 19,
+      "title": "Phase 2: Implement soft delete comment endpoint",
+      "status": "completed",
+      "assigned_to": "agent-1768650824-80298",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768650824-80298",
+      "dependencies": [],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "comments"
+      ],
+      "branch": "feat/issue-19-implement-soft-delete-comment-endpoint",
+      "claimed_at": "2026-01-17T11:53:44Z",
+      "completed_at": "2026-01-19T11:02:06Z",
+      "pr_number": 83
+    },
+    {
+      "issue_number": 20,
+      "title": "Phase 2: Implement restore comment endpoint",
+      "status": "completed",
+      "assigned_to": "agent-1768820662-88545",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768820662-88545",
+      "dependencies": [
+        19
+      ],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "comments"
+      ],
+      "branch": "feat/issue-20-implement-restore-comment-endpoint",
+      "claimed_at": "2026-01-19T11:04:22Z",
+      "completed_at": "2026-01-19T11:10:32Z",
+      "pr_number": 85
+    },
+    {
+      "issue_number": 21,
+      "title": "Phase 2: Implement add reaction endpoint",
+      "status": "completed",
+      "assigned_to": "agent-1768650859-80490",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768650859-80490",
+      "dependencies": [],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "reactions"
+      ],
+      "branch": "feat/issue-21-implement-add-reaction-endpoint",
+      "claimed_at": "2026-01-17T11:54:19Z",
+      "completed_at": "2026-01-19T11:02:09Z",
+      "pr_number": 81
+    },
+    {
+      "issue_number": 22,
+      "title": "Phase 2: Implement remove reaction endpoint",
+      "status": "completed",
+      "assigned_to": "agent-1768650894-81425",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768650894-81425",
+      "dependencies": [],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "reactions"
+      ],
+      "branch": "feat/issue-22-implement-remove-reaction-endpoint",
+      "claimed_at": "2026-01-17T11:54:54Z",
+      "completed_at": "2026-01-19T11:02:13Z",
+      "pr_number": 82
+    },
+    {
+      "issue_number": 23,
+      "title": "Phase 2: Implement reactions on comments",
+      "status": "completed",
+      "assigned_to": "agent-1768820687-89397",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768820687-89397",
+      "dependencies": [
+        21,
+        22
+      ],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "reactions"
+      ],
+      "branch": "feat/issue-23-implement-reactions-on-comments",
+      "claimed_at": "2026-01-19T11:04:47Z",
+      "pr_number": 84,
+      "completed_at": "2026-01-19T11:10:28Z"
+    },
+    {
+      "issue_number": 24,
+      "title": "Phase 2: Implement get user profile endpoint",
+      "status": "completed",
+      "assigned_to": "agent-1768821105-90353",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768821105-90353",
+      "dependencies": [],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "users"
+      ],
+      "branch": "feat/issue-24-implement-get-user-profile-endpoint",
+      "claimed_at": "2026-01-19T11:11:45Z",
+      "completed_at": "2026-01-19T11:22:05Z"
+    },
+    {
+      "issue_number": 25,
+      "title": "Phase 2: Implement update own profile endpoint",
+      "status": "completed",
+      "assigned_to": "agent-1768852727-9704",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768852727-9704",
+      "dependencies": [
+        24
+      ],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "users"
+      ],
+      "branch": "feat/issue-25-implement-update-own-profile-endpoint",
+      "claimed_at": "2026-01-19T19:58:47Z",
+      "completed_at": "2026-01-20T07:12:18Z",
+      "pr_number": 89
+    },
+    {
+      "issue_number": 26,
+      "title": "Phase 2: Implement get user posts endpoint",
+      "status": "completed",
+      "assigned_to": "agent-1768852745-10746",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768852745-10746",
+      "dependencies": [],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "users",
+        "feed"
+      ],
+      "branch": "feat/issue-26-implement-get-user-posts-endpoint",
+      "claimed_at": "2026-01-19T19:59:05Z",
+      "pr_number": 87,
+      "completed_at": "2026-01-19T20:06:39Z"
+    },
+    {
+      "issue_number": 27,
+      "title": "Phase 2: Implement get user comments endpoint",
+      "status": "completed",
+      "assigned_to": "agent-1768852765-12315",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768852765-12315",
+      "dependencies": [],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "users",
+        "feed"
+      ],
+      "branch": "feat/issue-27-implement-get-user-comments-endpoint",
+      "claimed_at": "2026-01-19T19:59:25Z",
+      "pr_number": 88,
+      "completed_at": "2026-01-20T07:06:55Z"
+    },
+    {
+      "issue_number": 28,
+      "title": "Phase 2: Implement list sections endpoint",
+      "status": "completed",
+      "assigned_to": "agent-1768894221-15568",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768894221-15568",
+      "dependencies": [],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "sections"
+      ],
+      "branch": "feat/issue-28-implement-list-sections-endpoint",
+      "claimed_at": "2026-01-20T07:30:21Z",
+      "pr_number": 90,
+      "completed_at": "2026-01-20T07:36:55Z"
+    },
+    {
+      "issue_number": 29,
+      "title": "Phase 2: Implement get section endpoint",
+      "status": "completed",
+      "assigned_to": "agent-1768894422-15756",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768894422-15756",
+      "dependencies": [],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "sections"
+      ],
+      "branch": "feat/issue-29-implement-get-section-endpoint",
+      "claimed_at": "2026-01-20T07:33:42Z",
+      "pr_number": 91,
+      "completed_at": "2026-01-20T07:36:55Z"
+    },
+    {
+      "issue_number": 30,
+      "title": "Phase 3: Implement WebSocket server",
+      "status": "completed",
+      "assigned_to": "agent-1768896608-22932",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768896608-22932",
+      "dependencies": [
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ],
+      "phase": 3,
+      "labels": [
+        "backend",
+        "websocket"
+      ],
+      "branch": "feat/issue-30-implement-websocket-server",
+      "claimed_at": "2026-01-20T08:10:08Z",
+      "pr_number": 92,
+      "completed_at": "2026-01-20T09:17:09Z"
+    },
+    {
+      "issue_number": 31,
+      "title": "Phase 3: Implement Redis pub/sub integration",
+      "status": "completed",
+      "assigned_to": "agent-1768901207-42531",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768901207-42531",
+      "dependencies": [
+        30
+      ],
+      "phase": 3,
+      "labels": [
+        "backend",
+        "websocket",
+        "redis"
+      ],
+      "branch": "feat/issue-31-implement-redis-pubsub-integration",
+      "claimed_at": "2026-01-20T09:26:47Z",
+      "pr_number": 94,
+      "completed_at": "2026-01-20T10:16:29Z"
+    },
+    {
+      "issue_number": 32,
+      "title": "Phase 3: Implement WebSocket event broadcasting",
+      "status": "completed",
+      "assigned_to": "agent-1768904561-56226",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768904561-56226",
+      "dependencies": [
+        30,
+        31
+      ],
+      "phase": 3,
+      "labels": [
+        "backend",
+        "websocket"
+      ],
+      "branch": "feat/issue-32-implement-websocket-event-broadcasting",
+      "claimed_at": "2026-01-20T10:22:41Z",
+      "pr_number": 96,
+      "completed_at": "2026-01-20T10:29:28Z"
+    },
+    {
+      "issue_number": 33,
+      "title": "Phase 3: Implement section subscription via WebSocket",
+      "status": "completed",
+      "assigned_to": "agent-1768905662-62269",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768905662-62269",
+      "dependencies": [
+        32
+      ],
+      "phase": 3,
+      "labels": [
+        "backend",
+        "websocket"
+      ],
+      "branch": "feat/issue-33-implement-section-subscription-via-webso",
+      "claimed_at": "2026-01-20T10:41:02Z",
+      "pr_number": 97,
+      "completed_at": "2026-01-20T10:59:14Z"
+    },
+    {
+      "issue_number": 34,
+      "title": "Phase 4: Implement notifications table and insertion",
+      "status": "completed",
+      "assigned_to": "agent-1768907034-67548",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768907034-67548",
+      "dependencies": [
+        30,
+        31,
+        32,
+        33
+      ],
+      "phase": 4,
+      "labels": [
+        "backend",
+        "notifications"
+      ],
+      "branch": "feat/issue-34-implement-notifications-table-and-insert",
+      "claimed_at": "2026-01-20T11:03:54Z",
+      "pr_number": 98,
+      "completed_at": "2026-01-20T11:29:53Z"
+    },
+    {
+      "issue_number": 35,
+      "title": "Phase 4: Implement get notifications endpoint",
+      "status": "completed",
+      "assigned_to": "agent-1768908744-75466",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768908744-75466",
+      "dependencies": [
+        34
+      ],
+      "phase": 4,
+      "labels": [
+        "backend",
+        "notifications"
+      ],
+      "branch": "feat/issue-35-implement-get-notifications-endpoint",
+      "claimed_at": "2026-01-20T11:32:24Z",
+      "pr_number": 105,
+      "completed_at": "2026-01-20T11:42:57Z"
+    },
+    {
+      "issue_number": 36,
+      "title": "Phase 4: Implement mark notification read endpoint",
+      "status": "completed",
+      "assigned_to": "agent-1768909495-78759",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768909495-78759",
+      "dependencies": [
+        35
+      ],
+      "phase": 4,
+      "labels": [
+        "backend",
+        "notifications"
+      ],
+      "branch": "feat/issue-36-implement-mark-notification-read-endpoin",
+      "claimed_at": "2026-01-20T11:44:55Z",
+      "pr_number": 106,
+      "completed_at": "2026-01-20T12:03:45Z"
+    },
+    {
+      "issue_number": 37,
+      "title": "Phase 4: Implement full-text search",
+      "status": "completed",
+      "assigned_to": "agent-1768907048-67961",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768907048-67961",
+      "dependencies": [
+        30,
+        31,
+        32,
+        33
+      ],
+      "phase": 4,
+      "labels": [
+        "backend",
+        "search"
+      ],
+      "branch": "feat/issue-37-implement-fulltext-search",
+      "claimed_at": "2026-01-20T11:04:08Z",
+      "pr_number": 104,
+      "completed_at": "2026-01-20T11:30:00Z"
+    },
+    {
+      "issue_number": 38,
+      "title": "Phase 4: Implement link metadata fetching strategy",
+      "status": "completed",
+      "assigned_to": "agent-1768915185-5637",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768915185-5637",
+      "dependencies": [
+        30,
+        31,
+        32,
+        33
+      ],
+      "phase": 4,
+      "labels": [
+        "backend",
+        "links"
+      ],
+      "branch": "feat/issue-38-implement-link-metadata-fetching-strateg",
+      "claimed_at": "2026-01-20T13:19:45Z",
+      "pr_number": 107,
+      "completed_at": "2026-01-20T13:41:15Z"
+    },
+    {
+      "issue_number": 39,
+      "title": "Phase 5: Implement hard delete endpoints",
+      "status": "completed",
+      "dependencies": [
+        34,
+        35,
+        36,
+        37,
+        38,
+        55,
+        56
+      ],
+      "phase": 5,
+      "labels": [
+        "backend",
+        "admin"
+      ],
+      "assigned_to": "agent-1768924650-74597",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768924650-74597",
+      "branch": "feat/issue-39-implement-hard-delete-endpoints",
+      "claimed_at": "2026-01-20T15:57:30Z",
+      "completed_at": "2026-01-20T16:01:14Z",
+      "pr_number": 118
+    },
+    {
+      "issue_number": 40,
+      "title": "Phase 5: Implement restore soft-deleted content",
+      "status": "completed",
+      "assigned_to": "agent-1768931328-94753",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768931328-94753",
+      "dependencies": [
+        39
+      ],
+      "phase": 5,
+      "labels": [
+        "backend",
+        "admin"
+      ],
+      "branch": "feat/issue-40-implement-restore-softdeleted-content",
+      "claimed_at": "2026-01-20T17:48:48Z",
+      "completed_at": "2026-01-20T17:54:25Z",
+      "pr_number": 120
+    },
+    {
+      "issue_number": 41,
+      "title": "Phase 5: Implement audit logging",
+      "status": "completed",
+      "assigned_to": "agent-1768931720-99111",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768931720-99111",
+      "dependencies": [
+        34,
+        35,
+        36,
+        37,
+        38,
+        55,
+        56
+      ],
+      "phase": 5,
+      "labels": [
+        "backend",
+        "admin"
+      ],
+      "branch": "feat/issue-41-implement-audit-logging",
+      "claimed_at": "2026-01-20T17:55:20Z",
+      "pr_number": 121,
+      "completed_at": "2026-01-20T19:59:34Z"
+    },
+    {
+      "issue_number": 42,
+      "title": "Phase 5: Implement config endpoint for admin toggles",
+      "status": "completed",
+      "assigned_to": "agent-1768930447-86402",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768930447-86402",
+      "dependencies": [
+        34,
+        35,
+        36,
+        37,
+        38,
+        55,
+        56
+      ],
+      "phase": 5,
+      "labels": [
+        "backend",
+        "admin"
+      ],
+      "branch": "feat/issue-42-implement-config-endpoint-for-admin-togg",
+      "claimed_at": "2026-01-20T17:34:07Z",
+      "completed_at": "2026-01-20T17:45:15Z",
+      "pr_number": 119
+    },
+    {
+      "issue_number": 43,
+      "title": "Phase 5: Implement section subscription opt-out",
+      "status": "completed",
+      "assigned_to": "agent-1768938368-33363",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768938368-33363",
+      "dependencies": [
+        34,
+        35,
+        36,
+        37,
+        38,
+        55,
+        56
+      ],
+      "phase": 5,
+      "labels": [
+        "backend",
+        "notifications"
+      ],
+      "branch": "feat/issue-43-implement-section-subscription-optout",
+      "claimed_at": "2026-01-20T19:46:08Z",
+      "completed_at": "2026-01-20T20:01:52Z",
+      "pr_number": 122
+    },
+    {
+      "issue_number": 44,
+      "title": "Phase 6: Integrate OpenTelemetry for traces",
+      "status": "completed",
+      "assigned_to": "agent-1768941716-51943",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768941716-51943",
+      "dependencies": [
+        39,
+        40,
+        41,
+        42,
+        43,
+        57
+      ],
+      "phase": 6,
+      "labels": [
+        "backend",
+        "observability"
+      ],
+      "branch": "feat/issue-44-integrate-opentelemetry-for-traces",
+      "claimed_at": "2026-01-20T20:41:56Z",
+      "pr_number": 125,
+      "completed_at": "2026-01-20T20:50:41Z"
+    },
+    {
+      "issue_number": 45,
+      "title": "Phase 6: Integrate OpenTelemetry for metrics",
+      "status": "completed",
+      "assigned_to": "agent-1768941905-53538",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768941905-53538",
+      "dependencies": [
+        39,
+        40,
+        41,
+        42,
+        43,
+        57
+      ],
+      "phase": 6,
+      "labels": [
+        "backend",
+        "observability"
+      ],
+      "branch": "feat/issue-45-integrate-opentelemetry-for-metrics",
+      "claimed_at": "2026-01-20T20:45:05Z",
+      "completed_at": "2026-01-20T21:16:37Z",
+      "pr_number": 126
+    },
+    {
+      "issue_number": 46,
+      "title": "Phase 6: Integrate OpenTelemetry for logs",
+      "status": "completed",
+      "assigned_to": "agent-1768943898-70901",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768943898-70901",
+      "dependencies": [
+        39,
+        40,
+        41,
+        42,
+        43,
+        57
+      ],
+      "phase": 6,
+      "labels": [
+        "backend",
+        "observability"
+      ],
+      "branch": "feat/issue-46-integrate-opentelemetry-for-logs",
+      "claimed_at": "2026-01-20T21:18:18Z",
+      "pr_number": 127,
+      "completed_at": "2026-01-20T21:36:04Z"
+    },
+    {
+      "issue_number": 47,
+      "title": "Phase 6: Setup Grafana dashboards",
+      "status": "completed",
+      "assigned_to": "agent-1768948350-2151",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768948350-2151",
+      "dependencies": [
+        44,
+        45,
+        46
+      ],
+      "phase": 6,
+      "labels": [
+        "backend",
+        "observability"
+      ],
+      "branch": "feat/issue-47-setup-grafana-dashboards",
+      "claimed_at": "2026-01-20T22:32:30Z",
+      "pr_number": 133,
+      "completed_at": "2026-01-20T23:06:27Z"
+    },
+    {
+      "issue_number": 48,
+      "title": "Phase 6: Write production deployment guide",
+      "status": "completed",
+      "assigned_to": "agent-1769086535-4259",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769086535-4259",
+      "dependencies": [],
+      "phase": 6,
+      "labels": [
+        "phase6",
+        "devops"
+      ],
+      "priority": 9999,
+      "branch": "feat/issue-48-write-production-deployment-guide",
+      "claimed_at": "2026-01-22T12:55:35Z",
+      "pr_number": 217,
+      "completed_at": "2026-01-22T13:00:53Z"
+    },
+    {
+      "issue_number": 49,
+      "title": "Phase 1: Initialize Svelte project",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 1,
+      "labels": []
+    },
+    {
+      "issue_number": 50,
+      "title": "Phase 2: Implement auth pages (register, login, logout)",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": []
+    },
+    {
+      "issue_number": 51,
+      "title": "Phase 2: Implement main layout and navigation",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": []
+    },
+    {
+      "issue_number": 52,
+      "title": "Phase 2: Implement feed view",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": []
+    },
+    {
+      "issue_number": 53,
+      "title": "Phase 2: Implement create post form",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": 2,
+      "labels": []
+    },
+    {
+      "issue_number": 54,
+      "title": "Phase 3: Implement WebSocket integration",
+      "status": "completed",
+      "assigned_to": "agent-1768915222-5997",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768915222-5997",
+      "dependencies": [
+        33
+      ],
+      "phase": 3,
+      "labels": [
+        "frontend",
+        "websocket"
+      ],
+      "branch": "feat/issue-54-implement-websocket-integration-frontend",
+      "claimed_at": "2026-01-20T13:20:22Z",
+      "pr_number": 108,
+      "completed_at": "2026-01-20T13:41:22Z"
+    },
+    {
+      "issue_number": 55,
+      "title": "Phase 4: Implement comments view",
+      "status": "completed",
+      "assigned_to": "agent-1768916657-17393",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768916657-17393",
+      "dependencies": [
+        54
+      ],
+      "phase": 4,
+      "labels": [
+        "frontend",
+        "comments"
+      ],
+      "branch": "feat/issue-55-implement-comments-view-frontend",
+      "claimed_at": "2026-01-20T13:44:17Z",
+      "pr_number": 110,
+      "completed_at": "2026-01-20T14:01:35Z"
+    },
+    {
+      "issue_number": 56,
+      "title": "Phase 4: Implement search",
+      "status": "completed",
+      "assigned_to": "agent-1768916700-17893",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768916700-17893",
+      "dependencies": [
+        37
+      ],
+      "phase": 4,
+      "labels": [
+        "frontend",
+        "search"
+      ],
+      "branch": "feat/issue-56-implement-search-frontend",
+      "claimed_at": "2026-01-20T13:45:00Z",
+      "pr_number": 109,
+      "completed_at": "2026-01-20T14:12:03Z"
+    },
+    {
+      "issue_number": 57,
+      "title": "Phase 5: Implement admin panel",
+      "status": "completed",
+      "assigned_to": "agent-1768939449-40733",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768939449-40733",
+      "dependencies": [
+        39,
+        40,
+        41,
+        42
+      ],
+      "phase": 5,
+      "labels": [
+        "frontend",
+        "admin"
+      ],
+      "branch": "feat/issue-57-implement-admin-panel-frontend",
+      "claimed_at": "2026-01-20T20:04:09Z",
+      "completed_at": "2026-01-20T20:44:08Z",
+      "pr_number": 123
+    },
+    {
+      "issue_number": 58,
+      "title": "Phase 6: Implement PWA features",
+      "status": "completed",
+      "assigned_to": "agent-1768948378-3294",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768948378-3294",
+      "dependencies": [
+        55,
+        57
+      ],
+      "phase": 6,
+      "labels": [
+        "frontend",
+        "pwa"
+      ],
+      "branch": "feat/issue-58-implement-pwa-features-frontend",
+      "claimed_at": "2026-01-20T22:32:58Z",
+      "pr_number": 134,
+      "completed_at": "2026-01-20T23:03:23Z"
+    },
+    {
+      "issue_number": 59,
+      "title": "Phase 6: Implement Web Push notifications",
+      "status": "completed",
+      "assigned_to": "agent-1768983077-39931",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768983077-39931",
+      "dependencies": [
+        58
+      ],
+      "phase": 6,
+      "labels": [
+        "frontend",
+        "notifications",
+        "pwa"
+      ],
+      "branch": "feat/issue-59-implement-web-push-notifications-fronten",
+      "claimed_at": "2026-01-21T08:11:17Z",
+      "pr_number": 146,
+      "completed_at": "2026-01-21T08:42:01Z"
+    },
+    {
+      "issue_number": 93,
+      "title": "Add frontend/backend services to docker-compose",
+      "status": "completed",
+      "assigned_to": "agent-1768901835-46496",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768901835-46496",
+      "dependencies": [],
+      "phase": 2,
+      "labels": [
+        "backend",
+        "frontend",
+        "devops"
+      ],
+      "branch": "feat/issue-93-add-frontendbackend-services-to-dockerco",
+      "claimed_at": "2026-01-20T09:37:15Z",
+      "pr_number": 95,
+      "completed_at": "2026-01-20T09:44:48Z"
+    },
+    {
+      "issue_number": 99,
+      "title": "Phase 7: Search scope without explicit section_id",
+      "status": "completed",
+      "assigned_to": "agent-1768939486-40944",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768939486-40944",
+      "dependencies": [],
+      "phase": 7,
+      "labels": [
+        "backend",
+        "search"
+      ],
+      "branch": "feat/issue-99-search-scope-without-explicit-sectionid",
+      "claimed_at": "2026-01-20T20:04:46Z",
+      "pr_number": 124,
+      "completed_at": "2026-01-20T20:32:02Z"
+    },
+    {
+      "issue_number": 100,
+      "title": "Phase 7: Link metadata as first-class search result",
+      "status": "completed",
+      "assigned_to": "agent-1768944792-75810",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768944792-75810",
+      "dependencies": [],
+      "phase": 7,
+      "labels": [
+        "backend",
+        "search",
+        "links"
+      ],
+      "branch": "feat/issue-100-link-metadata-as-firstclass-search-resul",
+      "claimed_at": "2026-01-20T21:33:12Z",
+      "completed_at": "2026-01-20T21:40:53Z",
+      "pr_number": 128
+    },
+    {
+      "issue_number": 101,
+      "title": "Phase 7: Search query length and token guards",
+      "status": "completed",
+      "assigned_to": "agent-1768944994-77683",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768944994-77683",
+      "dependencies": [],
+      "phase": 7,
+      "labels": [
+        "backend",
+        "search"
+      ],
+      "branch": "feat/issue-101-search-query-length-and-token-guards",
+      "claimed_at": "2026-01-20T21:36:34Z",
+      "pr_number": 129,
+      "completed_at": "2026-01-20T21:42:35Z"
+    },
+    {
+      "issue_number": 102,
+      "title": "Phase 7: Search ranking order test coverage",
+      "status": "completed",
+      "assigned_to": "agent-1768945364-81149",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768945364-81149",
+      "dependencies": [],
+      "phase": 7,
+      "labels": [
+        "backend",
+        "search",
+        "tests"
+      ],
+      "branch": "feat/issue-102-search-ranking-order-test-coverage",
+      "claimed_at": "2026-01-20T21:42:44Z",
+      "pr_number": 131,
+      "completed_at": "2026-01-20T21:55:02Z"
+    },
+    {
+      "issue_number": 103,
+      "title": "Phase 7: Precomputed tsvector for search performance",
+      "status": "completed",
+      "assigned_to": "agent-1768945394-81298",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768945394-81298",
+      "dependencies": [],
+      "phase": 7,
+      "labels": [
+        "backend",
+        "search",
+        "db"
+      ],
+      "branch": "feat/issue-103-precomputed-tsvector-for-search-performa",
+      "claimed_at": "2026-01-20T21:43:14Z",
+      "pr_number": 130,
+      "completed_at": "2026-01-20T21:47:30Z"
+    },
+    {
+      "issue_number": 111,
+      "title": "Set up Playwright and add core E2E tests",
+      "phase": "Phase 5",
+      "labels": [
+        "frontend",
+        "tests",
+        "e2e"
+      ],
+      "status": "completed",
+      "dependencies": [],
+      "assigned_to": "agent-1768946136-86637",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768946136-86637",
+      "branch": "feat/issue-111-set-up-playwright-and-add-core-e2e-tests",
+      "claimed_at": "2026-01-20T21:55:36Z",
+      "pr_number": 132,
+      "completed_at": "2026-01-20T22:30:40Z"
+    },
+    {
+      "issue_number": 112,
+      "title": "Frontend unit test coverage audit + missing test cases",
+      "phase": "Phase 5",
+      "labels": [
+        "frontend",
+        "tests"
+      ],
+      "status": "completed",
+      "dependencies": [],
+      "assigned_to": "agent-1768918848-33379",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768918848-33379",
+      "branch": "feat/issue-112-frontend-unit-test-coverage-audit-missin",
+      "claimed_at": "2026-01-20T14:20:49Z",
+      "pr_number": 115,
+      "completed_at": "2026-01-20T15:07:01Z"
+    },
+    {
+      "issue_number": 113,
+      "title": "Fix Layout matchMedia test (isMobile not updating in jsdom)",
+      "phase": "Phase 5",
+      "labels": [
+        "frontend",
+        "tests"
+      ],
+      "status": "completed",
+      "dependencies": [
+        112
+      ],
+      "assigned_to": "agent-1768922224948-113",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768922224948-113",
+      "branch": "feat/issue-113-fix-layout-matchmedia-test-ismobile-no",
+      "claimed_at": "2026-01-20T15:17:04Z",
+      "pr_number": 116,
+      "completed_at": "2026-01-20T15:31:31Z"
+    },
+    {
+      "issue_number": 114,
+      "title": "Fix SectionFeed IntersectionObserver test (loadMorePosts not triggered)",
+      "phase": "Phase 5",
+      "labels": [
+        "frontend",
+        "tests"
+      ],
+      "status": "completed",
+      "dependencies": [
+        112
+      ],
+      "assigned_to": "agent-1768923184096-114",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768923184096-114",
+      "branch": "feat/issue-114-fix-sectionfeed-intersectionobserver-tes",
+      "claimed_at": "2026-01-20T15:33:04Z",
+      "pr_number": 117,
+      "completed_at": "2026-01-20T15:39:14Z"
+    },
+    {
+      "issue_number": 135,
+      "title": "Phase 6: Backend Web Push API endpoints",
+      "status": "completed",
+      "assigned_to": "agent-1769068627-71725",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769068627-71725",
+      "dependencies": [],
+      "phase": 6,
+      "labels": [
+        "backend"
+      ],
+      "priority": 1,
+      "branch": "feat/issue-135-backend-web-push-api-endpoints",
+      "claimed_at": "2026-01-22T07:57:07Z",
+      "pr_number": 179,
+      "completed_at": "2026-01-22T11:10:03Z"
+    },
+    {
+      "issue_number": 136,
+      "title": "Bug: New posts show 'Unknown' username and 'Invalid Date' timestamp",
+      "status": "completed",
+      "assigned_to": "agent-1768986845-58711",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768986845-58711",
+      "dependencies": [],
+      "phase": "bug-critical",
+      "priority": 2,
+      "labels": [
+        "bug",
+        "frontend",
+        "backend",
+        "critical"
+      ],
+      "branch": "fix/issue-136-new-posts-show-unknown-username-and-inva",
+      "claimed_at": "2026-01-21T09:14:05Z",
+      "pr_number": 148,
+      "completed_at": "2026-01-21T09:31:48Z"
+    },
+    {
+      "issue_number": 137,
+      "title": "Bug: Link preview fails with 'An unexpected error occurred' when inserting URL",
+      "status": "completed",
+      "assigned_to": "agent-1768987240-60949",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768987240-60949",
+      "dependencies": [],
+      "phase": "bug-critical",
+      "priority": 3,
+      "labels": [
+        "bug",
+        "frontend",
+        "backend",
+        "links"
+      ],
+      "branch": "fix/issue-137-link-preview-fails-with-an-unexpected-er",
+      "claimed_at": "2026-01-21T09:20:40Z",
+      "completed_at": "2026-01-21T11:37:53Z",
+      "pr_number": 149
+    },
+    {
+      "issue_number": 138,
+      "title": "Bug: Emoji reactions UI missing from posts and comments",
+      "status": "completed",
+      "assigned_to": "agent-1768988067-63785",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768988067-63785",
+      "dependencies": [],
+      "phase": "bug-high",
+      "priority": 4,
+      "labels": [
+        "bug",
+        "frontend",
+        "reactions"
+      ],
+      "branch": "fix/issue-138-emoji-reactions-ui-missing-from-posts-an",
+      "claimed_at": "2026-01-21T09:34:27Z",
+      "completed_at": "2026-01-21T13:17:31Z",
+      "pr_number": 150
+    },
+    {
+      "issue_number": 139,
+      "title": "Bug: Admin moderation section in sidebar not fixed to viewport - scrolls with content",
+      "status": "completed",
+      "assigned_to": "agent-1769001574-90667",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769001574-90667",
+      "dependencies": [],
+      "phase": "bug-high",
+      "priority": 5,
+      "labels": [
+        "bug",
+        "frontend",
+        "layout"
+      ],
+      "branch": "fix/issue-139-admin-moderation-section-in-sidebar-not-",
+      "claimed_at": "2026-01-21T13:19:34Z",
+      "pr_number": 153,
+      "completed_at": "2026-01-21T13:28:54Z"
+    },
+    {
+      "issue_number": 140,
+      "title": "Bug: Moderation panel infinite loading for pending users, blocks navigation",
+      "status": "completed",
+      "assigned_to": "agent-1768983548-44286",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1768983548-44286",
+      "dependencies": [],
+      "phase": "bug-critical",
+      "priority": 1,
+      "labels": [
+        "bug",
+        "frontend",
+        "admin",
+        "critical"
+      ],
+      "branch": "fix/issue-140-moderation-panel-infinite-loading",
+      "claimed_at": "2026-01-21T08:19:47.516357Z",
+      "pr_number": 147,
+      "completed_at": "2026-01-21T11:35:03Z"
+    },
+    {
+      "issue_number": 140,
+      "title": "Bug: Moderation panel infinite loading for pending users, blocks navigation",
+      "status": "completed",
+      "assigned_to": "unknown",
+      "worktree": "unknown",
+      "dependencies": [],
+      "phase": "bug-high",
+      "priority": 5,
+      "labels": [
+        "bug",
+        "frontend",
+        "layout"
+      ],
+      "branch": "fix/issue-140-moderation-panel-infinite-loading",
+      "claimed_at": "2026-01-21T13:19:34Z",
+      "pr_number": 147,
+      "completed_at": "2026-01-21T13:28:54Z"
+    },
+    {
+      "issue_number": 141,
+      "title": "Bug: Grafana dashboards show 'No data' - metrics not being collected or exported",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bug-medium",
+      "priority": 6,
+      "labels": [
+        "bug",
+        "backend",
+        "observability"
+      ],
+      "assigned_to": "agent-1769015380-18468",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769015380-18468",
+      "branch": "fix/issue-141-grafana-dashboards-show-no-data-metrics-",
+      "claimed_at": "2026-01-21T17:09:40Z",
+      "pr_number": 158,
+      "completed_at": "2026-01-21T17:12:18Z"
+    },
+    {
+      "issue_number": 142,
+      "title": "Bug: Grafana cannot connect to Tempo - gRPC/HTTP protocol mismatch on port 3200",
+      "status": "completed",
+      "assigned_to": "agent-1769018594-25630",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769018594-25630",
+      "dependencies": [],
+      "phase": "bug-medium",
+      "priority": 7,
+      "labels": [
+        "bug",
+        "devops",
+        "observability"
+      ],
+      "branch": "fix/issue-142-grafana-cannot-connect-to-tempo-grpchttp",
+      "claimed_at": "2026-01-21T18:03:14Z",
+      "pr_number": 161,
+      "completed_at": "2026-01-21T21:23:06Z"
+    },
+    {
+      "issue_number": 143,
+      "title": "Bug: Grafana piechart panel plugin fails to load - Angular plugins deprecated",
+      "status": "completed",
+      "assigned_to": "agent-1769032581-99525",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769032581-99525",
+      "dependencies": [],
+      "phase": "bug-low",
+      "priority": 10,
+      "labels": [
+        "bug",
+        "devops",
+        "observability"
+      ],
+      "branch": "fix/issue-143-grafana-piechart-panel-plugin-fails-to-l",
+      "claimed_at": "2026-01-21T21:56:21Z",
+      "pr_number": 168,
+      "completed_at": "2026-01-21T21:58:33Z"
+    },
+    {
+      "issue_number": 144,
+      "title": "Bug: Frontend has 7 moderate severity npm vulnerabilities",
+      "status": "completed",
+      "assigned_to": "agent-1769033584-2665",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769033584-2665",
+      "dependencies": [],
+      "phase": "bug-low",
+      "priority": 11,
+      "labels": [
+        "bug",
+        "frontend",
+        "security"
+      ],
+      "branch": "fix/issue-144-frontend-has-7-moderate-severity-npm-vul",
+      "claimed_at": "2026-01-21T22:13:04Z",
+      "pr_number": 173,
+      "completed_at": "2026-01-21T23:07:49Z"
+    },
+    {
+      "issue_number": 145,
+      "title": "Bug: Deprecated GF_INSTALL_PLUGINS environment variable in docker-compose",
+      "status": "completed",
+      "assigned_to": "agent-1769033715-4230",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769033715-4230",
+      "dependencies": [],
+      "phase": "bug-low",
+      "priority": 12,
+      "labels": [
+        "bug",
+        "devops"
+      ],
+      "branch": "fix/issue-145-deprecated-gfinstallplugins-environment-",
+      "claimed_at": "2026-01-21T22:15:15Z",
+      "pr_number": 171,
+      "completed_at": "2026-01-21T22:19:51Z"
+    },
+    {
+      "issue_number": 151,
+      "title": "Fix: Playwright e2e tests picked up by Vitest",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug-medium",
+      "priority": 1,
+      "labels": [
+        "bug",
+        "frontend",
+        "tests"
+      ],
+      "branch": "unknown",
+      "claimed_at": "unknown",
+      "completed_at": "unknown",
+      "pr_number": 155
+    },
+    {
+      "issue_number": 152,
+      "title": "Fix: 27 TypeScript typecheck errors in frontend",
+      "status": "completed",
+      "assigned_to": "unknown",
+      "worktree": "unknown",
+      "dependencies": [],
+      "phase": "bug-medium",
+      "priority": 2,
+      "labels": [
+        "bug",
+        "frontend",
+        "tests"
+      ]
+    },
+    {
+      "issue_number": 156,
+      "title": "Fix: svelte-check errors in test files due to missing @types/node",
+      "status": "completed",
+      "assigned_to": "agent-1769004286-5093",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769004286-5093",
+      "dependencies": [],
+      "phase": "bug-medium",
+      "priority": 3,
+      "labels": [
+        "bug",
+        "frontend",
+        "tests"
+      ],
+      "branch": "fix/issue-156-fix-sveltecheck-errors-in-test-files-due",
+      "claimed_at": "2026-01-21T14:04:46Z",
+      "pr_number": 157,
+      "completed_at": "2026-01-21T14:06:19Z"
+    },
+    {
+      "issue_number": 160,
+      "title": "Bug: Query error when performing a search",
+      "status": "completed",
+      "assigned_to": "agent-1769030670-91720",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769030670-91720",
+      "dependencies": [],
+      "phase": "bug-critical",
+      "priority": 2,
+      "labels": [
+        "bug",
+        "backend",
+        "search"
+      ],
+      "branch": "fix/issue-160-query-error-when-performing-a-search",
+      "claimed_at": "2026-01-21T21:24:30Z",
+      "pr_number": 165,
+      "completed_at": "2026-01-21T21:36:17Z"
+    },
+    {
+      "issue_number": 162,
+      "title": "Frontend freezes with WebSocket connection error",
+      "status": "completed",
+      "assigned_to": "agent-1769020269-37729",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769020269-37729",
+      "dependencies": [],
+      "phase": "bug-critical",
+      "priority": 1,
+      "labels": [
+        "bug",
+        "frontend",
+        "websocket"
+      ],
+      "branch": "fix/issue-162-frontend-freezes-with-websocket-connecti",
+      "claimed_at": "2026-01-21T18:31:09Z",
+      "pr_number": 164,
+      "completed_at": "2026-01-21T21:22:06Z"
+    },
+    {
+      "issue_number": 163,
+      "title": "UI: Make 'General' default section at top and always show comment window",
+      "status": "completed",
+      "assigned_to": "agent-1769062770-51496",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769062770-51496",
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 13,
+      "labels": [
+        "frontend",
+        "ui"
+      ],
+      "branch": "feat/issue-163-ui-make-general-default-section-at-top-a",
+      "claimed_at": "2026-01-22T06:19:30Z",
+      "pr_number": 176,
+      "completed_at": "2026-01-22T07:46:48Z"
+    },
+    {
+      "issue_number": 166,
+      "title": "Bug: Link previews vanish after posting",
+      "status": "completed",
+      "assigned_to": "agent-1769031895-95928",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769031895-95928",
+      "dependencies": [],
+      "phase": "bug-medium",
+      "priority": 8,
+      "labels": [
+        "bug",
+        "frontend",
+        "links",
+        "ui"
+      ],
+      "branch": "fix/issue-166-link-previews-vanish-after-posting",
+      "claimed_at": "2026-01-21T21:44:55Z",
+      "pr_number": 167,
+      "completed_at": "2026-01-21T21:55:52Z"
+    },
+    {
+      "issue_number": 169,
+      "title": "Chore: Set up Buildkite CI pipeline for PR checks on main",
+      "status": "completed",
+      "assigned_to": "agent-1769033749-5851",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769033749-5851",
+      "dependencies": [],
+      "phase": "devops",
+      "priority": 9,
+      "labels": [
+        "devops",
+        "ci"
+      ],
+      "branch": "feat/issue-169-chore-set-up-buildkite-ci-pipeline-for-p",
+      "claimed_at": "2026-01-21T22:15:49Z",
+      "pr_number": 172,
+      "completed_at": "2026-01-21T22:21:17Z"
+    },
+    {
+      "issue_number": 170,
+      "title": "Chore: Production-ready deployment checklist",
+      "status": "completed",
+      "assigned_to": "agent-1769062711-47843",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769062711-47843",
+      "dependencies": [],
+      "phase": "devops",
+      "priority": 9,
+      "labels": [
+        "devops",
+        "deployment"
+      ],
+      "branch": "feat/issue-170-chore-productionready-deployment-checkli",
+      "claimed_at": "2026-01-22T06:18:31Z",
+      "pr_number": 175,
+      "completed_at": "2026-01-22T07:46:34Z"
+    },
+    {
+      "issue_number": 177,
+      "title": "Implement dynamic queue selection for self-hosted Buildkite agents",
+      "status": "completed",
+      "assigned_to": "agent-1769068689-72608",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769068689-72608",
+      "dependencies": [],
+      "phase": "devops",
+      "priority": 2,
+      "labels": [
+        "devops",
+        "ci",
+        "buildkite"
+      ],
+      "branch": "feat/issue-177-implement-dynamic-queue-selection-for-se",
+      "claimed_at": "2026-01-22T07:58:09Z",
+      "pr_number": 178,
+      "completed_at": "2026-01-22T09:56:28Z"
+    },
+    {
+      "issue_number": 180,
+      "title": "Backend: Wire DELETE /posts and return 405 on unsupported methods",
+      "status": "completed",
+      "assigned_to": "agent-1769084081-70312",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769084081-70312",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "backend",
+        "posts"
+      ],
+      "branch": "fix/issue-180-backend-wire-delete-posts-and-return-405",
+      "claimed_at": "2026-01-22T12:14:41Z",
+      "pr_number": 209,
+      "completed_at": "2026-01-22T12:29:02Z"
+    },
+    {
+      "issue_number": 181,
+      "title": "Backend: Require auth on read-only content endpoints",
+      "status": "completed",
+      "assigned_to": "agent-1769085064-83009",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769085064-83009",
+      "dependencies": [
+        180
+      ],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "backend",
+        "auth"
+      ],
+      "branch": "fix/issue-181-backend-require-auth-on-readonly-content",
+      "claimed_at": "2026-01-22T12:31:05Z",
+      "pr_number": 212,
+      "completed_at": "2026-01-22T12:43:28Z"
+    },
+    {
+      "issue_number": 182,
+      "title": "Backend: Add request body size limits for JSON endpoints",
+      "status": "completed",
+      "assigned_to": "agent-1769085816-88725",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769085816-88725",
+      "dependencies": [
+        181
+      ],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "backend"
+      ],
+      "branch": "feat/issue-182-backend-add-request-body-size-limits-for",
+      "claimed_at": "2026-01-22T12:43:36Z",
+      "pr_number": 214,
+      "completed_at": "2026-01-22T12:52:30Z"
+    },
+    {
+      "issue_number": 183,
+      "title": "Backend: Add SSRF protections to link metadata fetcher",
+      "status": "completed",
+      "assigned_to": "agent-1769084111-71943",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769084111-71943",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "backend",
+        "links"
+      ],
+      "branch": "fix/issue-183-backend-add-ssrf-protections-to-link-met",
+      "claimed_at": "2026-01-22T12:15:11Z",
+      "pr_number": 211,
+      "completed_at": "2026-01-22T12:31:49Z"
+    },
+    {
+      "issue_number": 184,
+      "title": "Backend: Add ReadHeaderTimeout to HTTP server",
+      "status": "completed",
+      "assigned_to": "agent-1769086494-3431",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769086494-3431",
+      "dependencies": [
+        182
+      ],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "backend"
+      ],
+      "branch": "feat/issue-184-backend-add-readheadertimeout-to-http-se",
+      "claimed_at": "2026-01-22T12:54:54Z",
+      "pr_number": 216,
+      "completed_at": "2026-01-22T12:59:02Z"
+    },
+    {
+      "issue_number": 186,
+      "title": "Frontend: Service worker should handle SKIP_WAITING message",
+      "status": "completed",
+      "assigned_to": "agent-1769084132-72709",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769084132-72709",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "pwa"
+      ],
+      "branch": "fix/issue-186-frontend-service-worker-should-handle-sk",
+      "claimed_at": "2026-01-22T12:15:32Z",
+      "pr_number": 208,
+      "completed_at": "2026-01-22T12:23:42Z"
+    },
+    {
+      "issue_number": 187,
+      "title": "Infra: Backend Dockerfile installs wrong migrate binary on amd64",
+      "status": "completed",
+      "assigned_to": "agent-1769084880-79326",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769084880-79326",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "backend",
+        "devops"
+      ],
+      "branch": "fix/issue-187-infra-backend-dockerfile-installs-wrong-",
+      "claimed_at": "2026-01-22T12:28:00Z",
+      "pr_number": 210,
+      "completed_at": "2026-01-22T12:31:34Z"
+    },
+    {
+      "issue_number": 188,
+      "title": "Infra: Pin observability image versions in compose files",
+      "status": "completed",
+      "assigned_to": "agent-1769085831-88987",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769085831-88987",
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "observability",
+        "devops"
+      ],
+      "branch": "feat/issue-188-infra-pin-observability-image-versions-i",
+      "claimed_at": "2026-01-22T12:43:51Z",
+      "pr_number": 213,
+      "completed_at": "2026-01-22T12:48:54Z"
+    },
+    {
+      "issue_number": 189,
+      "title": "Auth: Replace default admin seed with bootstrap flow",
+      "status": "completed",
+      "assigned_to": "agent-1769086805-8364",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769086805-8364",
+      "dependencies": [
+        184
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "backend",
+        "auth",
+        "admin"
+      ],
+      "branch": "feat/issue-189-auth-replace-default-admin-seed-with-boo",
+      "claimed_at": "2026-01-22T13:00:05Z",
+      "pr_number": 219,
+      "completed_at": "2026-01-23T08:02:30Z"
+    },
+    {
+      "issue_number": 190,
+      "title": "Auth: Add rate limiting for login/register",
+      "status": "completed",
+      "assigned_to": "agent-1769086717-7034",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769086717-7034",
+      "dependencies": [
+        199
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "backend",
+        "auth",
+        "redis"
+      ],
+      "branch": "feat/issue-190-auth-add-rate-limiting-for-loginregister",
+      "claimed_at": "2026-01-22T12:58:37Z",
+      "pr_number": 218,
+      "completed_at": "2026-01-23T07:54:23Z"
+    },
+    {
+      "issue_number": 191,
+      "title": "Auth: Failed login tracking + temporary lockout",
+      "status": "completed",
+      "assigned_to": "agent-1769155051-28940",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769155051-28940",
+      "dependencies": [
+        190
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "backend",
+        "auth",
+        "redis"
+      ],
+      "branch": "feat/issue-191-auth-failed-login-tracking-temporary-loc",
+      "claimed_at": "2026-01-23T07:57:31Z",
+      "pr_number": 221,
+      "completed_at": "2026-01-23T08:04:03Z"
+    },
+    {
+      "issue_number": 192,
+      "title": "Auth: Reduce user enumeration in login/register",
+      "status": "completed",
+      "assigned_to": "agent-1769155469-35905",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769155469-35905",
+      "dependencies": [
+        191
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "backend",
+        "auth"
+      ],
+      "branch": "feat/issue-192-auth-reduce-user-enumeration-in-loginreg",
+      "claimed_at": "2026-01-23T08:04:29Z",
+      "pr_number": 223,
+      "completed_at": "2026-01-23T08:15:08Z"
+    },
+    {
+      "issue_number": 193,
+      "title": "Auth: Add CSRF token issuance + verification (backend)",
+      "status": "completed",
+      "assigned_to": "agent-1769156951-54707",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769156951-54707",
+      "dependencies": [
+        189,
+        195
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "backend",
+        "auth"
+      ],
+      "branch": "feat/issue-193-auth-add-csrf-token-issuance-verificatio",
+      "claimed_at": "2026-01-23T08:29:11Z",
+      "pr_number": 228,
+      "completed_at": "2026-01-23T08:48:28Z"
+    },
+    {
+      "issue_number": 194,
+      "title": "Auth: Add CSRF token handling in frontend client",
+      "status": "completed",
+      "assigned_to": "agent-1769460363-55881",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769460363-55881",
+      "dependencies": [
+        193
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "auth"
+      ],
+      "branch": "feat/issue-194-auth-add-csrf-token-handling-in-frontend",
+      "claimed_at": "2026-01-26T20:46:03Z",
+      "pr_number": 258,
+      "completed_at": "2026-01-26T21:16:41Z"
+    },
+    {
+      "issue_number": 195,
+      "title": "Auth: Track sessions per user + add logout-all endpoint",
+      "status": "completed",
+      "assigned_to": "agent-1769156480-45803",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769156480-45803",
+      "dependencies": [
+        202
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "backend",
+        "auth",
+        "redis"
+      ],
+      "branch": "feat/issue-195-auth-track-sessions-per-user-add-logouta",
+      "claimed_at": "2026-01-23T08:21:20Z",
+      "pr_number": 226,
+      "completed_at": "2026-01-23T08:28:28Z"
+    },
+    {
+      "issue_number": 196,
+      "title": "Auth: Admin generates one-time password reset links (backend)",
+      "status": "completed",
+      "assigned_to": "agent-1769156968-56041",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769156968-56041",
+      "dependencies": [
+        195
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "backend",
+        "db",
+        "auth",
+        "admin"
+      ],
+      "branch": "feat/issue-196-auth-admin-generates-onetime-password-re",
+      "claimed_at": "2026-01-23T08:29:28Z",
+      "pr_number": 227,
+      "completed_at": "2026-01-23T09:07:48Z"
+    },
+    {
+      "issue_number": 197,
+      "title": "Auth: Admin UI to generate password reset links",
+      "status": "completed",
+      "assigned_to": "agent-1769455667-61502",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769455667-61502",
+      "dependencies": [
+        196
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "auth",
+        "admin"
+      ],
+      "branch": "feat/issue-197-auth-admin-ui-to-generate-password-reset",
+      "claimed_at": "2026-01-26T19:27:47Z",
+      "pr_number": 243,
+      "completed_at": "2026-01-26T19:58:47Z"
+    },
+    {
+      "issue_number": 198,
+      "title": "Auth: Password reset page (frontend)",
+      "status": "completed",
+      "assigned_to": "agent-1769455693-62616",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769455693-62616",
+      "dependencies": [
+        196
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "auth"
+      ],
+      "branch": "feat/issue-198-auth-password-reset-page-frontend",
+      "claimed_at": "2026-01-26T19:28:13Z",
+      "pr_number": 241,
+      "completed_at": "2026-01-26T19:36:32Z"
+    },
+    {
+      "issue_number": 199,
+      "title": "Auth: Username-based registration/login + make email optional (backend)",
+      "status": "completed",
+      "assigned_to": "agent-1769085852-89717",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769085852-89717",
+      "dependencies": [],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "backend",
+        "db",
+        "auth"
+      ],
+      "branch": "feat/issue-199-auth-usernamebased-registrationlogin-mak",
+      "claimed_at": "2026-01-22T12:44:12Z",
+      "pr_number": 215,
+      "completed_at": "2026-01-22T12:57:14Z"
+    },
+    {
+      "issue_number": 200,
+      "title": "Auth: Update login/register UI for username-based auth",
+      "status": "completed",
+      "assigned_to": "agent-1769154415-13501",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769154415-13501",
+      "dependencies": [
+        199
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "auth"
+      ],
+      "branch": "feat/issue-200-auth-update-loginregister-ui-for-usernam",
+      "claimed_at": "2026-01-23T07:46:55Z",
+      "pr_number": 220,
+      "completed_at": "2026-01-23T07:59:39Z"
+    },
+    {
+      "issue_number": 201,
+      "title": "Docs: Update auth docs for username-based login",
+      "status": "completed",
+      "assigned_to": "agent-1769155307-32114",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769155307-32114",
+      "dependencies": [
+        199
+      ],
+      "phase": 5,
+      "labels": [
+        "documentation",
+        "enhancement",
+        "auth"
+      ],
+      "branch": "feat/issue-201-docs-update-auth-docs-for-usernamebased-",
+      "claimed_at": "2026-01-23T08:01:47Z",
+      "pr_number": 222,
+      "completed_at": "2026-01-23T08:07:32Z"
+    },
+    {
+      "issue_number": 202,
+      "title": "Auth: Update password policy validation (backend)",
+      "status": "completed",
+      "assigned_to": "agent-1769156124-40485",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769156124-40485",
+      "dependencies": [
+        192
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "backend",
+        "auth"
+      ],
+      "branch": "feat/issue-202-auth-update-password-policy-validation-b",
+      "claimed_at": "2026-01-23T08:15:24Z",
+      "pr_number": 224,
+      "completed_at": "2026-01-23T08:21:04Z"
+    },
+    {
+      "issue_number": 203,
+      "title": "Auth: Update frontend password guidance to match new policy",
+      "status": "completed",
+      "assigned_to": "agent-1769156499-46102",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769156499-46102",
+      "dependencies": [
+        202
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "auth"
+      ],
+      "branch": "feat/issue-203-auth-update-frontend-password-guidance-t",
+      "claimed_at": "2026-01-23T08:21:39Z",
+      "pr_number": 225,
+      "completed_at": "2026-01-23T08:27:19Z"
+    },
+    {
+      "issue_number": 204,
+      "title": "Auth: Add auth event logging (backend)",
+      "status": "completed",
+      "assigned_to": "agent-1769455716-63887",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769455716-63887",
+      "dependencies": [
+        196
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "backend",
+        "db",
+        "auth"
+      ],
+      "branch": "feat/issue-204-auth-add-auth-event-logging-backend",
+      "claimed_at": "2026-01-26T19:28:36Z",
+      "pr_number": 242,
+      "completed_at": "2026-01-26T19:56:05Z"
+    },
+    {
+      "issue_number": 205,
+      "title": "Auth: Add admin TOTP enrollment + verification (backend)",
+      "status": "completed",
+      "assigned_to": "agent-1769457368-87124",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769457368-87124",
+      "dependencies": [
+        204
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "backend",
+        "db",
+        "auth",
+        "admin"
+      ],
+      "branch": "feat/issue-205-auth-add-admin-totp-enrollment-verificat",
+      "claimed_at": "2026-01-26T19:56:08Z",
+      "completed_at": "2026-01-26T20:20:19Z",
+      "pr_number": 253
+    },
+    {
+      "issue_number": 206,
+      "title": "Auth: Admin TOTP UI + login challenge (frontend)",
+      "status": "completed",
+      "assigned_to": "agent-1769458248-19105",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769458248-19105",
+      "dependencies": [
+        205
+      ],
+      "phase": 5,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "auth",
+        "admin"
+      ],
+      "branch": "feat/issue-206-auth-admin-totp-ui-login-challenge-front",
+      "claimed_at": "2026-01-26T20:10:48Z",
+      "pr_number": 256,
+      "completed_at": "2026-01-26T21:28:00Z"
+    },
+    {
+      "issue_number": 207,
+      "title": "Re-evaluate observability retention policies",
+      "status": "completed",
+      "assigned_to": "agent-1769460378-56959",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769460378-56959",
+      "dependencies": [],
+      "phase": "phase6",
+      "labels": [
+        "enhancement",
+        "observability",
+        "devops"
+      ],
+      "branch": "feat/issue-207-reevaluate-observability-retention-polic",
+      "claimed_at": "2026-01-26T20:46:18Z",
+      "pr_number": 257,
+      "completed_at": "2026-01-26T21:08:43Z"
+    },
+    {
+      "issue_number": 232,
+      "title": "Observability: Trace WebSocket messages + add message/subscription metrics",
+      "status": "completed",
+      "assigned_to": "agent-1769457078-77265",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769457078-77265",
+      "dependencies": [],
+      "phase": "phase6",
+      "labels": [
+        "enhancement",
+        "backend",
+        "websocket"
+      ],
+      "branch": "feat/issue-232-observability-trace-websocket-messages-a",
+      "claimed_at": "2026-01-26T19:51:18Z",
+      "pr_number": 244,
+      "completed_at": "2026-01-26T19:58:43Z"
+    },
+    {
+      "issue_number": 233,
+      "title": "Observability: Add missing business metrics (reactions, deletes, notifications, link fetch)",
+      "status": "completed",
+      "assigned_to": "agent-1769457307-83061",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769457307-83061",
+      "dependencies": [],
+      "phase": "phase6",
+      "labels": [
+        "enhancement",
+        "backend"
+      ],
+      "branch": "feat/issue-233-observability-add-missing-business-metri",
+      "claimed_at": "2026-01-26T19:55:07Z",
+      "completed_at": "2026-01-26T20:06:26Z",
+      "pr_number": 247
+    },
+    {
+      "issue_number": 234,
+      "title": "Tests: Add handler coverage for notification endpoints",
+      "status": "completed",
+      "assigned_to": "agent-1769457326-85109",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769457326-85109",
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "backend",
+        "notifications"
+      ],
+      "branch": "feat/issue-234-tests-add-handler-coverage-for-notificat",
+      "claimed_at": "2026-01-26T19:55:26Z",
+      "completed_at": "2026-01-26T20:01:15Z",
+      "pr_number": 246
+    },
+    {
+      "issue_number": 235,
+      "title": "Tests: Add WebSocket handler coverage (origin + subscribe + dispatch)",
+      "status": "completed",
+      "assigned_to": "agent-1769457624-91679",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769457624-91679",
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "backend",
+        "websocket"
+      ],
+      "branch": "feat/issue-235-tests-add-websocket-handler-coverage-ori",
+      "claimed_at": "2026-01-26T20:00:24Z",
+      "pr_number": 249,
+      "completed_at": "2026-01-26T20:10:11Z"
+    },
+    {
+      "issue_number": 236,
+      "title": "Tests: Add PostService unit coverage (create/delete/restore)",
+      "status": "completed",
+      "assigned_to": "agent-1769457703-95233",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769457703-95233",
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "backend",
+        "posts"
+      ],
+      "branch": "feat/issue-236-tests-add-postservice-unit-coverage-crea",
+      "claimed_at": "2026-01-26T20:01:43Z",
+      "completed_at": "2026-01-26T20:10:03Z",
+      "pr_number": 250
+    },
+    {
+      "issue_number": 237,
+      "title": "Docs: Align API response format in DESIGN.md with implementation",
+      "status": "completed",
+      "assigned_to": "agent-1769457920-5481",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769457920-5481",
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "documentation"
+      ],
+      "branch": "feat/issue-237-docs-align-api-response-format-in-design",
+      "claimed_at": "2026-01-26T20:05:20Z",
+      "pr_number": 252,
+      "completed_at": "2026-01-26T20:12:41Z"
+    },
+    {
+      "issue_number": 238,
+      "title": "Docs: Add password reset flow + endpoints to DESIGN.md/README",
+      "status": "completed",
+      "assigned_to": "agent-1769457943-7335",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769457943-7335",
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "documentation",
+        "auth",
+        "admin"
+      ],
+      "branch": "feat/issue-238-docs-add-password-reset-flow-endpoints-t",
+      "claimed_at": "2026-01-26T20:05:43Z",
+      "completed_at": "2026-01-26T20:09:54Z",
+      "pr_number": 251
+    },
+    {
+      "issue_number": 239,
+      "title": "Security: Add rate limiting for content creation/write endpoints",
+      "status": "completed",
+      "assigned_to": "agent-1769458263-20226",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769458263-20226",
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "backend",
+        "posts",
+        "comments"
+      ],
+      "branch": "feat/issue-239-security-add-rate-limiting-for-content-c",
+      "claimed_at": "2026-01-26T20:11:03Z",
+      "pr_number": 254,
+      "completed_at": "2026-01-26T20:31:29Z"
+    },
+    {
+      "issue_number": 240,
+      "title": "Security: Harden WebSocket origin validation (no Host header trust)",
+      "status": "completed",
+      "assigned_to": "agent-1769458271-21200",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769458271-21200",
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "backend",
+        "websocket"
+      ],
+      "branch": "feat/issue-240-security-harden-websocket-origin-validat",
+      "claimed_at": "2026-01-26T20:11:11Z",
+      "pr_number": 255,
+      "completed_at": "2026-01-26T20:26:01Z"
+    },
+    {
+      "issue_number": 245,
+      "title": "Fix admin approved users endpoint for reset links",
+      "status": "completed",
+      "assigned_to": "agent-1769455667-61502",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769455667-61502",
+      "dependencies": [
+        197
+      ],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "backend",
+        "admin",
+        "auth"
+      ],
+      "branch": "fix/issue-245-admin-approved-users-endpoint",
+      "claimed_at": "2026-01-26T20:02:41Z",
+      "pr_number": 248,
+      "completed_at": "2026-01-26T20:08:00Z"
+    },
+    {
+      "issue_number": 259,
+      "title": "Bug: Comment author shows as Unknown",
+      "status": "completed",
+      "assigned_to": "agent-1769497162-8746",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769497162-8746",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "comments",
+        "ui"
+      ],
+      "branch": "fix/issue-259-comment-author-shows-as-unknown",
+      "claimed_at": "2026-01-27T06:59:22Z",
+      "pr_number": 274,
+      "completed_at": "2026-01-27T07:22:12Z"
+    },
+    {
+      "issue_number": 260,
+      "title": "Bug: Incorrect comment count and load-more UI with single comment",
+      "status": "completed",
+      "assigned_to": "agent-1769497175-10606",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769497175-10606",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "comments",
+        "ui"
+      ],
+      "branch": "fix/issue-260-incorrect-comment-count-and-loadmore-ui-",
+      "claimed_at": "2026-01-27T06:59:35Z",
+      "pr_number": 276,
+      "completed_at": "2026-01-27T07:42:58Z"
+    },
+    {
+      "issue_number": 261,
+      "title": "Enhancement: Replace link prompt with inline input",
+      "status": "completed",
+      "assigned_to": "agent-1769500838-69635",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769500838-69635",
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "frontend",
+        "links",
+        "ui"
+      ],
+      "branch": "feat/issue-261-enhancement-replace-link-prompt-with-inl",
+      "claimed_at": "2026-01-27T08:00:38Z",
+      "pr_number": 289,
+      "completed_at": "2026-01-27T08:05:37Z"
+    },
+    {
+      "issue_number": 262,
+      "title": "Enhancement: Add UI navigation to user profiles",
+      "status": "completed",
+      "assigned_to": "agent-1769500859-71940",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769500859-71940",
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "frontend",
+        "users",
+        "ui"
+      ],
+      "branch": "feat/issue-262-enhancement-add-ui-navigation-to-user-pr",
+      "claimed_at": "2026-01-27T08:00:59Z",
+      "completed_at": "2026-01-27T08:18:48Z"
+    },
+    {
+      "issue_number": 263,
+      "title": "Bug: Header navbar rubber-bands instead of staying fixed",
+      "status": "completed",
+      "assigned_to": "agent-1769498592-30399",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769498592-30399",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "ui"
+      ],
+      "branch": "fix/issue-263-header-navbar-rubberbands-instead-of-sta",
+      "claimed_at": "2026-01-27T07:23:12Z",
+      "pr_number": 281,
+      "completed_at": "2026-01-27T07:28:14Z"
+    },
+    {
+      "issue_number": 264,
+      "title": "Bug: Loki fails to start due to shared_store config (backend OTLP logs fail)",
+      "status": "completed",
+      "assigned_to": "agent-1769498615-33138",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769498615-33138",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "observability",
+        "devops",
+        "backend"
+      ],
+      "branch": "fix/issue-264-loki-fails-to-start-due-to-sharedstore-c",
+      "claimed_at": "2026-01-27T07:23:35Z",
+      "pr_number": 280,
+      "completed_at": "2026-01-27T07:27:58Z"
+    },
+    {
+      "issue_number": 265,
+      "title": "Bug: Grafana logs show xychart plugin already registered on startup",
+      "status": "completed",
+      "assigned_to": "agent-1769498638-35291",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769498638-35291",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "observability",
+        "devops"
+      ],
+      "branch": "fix/issue-265-grafana-logs-show-xychart-plugin-already",
+      "claimed_at": "2026-01-27T07:23:58Z",
+      "pr_number": 284,
+      "completed_at": "2026-01-27T07:48:51Z"
+    },
+    {
+      "issue_number": 266,
+      "title": "Bug: Postgres init logs warn about missing locales on Alpine",
+      "status": "completed",
+      "assigned_to": "agent-1769498700-37891",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769498700-37891",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "db",
+        "devops"
+      ],
+      "branch": "fix/issue-266-postgres-init-logs-warn-about-missing-lo",
+      "claimed_at": "2026-01-27T07:25:00Z",
+      "pr_number": 282,
+      "completed_at": "2026-01-27T07:48:17Z"
+    },
+    {
+      "issue_number": 267,
+      "title": "Bug: Frontend dev container reports npm audit moderate vulnerability",
+      "status": "completed",
+      "assigned_to": "agent-1769498744-40673",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769498744-40673",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend"
+      ],
+      "branch": "fix/issue-267-frontend-dev-container-reports-npm-audit",
+      "claimed_at": "2026-01-27T07:25:44Z",
+      "pr_number": 283,
+      "completed_at": "2026-01-27T07:48:32Z"
+    },
+    {
+      "issue_number": 268,
+      "title": "Bug: Auth form errors persist after correcting input",
+      "status": "completed",
+      "assigned_to": "agent-1769498756-42536",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769498756-42536",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "auth",
+        "ui"
+      ],
+      "branch": "fix/issue-268-auth-form-errors-persist-after-correctin",
+      "claimed_at": "2026-01-27T07:25:56Z",
+      "pr_number": 285,
+      "completed_at": "2026-01-27T07:49:06Z"
+    },
+    {
+      "issue_number": 269,
+      "title": "Bug: Enable notifications toggle stays stuck on 'Enabling...'",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "pwa",
+        "ui"
+      ],
+      "branch": "fix/issue-269-notifications-toggle-stuck"
+    },
+    {
+      "issue_number": 270,
+      "title": "Bug: No sections listed after fresh setup, leaving UI with no navigable content",
+      "status": "completed",
+      "assigned_to": "agent-1769499646-55079",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769499646-55079",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "sections",
+        "ui"
+      ],
+      "branch": "fix/issue-270-no-sections-listed-after-fresh-setup-lea",
+      "claimed_at": "2026-01-27T07:40:46Z",
+      "pr_number": 286,
+      "completed_at": "2026-01-27T07:49:30Z"
+    },
+    {
+      "issue_number": 271,
+      "title": "Bug: Admin MFA enrollment fails with 'TOTP configuration missing' in default dev setup",
+      "status": "completed",
+      "assigned_to": "agent-1769499663-56156",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769499663-56156",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "auth",
+        "admin"
+      ],
+      "branch": "fix/issue-271-admin-mfa-enrollment-fails-with-totp-con",
+      "claimed_at": "2026-01-27T07:41:03Z",
+      "pr_number": 287,
+      "completed_at": "2026-01-27T07:50:03Z"
+    },
+    {
+      "issue_number": 272,
+      "title": "Bug: Moderation pending users view stuck 'Loading pending users...' with console error",
+      "status": "completed",
+      "assigned_to": "agent-1769500785-65360",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769500785-65360",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "admin"
+      ],
+      "branch": "fix/issue-272-moderation-pending-users-view-stuck-load",
+      "claimed_at": "2026-01-27T07:59:45Z",
+      "pr_number": 288,
+      "completed_at": "2026-01-27T08:05:17Z"
+    },
+    {
+      "issue_number": 273,
+      "title": "Bug: Notifications toggle cannot be disabled after enabling",
+      "status": "completed",
+      "assigned_to": "agent-1769500791-66304",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769500791-66304",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "pwa",
+        "ui"
+      ],
+      "branch": "fix/issue-273-notifications-toggle-cannot-be-disabled-",
+      "claimed_at": "2026-01-27T07:59:51Z",
+      "completed_at": "2026-01-27T08:08:34Z",
+      "pr_number": 291
+    },
+    {
+      "issue_number": 275,
+      "title": "Bug: Search query/results persist across section changes and show mismatched posts",
+      "status": "completed",
+      "assigned_to": "agent-1769500816-67560",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769500816-67560",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "search",
+        "ui"
+      ],
+      "branch": "fix/issue-275-search-queryresults-persist-across-secti",
+      "claimed_at": "2026-01-27T08:00:16Z",
+      "pr_number": 290,
+      "completed_at": "2026-01-27T08:06:07Z"
+    },
+    {
+      "issue_number": 277,
+      "title": "Bug: Comment input label/placeholder duplicates 'Add a comment' text",
+      "status": "completed",
+      "assigned_to": "agent-1769500828-68580",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769500828-68580",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "comments",
+        "ui"
+      ],
+      "branch": "fix/issue-277-comment-input-labelplaceholder-duplicate",
+      "claimed_at": "2026-01-27T08:00:28Z",
+      "pr_number": 292,
+      "completed_at": "2026-01-27T08:09:53Z"
+    },
+    {
+      "issue_number": 278,
+      "title": "Bug: Logout API succeeds but UI stays on authenticated screen until refresh",
+      "status": "completed",
+      "assigned_to": null,
+      "worktree": null,
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "auth"
+      ],
+      "branch": "fix/issue-278-logout-no-redirect"
+    },
+    {
+      "issue_number": 294,
+      "title": "Bug: Login for unapproved users shows invalid credentials instead of awaiting approval",
+      "status": "completed",
+      "assigned_to": "agent-1769557354-25092",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769557354-25092",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "backend",
+        "frontend",
+        "auth"
+      ],
+      "branch": "fix/issue-294-login-for-unapproved-users-shows-invalid",
+      "claimed_at": "2026-01-27T23:42:34Z",
+      "pr_number": 318,
+      "completed_at": "2026-01-27T23:59:27Z"
+    },
+    {
+      "issue_number": 295,
+      "title": "Bug: Password reset link routes to login instead of reset screen",
+      "status": "completed",
+      "assigned_to": "agent-1769558135-29251",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769558135-29251",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "auth"
+      ],
+      "branch": "fix/issue-295-password-reset-link-routes-to-login-inst",
+      "claimed_at": "2026-01-27T23:55:35Z",
+      "pr_number": 319,
+      "completed_at": "2026-01-28T00:01:46Z"
+    },
+    {
+      "issue_number": 296,
+      "title": "Bug: Admin MFA one-time code prompt appears as error state",
+      "status": "completed",
+      "assigned_to": "agent-1769558152-31208",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769558152-31208",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "auth",
+        "admin",
+        "ui"
+      ],
+      "branch": "fix/issue-296-admin-mfa-onetime-code-prompt-appears-as",
+      "claimed_at": "2026-01-27T23:55:52Z",
+      "pr_number": 320,
+      "completed_at": "2026-01-28T00:03:44Z"
+    },
+    {
+      "issue_number": 297,
+      "title": "Bug: Post creation rejects URL-only posts",
+      "status": "completed",
+      "assigned_to": "agent-1769558171-32460",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769558171-32460",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "backend",
+        "frontend",
+        "posts",
+        "links"
+      ],
+      "branch": "fix/issue-297-post-creation-rejects-urlonly-posts",
+      "claimed_at": "2026-01-27T23:56:11Z",
+      "pr_number": 321,
+      "completed_at": "2026-01-28T00:06:41Z"
+    },
+    {
+      "issue_number": 298,
+      "title": "Bug: Link previews missing after page reload",
+      "status": "completed",
+      "assigned_to": "agent-1769558183-33633",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769558183-33633",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "links",
+        "ui"
+      ],
+      "branch": "fix/issue-298-link-previews-missing-after-page-reload",
+      "claimed_at": "2026-01-27T23:56:23Z",
+      "pr_number": 322,
+      "completed_at": "2026-01-28T00:05:14Z"
+    },
+    {
+      "issue_number": 299,
+      "title": "Bug: Photo upload succeeds but image not displayed",
+      "status": "completed",
+      "assigned_to": "agent-1769558538-45323",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769558538-45323",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "posts",
+        "ui"
+      ],
+      "branch": "fix/issue-299-photo-upload-succeeds-but-image-not-disp",
+      "claimed_at": "2026-01-28T00:02:19Z",
+      "pr_number": 324,
+      "completed_at": "2026-01-28T07:23:27Z"
+    },
+    {
+      "issue_number": 300,
+      "title": "Bug: Nested comment replies increment comment count by 2",
+      "status": "completed",
+      "assigned_to": "agent-1769558568-46584",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769558568-46584",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "comments",
+        "ui"
+      ],
+      "branch": "fix/issue-300-nested-comment-replies-increment-comment",
+      "claimed_at": "2026-01-28T00:02:48Z",
+      "pr_number": 323,
+      "completed_at": "2026-01-28T00:07:56Z"
+    },
+    {
+      "issue_number": 301,
+      "title": "Bug: Login for unapproved users shows invalid credentials instead of awaiting approval",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "backend",
+        "frontend",
+        "auth"
+      ],
+      "assigned_to": "agent-1769585859-32401",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769585859-32401",
+      "branch": "fix/issue-301-login-for-unapproved-users-shows-invalid",
+      "claimed_at": "2026-01-28T07:37:39Z",
+      "pr_number": 329,
+      "completed_at": "2026-01-28T07:46:10Z"
+    },
+    {
+      "issue_number": 302,
+      "title": "Bug: Password reset link routes to login instead of reset screen",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "auth"
+      ],
+      "assigned_to": "agent-1769585863-32489",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769585863-32489",
+      "branch": "fix/issue-302-password-reset-link-routes-to-login-inst",
+      "claimed_at": "2026-01-28T07:37:43Z",
+      "pr_number": 330,
+      "completed_at": "2026-01-28T07:51:14Z"
+    },
+    {
+      "issue_number": 303,
+      "title": "Bug: Admin MFA one-time code prompt appears as error state",
+      "status": "completed",
+      "assigned_to": "agent-1769558743-56984",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769558743-56984",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "auth",
+        "admin",
+        "ui"
+      ],
+      "branch": "fix/issue-303-admin-mfa-onetime-code-prompt-appears-as",
+      "claimed_at": "2026-01-28T00:05:43Z",
+      "pr_number": 325,
+      "completed_at": "2026-01-28T07:15:41Z"
+    },
+    {
+      "issue_number": 304,
+      "title": "Bug: Post creation rejects URL-only posts",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "backend",
+        "frontend",
+        "posts",
+        "links"
+      ],
+      "assigned_to": "agent-1769625512-38658",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769625512-38658",
+      "branch": "fix/issue-304-post-creation-rejects-urlonly-posts",
+      "claimed_at": "2026-01-28T18:38:32Z",
+      "pr_number": 340,
+      "completed_at": "2026-01-28T18:45:16Z"
+    },
+    {
+      "issue_number": 305,
+      "title": "Bug: Link previews missing after page reload",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "links",
+        "ui"
+      ],
+      "assigned_to": "agent-1769585946-33599",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769585946-33599",
+      "branch": "fix/issue-305-link-previews-missing-after-page-reload",
+      "claimed_at": "2026-01-28T07:39:06Z",
+      "pr_number": 332,
+      "completed_at": "2026-01-28T07:53:12Z"
+    },
+    {
+      "issue_number": 306,
+      "title": "Bug: Photo upload succeeds but image not displayed",
+      "status": "completed",
+      "assigned_to": "agent-1769583446-77055",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769583446-77055",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "posts",
+        "ui"
+      ],
+      "branch": "fix/issue-306-photo-upload-succeeds-but-image-not-disp",
+      "claimed_at": "2026-01-28T06:57:26Z",
+      "pr_number": 328,
+      "completed_at": "2026-01-28T07:27:27Z"
+    },
+    {
+      "issue_number": 307,
+      "title": "Bug: Nested comment replies increment comment count by 2",
+      "status": "completed",
+      "assigned_to": "agent-1769583456-78144",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769583456-78144",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "comments",
+        "ui"
+      ],
+      "branch": "fix/issue-307-nested-comment-replies-increment-comment",
+      "claimed_at": "2026-01-28T06:57:36Z",
+      "pr_number": 326,
+      "completed_at": "2026-01-28T07:02:15Z"
+    },
+    {
+      "issue_number": 308,
+      "title": "Bug: Feed pagination/infinite scroll does not limit or load more posts",
+      "status": "completed",
+      "assigned_to": "agent-1769583465-79221",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769583465-79221",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "feed",
+        "ui"
+      ],
+      "branch": "fix/issue-308-feed-paginationinfinite-scroll-does-not-",
+      "claimed_at": "2026-01-28T06:57:45Z",
+      "pr_number": 327,
+      "completed_at": "2026-01-28T07:08:08Z"
+    },
+    {
+      "issue_number": 309,
+      "title": "Enhancement: Show section name on search results",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "frontend",
+        "search",
+        "ui"
+      ],
+      "assigned_to": "agent-1769586708-55716",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769586708-55716",
+      "branch": "feat/issue-309-enhancement-show-section-name-on-search-",
+      "claimed_at": "2026-01-28T07:51:48Z",
+      "pr_number": 335,
+      "completed_at": "2026-01-28T08:12:33Z"
+    },
+    {
+      "issue_number": 310,
+      "title": "Enhancement: Include parent post context for comment search results",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "frontend",
+        "search",
+        "ui"
+      ],
+      "assigned_to": "agent-1769586839-61833",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769586839-61833",
+      "branch": "feat/issue-310-enhancement-include-parent-post-context-",
+      "claimed_at": "2026-01-28T07:53:59Z",
+      "pr_number": 336,
+      "completed_at": "2026-01-28T17:58:18Z"
+    },
+    {
+      "issue_number": 311,
+      "title": "Enhancement: Highlight matched comment in search results",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "frontend",
+        "search",
+        "ui"
+      ],
+      "assigned_to": "agent-1769588202-90249",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769588202-90249",
+      "branch": "feat/issue-311-enhancement-highlight-matched-comment-in",
+      "claimed_at": "2026-01-28T08:16:42Z",
+      "pr_number": 337,
+      "completed_at": "2026-01-28T18:19:18Z"
+    },
+    {
+      "issue_number": 312,
+      "title": "Bug: WebSocket section updates not delivered between clients",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "backend",
+        "websocket",
+        "redis"
+      ],
+      "assigned_to": "agent-1769586302-40500",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769586302-40500",
+      "branch": "fix/issue-312-websocket-section-updates-not-delivered-",
+      "claimed_at": "2026-01-28T07:45:02Z",
+      "pr_number": 333,
+      "completed_at": "2026-01-28T08:01:30Z"
+    },
+    {
+      "issue_number": 313,
+      "title": "Bug: Duplicate error message when notifications permission denied",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "pwa",
+        "ui"
+      ],
+      "assigned_to": "agent-1769586330-41974",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769586330-41974",
+      "branch": "fix/issue-313-duplicate-error-message-when-notificatio",
+      "claimed_at": "2026-01-28T07:45:30Z",
+      "pr_number": 331,
+      "completed_at": "2026-01-28T07:49:54Z"
+    },
+    {
+      "issue_number": 314,
+      "title": "Enhancement: Linkify URLs in posts and comments",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "frontend",
+        "posts",
+        "comments",
+        "ui"
+      ],
+      "assigned_to": "agent-1769588215-91435",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769588215-91435",
+      "branch": "feat/issue-314-enhancement-linkify-urls-in-posts-and-co",
+      "claimed_at": "2026-01-28T08:16:55Z",
+      "completed_at": "2026-01-28T08:30:51Z",
+      "pr_number": 338
+    },
+    {
+      "issue_number": 315,
+      "title": "Enhancement: Add reaction tooltips listing reacting users",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "frontend",
+        "reactions",
+        "ui"
+      ],
+      "assigned_to": "agent-1769626663-59447",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769626663-59447",
+      "branch": "feat/issue-315-enhancement-add-reaction-tooltips-listin",
+      "claimed_at": "2026-01-28T18:57:43Z",
+      "pr_number": 341,
+      "completed_at": "2026-01-28T20:06:47Z"
+    },
+    {
+      "issue_number": 316,
+      "title": "UI: Align admin moderation toolkit transitions with app",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "frontend",
+        "admin",
+        "ui"
+      ],
+      "assigned_to": "agent-1769624545-23260",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769624545-23260",
+      "branch": "feat/issue-316-ui-align-admin-moderation-toolkit-transi",
+      "claimed_at": "2026-01-28T18:22:25Z",
+      "pr_number": 339,
+      "completed_at": "2026-01-28T18:28:54Z"
+    },
+    {
+      "issue_number": 317,
+      "title": "Bug: Navigation does not update URL, causing refresh to reset view",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "ui"
+      ],
+      "assigned_to": "agent-1769586404-44971",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769586404-44971",
+      "branch": "fix/issue-317-navigation-does-not-update-url-causing-r",
+      "claimed_at": "2026-01-28T07:46:44Z",
+      "pr_number": 334,
+      "completed_at": "2026-01-28T08:28:42Z"
+    },
+    {
+      "issue_number": 351,
+      "title": "Enhancement: Use section names instead of IDs in URL paths",
+      "status": "completed",
+      "assigned_to": "agent-1769642348-76400",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769642348-76400",
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "frontend",
+        "sections",
+        "ui"
+      ],
+      "branch": "feat/issue-351-enhancement-use-section-names-instead-of",
+      "claimed_at": "2026-01-28T23:19:08Z",
+      "pr_number": 361,
+      "completed_at": "2026-01-29T00:00:12Z"
+    },
+    {
+      "issue_number": 350,
+      "title": "Enhancement: Display reaction tooltip emoji and names on a single line",
+      "status": "completed",
+      "assigned_to": "agent-1769642344-76411",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769642344-76411",
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "frontend",
+        "reactions",
+        "ui"
+      ],
+      "branch": "feat/issue-350-enhancement-display-reaction-tooltip-emo",
+      "claimed_at": "2026-01-28T23:19:04Z",
+      "pr_number": 360,
+      "completed_at": "2026-01-28T23:30:03Z"
+    },
+    {
+      "issue_number": 349,
+      "title": "Bug: User profile navigation crashes with \"apiUser is undefined\" error",
+      "status": "completed",
+      "assigned_to": "agent-1769642335-76245",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769642335-76245",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "users",
+        "ui"
+      ],
+      "branch": "fix/issue-349-user-profile-navigation-crashes-with-api",
+      "claimed_at": "2026-01-28T23:18:55Z",
+      "pr_number": 358,
+      "completed_at": "2026-01-28T23:26:54Z"
+    },
+    {
+      "issue_number": 348,
+      "title": "Bug: Reactions do not update in real-time via WebSocket",
+      "status": "completed",
+      "assigned_to": "agent-1769640406-46499",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769640406-46499",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "websocket",
+        "reactions"
+      ],
+      "branch": "fix/issue-348-reactions-do-not-update-in-realtime-via-",
+      "claimed_at": "2026-01-28T22:46:46Z",
+      "pr_number": 357,
+      "completed_at": "2026-01-28T23:09:28Z"
+    },
+    {
+      "issue_number": 347,
+      "title": "Bug: Previous section stays highlighted in sidebar when navigating to Moderation",
+      "status": "completed",
+      "assigned_to": "agent-1769639930-33565",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769639930-33565",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "admin",
+        "ui"
+      ],
+      "branch": "fix/issue-347-previous-section-stays-highlighted-in-si",
+      "claimed_at": "2026-01-28T22:38:50Z",
+      "pr_number": 356,
+      "completed_at": "2026-01-28T22:48:44Z"
+    },
+    {
+      "issue_number": 346,
+      "title": "Bug: Search results for replies not grouped by section in \"Everywhere\" scope",
+      "status": "completed",
+      "assigned_to": "agent-1769639368-11821",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769639368-11821",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "search",
+        "comments",
+        "ui"
+      ],
+      "branch": "fix/issue-346-search-results-for-replies-not-grouped-b",
+      "claimed_at": "2026-01-28T22:29:28Z",
+      "pr_number": 353,
+      "completed_at": "2026-01-28T22:41:51Z"
+    },
+    {
+      "issue_number": 345,
+      "title": "Enhancement: Enlarge section name pills in search results and add emoji",
+      "status": "completed",
+      "assigned_to": "agent-1769642339-76367",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769642339-76367",
+      "dependencies": [],
+      "phase": "feature",
+      "labels": [
+        "enhancement",
+        "frontend",
+        "search",
+        "sections",
+        "ui"
+      ],
+      "branch": "feat/issue-345-enhancement-enlarge-section-name-pills-i",
+      "claimed_at": "2026-01-28T23:18:59Z",
+      "pr_number": 359,
+      "completed_at": "2026-01-28T23:29:28Z"
+    },
+    {
+      "issue_number": 344,
+      "title": "Bug: Search scope button too narrow for \"Everywhere\" label",
+      "status": "completed",
+      "assigned_to": "agent-1769639364-11796",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769639364-11796",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "search",
+        "ui"
+      ],
+      "branch": "fix/issue-344-search-scope-button-too-narrow-for-every",
+      "claimed_at": "2026-01-28T22:29:24Z",
+      "pr_number": 352,
+      "completed_at": "2026-01-28T22:36:35Z"
+    },
+    {
+      "issue_number": 343,
+      "title": "Bug: \"View full thread\" link in search navigates to section instead of thread",
+      "status": "completed",
+      "assigned_to": "agent-1769639352-11513",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769639352-11513",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "enhancement",
+        "frontend",
+        "search",
+        "ui"
+      ],
+      "branch": "fix/issue-343-view-full-thread-link-in-search-navigate",
+      "claimed_at": "2026-01-28T22:29:12Z",
+      "pr_number": 355,
+      "completed_at": "2026-01-28T22:59:33Z"
+    },
+    {
+      "issue_number": 342,
+      "title": "Bug: Uploaded images do not render in posts",
+      "status": "completed",
+      "assigned_to": "agent-1769639348-11404",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769639348-11404",
+      "dependencies": [],
+      "phase": "bug",
+      "labels": [
+        "bug",
+        "frontend",
+        "posts",
+        "ui"
+      ],
+      "branch": "fix/issue-342-uploaded-images-do-not-render-in-posts",
+      "claimed_at": "2026-01-28T22:29:08Z",
+      "pr_number": 354,
+      "completed_at": "2026-01-28T22:45:14Z"
+    },
+    {
+      "issue_number": 364,
+      "title": "Bug: Image upload not working",
+      "status": "completed",
+      "assigned_to": "agent-1769676766-52175",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769676766-52175",
+      "dependencies": [],
+      "phase": "bug",
+      "priority": 1,
+      "labels": [
+        "bug",
+        "backend",
+        "frontend"
+      ],
+      "branch": "fix/issue-364-image-upload-not-working",
+      "claimed_at": "2026-01-29T08:52:46Z",
+      "pr_number": 404,
+      "completed_at": "2026-01-29T10:59:25Z"
+    },
+    {
+      "issue_number": 369,
+      "title": "Enhancement: Reorganize sections (rename Photos to Series, reorder)",
+      "status": "completed",
+      "assigned_to": "agent-1769684907-17691",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769684907-17691",
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 3,
+      "labels": [
+        "enhancement",
+        "backend",
+        "db",
+        "sections"
+      ],
+      "branch": "feat/issue-369-enhancement-reorganize-sections-rename-p",
+      "claimed_at": "2026-01-29T11:08:27Z",
+      "pr_number": 409,
+      "completed_at": "2026-01-29T11:18:05Z"
+    },
+    {
+      "issue_number": 370,
+      "title": "Enhancement: Remove bio from profile page",
+      "status": "completed",
+      "assigned_to": "agent-1769685509-47051",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769685509-47051",
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 3,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "users",
+        "ui"
+      ],
+      "branch": "feat/issue-370-enhancement-remove-bio-from-profile-page",
+      "claimed_at": "2026-01-29T11:18:29Z",
+      "pr_number": 410,
+      "completed_at": "2026-01-29T11:23:10Z"
+    },
+    {
+      "issue_number": 372,
+      "title": "Bug: Search scope switching auto-updates results without user action",
+      "status": "completed",
+      "assigned_to": "agent-1769676796-52463",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769676796-52463",
+      "dependencies": [],
+      "phase": "bug",
+      "priority": 4,
+      "labels": [
+        "bug",
+        "frontend",
+        "search"
+      ],
+      "branch": "fix/issue-372-search-scope-switching-autoupdates-resul",
+      "claimed_at": "2026-01-29T08:53:16Z",
+      "pr_number": 403,
+      "completed_at": "2026-01-29T09:13:26Z"
+    },
+    {
+      "issue_number": 373,
+      "title": "Bug: Superfluous section pill on parent post in scoped search results",
+      "status": "completed",
+      "assigned_to": "agent-1769676801-52908",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769676801-52908",
+      "dependencies": [],
+      "phase": "bug",
+      "priority": 4,
+      "labels": [
+        "bug",
+        "frontend",
+        "search",
+        "ui"
+      ],
+      "branch": "fix/issue-373-superfluous-section-pill-on-parent-post-",
+      "claimed_at": "2026-01-29T08:53:21Z",
+      "pr_number": 401,
+      "completed_at": "2026-01-29T09:00:21Z"
+    },
+    {
+      "issue_number": 377,
+      "title": "Backend: Extend audit_logs table schema with metadata support",
+      "status": "completed",
+      "assigned_to": "agent-1769684474-2552",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769684474-2552",
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 0,
+      "labels": [
+        "enhancement",
+        "backend",
+        "db",
+        "admin"
+      ],
+      "branch": "feat/issue-377-backend-extend-auditlogs-table-schema-wi",
+      "claimed_at": "2026-01-29T11:01:14Z",
+      "pr_number": 405,
+      "completed_at": "2026-01-29T11:06:21Z"
+    },
+    {
+      "issue_number": 379,
+      "title": "Backend: Add audit events for user management actions",
+      "status": "completed",
+      "assigned_to": "agent-1769685712-55427",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769685712-55427",
+      "dependencies": [
+        378
+      ],
+      "phase": "feature",
+      "priority": 0,
+      "labels": [
+        "enhancement",
+        "backend",
+        "admin",
+        "users"
+      ],
+      "branch": "feat/issue-379-backend-add-audit-events-for-user-manage",
+      "claimed_at": "2026-01-29T11:21:52Z",
+      "pr_number": 414,
+      "completed_at": "2026-01-29T11:38:52Z"
+    },
+    {
+      "issue_number": 380,
+      "title": "Backend: Add audit events for content moderation actions",
+      "status": "completed",
+      "assigned_to": "agent-1769685718-56557",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769685718-56557",
+      "dependencies": [
+        378
+      ],
+      "phase": "feature",
+      "priority": 0,
+      "labels": [
+        "enhancement",
+        "backend",
+        "admin",
+        "posts",
+        "comments"
+      ],
+      "branch": "feat/issue-380-backend-add-audit-events-for-content-mod",
+      "claimed_at": "2026-01-29T11:21:58Z",
+      "pr_number": 412,
+      "completed_at": "2026-01-29T11:35:34Z"
+    },
+    {
+      "issue_number": 381,
+      "title": "Backend: Add audit events for settings and auth actions",
+      "status": "completed",
+      "assigned_to": "agent-1769685814-60228",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769685814-60228",
+      "dependencies": [
+        378
+      ],
+      "phase": "feature",
+      "priority": 0,
+      "labels": [
+        "enhancement",
+        "backend",
+        "admin",
+        "auth"
+      ],
+      "branch": "feat/issue-381-backend-add-audit-events-for-settings-an",
+      "claimed_at": "2026-01-29T11:23:34Z",
+      "pr_number": 413,
+      "completed_at": "2026-01-29T11:36:36Z"
+    },
+    {
+      "issue_number": 384,
+      "title": "Docs: Add audit logging guidelines to CLAUDE.md",
+      "status": "completed",
+      "assigned_to": "agent-1769684478-2712",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769684478-2712",
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 0,
+      "labels": [
+        "enhancement",
+        "documentation"
+      ],
+      "branch": "feat/issue-384-docs-add-audit-logging-guidelines-to-cla",
+      "claimed_at": "2026-01-29T11:01:18Z",
+      "pr_number": 406,
+      "completed_at": "2026-01-29T11:07:51Z"
+    },
+    {
+      "issue_number": 400,
+      "title": "Bug: WebSocket connection loop causes repeated reconnections every few seconds",
+      "status": "completed",
+      "assigned_to": "agent-1769676763-52060",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769676763-52060",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 0,
+      "labels": [
+        "bug",
+        "frontend",
+        "backend",
+        "websocket"
+      ],
+      "branch": "fix/issue-400-websocket-connection-loop-causes-repeate",
+      "claimed_at": "2026-01-29T08:52:43Z",
+      "pr_number": 402,
+      "completed_at": "2026-01-29T09:06:15Z"
+    }
+  ],
+  "archived_issue_numbers": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    93,
+    99,
+    100,
+    101,
+    102,
+    103,
+    111,
+    112,
+    113,
+    114,
+    135,
+    136,
+    137,
+    138,
+    139,
+    140,
+    141,
+    142,
+    143,
+    144,
+    145,
+    151,
+    152,
+    156,
+    160,
+    162,
+    163,
+    166,
+    169,
+    170,
+    177,
+    180,
+    181,
+    182,
+    183,
+    184,
+    186,
+    187,
+    188,
+    189,
+    190,
+    191,
+    192,
+    193,
+    194,
+    195,
+    196,
+    197,
+    198,
+    199,
+    200,
+    201,
+    202,
+    203,
+    204,
+    205,
+    206,
+    207,
+    232,
+    233,
+    234,
+    235,
+    236,
+    237,
+    238,
+    239,
+    240,
+    245,
+    259,
+    260,
+    261,
+    262,
+    263,
+    264,
+    265,
+    266,
+    267,
+    268,
+    269,
+    270,
+    271,
+    272,
+    273,
+    275,
+    277,
+    278,
+    294,
+    295,
+    296,
+    297,
+    298,
+    299,
+    300,
+    301,
+    302,
+    303,
+    304,
+    305,
+    306,
+    307,
+    308,
+    309,
+    310,
+    311,
+    312,
+    313,
+    314,
+    315,
+    316,
+    317,
+    342,
+    343,
+    344,
+    345,
+    346,
+    347,
+    348,
+    349,
+    350,
+    351,
+    364,
+    369,
+    370,
+    372,
+    373,
+    377,
+    379,
+    380,
+    381,
+    384,
+    400
+  ]
+}
