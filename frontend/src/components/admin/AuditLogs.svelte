@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api } from '../../services/api';
+  import { replacePath } from '../../services/routeNavigation';
 
   interface AuditLog {
     id: string;
@@ -23,11 +24,36 @@
     next_cursor?: string | null;
   }
 
+  interface AuditLogActionsResponse {
+    actions: string[];
+  }
+
+  interface AdminUser {
+    id: string;
+    username: string;
+    email: string;
+    is_admin: boolean;
+    approved_at: string;
+    created_at: string;
+  }
+
   let logs: AuditLog[] = [];
   let cursor: string | null = null;
   let hasMore = true;
   let isLoading = false;
   let errorMessage = '';
+  let isFilterLoading = false;
+  let filterErrorMessage = '';
+
+  let availableActions: string[] = [];
+  let users: AdminUser[] = [];
+
+  let selectedActions: string[] = [];
+  let startDate = '';
+  let endDate = '';
+  let adminUserId = '';
+  let targetUserId = '';
+  let filtersInitialized = false;
 
   const actionLabels: Record<string, string> = {
     approve_user: 'Approved user',
@@ -163,6 +189,71 @@
     return details;
   };
 
+  const buildActionOptions = () => {
+    const options = new Set<string>([...availableActions, ...Object.keys(actionLabels), ...selectedActions]);
+    return Array.from(options).sort((a, b) => a.localeCompare(b));
+  };
+
+  const buildFilterParams = () => {
+    const params = new URLSearchParams();
+    params.set('tab', 'audit');
+    selectedActions.forEach((action) => params.append('action', action));
+    if (startDate) params.set('start', startDate);
+    if (endDate) params.set('end', endDate);
+    if (adminUserId) params.set('admin_user_id', adminUserId);
+    if (targetUserId) params.set('target_user_id', targetUserId);
+    return params;
+  };
+
+  const syncUrlWithFilters = () => {
+    if (typeof window === 'undefined') return;
+    const params = buildFilterParams();
+    const query = params.toString();
+    const path = `${window.location.pathname}${query ? `?${query}` : ''}`;
+    replacePath(path);
+  };
+
+  const parseDateParam = (value: string | null) => {
+    if (!value) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+    return '';
+  };
+
+  const loadFilters = async () => {
+    if (isFilterLoading) return;
+    isFilterLoading = true;
+    filterErrorMessage = '';
+    try {
+      const [actionsResponse, usersResponse] = await Promise.all([
+        api.get<AuditLogActionsResponse>('/admin/audit-logs/actions'),
+        api.get<AdminUser[] | null>('/admin/users/approved'),
+      ]);
+      availableActions = Array.isArray(actionsResponse?.actions) ? actionsResponse.actions : [];
+      users = Array.isArray(usersResponse) ? usersResponse : [];
+    } catch (error) {
+      filterErrorMessage = error instanceof Error ? error.message : 'Failed to load audit filters.';
+    } finally {
+      isFilterLoading = false;
+    }
+  };
+
+  const applyFilters = async ({ updateUrl = true }: { updateUrl?: boolean } = {}) => {
+    if (!filtersInitialized) return;
+    if (updateUrl) {
+      syncUrlWithFilters();
+    }
+    await loadLogs({ reset: true });
+  };
+
+  const clearFilters = async () => {
+    selectedActions = [];
+    startDate = '';
+    endDate = '';
+    adminUserId = '';
+    targetUserId = '';
+    await applyFilters();
+  };
+
   const loadLogs = async ({ reset = false }: { reset?: boolean } = {}) => {
     if (isLoading) return;
     isLoading = true;
@@ -175,8 +266,12 @@
     }
 
     try {
-      const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
-      const response = await api.get<AuditLogsResponse>(`/admin/audit-logs${query}`);
+      const params = buildFilterParams();
+      if (cursor) {
+        params.set('cursor', cursor);
+      }
+      const query = params.toString();
+      const response = await api.get<AuditLogsResponse>(`/admin/audit-logs${query ? `?${query}` : ''}`);
       logs = reset ? response.logs : [...logs, ...response.logs];
       hasMore = response.has_more;
       cursor = response.next_cursor ?? null;
@@ -188,6 +283,17 @@
   };
 
   onMount(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      selectedActions = params.getAll('action');
+      startDate = parseDateParam(params.get('start'));
+      endDate = parseDateParam(params.get('end'));
+      adminUserId = params.get('admin_user_id') ?? '';
+      targetUserId = params.get('target_user_id') ?? '';
+    }
+    filtersInitialized = true;
+    syncUrlWithFilters();
+    loadFilters();
     loadLogs();
   });
 </script>
@@ -208,6 +314,106 @@
     >
       Refresh
     </button>
+  </div>
+
+  <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Filters</p>
+        <p class="text-sm text-slate-600">Slice the log by action, date range, or user.</p>
+      </div>
+      <button
+        class="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+        on:click={clearFilters}
+        disabled={isLoading}
+      >
+        Clear filters
+      </button>
+    </div>
+
+    {#if filterErrorMessage}
+      <div class="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
+        {filterErrorMessage}
+      </div>
+    {/if}
+
+    <div class="mt-4 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+      <div class="space-y-2">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Action type</p>
+        <div class="max-h-44 space-y-2 overflow-auto rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600">
+          {#if isFilterLoading}
+            <p class="text-slate-400">Loading action types...</p>
+          {:else if buildActionOptions().length === 0}
+            <p class="text-slate-400">No action types yet.</p>
+          {:else}
+            {#each buildActionOptions() as action}
+              <label class="flex items-center gap-2">
+                <input
+                  class="h-4 w-4 rounded border-slate-300 text-amber-500 focus:ring-amber-400"
+                  type="checkbox"
+                  value={action}
+                  bind:group={selectedActions}
+                  on:change={() => applyFilters()}
+                />
+                <span>{formatAction(action)}</span>
+              </label>
+            {/each}
+          {/if}
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Date range</p>
+        <div class="space-y-3">
+          <label class="block text-xs text-slate-500">
+            Start date
+            <input
+              class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700"
+              type="date"
+              bind:value={startDate}
+              on:change={() => applyFilters()}
+            />
+          </label>
+          <label class="block text-xs text-slate-500">
+            End date
+            <input
+              class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700"
+              type="date"
+              bind:value={endDate}
+              on:change={() => applyFilters()}
+            />
+          </label>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Admin user</p>
+        <select
+          class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700"
+          bind:value={adminUserId}
+          on:change={() => applyFilters()}
+        >
+          <option value="">Any admin</option>
+          {#each users.filter((user) => user.is_admin) as user}
+            <option value={user.id}>{user.username} · {user.email}</option>
+          {/each}
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Target user</p>
+        <select
+          class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700"
+          bind:value={targetUserId}
+          on:change={() => applyFilters()}
+        >
+          <option value="">Any user</option>
+          {#each users as user}
+            <option value={user.id}>{user.username} · {user.email}</option>
+          {/each}
+        </select>
+      </div>
+    </div>
   </div>
 
   {#if isLoading && logs.length === 0}

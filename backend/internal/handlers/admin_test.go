@@ -1035,6 +1035,152 @@ func TestGetAuditLogs(t *testing.T) {
 	}
 }
 
+func TestGetAuditLogsWithFilters(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	adminID := uuid.New()
+	_, err := db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'auditfilteradmin', 'auditfilteradmin@example.com', '$2a$12$test', true, now(), now())
+	`, adminID)
+	if err != nil {
+		t.Fatalf("failed to create admin user: %v", err)
+	}
+
+	otherAdminID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'auditfilteradmin2', 'auditfilteradmin2@example.com', '$2a$12$test', true, now(), now())
+	`, otherAdminID)
+	if err != nil {
+		t.Fatalf("failed to create secondary admin user: %v", err)
+	}
+
+	targetID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, approved_at, created_at)
+		VALUES ($1, 'auditfiltertarget', 'auditfiltertarget@example.com', '$2a$12$test', now(), now())
+	`, targetID)
+	if err != nil {
+		t.Fatalf("failed to create target user: %v", err)
+	}
+
+	baseTime := time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC)
+	_, err = db.Exec(`
+		INSERT INTO audit_logs (id, admin_user_id, action, target_user_id, created_at)
+		VALUES ($1, $2, 'approve_user', $3, $4)
+	`, uuid.New(), adminID, targetID, baseTime)
+	if err != nil {
+		t.Fatalf("failed to create audit log 1: %v", err)
+	}
+
+	_, err = db.Exec(`
+		INSERT INTO audit_logs (id, admin_user_id, action, created_at)
+		VALUES ($1, $2, 'reject_user', $3)
+	`, uuid.New(), otherAdminID, baseTime.Add(24*time.Hour))
+	if err != nil {
+		t.Fatalf("failed to create audit log 2: %v", err)
+	}
+
+	_, err = db.Exec(`
+		INSERT INTO audit_logs (id, admin_user_id, action, related_user_id, created_at)
+		VALUES ($1, $2, 'delete_post', $3, $4)
+	`, uuid.New(), adminID, targetID, baseTime.Add(48*time.Hour))
+	if err != nil {
+		t.Fatalf("failed to create audit log 3: %v", err)
+	}
+
+	handler := NewAdminHandler(db, nil)
+
+	req := httptest.NewRequest("GET", "/api/v1/admin/audit-logs?action=reject_user", nil)
+	w := httptest.NewRecorder()
+	handler.GetAuditLogs(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, w.Code)
+	}
+	var actionResponse models.AuditLogsResponse
+	if err := json.NewDecoder(w.Body).Decode(&actionResponse); err != nil {
+		t.Fatalf("failed to decode action response: %v", err)
+	}
+	if len(actionResponse.Logs) != 1 || actionResponse.Logs[0].Action != "reject_user" {
+		t.Errorf("expected only reject_user log, got %+v", actionResponse.Logs)
+	}
+
+	req = httptest.NewRequest("GET", "/api/v1/admin/audit-logs?start=2024-01-02&end=2024-01-02", nil)
+	w = httptest.NewRecorder()
+	handler.GetAuditLogs(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, w.Code)
+	}
+	var dateResponse models.AuditLogsResponse
+	if err := json.NewDecoder(w.Body).Decode(&dateResponse); err != nil {
+		t.Fatalf("failed to decode date response: %v", err)
+	}
+	if len(dateResponse.Logs) != 1 || dateResponse.Logs[0].Action != "reject_user" {
+		t.Errorf("expected only reject_user log in date range, got %+v", dateResponse.Logs)
+	}
+
+	req = httptest.NewRequest("GET", "/api/v1/admin/audit-logs?admin_user_id="+adminID.String(), nil)
+	w = httptest.NewRecorder()
+	handler.GetAuditLogs(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, w.Code)
+	}
+	var adminResponse models.AuditLogsResponse
+	if err := json.NewDecoder(w.Body).Decode(&adminResponse); err != nil {
+		t.Fatalf("failed to decode admin response: %v", err)
+	}
+	if len(adminResponse.Logs) != 2 {
+		t.Errorf("expected 2 logs for admin filter, got %d", len(adminResponse.Logs))
+	}
+
+	req = httptest.NewRequest("GET", "/api/v1/admin/audit-logs?target_user_id="+targetID.String(), nil)
+	w = httptest.NewRecorder()
+	handler.GetAuditLogs(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, w.Code)
+	}
+	var targetResponse models.AuditLogsResponse
+	if err := json.NewDecoder(w.Body).Decode(&targetResponse); err != nil {
+		t.Fatalf("failed to decode target response: %v", err)
+	}
+	if len(targetResponse.Logs) != 2 {
+		t.Errorf("expected 2 logs for target user filter, got %d", len(targetResponse.Logs))
+	}
+}
+
+func TestGetAuditLogActions(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	_, err := db.Exec(`
+		INSERT INTO audit_logs (id, action, created_at)
+		VALUES ($1, 'action_one', now()), ($2, 'action_two', now())
+	`, uuid.New(), uuid.New())
+	if err != nil {
+		t.Fatalf("failed to create audit logs: %v", err)
+	}
+
+	handler := NewAdminHandler(db, nil)
+	req := httptest.NewRequest("GET", "/api/v1/admin/audit-logs/actions", nil)
+	w := httptest.NewRecorder()
+
+	handler.GetAuditLogActions(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, w.Code)
+	}
+
+	var response models.AuditLogActionsResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if len(response.Actions) < 2 {
+		t.Errorf("expected at least 2 actions, got %d", len(response.Actions))
+	}
+}
+
 // TestGetAuditLogsMethodNotAllowed tests that POST to GetAuditLogs is rejected
 func TestGetAuditLogsMethodNotAllowed(t *testing.T) {
 	handler := NewAdminHandler(nil, nil)

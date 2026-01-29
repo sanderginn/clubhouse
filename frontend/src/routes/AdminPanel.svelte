@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import PendingUsers from '../components/admin/PendingUsers.svelte';
   import AuditLogs from '../components/admin/AuditLogs.svelte';
   import UserResetLinks from '../components/admin/UserResetLinks.svelte';
@@ -30,6 +31,15 @@
   ];
 
   let activeTab: AdminTab = 'pending';
+
+  onMount(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (tabParam && tabs.some((tab) => tab.id === tabParam)) {
+      activeTab = tabParam as AdminTab;
+    }
+  });
 </script>
 
 <div class="admin-panel space-y-8">

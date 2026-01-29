@@ -5,11 +5,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/models"
@@ -619,7 +621,94 @@ func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Query audit logs with usernames and metadata, ordered by created_at DESC
+	actions := normalizeAuditActions(r.URL.Query()["action"])
+	if actionList := r.URL.Query().Get("actions"); actionList != "" {
+		actions = normalizeAuditActions(append(actions, strings.Split(actionList, ",")...))
+	}
+
+	var adminUserID *uuid.UUID
+	adminUserIDParam := r.URL.Query().Get("admin_user_id")
+	if adminUserIDParam != "" {
+		parsedID, err := uuid.Parse(adminUserIDParam)
+		if err != nil {
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid admin_user_id")
+			return
+		}
+		adminUserID = &parsedID
+	}
+
+	var targetUserID *uuid.UUID
+	targetUserIDParam := r.URL.Query().Get("target_user_id")
+	if targetUserIDParam != "" {
+		parsedID, err := uuid.Parse(targetUserIDParam)
+		if err != nil {
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid target_user_id")
+			return
+		}
+		targetUserID = &parsedID
+	}
+
+	startDate, startDateOnly, err := parseAuditDateParam(r.URL.Query().Get("start"))
+	if err != nil {
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid start date")
+		return
+	}
+
+	endDate, endDateOnly, err := parseAuditDateParam(r.URL.Query().Get("end"))
+	if err != nil {
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid end date")
+		return
+	}
+
+	if endDate != nil && endDateOnly {
+		adjusted := endDate.Add(24 * time.Hour)
+		endDate = &adjusted
+	}
+	if startDate != nil && startDateOnly {
+		adjusted := time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, time.UTC)
+		startDate = &adjusted
+	}
+
+	if startDate != nil && endDate != nil && !startDate.Before(*endDate) {
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid date range")
+		return
+	}
+
+	whereClauses := []string{`
+		(
+			$1::timestamp IS NULL
+			OR ($2::uuid IS NULL AND a.created_at < $1)
+			OR ($2 IS NOT NULL AND (a.created_at, a.id) < ($1, $2))
+		)
+	`}
+	args := []interface{}{cursorTimestamp, cursorID}
+
+	if len(actions) > 0 {
+		whereClauses = append(whereClauses, fmt.Sprintf("a.action = ANY($%d)", len(args)+1))
+		args = append(args, pq.Array(actions))
+	}
+
+	if adminUserID != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("a.admin_user_id = $%d", len(args)+1))
+		args = append(args, *adminUserID)
+	}
+
+	if targetUserID != nil {
+		placeholder := len(args) + 1
+		whereClauses = append(whereClauses, fmt.Sprintf("(a.target_user_id = $%d OR a.related_user_id = $%d)", placeholder, placeholder))
+		args = append(args, *targetUserID)
+	}
+
+	if startDate != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("a.created_at >= $%d", len(args)+1))
+		args = append(args, *startDate)
+	}
+
+	if endDate != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("a.created_at < $%d", len(args)+1))
+		args = append(args, *endDate)
+	}
+
 	query := `
 		SELECT
 			a.id,
@@ -638,16 +727,13 @@ func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 		LEFT JOIN users admin ON a.admin_user_id = admin.id
 		LEFT JOIN users related ON a.related_user_id = related.id
 		LEFT JOIN users target ON a.target_user_id = target.id
-		WHERE (
-			$1::timestamp IS NULL
-			OR ($2::uuid IS NULL AND a.created_at < $1)
-			OR ($2 IS NOT NULL AND (a.created_at, a.id) < ($1, $2))
-		)
+		WHERE ` + strings.Join(whereClauses, " AND ") + `
 		ORDER BY a.created_at DESC, a.id DESC
-		LIMIT $3
+		LIMIT $` + fmt.Sprint(len(args)+1) + `
 	`
 
-	rows, err := h.db.QueryContext(r.Context(), query, cursorTimestamp, cursorID, limit+1)
+	args = append(args, limit+1)
+	rows, err := h.db.QueryContext(r.Context(), query, args...)
 	if err != nil {
 		writeError(r.Context(), w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to fetch audit logs")
 		return
@@ -746,6 +832,51 @@ func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetAuditLogActions returns distinct audit log action types.
+func (h *AdminHandler) GetAuditLogActions(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		return
+	}
+
+	rows, err := h.db.QueryContext(r.Context(), `SELECT DISTINCT action FROM audit_logs ORDER BY action ASC`)
+	if err != nil {
+		writeError(r.Context(), w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to fetch audit log actions")
+		return
+	}
+	defer rows.Close()
+
+	var actions []string
+	for rows.Next() {
+		var action string
+		if err := rows.Scan(&action); err != nil {
+			writeError(r.Context(), w, http.StatusInternalServerError, "SCAN_FAILED", "Failed to parse audit log actions")
+			return
+		}
+		if strings.TrimSpace(action) == "" {
+			continue
+		}
+		actions = append(actions, action)
+	}
+
+	if err := rows.Err(); err != nil {
+		writeError(r.Context(), w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to fetch audit log actions")
+		return
+	}
+
+	response := models.AuditLogActionsResponse{Actions: actions}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode audit log actions response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}
+
 func (h *AdminHandler) logAdminAudit(ctx context.Context, action string, targetUserID uuid.UUID, metadata map[string]interface{}) {
 	if h == nil || h.db == nil {
 		return
@@ -765,6 +896,49 @@ func (h *AdminHandler) logAdminAudit(ctx context.Context, action string, targetU
 			Err:        err,
 		})
 	}
+}
+
+func parseAuditDateParam(value string) (*time.Time, bool, error) {
+	if value == "" {
+		return nil, false, nil
+	}
+
+	if strings.Contains(value, "T") {
+		parsedTime, err := time.Parse(time.RFC3339Nano, value)
+		if err != nil {
+			parsedTime, err = time.Parse(time.RFC3339, value)
+		}
+		if err != nil {
+			return nil, false, err
+		}
+		return &parsedTime, false, nil
+	}
+
+	parsedDate, err := time.Parse("2006-01-02", value)
+	if err != nil {
+		return nil, false, err
+	}
+	parsedDate = time.Date(parsedDate.Year(), parsedDate.Month(), parsedDate.Day(), 0, 0, 0, 0, time.UTC)
+	return &parsedDate, true, nil
+}
+
+func normalizeAuditActions(values []string) []string {
+	actions := make([]string, 0, len(values))
+	seen := make(map[string]struct{})
+	for _, value := range values {
+		for _, action := range strings.Split(value, ",") {
+			action = strings.TrimSpace(action)
+			if action == "" {
+				continue
+			}
+			if _, ok := seen[action]; ok {
+				continue
+			}
+			seen[action] = struct{}{}
+			actions = append(actions, action)
+		}
+	}
+	return actions
 }
 
 // GetAuthEvents returns auth events with pagination

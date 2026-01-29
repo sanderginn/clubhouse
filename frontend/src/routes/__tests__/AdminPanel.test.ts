@@ -38,6 +38,9 @@ describe('AdminPanel', () => {
       if (endpoint === '/admin/users/approved') {
         return Promise.resolve([]);
       }
+      if (endpoint === '/admin/audit-logs/actions') {
+        return Promise.resolve({ actions: [] });
+      }
       if (endpoint.startsWith('/admin/audit-logs')) {
         return Promise.resolve({ logs: [], has_more: false });
       }
