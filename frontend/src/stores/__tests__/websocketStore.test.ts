@@ -14,9 +14,9 @@ class MockWebSocket {
   url: string;
   readyState = MockWebSocket.CONNECTING;
   send = vi.fn();
-  close = vi.fn(() => {
+  close = vi.fn((code: number = 1000, reason: string = '') => {
     this.readyState = MockWebSocket.CLOSED;
-    this.emit('close', { code: 1000, reason: '' });
+    this.emit('close', { code, reason });
   });
 
   private listeners: Record<string, Array<(event: any) => void>> = {};
@@ -379,5 +379,39 @@ describe('websocketStore', () => {
 
     vi.advanceTimersByTime(1000);
     expect(MockWebSocket.instances.length).toBeGreaterThan(initialCount);
+  });
+
+  it('does not reconnect after intentional cleanup', async () => {
+    vi.useFakeTimers();
+    storeRefs.isAuthenticated.set(true);
+
+    const { websocketStore } = await import('../websocketStore');
+    websocketStore.init();
+
+    const socket = MockWebSocket.instances[0];
+    socket.open();
+
+    websocketStore.cleanup();
+    const initialCount = MockWebSocket.instances.length;
+
+    vi.advanceTimersByTime(2000);
+    expect(MockWebSocket.instances.length).toBe(initialCount);
+  });
+
+  it('does not reconnect when server replaces connection', async () => {
+    vi.useFakeTimers();
+    storeRefs.isAuthenticated.set(true);
+
+    const { websocketStore } = await import('../websocketStore');
+    websocketStore.init();
+
+    const socket = MockWebSocket.instances[0];
+    socket.open();
+
+    socket.emit('close', { code: 4000, reason: 'replaced' });
+    const initialCount = MockWebSocket.instances.length;
+
+    vi.advanceTimersByTime(2000);
+    expect(MockWebSocket.instances.length).toBe(initialCount);
   });
 });

@@ -23,17 +23,19 @@ import (
 )
 
 const (
-	wsReadLimit          = 64 * 1024
-	wsPongWait           = 60 * time.Second
-	wsPingPeriod         = 50 * time.Second
-	wsWriteWait          = 10 * time.Second
-	wsSubscribe          = "subscribe"
-	wsUnsubscribe        = "unsubscribe"
-	wsPing               = "ping"
-	userMentions         = "user:%s:mentions"
-	userNotify           = "user:%s:notifications"
-	sectionPrefix        = "section:%s"
-	wsOriginAllowlistEnv = "WS_ORIGIN_ALLOWLIST"
+	wsReadLimit           = 64 * 1024
+	wsPongWait            = 60 * time.Second
+	wsPingPeriod          = 50 * time.Second
+	wsWriteWait           = 10 * time.Second
+	wsSubscribe           = "subscribe"
+	wsUnsubscribe         = "unsubscribe"
+	wsPing                = "ping"
+	wsCloseReplacedCode   = 4000
+	wsCloseReplacedReason = "replaced"
+	userMentions          = "user:%s:mentions"
+	userNotify            = "user:%s:notifications"
+	sectionPrefix         = "section:%s"
+	wsOriginAllowlistEnv  = "WS_ORIGIN_ALLOWLIST"
 )
 
 // WebSocket spans:
@@ -132,7 +134,8 @@ func (h *WebSocketHandler) registerConnection(ctx context.Context, userID uuid.U
 	h.mu.Lock()
 	if existing := h.connections[userID]; existing != nil {
 		// One active connection per user; latest connection wins.
-		h.closeConnection(existing)
+		observability.LogInfo(ctx, "WebSocket replaced existing connection", "user_id", userID.String())
+		h.closeConnection(existing, wsCloseReplacedCode, wsCloseReplacedReason)
 	}
 	h.connections[userID] = wsConn
 	h.mu.Unlock()
@@ -148,12 +151,12 @@ func (h *WebSocketHandler) unregisterConnection(ctx context.Context, userID uuid
 	}
 	h.mu.Unlock()
 
-	h.closeConnection(wsConn)
+	h.closeConnection(wsConn, websocket.CloseNormalClosure, "")
 	h.addEvent(ctx, userID, "websocket_disconnected")
 	observability.RecordWebsocketDisconnect(ctx)
 }
 
-func (h *WebSocketHandler) closeConnection(wsConn *wsConnection) {
+func (h *WebSocketHandler) closeConnection(wsConn *wsConnection, code int, reason string) {
 	if wsConn == nil {
 		return
 	}
@@ -163,7 +166,7 @@ func (h *WebSocketHandler) closeConnection(wsConn *wsConnection) {
 	}
 	wsConn.writeMu.Lock()
 	_ = wsConn.conn.SetWriteDeadline(time.Now().Add(wsWriteWait))
-	_ = wsConn.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+	_ = wsConn.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(code, reason))
 	wsConn.writeMu.Unlock()
 	_ = wsConn.conn.Close()
 }
