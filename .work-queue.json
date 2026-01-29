@@ -12,7 +12,8 @@
     385,
     386,
     387,
-    388
+    388,
+    426
   ],
   "issues": [
     {
@@ -596,7 +597,7 @@
     {
       "issue_number": 426,
       "title": "[High] Implement frontend error tracking infrastructure",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769694351-63847",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769694351-63847",
       "dependencies": [],
@@ -607,7 +608,9 @@
         "frontend"
       ],
       "branch": "feat/issue-426-high-implement-frontend-error-tracking-i",
-      "claimed_at": "2026-01-29T13:45:51Z"
+      "claimed_at": "2026-01-29T13:45:51Z",
+      "pr_number": 448,
+      "completed_at": "2026-01-29T16:05:24Z"
     },
     {
       "issue_number": 427,
