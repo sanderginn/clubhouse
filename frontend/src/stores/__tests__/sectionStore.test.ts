@@ -69,7 +69,7 @@ describe('sectionStore', () => {
     sectionStore.setSections([
       { id: 'section-2', name: 'Books', type: 'book', icon: '📚', slug: 'books' },
       { id: 'section-3', name: 'General', type: 'general', icon: '💬', slug: 'general' },
-      { id: 'section-4', name: 'Photos', type: 'photo', icon: '📷', slug: 'photos' },
+      { id: 'section-4', name: 'Series', type: 'series', icon: '📺', slug: 'series' },
     ]);
 
     const state = get(sectionStore);
