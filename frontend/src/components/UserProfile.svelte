@@ -15,7 +15,6 @@
   interface ApiProfileUser {
     id: string;
     username: string;
-    bio?: string | null;
     profilePictureUrl?: string | null;
     profile_picture_url?: string | null;
     createdAt?: string | null;
@@ -36,7 +35,6 @@
   interface ProfileUser {
     id: string;
     username: string;
-    bio?: string | null;
     profilePictureUrl?: string | null;
     createdAt?: string | null;
   }
@@ -132,7 +130,6 @@
       profile = {
         id: apiUser.id,
         username: apiUser.username,
-        bio: apiUser.bio ?? null,
         profilePictureUrl: apiUser.profilePictureUrl ?? apiUser.profile_picture_url ?? null,
         createdAt: apiUser.createdAt ?? apiUser.created_at ?? null,
       };
@@ -417,11 +414,6 @@
         {/if}
       </div>
 
-      {#if profile.bio}
-        <p class="mt-4 text-gray-700 whitespace-pre-wrap">{profile.bio}</p>
-      {:else}
-        <p class="mt-4 text-gray-400 italic">No bio yet.</p>
-      {/if}
     </section>
 
     <section class="bg-white rounded-lg shadow-sm border border-gray-200">
