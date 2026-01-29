@@ -3439,9 +3439,7 @@
       "claimed_at": "2026-01-28T22:29:08Z",
       "pr_number": 354,
       "completed_at": "2026-01-28T22:45:14Z"
-    }
-  ],
-  "queue": [
+    },
     {
       "issue_number": 362,
       "title": "Enhancement: Comprehensive audit logs system",
