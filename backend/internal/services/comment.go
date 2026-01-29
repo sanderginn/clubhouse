@@ -617,12 +617,23 @@ func (s *CommentService) DeleteComment(ctx context.Context, commentID uuid.UUID,
 	}
 
 	if isAdmin && comment.UserID != userID {
-		auditQuery := `
-			INSERT INTO audit_logs (admin_user_id, action, related_comment_id, created_at)
-			VALUES ($1, 'delete_comment', $2, now())
-		`
-		_, err = tx.ExecContext(ctx, auditQuery, userID, commentID)
-		if err != nil {
+		auditService := NewAuditService(tx)
+		metadata := map[string]interface{}{
+			"comment_id":         comment.ID.String(),
+			"post_id":            comment.PostID.String(),
+			"content_excerpt":    truncateAuditExcerpt(comment.Content),
+			"deleted_by_user_id": userID.String(),
+			"deleted_by_admin":   true,
+		}
+		if err := auditService.LogModerationAudit(
+			ctx,
+			"delete_comment",
+			userID,
+			comment.UserID,
+			uuid.Nil,
+			comment.ID,
+			metadata,
+		); err != nil {
 			return nil, fmt.Errorf("failed to create audit log: %w", err)
 		}
 	}
@@ -909,11 +920,23 @@ func (s *CommentService) AdminRestoreComment(ctx context.Context, commentID uuid
 	}
 
 	// Create audit log entry
-	_, err = tx.ExecContext(ctx, `
-		INSERT INTO audit_logs (admin_user_id, action, related_comment_id, created_at)
-		VALUES ($1, 'restore_comment', $2, now())
-	`, adminUserID, commentID)
-	if err != nil {
+	auditService := NewAuditService(tx)
+	metadata := map[string]interface{}{
+		"comment_id":            comment.ID.String(),
+		"post_id":               comment.PostID.String(),
+		"restored_by_user_id":   adminUserID.String(),
+		"restored_by_admin":     true,
+		"comment_owner_user_id": comment.UserID.String(),
+	}
+	if err := auditService.LogModerationAudit(
+		ctx,
+		"restore_comment",
+		adminUserID,
+		comment.UserID,
+		uuid.Nil,
+		comment.ID,
+		metadata,
+	); err != nil {
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 

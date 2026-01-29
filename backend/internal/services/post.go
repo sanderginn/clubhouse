@@ -405,6 +405,14 @@ func (s *PostService) DeletePost(ctx context.Context, postID uuid.UUID, userID u
 		return nil, errors.New("unauthorized to delete this post")
 	}
 
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
 	// Soft delete the post
 	query := `
 		UPDATE posts
@@ -414,13 +422,39 @@ func (s *PostService) DeletePost(ctx context.Context, postID uuid.UUID, userID u
 	`
 
 	var updatedPost models.Post
-	err = s.db.QueryRowContext(ctx, query, userID, postID).Scan(
+	err = tx.QueryRowContext(ctx, query, userID, postID).Scan(
 		&updatedPost.ID, &updatedPost.UserID, &updatedPost.SectionID, &updatedPost.Content,
 		&updatedPost.CreatedAt, &updatedPost.UpdatedAt, &updatedPost.DeletedAt, &updatedPost.DeletedByUserID,
 	)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete post: %w", err)
+	}
+
+	if isAdmin && post.UserID != userID {
+		auditService := NewAuditService(tx)
+		metadata := map[string]interface{}{
+			"post_id":            post.ID.String(),
+			"section_id":         post.SectionID.String(),
+			"content_excerpt":    truncateAuditExcerpt(post.Content),
+			"deleted_by_user_id": userID.String(),
+			"deleted_by_admin":   true,
+		}
+		if err := auditService.LogModerationAudit(
+			ctx,
+			"delete_post",
+			userID,
+			post.UserID,
+			post.ID,
+			uuid.Nil,
+			metadata,
+		); err != nil {
+			return nil, fmt.Errorf("failed to create audit log: %w", err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	// Copy over the user and links from the original post
@@ -762,11 +796,23 @@ func (s *PostService) AdminRestorePost(ctx context.Context, postID uuid.UUID, ad
 	}
 
 	// Create audit log entry
-	_, err = tx.ExecContext(ctx, `
-		INSERT INTO audit_logs (admin_user_id, action, related_post_id, created_at)
-		VALUES ($1, 'restore_post', $2, now())
-	`, adminUserID, postID)
-	if err != nil {
+	auditService := NewAuditService(tx)
+	metadata := map[string]interface{}{
+		"post_id":             post.ID.String(),
+		"section_id":          post.SectionID.String(),
+		"restored_by_user_id": adminUserID.String(),
+		"restored_by_admin":   true,
+		"post_owner_user_id":  post.UserID.String(),
+	}
+	if err := auditService.LogModerationAudit(
+		ctx,
+		"restore_post",
+		adminUserID,
+		post.UserID,
+		post.ID,
+		uuid.Nil,
+		metadata,
+	); err != nil {
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
