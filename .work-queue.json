@@ -187,6 +187,7 @@
     364,
     372,
     373,
+    377,
     400
   ],
   "issues": [
@@ -3591,7 +3592,7 @@
     {
       "issue_number": 377,
       "title": "Backend: Extend audit_logs table schema with metadata support",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769684474-2552",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769684474-2552",
       "dependencies": [],
@@ -3604,7 +3605,9 @@
         "admin"
       ],
       "branch": "feat/issue-377-backend-extend-auditlogs-table-schema-wi",
-      "claimed_at": "2026-01-29T11:01:14Z"
+      "claimed_at": "2026-01-29T11:01:14Z",
+      "pr_number": 405,
+      "completed_at": "2026-01-29T11:06:21Z"
     },
     {
       "issue_number": 378,
