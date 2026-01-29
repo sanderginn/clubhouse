@@ -191,6 +191,7 @@
     373,
     377,
     378,
+    380,
     384,
     388,
     400
@@ -3666,7 +3667,7 @@
     {
       "issue_number": 380,
       "title": "Backend: Add audit events for content moderation actions",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769685718-56557",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769685718-56557",
       "dependencies": [
@@ -3682,7 +3683,9 @@
         "comments"
       ],
       "branch": "feat/issue-380-backend-add-audit-events-for-content-mod",
-      "claimed_at": "2026-01-29T11:21:58Z"
+      "claimed_at": "2026-01-29T11:21:58Z",
+      "pr_number": 412,
+      "completed_at": "2026-01-29T11:35:18Z"
     },
     {
       "issue_number": 381,
