@@ -184,6 +184,7 @@
     349,
     350,
     351,
+    372,
     373,
     400
   ],
@@ -3531,7 +3532,7 @@
     {
       "issue_number": 372,
       "title": "Bug: Search scope switching auto-updates results without user action",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769676796-52463",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769676796-52463",
       "dependencies": [],
@@ -3543,7 +3544,9 @@
         "search"
       ],
       "branch": "fix/issue-372-search-scope-switching-autoupdates-resul",
-      "claimed_at": "2026-01-29T08:53:16Z"
+      "claimed_at": "2026-01-29T08:53:16Z",
+      "pr_number": 403,
+      "completed_at": "2026-01-29T09:13:26Z"
     },
     {
       "issue_number": 373,
