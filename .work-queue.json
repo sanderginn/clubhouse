@@ -189,6 +189,7 @@
     372,
     373,
     377,
+    378,
     384,
     400
   ],
@@ -3620,7 +3621,7 @@
     {
       "issue_number": 378,
       "title": "Backend: Add audit helper with metadata support",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769684808-13678",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769684808-13678",
       "dependencies": [
@@ -3634,7 +3635,9 @@
         "admin"
       ],
       "branch": "feat/issue-378-backend-add-audit-helper-with-metadata-s",
-      "claimed_at": "2026-01-29T11:06:48Z"
+      "claimed_at": "2026-01-29T11:06:48Z",
+      "pr_number": 408,
+      "completed_at": "2026-01-29T11:20:51Z"
     },
     {
       "issue_number": 379,
