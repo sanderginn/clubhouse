@@ -677,9 +677,9 @@
     {
       "issue_number": 430,
       "title": "Grafana: Create notifications and delivery dashboard",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769704390-6583",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769704390-6583",
       "dependencies": [],
       "phase": "observability",
       "priority": 3,
@@ -687,7 +687,9 @@
         "observability",
         "grafana",
         "dashboard"
-      ]
+      ],
+      "branch": "feat/issue-430-grafana-create-notifications-and-deliver",
+      "claimed_at": "2026-01-29T16:33:10Z"
     },
     {
       "issue_number": 431,
