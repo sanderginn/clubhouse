@@ -8,7 +8,9 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/models"
@@ -327,6 +329,166 @@ func TestDeleteCommentHandlerMissingUserID(t *testing.T) {
 	if errResp.Code != "UNAUTHORIZED" {
 		t.Errorf("handler returned wrong error code: got %v want UNAUTHORIZED", errResp.Code)
 	}
+}
+
+func TestUpdateCommentSuccess(t *testing.T) {
+	db, mock, err := setupMockDB(t)
+	if err != nil {
+		t.Fatalf("failed to setup mock db: %v", err)
+	}
+	defer db.Close()
+
+	handler := NewCommentHandler(db, nil, nil)
+	userID := uuid.New()
+	commentID := uuid.New()
+	postID := uuid.New()
+	sectionID := uuid.New()
+	now := time.Now()
+	updatedAt := now.Add(time.Minute)
+
+	body, err := json.Marshal(models.UpdateCommentRequest{Content: "Updated comment"})
+	if err != nil {
+		t.Fatalf("failed to marshal body: %v", err)
+	}
+
+	mock.ExpectQuery("SELECT user_id").WithArgs(commentID).
+		WillReturnRows(sqlmock.NewRows([]string{"user_id"}).AddRow(userID))
+	mock.ExpectBegin()
+	mock.ExpectExec("UPDATE comments").WithArgs("Updated comment", commentID).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectExec("INSERT INTO audit_logs").WithArgs(userID, commentID, userID).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectCommit()
+
+	rows := mock.NewRows([]string{
+		"id", "user_id", "post_id", "section_id", "parent_comment_id", "content",
+		"created_at", "updated_at", "deleted_at", "deleted_by_user_id",
+		"id", "username", "email", "profile_picture_url", "bio", "is_admin", "created_at",
+	}).AddRow(
+		commentID, userID, postID, sectionID, nil, "Updated comment",
+		now, updatedAt, nil, nil,
+		userID, "testuser", "test@example.com", nil, nil, false, now,
+	)
+	mock.ExpectQuery("SELECT").WithArgs(commentID).WillReturnRows(rows)
+
+	linksRows := mock.NewRows([]string{"id", "url", "metadata", "created_at"})
+	mock.ExpectQuery("SELECT id, url, metadata, created_at").WithArgs(commentID).WillReturnRows(linksRows)
+
+	reactionRows := mock.NewRows([]string{"emoji", "count"})
+	mock.ExpectQuery("SELECT emoji, COUNT").WithArgs(commentID).WillReturnRows(reactionRows)
+
+	viewerRows := mock.NewRows([]string{"emoji"})
+	mock.ExpectQuery("SELECT emoji").WithArgs(commentID, userID).WillReturnRows(viewerRows)
+
+	req, err := http.NewRequest(http.MethodPatch, "/api/v1/comments/"+commentID.String(), bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req = req.WithContext(createTestUserContext(req.Context(), userID, "testuser", false))
+
+	rr := httptest.NewRecorder()
+	handler.UpdateComment(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("expected status %v, got %v (mock: %v)", http.StatusOK, status, err)
+		}
+		t.Fatalf("expected status %v, got %v", http.StatusOK, status)
+	}
+
+	var response models.UpdateCommentResponse
+	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if response.Comment.Content != "Updated comment" {
+		t.Fatalf("expected content to be updated, got %s", response.Comment.Content)
+	}
+
+	if response.Comment.UpdatedAt == nil {
+		t.Fatal("expected updated_at to be set")
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unfulfilled expectations: %v", err)
+	}
+
+}
+
+func TestUpdateCommentEmptyContent(t *testing.T) {
+	handler := &CommentHandler{commentService: services.NewCommentService(nil)}
+	commentID := uuid.New()
+
+	body, err := json.Marshal(models.UpdateCommentRequest{Content: "   "})
+	if err != nil {
+		t.Fatalf("failed to marshal body: %v", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, "/api/v1/comments/"+commentID.String(), bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req = req.WithContext(createTestUserContext(req.Context(), uuid.New(), "testuser", false))
+
+	rr := httptest.NewRecorder()
+	handler.UpdateComment(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Fatalf("expected status %v, got %v", http.StatusBadRequest, status)
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if response.Code != "CONTENT_REQUIRED" {
+		t.Fatalf("expected code CONTENT_REQUIRED, got %s", response.Code)
+	}
+}
+
+func TestUpdateCommentForbidden(t *testing.T) {
+	db, mock, err := setupMockDB(t)
+	if err != nil {
+		t.Fatalf("failed to setup mock db: %v", err)
+	}
+	defer db.Close()
+
+	handler := NewCommentHandler(db, nil, nil)
+	userID := uuid.New()
+	commentID := uuid.New()
+
+	body, err := json.Marshal(models.UpdateCommentRequest{Content: "Updated comment"})
+	if err != nil {
+		t.Fatalf("failed to marshal body: %v", err)
+	}
+
+	mock.ExpectQuery("SELECT user_id").
+		WithArgs(commentID).
+		WillReturnRows(sqlmock.NewRows([]string{"user_id"}).AddRow(uuid.New()))
+
+	req, err := http.NewRequest(http.MethodPatch, "/api/v1/comments/"+commentID.String(), bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req = req.WithContext(createTestUserContext(req.Context(), userID, "testuser", false))
+
+	rr := httptest.NewRecorder()
+	handler.UpdateComment(rr, req)
+
+	if status := rr.Code; status != http.StatusForbidden {
+		t.Fatalf("expected status %v, got %v", http.StatusForbidden, status)
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if response.Code != "FORBIDDEN" {
+		t.Fatalf("expected code FORBIDDEN, got %s", response.Code)
+	}
+
 }
 
 func TestDeleteCommentHandlerInvalidID(t *testing.T) {

@@ -117,6 +117,85 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// UpdatePost handles PATCH /api/v1/posts/{id}
+func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPatch {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only PATCH requests are allowed")
+		return
+	}
+
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
+		return
+	}
+
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 5 {
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Post ID is required")
+		return
+	}
+
+	postIDStr := pathParts[4]
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_POST_ID", "Invalid post ID format")
+		return
+	}
+
+	var req models.UpdatePostRequest
+	if err := decodeJSONBody(w, r, &req); err != nil {
+		if isRequestBodyTooLarge(err) {
+			writeError(r.Context(), w, http.StatusRequestEntityTooLarge, "REQUEST_TOO_LARGE", "Request body too large")
+			return
+		}
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		return
+	}
+
+	post, err := h.postService.UpdatePost(r.Context(), postID, userID, &req)
+	if err != nil {
+		switch err.Error() {
+		case "post not found":
+			writeError(r.Context(), w, http.StatusNotFound, "POST_NOT_FOUND", "Post not found")
+		case "unauthorized to edit this post":
+			writeError(r.Context(), w, http.StatusForbidden, "FORBIDDEN", "You can only edit your own posts")
+		case "content is required":
+			writeError(r.Context(), w, http.StatusBadRequest, "CONTENT_REQUIRED", err.Error())
+		case "content must be less than 5000 characters":
+			writeError(r.Context(), w, http.StatusBadRequest, "CONTENT_TOO_LONG", err.Error())
+		case "link url cannot be empty":
+			writeError(r.Context(), w, http.StatusBadRequest, "LINK_URL_REQUIRED", err.Error())
+		case "link url must be less than 2048 characters":
+			writeError(r.Context(), w, http.StatusBadRequest, "LINK_URL_TOO_LONG", err.Error())
+		default:
+			writeError(r.Context(), w, http.StatusInternalServerError, "POST_UPDATE_FAILED", "Failed to update post")
+		}
+		return
+	}
+
+	response := models.UpdatePostResponse{
+		Post: *post,
+	}
+
+	publishCtx, cancel := publishContext()
+	mentionedUserIDs, _ := resolveMentionedUserIDs(publishCtx, h.userService, post.Content, userID)
+	_ = h.notify.CreateMentionNotifications(publishCtx, mentionedUserIDs, userID, post.SectionID, post.ID, nil)
+	_ = publishMentions(publishCtx, h.redis, mentionedUserIDs, userID, &post.ID, nil)
+	cancel()
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode update post response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}
+
 // GetPost handles GET /api/v1/posts/{id}
 func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {

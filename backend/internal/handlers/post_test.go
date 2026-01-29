@@ -12,6 +12,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/models"
+	"github.com/sanderginn/clubhouse/internal/services"
 )
 
 // TestGetPostSuccess tests successfully retrieving a post
@@ -224,7 +225,6 @@ func TestGetPostInvalidID(t *testing.T) {
 	defer db.Close()
 
 	handler := NewPostHandler(db, nil, nil)
-
 	req, err := http.NewRequest("GET", "/api/v1/posts/not-a-uuid", nil)
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
@@ -433,7 +433,6 @@ func TestGetFeedInvalidSectionID(t *testing.T) {
 	defer db.Close()
 
 	handler := NewPostHandler(db, nil, nil)
-
 	req, err := http.NewRequest("GET", "/api/v1/sections/not-a-uuid/feed", nil)
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
@@ -735,6 +734,167 @@ func TestRestorePostPermanentlyDeleted(t *testing.T) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("unfulfilled expectations: %v", err)
 	}
+}
+
+func TestUpdatePostSuccess(t *testing.T) {
+	db, mock, err := setupMockDB(t)
+	if err != nil {
+		t.Fatalf("failed to setup mock db: %v", err)
+	}
+	defer db.Close()
+
+	handler := NewPostHandler(db, nil, nil)
+	userID := uuid.New()
+	postID := uuid.New()
+	sectionID := uuid.New()
+	now := time.Now()
+	updatedAt := now.Add(time.Minute)
+
+	body, err := json.Marshal(models.UpdatePostRequest{Content: "Updated content"})
+	if err != nil {
+		t.Fatalf("failed to marshal body: %v", err)
+	}
+
+	mock.ExpectQuery("SELECT user_id").WithArgs(postID).
+		WillReturnRows(sqlmock.NewRows([]string{"user_id"}).AddRow(userID))
+	mock.ExpectBegin()
+	mock.ExpectExec("UPDATE posts").WithArgs("Updated content", postID).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectExec("INSERT INTO audit_logs").WithArgs(userID, postID, userID).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectCommit()
+
+	rows := mock.NewRows([]string{
+		"id", "user_id", "section_id", "content",
+		"created_at", "updated_at", "deleted_at", "deleted_by_user_id",
+		"id", "username", "email", "profile_picture_url", "bio", "is_admin", "created_at",
+		"comment_count",
+	}).AddRow(
+		postID, userID, sectionID, "Updated content",
+		now, updatedAt, nil, nil,
+		userID, "testuser", "test@example.com", nil, nil, false, now,
+		0,
+	)
+	mock.ExpectQuery("SELECT").WithArgs(postID).WillReturnRows(rows)
+
+	linksRows := mock.NewRows([]string{"id", "url", "metadata", "created_at"})
+	mock.ExpectQuery("SELECT id, url, metadata, created_at").WithArgs(postID).WillReturnRows(linksRows)
+
+	reactionRows := mock.NewRows([]string{"emoji", "count"})
+	mock.ExpectQuery("SELECT emoji, COUNT").WithArgs(postID).WillReturnRows(reactionRows)
+
+	viewerRows := mock.NewRows([]string{"emoji"})
+	mock.ExpectQuery("SELECT emoji").WithArgs(postID, userID).WillReturnRows(viewerRows)
+
+	req, err := http.NewRequest(http.MethodPatch, "/api/v1/posts/"+postID.String(), bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req = req.WithContext(createTestUserContext(req.Context(), userID, "testuser", false))
+
+	rr := httptest.NewRecorder()
+	handler.UpdatePost(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("expected status %v, got %v (mock: %v)", http.StatusOK, status, err)
+		}
+		t.Fatalf("expected status %v, got %v", http.StatusOK, status)
+	}
+
+	var response models.UpdatePostResponse
+	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if response.Post.Content != "Updated content" {
+		t.Fatalf("expected content to be updated, got %s", response.Post.Content)
+	}
+
+	if response.Post.UpdatedAt == nil {
+		t.Fatal("expected updated_at to be set")
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unfulfilled expectations: %v", err)
+	}
+
+}
+
+func TestUpdatePostEmptyContent(t *testing.T) {
+	handler := &PostHandler{postService: services.NewPostService(nil)}
+	postID := uuid.New()
+
+	body, err := json.Marshal(models.UpdatePostRequest{Content: "   "})
+	if err != nil {
+		t.Fatalf("failed to marshal body: %v", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, "/api/v1/posts/"+postID.String(), bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req = req.WithContext(createTestUserContext(req.Context(), uuid.New(), "testuser", false))
+
+	rr := httptest.NewRecorder()
+	handler.UpdatePost(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Fatalf("expected status %v, got %v", http.StatusBadRequest, status)
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if response.Code != "CONTENT_REQUIRED" {
+		t.Fatalf("expected code CONTENT_REQUIRED, got %s", response.Code)
+	}
+}
+
+func TestUpdatePostForbidden(t *testing.T) {
+	db, mock, err := setupMockDB(t)
+	if err != nil {
+		t.Fatalf("failed to setup mock db: %v", err)
+	}
+	defer db.Close()
+
+	handler := NewPostHandler(db, nil, nil)
+	userID := uuid.New()
+	postID := uuid.New()
+
+	body, err := json.Marshal(models.UpdatePostRequest{Content: "Updated content"})
+	if err != nil {
+		t.Fatalf("failed to marshal body: %v", err)
+	}
+
+	mock.ExpectQuery("SELECT user_id").
+		WithArgs(postID).
+		WillReturnRows(sqlmock.NewRows([]string{"user_id"}).AddRow(uuid.New()))
+
+	req, err := http.NewRequest(http.MethodPatch, "/api/v1/posts/"+postID.String(), bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req = req.WithContext(createTestUserContext(req.Context(), userID, "testuser", false))
+
+	rr := httptest.NewRecorder()
+	handler.UpdatePost(rr, req)
+
+	if status := rr.Code; status != http.StatusForbidden {
+		t.Fatalf("expected status %v, got %v", http.StatusForbidden, status)
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if response.Code != "FORBIDDEN" {
+		t.Fatalf("expected code FORBIDDEN, got %s", response.Code)
+	}
+
 }
 
 // setupMockDB creates a mock database connection for testing

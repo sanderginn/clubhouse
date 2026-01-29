@@ -16,6 +16,7 @@ type postRouteDeps struct {
 	removeReactionFromPost http.HandlerFunc
 	getReactions           http.HandlerFunc
 	getPost                http.HandlerFunc
+	updatePost             http.HandlerFunc
 	deletePost             http.HandlerFunc
 }
 
@@ -44,6 +45,11 @@ func newPostRouteHandler(requireAuth authMiddleware, requireAuthCSRF authMiddlew
 		if r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/reactions") {
 			// GET /api/v1/posts/{id}/reactions
 			requireAuth(http.HandlerFunc(deps.getReactions)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodPatch && isPostIDPath(r.URL.Path) {
+			// PATCH /api/v1/posts/{id}
+			requireAuthCSRF(http.HandlerFunc(deps.updatePost)).ServeHTTP(w, r)
 			return
 		}
 		if r.Method == http.MethodDelete && isPostIDPath(r.URL.Path) {
@@ -89,4 +95,13 @@ func isPostIDPath(path string) bool {
 		return false
 	}
 	return parts[1] == "api" && parts[2] == "v1" && parts[3] == "posts" && parts[4] != ""
+}
+
+func isCommentIDPath(path string) bool {
+	trimmed := strings.TrimSuffix(path, "/")
+	parts := strings.Split(trimmed, "/")
+	if len(parts) != 5 {
+		return false
+	}
+	return parts[1] == "api" && parts[2] == "v1" && parts[3] == "comments" && parts[4] != ""
 }

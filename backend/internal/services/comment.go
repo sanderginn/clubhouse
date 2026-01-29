@@ -164,6 +164,112 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 	return &comment, nil
 }
 
+// UpdateComment updates a comment's content and links (author only).
+
+func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID, userID uuid.UUID, req *models.UpdateCommentRequest) (*models.Comment, error) {
+	ctx, span := otel.Tracer("clubhouse.comments").Start(ctx, "CommentService.UpdateComment")
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.String("comment_id", commentID.String()),
+		attribute.Int("content_length", len(strings.TrimSpace(req.Content))),
+		attribute.Bool("has_links", req.Links != nil && len(*req.Links) > 0),
+	)
+	defer span.End()
+
+	if err := validateUpdateCommentInput(req); err != nil {
+		return nil, err
+	}
+
+	trimmedContent := strings.TrimSpace(req.Content)
+	var linkMetadata []models.JSONMap
+	linksChanged := false
+
+	var ownerID uuid.UUID
+	err := s.db.QueryRowContext(ctx, `
+		SELECT user_id
+		FROM comments
+		WHERE id = $1 AND deleted_at IS NULL
+	`, commentID).Scan(&ownerID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("comment not found")
+		}
+		return nil, fmt.Errorf("failed to fetch comment owner: %w", err)
+	}
+
+	if ownerID != userID {
+		return nil, errors.New("unauthorized to edit this comment")
+	}
+
+	if req.Links != nil {
+		existingURLs, err := getCommentLinkURLs(ctx, s.db, commentID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch comment links: %w", err)
+		}
+
+		linksChanged = !linkRequestsMatchURLs(existingURLs, *req.Links)
+		if linksChanged && len(*req.Links) > 0 {
+			linkMetadata = fetchLinkMetadata(ctx, *req.Links)
+		}
+	}
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	_, err = tx.ExecContext(ctx, `
+		UPDATE comments
+		SET content = $1, updated_at = now()
+		WHERE id = $2
+	`, trimmedContent, commentID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update comment: %w", err)
+	}
+
+	if req.Links != nil && linksChanged {
+		if _, err := tx.ExecContext(ctx, "DELETE FROM links WHERE comment_id = $1", commentID); err != nil {
+			return nil, fmt.Errorf("failed to delete comment links: %w", err)
+		}
+
+		if len(*req.Links) > 0 {
+			for i, linkReq := range *req.Links {
+				linkID := uuid.New()
+
+				metadataValue := interface{}(nil)
+				if len(linkMetadata) > i && len(linkMetadata[i]) > 0 {
+					metadataValue = linkMetadata[i]
+				}
+
+				_, err := tx.ExecContext(ctx, `
+					INSERT INTO links (id, comment_id, url, metadata, created_at)
+					VALUES ($1, $2, $3, $4, now())
+				`, linkID, commentID, linkReq.URL, metadataValue)
+				if err != nil {
+					return nil, fmt.Errorf("failed to create link: %w", err)
+				}
+			}
+		}
+	}
+
+	_, err = tx.ExecContext(ctx, `
+		INSERT INTO audit_logs (admin_user_id, action, related_comment_id, related_user_id, created_at)
+		VALUES ($1, 'update_comment', $2, $3, now())
+	`, userID, commentID, ownerID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create audit log: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return s.GetCommentByID(ctx, commentID, userID)
+}
+
 // GetCommentByID retrieves a comment by ID with all related data
 func (s *CommentService) GetCommentByID(ctx context.Context, commentID uuid.UUID, userID uuid.UUID) (*models.Comment, error) {
 	query := `
@@ -278,6 +384,32 @@ func (s *CommentService) getCommentLinks(ctx context.Context, commentID uuid.UUI
 	}
 
 	return links, nil
+}
+
+func getCommentLinkURLs(ctx context.Context, queryer interface {
+	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
+}, commentID uuid.UUID) ([]string, error) {
+	rows, err := queryer.QueryContext(ctx, `
+		SELECT url
+		FROM links
+		WHERE comment_id = $1
+		ORDER BY created_at ASC
+	`, commentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var urls []string
+	for rows.Next() {
+		var url string
+		if err := rows.Scan(&url); err != nil {
+			return nil, err
+		}
+		urls = append(urls, url)
+	}
+
+	return urls, rows.Err()
 }
 
 // getCommentReactions retrieves reaction counts and viewer reactions for a comment
@@ -974,4 +1106,33 @@ func (s *CommentService) AdminRestoreComment(ctx context.Context, commentID uuid
 	observability.RecordCommentRestored(ctx)
 
 	return &comment, nil
+}
+
+// validateUpdateCommentInput validates comment update input
+func validateUpdateCommentInput(req *models.UpdateCommentRequest) error {
+	if req == nil {
+		return fmt.Errorf("content is required")
+	}
+
+	trimmedContent := strings.TrimSpace(req.Content)
+	if trimmedContent == "" {
+		return fmt.Errorf("content is required")
+	}
+
+	if len(trimmedContent) > 5000 {
+		return fmt.Errorf("content must be less than 5000 characters")
+	}
+
+	if req.Links != nil {
+		for _, link := range *req.Links {
+			if strings.TrimSpace(link.URL) == "" {
+				return fmt.Errorf("link url cannot be empty")
+			}
+			if len(link.URL) > 2048 {
+				return fmt.Errorf("link url must be less than 2048 characters")
+			}
+		}
+	}
+
+	return nil
 }
