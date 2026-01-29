@@ -17,9 +17,9 @@
     {
       "issue_number": 365,
       "title": "Enhancement: Promote users to admin in moderation console",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769695813-2458",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769695813-2458",
       "dependencies": [
         378
       ],
@@ -31,7 +31,9 @@
         "frontend",
         "admin",
         "users"
-      ]
+      ],
+      "branch": "feat/issue-365-enhancement-promote-users-to-admin-in-mo",
+      "claimed_at": "2026-01-29T14:10:13Z"
     },
     {
       "issue_number": 366,
