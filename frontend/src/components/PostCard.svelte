@@ -4,6 +4,7 @@
   import { postStore, currentUser } from '../stores';
   import { api } from '../services/api';
   import CommentThread from './comments/CommentThread.svelte';
+  import EditedBadge from './EditedBadge.svelte';
   import ReactionBar from './reactions/ReactionBar.svelte';
   import { buildProfileHref, handleProfileNavigation } from '../services/profileNavigation';
   import { buildThreadHref } from '../services/routeNavigation';
@@ -242,6 +243,7 @@
         <time class="text-gray-500 text-sm" datetime={post.createdAt}>
           {formatDate(post.createdAt)}
         </time>
+        <EditedBadge createdAt={post.createdAt} updatedAt={post.updatedAt} />
         {#if canEdit}
           <div class="ml-auto relative">
             <button
