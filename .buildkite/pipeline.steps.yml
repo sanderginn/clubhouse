@@ -13,9 +13,6 @@ steps:
     command: "bash .buildkite/scripts/backend-test.sh"
     env:
       CLUBHOUSE_TEST_DATABASE_URL: "postgres://clubhouse_test:clubhouse_test@postgres-test:5432/clubhouse_test?sslmode=disable"
-      REDIS_HOST: redis-test
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: clubhouse_test
     plugins:
       - docker-compose#v5.5.0:
           run: backend-test

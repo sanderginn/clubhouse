@@ -13,21 +13,6 @@ services:
       timeout: 5s
       retries: 10
 
-  # Test Redis (optional, tests use miniredis by default)
-  redis-test:
-    image: redis:7-alpine
-    container_name: clubhouse-redis-test
-    command: redis-server --requirepass clubhouse_test
-    ports:
-      - "6380:6379"
-    tmpfs:
-      - /data
-    healthcheck:
-      test: ["CMD", "redis-cli", "-a", "clubhouse_test", "ping"]
-      interval: 2s
-      timeout: 5s
-      retries: 10
-
   backend-test:
     build:
       context: .
