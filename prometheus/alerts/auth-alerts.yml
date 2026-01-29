@@ -1,0 +1,11 @@
+groups:
+  - name: auth-alerts
+    rules:
+      - alert: ClubhouseAuthUnavailable
+        expr: up{job="clubhouse"} == 0
+        for: 2m
+        labels:
+          severity: high
+        annotations:
+          summary: "Clubhouse auth unavailable"
+          description: "Backend scrape is failing; auth endpoints may be unavailable."
