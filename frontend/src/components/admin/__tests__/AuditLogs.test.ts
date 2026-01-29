@@ -22,26 +22,37 @@ afterEach(() => {
 
 describe('AuditLogs', () => {
   it('renders logs from API', async () => {
-    apiGet.mockResolvedValue({
-      logs: [
-        {
-          id: 'log-1',
-          admin_user_id: 'admin-1',
-          admin_username: 'sander',
-          action: 'approve_user',
-          target_user_id: 'user-1',
-          target_username: 'johndoe',
-          created_at: '2024-01-01T00:00:00Z',
-        },
-      ],
-      has_more: false,
+    apiGet.mockImplementation((endpoint: string) => {
+      if (endpoint === '/admin/audit-logs/actions') {
+        return Promise.resolve({ actions: ['approve_user'] });
+      }
+      if (endpoint === '/admin/users/approved') {
+        return Promise.resolve([]);
+      }
+      if (endpoint.startsWith('/admin/audit-logs')) {
+        return Promise.resolve({
+          logs: [
+            {
+              id: 'log-1',
+              admin_user_id: 'admin-1',
+              admin_username: 'sander',
+              action: 'approve_user',
+              target_user_id: 'user-1',
+              target_username: 'johndoe',
+              created_at: '2024-01-01T00:00:00Z',
+            },
+          ],
+          has_more: false,
+        });
+      }
+      return Promise.resolve([]);
     });
 
     render(AuditLogs);
     await fireEvent.click(screen.getByText('Refresh'));
     await tick();
 
-    expect(apiGet).toHaveBeenCalledWith('/admin/audit-logs');
+    expect(apiGet).toHaveBeenCalledWith('/admin/audit-logs?tab=audit');
     expect(screen.getByText('Approved user johndoe')).toBeInTheDocument();
     expect(screen.getByText(/sander/i)).toBeInTheDocument();
   });
@@ -79,6 +90,12 @@ describe('AuditLogs', () => {
     };
 
     apiGet.mockImplementation((endpoint: string) => {
+      if (endpoint === '/admin/audit-logs/actions') {
+        return Promise.resolve({ actions: ['approve_user', 'reject_user'] });
+      }
+      if (endpoint === '/admin/users/approved') {
+        return Promise.resolve([]);
+      }
       if (endpoint.includes('cursor=cursor-1')) {
         return Promise.resolve(loadMoreResponse);
       }
@@ -93,7 +110,7 @@ describe('AuditLogs', () => {
     await fireEvent.click(loadMore);
     await tick();
 
-    expect(apiGet).toHaveBeenCalledWith('/admin/audit-logs?cursor=cursor-1');
+    expect(apiGet).toHaveBeenCalledWith('/admin/audit-logs?tab=audit&cursor=cursor-1');
     expect(screen.getByText('Rejected user janedoe')).toBeInTheDocument();
   });
 });

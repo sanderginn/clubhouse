@@ -330,6 +330,7 @@ func main() {
 
 	// Admin audit logs route
 	mux.Handle("/api/v1/admin/audit-logs", requireAdmin(http.HandlerFunc(adminHandler.GetAuditLogs)))
+	mux.Handle("/api/v1/admin/audit-logs/actions", requireAdmin(http.HandlerFunc(adminHandler.GetAuditLogActions)))
 	// Admin auth events route
 	mux.Handle("/api/v1/admin/auth-events", requireAdmin(http.HandlerFunc(adminHandler.GetAuthEvents)))
 

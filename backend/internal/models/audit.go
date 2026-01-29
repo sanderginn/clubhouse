@@ -28,3 +28,8 @@ type AuditLogsResponse struct {
 	HasMore    bool        `json:"has_more"`
 	NextCursor *string     `json:"next_cursor,omitempty"`
 }
+
+// AuditLogActionsResponse represents the response for listing audit log action types.
+type AuditLogActionsResponse struct {
+	Actions []string `json:"actions"`
+}
