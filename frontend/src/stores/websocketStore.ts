@@ -6,6 +6,7 @@ import { commentStore, type Comment } from './commentStore';
 import { api } from '../services/api';
 import { mapApiComment } from './commentMapper';
 import { mapApiPost, type ApiPost } from './postMapper';
+import { logError, logInfo, logWarn } from '../lib/observability/logger';
 
 type WebSocketStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
@@ -133,13 +134,16 @@ function scheduleReconnect() {
     };
     lastError.set(error);
     status.set('error');
-    console.error('[WebSocket] Max reconnection attempts reached:', error);
+    logError('WebSocket max reconnection attempts reached', {
+      reconnectAttempts,
+      message: error.message,
+    });
     return;
   }
 
   const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 10000);
   reconnectAttempts += 1;
-  console.log(`[WebSocket] Scheduling reconnection attempt ${reconnectAttempts} in ${delay}ms`);
+  logInfo('WebSocket scheduling reconnection', { attempt: reconnectAttempts, delayMs: delay });
   reconnectTimer = setTimeout(() => {
     reconnectTimer = null;
     connect();
@@ -153,14 +157,17 @@ function connect() {
 
   intentionalClose = false;
   const wsUrl = getWebSocketUrl();
-  console.log(`[WebSocket] Attempting to connect to ${wsUrl} (attempt ${reconnectAttempts + 1})`);
+  logInfo('WebSocket connecting', {
+    url: wsUrl,
+    attempt: reconnectAttempts + 1,
+  });
   status.set('connecting');
 
   const socketRef = new WebSocket(wsUrl);
   socket = socketRef;
 
   socketRef.addEventListener('open', () => {
-    console.log('[WebSocket] Connection established');
+    logInfo('WebSocket connected');
     reconnectAttempts = 0;
     lastError.set(null);
     status.set('connected');
@@ -214,7 +221,9 @@ function connect() {
                   commentStore.addComment(postId, comment);
                 }
               })
-              .catch(() => {});
+              .catch((error) => {
+                logWarn('WebSocket comment fetch failed', { postId, commentId, error });
+              });
           }
         }
         break;
@@ -264,7 +273,10 @@ function connect() {
     if (socketRef !== socket) {
       return;
     }
-    console.log(`[WebSocket] Connection closed (code: ${event.code}, reason: ${event.reason || 'none'})`);
+    logInfo('WebSocket closed', {
+      code: event.code,
+      reason: event.reason || 'none',
+    });
     socket = null;
     status.set('disconnected');
 
@@ -275,9 +287,9 @@ function connect() {
     if (closedIntentionally || closedBecauseReplaced) {
       lastError.set(null);
       if (closedBecauseReplaced) {
-        console.log('[WebSocket] Connection replaced by a newer session, skipping reconnect');
+        logInfo('WebSocket replaced by newer session');
       } else {
-        console.log('[WebSocket] Connection closed intentionally, skipping reconnect');
+        logInfo('WebSocket closed intentionally');
       }
       return;
     }
@@ -293,7 +305,7 @@ function connect() {
   });
 
   socketRef.addEventListener('error', (event) => {
-    console.error('[WebSocket] Connection error:', event);
+    logError('WebSocket connection error', { event });
     const error: WebSocketError = {
       message: 'WebSocket connection error - check authentication and network connectivity',
       timestamp: new Date(),
@@ -305,7 +317,7 @@ function connect() {
 }
 
 function disconnect() {
-  console.log('[WebSocket] Disconnecting');
+  logInfo('WebSocket disconnecting');
   intentionalClose = true;
   if (reconnectTimer) {
     clearTimeout(reconnectTimer);
@@ -355,7 +367,7 @@ function cleanup() {
 }
 
 function retry() {
-  console.log('[WebSocket] Manual retry requested');
+  logInfo('WebSocket manual retry requested');
   reconnectAttempts = 0;
   lastError.set(null);
   if (lastAuthState && !socket) {

@@ -107,6 +107,10 @@ npm install
 npm run dev
 ```
 
+Optional frontend environment variables:
+- `VITE_SENTRY_DSN`: Sentry DSN for client error tracking (leave unset to disable).
+- `VITE_APP_VERSION`: Release identifier for error tracking.
+
 ## Architecture
 
 See [DESIGN.md](DESIGN.md) for complete system design.
