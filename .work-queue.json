@@ -10,7 +10,6 @@
     382,
     383,
     385,
-    386,
     387,
     388
   ],
@@ -161,7 +160,7 @@
     {
       "issue_number": 386,
       "title": "Frontend: Add edit UI for posts and comments",
-      "status": "completed",
+      "status": "in_progress",
       "assigned_to": "agent-1769693962-50177",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769693962-50177",
       "dependencies": [
@@ -177,9 +176,7 @@
         "ui"
       ],
       "branch": "feat/issue-386-frontend-add-edit-ui-for-posts-and-comme",
-      "claimed_at": "2026-01-29T13:39:22Z",
-      "pr_number": 447,
-      "completed_at": "2026-01-29T14:23:15Z"
+      "claimed_at": "2026-01-29T13:39:22Z"
     },
     {
       "issue_number": 387,
