@@ -117,7 +117,7 @@ function createPWAStore() {
             }
           });
         } catch (error) {
-          logError('Service worker registration failed', { error });
+          logError('Service worker registration failed', { action: 'register_service_worker' }, error);
         }
       }
     },
@@ -173,7 +173,7 @@ function createPWAStore() {
         update((state) => ({ ...state, isPushSubscribed: true }));
         return true;
       } catch (error) {
-        logError('Failed to subscribe to push notifications', { error });
+        logError('Failed to subscribe to push notifications', { action: 'push_subscribe' }, error);
         return false;
       }
     },
@@ -203,7 +203,7 @@ function createPWAStore() {
 
         return unsubscribed;
       } catch (error) {
-        logError('Failed to unsubscribe from push notifications', { error });
+        logError('Failed to unsubscribe from push notifications', { action: 'push_unsubscribe' }, error);
         return false;
       }
     },
