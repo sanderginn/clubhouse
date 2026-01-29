@@ -58,7 +58,7 @@
       on:blur={() => (showTooltip = false)}
       on:click={(event) => {
         event.stopPropagation();
-        showTooltip = !showTooltip;
+        showTooltip = true;
       }}
       on:keydown={handleKeydown}
     >
