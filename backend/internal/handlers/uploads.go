@@ -54,14 +54,13 @@ func NewUploadHandler() *UploadHandler {
 		uploadDir: uploadDir,
 		maxBytes:  maxBytes,
 		allowedTypes: map[string]string{
-			"image/jpeg":    ".jpg",
-			"image/png":     ".png",
-			"image/gif":     ".gif",
-			"image/webp":    ".webp",
-			"image/bmp":     ".bmp",
-			"image/svg+xml": ".svg",
-			"image/avif":    ".avif",
-			"image/tiff":    ".tiff",
+			"image/jpeg": ".jpg",
+			"image/png":  ".png",
+			"image/gif":  ".gif",
+			"image/webp": ".webp",
+			"image/bmp":  ".bmp",
+			"image/avif": ".avif",
+			"image/tiff": ".tiff",
 		},
 	}
 }
@@ -128,14 +127,10 @@ func (h *UploadHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 
 	contentType := http.DetectContentType(sniffBuffer[:n])
 	mediaType, _, _ := mime.ParseMediaType(contentType)
-	fileExt := strings.ToLower(filepath.Ext(header.Filename))
 	resolvedExt, ok := h.allowedTypes[mediaType]
 	if !ok {
-		if !isAllowedSvg(mediaType, fileExt) {
-			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_FILE_TYPE", "Only image uploads are supported")
-			return
-		}
-		resolvedExt = ".svg"
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_FILE_TYPE", "Only image uploads are supported")
+		return
 	}
 
 	userDir := filepath.Join(h.uploadDir, userID.String())
@@ -169,13 +164,6 @@ func (h *UploadHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 			Err:        err,
 		})
 	}
-}
-
-func isAllowedSvg(mediaType, ext string) bool {
-	if ext != ".svg" {
-		return false
-	}
-	return mediaType == "image/svg+xml" || mediaType == "text/xml" || mediaType == "application/xml" || mediaType == "text/plain"
 }
 
 func writeUploadFile(path string, prefix []byte, src io.Reader, maxBytes int64) error {
