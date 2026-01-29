@@ -226,16 +226,38 @@ function createSearchStore() {
               },
             };
           }
-          if (result.type === 'comment' && result.comment?.user?.id === userId) {
-            return {
-              ...result,
-              comment: {
+          if (result.type === 'comment') {
+            let updatedComment = result.comment;
+            let updatedPost = result.post;
+
+            if (result.comment?.user && result.comment.user.id === userId) {
+              updatedComment = {
                 ...result.comment,
                 user: {
                   ...result.comment.user,
                   profilePictureUrl,
                 },
-              },
+              };
+            }
+
+            if (result.post?.user && result.post.user.id === userId) {
+              updatedPost = {
+                ...result.post,
+                user: {
+                  ...result.post.user,
+                  profilePictureUrl,
+                },
+              };
+            }
+
+            if (updatedComment === result.comment && updatedPost === result.post) {
+              return result;
+            }
+
+            return {
+              ...result,
+              comment: updatedComment,
+              post: updatedPost,
             };
           }
           return result;
