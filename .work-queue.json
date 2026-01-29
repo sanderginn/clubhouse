@@ -3479,9 +3479,9 @@
     {
       "issue_number": 366,
       "title": "Bug: Member names not clickable in admin toolkit members section",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769676770-52087",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769676770-52087",
       "dependencies": [],
       "phase": "bug",
       "priority": 2,
@@ -3490,7 +3490,9 @@
         "frontend",
         "admin",
         "ui"
-      ]
+      ],
+      "branch": "fix/issue-366-member-names-not-clickable-in-admin-tool",
+      "claimed_at": "2026-01-29T08:52:50Z"
     },
     {
       "issue_number": 369,
