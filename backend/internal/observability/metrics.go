@@ -36,6 +36,11 @@ type metrics struct {
 	linkMetadataFetchAttempts metric.Int64Counter
 	linkMetadataFetchSuccess  metric.Int64Counter
 	linkMetadataFetchFailures metric.Int64Counter
+	frontendWebVitals         metric.Float64Histogram
+	frontendApiDuration       metric.Float64Histogram
+	frontendWebsocketDuration metric.Float64Histogram
+	frontendAssetDuration     metric.Float64Histogram
+	frontendComponentDuration metric.Float64Histogram
 }
 
 var (
@@ -272,6 +277,55 @@ func initMetrics() error {
 			return
 		}
 
+		frontendWebVitals, err := meter.Float64Histogram(
+			"clubhouse.frontend.web_vitals",
+			metric.WithDescription("Frontend Web Vitals values"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		frontendApiDuration, err := meter.Float64Histogram(
+			"clubhouse.frontend.api.request.duration_ms",
+			metric.WithDescription("Frontend API request duration in milliseconds"),
+			metric.WithUnit("ms"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		frontendWebsocketDuration, err := meter.Float64Histogram(
+			"clubhouse.frontend.websocket.connect.duration_ms",
+			metric.WithDescription("Frontend WebSocket connect time in milliseconds"),
+			metric.WithUnit("ms"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		frontendAssetDuration, err := meter.Float64Histogram(
+			"clubhouse.frontend.asset.load.duration_ms",
+			metric.WithDescription("Frontend asset load duration in milliseconds"),
+			metric.WithUnit("ms"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		frontendComponentDuration, err := meter.Float64Histogram(
+			"clubhouse.frontend.component.render.duration_ms",
+			metric.WithDescription("Frontend component render duration in milliseconds"),
+			metric.WithUnit("ms"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
 		metricsInstance = &metrics{
 			httpRequestCount:          httpRequestCount,
 			httpRequestDuration:       httpRequestDuration,
@@ -297,6 +351,11 @@ func initMetrics() error {
 			linkMetadataFetchAttempts: linkMetadataFetchAttempts,
 			linkMetadataFetchSuccess:  linkMetadataFetchSuccess,
 			linkMetadataFetchFailures: linkMetadataFetchFailures,
+			frontendWebVitals:         frontendWebVitals,
+			frontendApiDuration:       frontendApiDuration,
+			frontendWebsocketDuration: frontendWebsocketDuration,
+			frontendAssetDuration:     frontendAssetDuration,
+			frontendComponentDuration: frontendComponentDuration,
 		}
 	})
 
@@ -541,4 +600,81 @@ func RecordLinkMetadataFetchFailure(ctx context.Context, count int64) {
 		return
 	}
 	m.linkMetadataFetchFailures.Add(ctx, count)
+}
+
+// RecordFrontendWebVital records a Web Vital metric from the frontend.
+func RecordFrontendWebVital(ctx context.Context, name string, value float64, rating string, navigationType string, unit string) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	attrs := []attribute.KeyValue{
+		attribute.String("name", name),
+	}
+	if rating != "" {
+		attrs = append(attrs, attribute.String("rating", rating))
+	}
+	if navigationType != "" {
+		attrs = append(attrs, attribute.String("navigation_type", navigationType))
+	}
+	if unit != "" {
+		attrs = append(attrs, attribute.String("unit", unit))
+	}
+	m.frontendWebVitals.Record(ctx, value, metric.WithAttributes(attrs...))
+}
+
+// RecordFrontendAPIDuration records the duration of frontend API calls.
+func RecordFrontendAPIDuration(ctx context.Context, endpoint string, method string, status int, durationMs float64) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	attrs := []attribute.KeyValue{
+		attribute.String("endpoint", endpoint),
+		attribute.String("method", method),
+		attribute.Int("status", status),
+	}
+	m.frontendApiDuration.Record(ctx, durationMs, metric.WithAttributes(attrs...))
+}
+
+// RecordFrontendWebsocketConnect records the WebSocket connection time.
+func RecordFrontendWebsocketConnect(ctx context.Context, outcome string, durationMs float64) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	attrs := []attribute.KeyValue{}
+	if outcome != "" {
+		attrs = append(attrs, attribute.String("outcome", outcome))
+	}
+	m.frontendWebsocketDuration.Record(ctx, durationMs, metric.WithAttributes(attrs...))
+}
+
+// RecordFrontendAssetLoad records asset load durations.
+func RecordFrontendAssetLoad(ctx context.Context, resourceType string, name string, durationMs float64) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	attrs := []attribute.KeyValue{}
+	if resourceType != "" {
+		attrs = append(attrs, attribute.String("resource_type", resourceType))
+	}
+	if name != "" {
+		attrs = append(attrs, attribute.String("name", name))
+	}
+	m.frontendAssetDuration.Record(ctx, durationMs, metric.WithAttributes(attrs...))
+}
+
+// RecordFrontendComponentRender records component render durations.
+func RecordFrontendComponentRender(ctx context.Context, component string, durationMs float64) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	attrs := []attribute.KeyValue{}
+	if component != "" {
+		attrs = append(attrs, attribute.String("component", component))
+	}
+	m.frontendComponentDuration.Record(ctx, durationMs, metric.WithAttributes(attrs...))
 }

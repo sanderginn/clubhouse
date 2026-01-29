@@ -3,6 +3,7 @@ import type { CreateCommentRequest, Comment } from '../stores/commentStore';
 import { mapApiComment, type ApiComment } from '../stores/commentMapper';
 import { mapApiPost, type ApiPost } from '../stores/postMapper';
 import { logError, logWarn } from '../lib/observability/logger';
+import { recordApiTiming } from '../lib/observability/performance';
 
 const API_BASE = '/api/v1';
 const CSRF_ENDPOINT = '/auth/csrf';
@@ -117,6 +118,7 @@ class ApiClient {
   ): Promise<T> {
     const url = `${API_BASE}${endpoint}`;
     const method = (options.method ?? 'GET').toUpperCase();
+    const startTime = typeof performance !== 'undefined' ? performance.now() : null;
     const headers = new Headers(options.headers ?? {});
     headers.set('Content-Type', 'application/json');
 
@@ -136,8 +138,14 @@ class ApiClient {
         credentials: 'include',
       });
     } catch (error) {
+      if (startTime !== null) {
+        recordApiTiming(endpoint, method, 0, performance.now() - startTime);
+      }
       logError('API request failed', { endpoint, method, url }, error);
       throw error;
+    }
+    if (startTime !== null) {
+      recordApiTiming(endpoint, method, response.status, performance.now() - startTime);
     }
 
     if (!response.ok) {
@@ -214,6 +222,7 @@ class ApiClient {
     retry = true
   ): Promise<{ url: string }> {
     const csrfToken = await this.ensureCsrfToken();
+    const startTime = typeof performance !== 'undefined' ? performance.now() : null;
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open('POST', `${API_BASE}/uploads`);
@@ -229,12 +238,18 @@ class ApiClient {
       };
 
       xhr.onerror = () => {
+        if (startTime !== null) {
+          recordApiTiming('/uploads', 'POST', 0, performance.now() - startTime);
+        }
         logError('Upload request failed', { endpoint: '/uploads', method: 'POST' });
         reject(new Error('Upload failed'));
       };
 
       xhr.onload = async () => {
         const status = xhr.status;
+        if (startTime !== null) {
+          recordApiTiming('/uploads', 'POST', status, performance.now() - startTime);
+        }
         const responseText = xhr.responseText || '{}';
         if (status >= 200 && status < 300) {
           try {

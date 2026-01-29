@@ -7,6 +7,7 @@ import { api } from '../services/api';
 import { mapApiComment } from './commentMapper';
 import { mapApiPost, type ApiPost } from './postMapper';
 import { logError, logInfo, logWarn } from '../lib/observability/logger';
+import { recordWebsocketConnect } from '../lib/observability/performance';
 
 type WebSocketStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
@@ -157,6 +158,8 @@ function connect() {
 
   intentionalClose = false;
   const wsUrl = getWebSocketUrl();
+  const connectStart = typeof performance !== 'undefined' ? performance.now() : null;
+  let connectRecorded = false;
   logInfo('WebSocket connecting', {
     url: wsUrl,
     attempt: reconnectAttempts + 1,
@@ -168,6 +171,10 @@ function connect() {
 
   socketRef.addEventListener('open', () => {
     logInfo('WebSocket connected');
+    if (connectStart !== null && !connectRecorded) {
+      recordWebsocketConnect('success', performance.now() - connectStart);
+      connectRecorded = true;
+    }
     reconnectAttempts = 0;
     lastError.set(null);
     status.set('connected');
@@ -277,6 +284,10 @@ function connect() {
       code: event.code,
       reason: event.reason || 'none',
     });
+    if (connectStart !== null && !connectRecorded) {
+      recordWebsocketConnect('closed', performance.now() - connectStart);
+      connectRecorded = true;
+    }
     socket = null;
     status.set('disconnected');
 
@@ -306,6 +317,10 @@ function connect() {
 
   socketRef.addEventListener('error', (event) => {
     logError('WebSocket connection error', { event });
+    if (connectStart !== null && !connectRecorded) {
+      recordWebsocketConnect('error', performance.now() - connectStart);
+      connectRecorded = true;
+    }
     const error: WebSocketError = {
       message: 'WebSocket connection error - check authentication and network connectivity',
       timestamp: new Date(),

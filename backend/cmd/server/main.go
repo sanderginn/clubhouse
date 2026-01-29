@@ -129,6 +129,7 @@ func main() {
 	notificationHandler := handlers.NewNotificationHandler(dbConn, pushService)
 	wsHandler := handlers.NewWebSocketHandler(redisConn)
 	linkHandler := handlers.NewLinkHandler()
+	frontendMetricsHandler := handlers.NewMetricsHandler()
 	pushHandler := handlers.NewPushHandler(dbConn, pushService)
 	uploadHandler := handlers.NewUploadHandler()
 	requireAuth := middleware.RequireAuth(redisConn)
@@ -260,6 +261,7 @@ func main() {
 
 	// Link preview route (protected with CSRF - POST only, prevents SSRF)
 	mux.Handle("/api/v1/links/preview", requireAuthCSRF(http.HandlerFunc(linkHandler.PreviewLink)))
+	mux.Handle("/api/v1/metrics/vitals", requireAuth(http.HandlerFunc(frontendMetricsHandler.RecordFrontendMetrics)))
 
 	// Notification routes (protected)
 	mux.Handle("/api/v1/notifications", requireAuth(http.HandlerFunc(notificationHandler.GetNotifications)))
