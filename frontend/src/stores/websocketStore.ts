@@ -75,6 +75,7 @@ let lastAuthState = false;
 let currentSectionId: string | null = null;
 let authUnsub: (() => void) | null = null;
 let sectionUnsub: (() => void) | null = null;
+let intentionalClose = false;
 
 function getWebSocketUrl(): string {
   const url = new URL('/api/v1/ws', window.location.href);
@@ -150,6 +151,7 @@ function connect() {
     return;
   }
 
+  intentionalClose = false;
   const wsUrl = getWebSocketUrl();
   console.log(`[WebSocket] Attempting to connect to ${wsUrl} (attempt ${reconnectAttempts + 1})`);
   status.set('connecting');
@@ -262,6 +264,20 @@ function connect() {
     socket = null;
     status.set('disconnected');
 
+    const closedBecauseReplaced = event.code === 4000 || event.reason === 'replaced';
+    const closedIntentionally = intentionalClose;
+    intentionalClose = false;
+
+    if (closedIntentionally || closedBecauseReplaced) {
+      lastError.set(null);
+      if (closedBecauseReplaced) {
+        console.log('[WebSocket] Connection replaced by a newer session, skipping reconnect');
+      } else {
+        console.log('[WebSocket] Connection closed intentionally, skipping reconnect');
+      }
+      return;
+    }
+
     const error: WebSocketError = {
       message: event.reason || `Connection closed with code ${event.code}`,
       timestamp: new Date(),
@@ -286,6 +302,7 @@ function connect() {
 
 function disconnect() {
   console.log('[WebSocket] Disconnecting');
+  intentionalClose = true;
   if (reconnectTimer) {
     clearTimeout(reconnectTimer);
     reconnectTimer = null;
@@ -293,7 +310,7 @@ function disconnect() {
   reconnectAttempts = 0;
   lastError.set(null);
   if (socket) {
-    socket.close();
+    socket.close(1000, 'client_disconnect');
     socket = null;
   }
   status.set('disconnected');
