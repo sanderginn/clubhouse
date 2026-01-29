@@ -186,6 +186,7 @@
     351,
     364,
     369,
+    370,
     372,
     373,
     377,
@@ -3528,7 +3529,7 @@
     {
       "issue_number": 370,
       "title": "Enhancement: Remove bio from profile page",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769685509-47051",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769685509-47051",
       "dependencies": [],
@@ -3541,7 +3542,9 @@
         "ui"
       ],
       "branch": "feat/issue-370-enhancement-remove-bio-from-profile-page",
-      "claimed_at": "2026-01-29T11:18:29Z"
+      "claimed_at": "2026-01-29T11:18:29Z",
+      "pr_number": 410,
+      "completed_at": "2026-01-29T11:23:10Z"
     },
     {
       "issue_number": 372,
