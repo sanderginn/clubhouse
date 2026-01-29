@@ -224,9 +224,9 @@
     {
       "issue_number": 389,
       "title": "Frontend: Add profile picture upload to settings page",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769695815-2572",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769695815-2572",
       "dependencies": [
         388
       ],
@@ -237,7 +237,9 @@
         "frontend",
         "users",
         "ui"
-      ]
+      ],
+      "branch": "feat/issue-389-frontend-add-profile-picture-upload-to-s",
+      "claimed_at": "2026-01-29T14:10:15Z"
     },
     {
       "issue_number": 390,
