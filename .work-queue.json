@@ -17,6 +17,7 @@
     389,
     426,
     427,
+    428,
     430,
     441
   ],
@@ -646,7 +647,7 @@
     {
       "issue_number": 428,
       "title": "[Low] Add frontend OpenTelemetry integration",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769703802-87365",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769703802-87365",
       "dependencies": [
@@ -659,7 +660,9 @@
         "frontend"
       ],
       "branch": "feat/issue-428-low-add-frontend-opentelemetry-integrati",
-      "claimed_at": "2026-01-29T16:23:22Z"
+      "claimed_at": "2026-01-29T16:23:22Z",
+      "pr_number": 454,
+      "completed_at": "2026-01-29T17:06:33Z"
     },
     {
       "issue_number": 429,
