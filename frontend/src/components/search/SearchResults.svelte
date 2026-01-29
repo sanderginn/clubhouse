@@ -238,6 +238,7 @@
   $: hasQuery = normalizedQuery.length > 0;
   $: showResults = $lastSearchQuery && $lastSearchQuery === normalizedQuery;
   $: isGlobalScope = $searchScope === 'global';
+  $: showParentSectionPill = $searchScope === 'global';
   $: sectionGroups = isGlobalScope ? buildSectionGroups($searchResults, $sections) : [];
 </script>
 
@@ -488,7 +489,7 @@
               <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
                 <div class="flex items-center gap-2">
                   <span>Parent post</span>
-                  {#if sectionName}
+                  {#if sectionName && showParentSectionPill}
                     <span class={sectionPillClass}>
                       {#if sectionIcon}
                         <span class={sectionPillIconClass} aria-hidden="true">{sectionIcon}</span>

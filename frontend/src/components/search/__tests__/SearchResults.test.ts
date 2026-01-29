@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/svelte';
+import { render, screen, cleanup, within } from '@testing-library/svelte';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
@@ -151,6 +151,42 @@ describe('SearchResults', () => {
 
     render(SearchResults);
     expect(screen.getAllByText('Movies').length).toBeGreaterThan(0);
+  });
+
+  it('hides section pill on parent post in section scope', () => {
+    storeRefs.searchQuery.set('reply');
+    storeRefs.lastSearchQuery.set('reply');
+    storeRefs.sections.set([
+      { id: 'section-1', name: 'Music', type: 'music', icon: '🎵', slug: 'music' },
+    ]);
+    storeRefs.activeSection.set({ id: 'section-1', name: 'Music', slug: 'music' });
+    storeRefs.searchResults.set([
+      {
+        type: 'comment',
+        score: 1,
+        comment: {
+          id: 'comment-1',
+          postId: 'post-1',
+          sectionId: 'section-1',
+          content: 'Great track',
+          createdAt: '2025-01-03T00:00:00Z',
+          user: { id: 'user-2', username: 'Alex' },
+        },
+        post: {
+          id: 'post-1',
+          sectionId: 'section-1',
+          content: 'Music post',
+          createdAt: '2025-01-02T00:00:00Z',
+          userId: 'user-1',
+        },
+      },
+    ]);
+
+    render(SearchResults);
+    const parentLabel = screen.getByText('Parent post');
+    const parentHeader = parentLabel.parentElement;
+    expect(parentHeader).toBeTruthy();
+    expect(within(parentHeader as HTMLElement).queryByText('Music')).not.toBeInTheDocument();
   });
 
   it('groups global search results by section', () => {
