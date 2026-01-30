@@ -269,6 +269,29 @@ func ExtractDomain(rawURL string) string {
 	return host
 }
 
+// IsInternalUploadURL reports whether rawURL points to the internal uploads endpoint.
+func IsInternalUploadURL(rawURL string) bool {
+	trimmed := strings.TrimSpace(rawURL)
+	if trimmed == "" {
+		return false
+	}
+	if strings.HasPrefix(trimmed, "/api/v1/uploads/") || trimmed == "/api/v1/uploads" {
+		return true
+	}
+	parsed, err := url.Parse(trimmed)
+	if err != nil {
+		return false
+	}
+	path := strings.TrimSpace(parsed.Path)
+	if path == "" {
+		return false
+	}
+	if strings.HasPrefix(path, "/api/v1/uploads/") || path == "/api/v1/uploads" {
+		return true
+	}
+	return false
+}
+
 func isBlockedHostname(host string) bool {
 	switch host {
 	case "localhost", "metadata.google.internal":

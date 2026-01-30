@@ -21,6 +21,9 @@ func fetchLinkMetadata(ctx context.Context, links []models.LinkRequest) []models
 
 	metadata := make([]models.JSONMap, len(links))
 	for i, link := range links {
+		if linkmeta.IsInternalUploadURL(link.URL) {
+			continue
+		}
 		observability.RecordLinkMetadataFetchAttempt(ctx, 1)
 		start := time.Now()
 		meta, err := linkmeta.FetchMetadata(ctx, link.URL)
