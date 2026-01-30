@@ -490,7 +490,7 @@
             "uid": "tempo"
           },
           "queryType": "traceql",
-          "query": "{resource.service.name=\"$service\", span.name=\"$operation\", status.code=\"$status\"} | duration > ${min_duration_ms}ms | span[\"$tag_key\"] = \"$tag_value\"",
+          "query": "{resource.service.name=~\"$service\", span.name=~\"$operation\", status.code=~\"$status\"} | duration > ${min_duration_ms}ms | span[\"$tag_key\"] =~ \"$tag_value\"",
           "limit": 200,
           "refId": "A"
         }
@@ -589,6 +589,7 @@
         "definition": "label_values(tempo_spanmetrics_calls_total, service)",
         "hide": 0,
         "includeAll": true,
+        "allValue": ".*",
         "multi": false,
         "name": "service",
         "options": [],
@@ -614,6 +615,7 @@
         "definition": "label_values(tempo_spanmetrics_calls_total{service=\"$service\"}, span_name)",
         "hide": 0,
         "includeAll": true,
+        "allValue": ".*",
         "multi": false,
         "name": "operation",
         "options": [],
@@ -671,15 +673,15 @@
       {
         "current": {
           "selected": false,
-          "text": "",
-          "value": ""
+          "text": ".*",
+          "value": ".*"
         },
         "hide": 0,
         "includeAll": false,
         "multi": false,
         "name": "tag_value",
         "options": [],
-        "query": "",
+        "query": ".*",
         "skipUrlSync": false,
         "type": "textbox"
       },
@@ -691,6 +693,7 @@
         },
         "hide": 0,
         "includeAll": true,
+        "allValue": ".*",
         "multi": false,
         "name": "status",
         "options": [
