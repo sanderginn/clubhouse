@@ -888,9 +888,9 @@
     {
       "issue_number": 437,
       "title": "Loki: Create error log exploration dashboard",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769767693-76576",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769767693-76576",
       "dependencies": [],
       "phase": "observability",
       "priority": 3,
@@ -899,7 +899,9 @@
         "grafana",
         "loki",
         "dashboard"
-      ]
+      ],
+      "branch": "feat/issue-437-loki-create-error-log-exploration-dashbo",
+      "claimed_at": "2026-01-30T10:08:13Z"
     },
     {
       "issue_number": 438,
