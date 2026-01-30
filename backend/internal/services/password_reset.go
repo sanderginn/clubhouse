@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+	"github.com/sanderginn/clubhouse/internal/observability"
 )
 
 const (
@@ -88,10 +89,12 @@ func (s *PasswordResetService) GetToken(ctx context.Context, token string) (*Pas
 	tokenJSON, err := s.redis.Get(ctx, key).Result()
 	if err != nil {
 		if err == redis.Nil {
+			observability.RecordCacheMiss(ctx, "password_reset")
 			return nil, ErrPasswordResetTokenNotFound
 		}
 		return nil, fmt.Errorf("failed to get password reset token from Redis: %w", err)
 	}
+	observability.RecordCacheHit(ctx, "password_reset")
 
 	var resetToken PasswordResetToken
 	if err := json.Unmarshal([]byte(tokenJSON), &resetToken); err != nil {
@@ -142,6 +145,7 @@ func (s *PasswordResetService) ClaimToken(ctx context.Context, token string) (*P
 	result, err := s.redis.Eval(ctx, script, []string{key}).Result()
 	if err != nil {
 		if err == redis.Nil {
+			observability.RecordCacheMiss(ctx, "password_reset")
 			return nil, ErrPasswordResetTokenNotFound
 		}
 		return nil, fmt.Errorf("failed to execute atomic claim-token script: %w", err)
@@ -149,12 +153,15 @@ func (s *PasswordResetService) ClaimToken(ctx context.Context, token string) (*P
 
 	resultStr, ok := result.(string)
 	if !ok {
+		observability.RecordCacheMiss(ctx, "password_reset")
 		return nil, ErrPasswordResetTokenNotFound
 	}
 
 	if resultStr == "" {
+		observability.RecordCacheHit(ctx, "password_reset")
 		return nil, ErrPasswordResetTokenAlreadyUsed
 	}
+	observability.RecordCacheHit(ctx, "password_reset")
 
 	var resetToken PasswordResetToken
 	if err := json.Unmarshal([]byte(resultStr), &resetToken); err != nil {

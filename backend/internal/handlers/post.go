@@ -179,6 +179,7 @@ func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	observability.RecordPostUpdated(r.Context())
 
 	response := models.UpdatePostResponse{
 		Post: *post,

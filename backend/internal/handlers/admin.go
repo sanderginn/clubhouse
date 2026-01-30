@@ -139,6 +139,7 @@ func (h *AdminHandler) ApproveUser(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	observability.RecordAdminAction(r.Context(), "approve_user")
 
 	observability.LogInfo(r.Context(), "user approved",
 		"user_id", userID.String(),
@@ -211,6 +212,7 @@ func (h *AdminHandler) PromoteUser(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 	}
+	observability.RecordAdminAction(r.Context(), "promote_user")
 
 	observability.LogInfo(r.Context(), "user promoted",
 		"user_id", userID.String(),
@@ -386,6 +388,7 @@ func (h *AdminHandler) RejectUser(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	observability.RecordAdminAction(r.Context(), "reject_user")
 
 	observability.LogInfo(r.Context(), "user rejected",
 		"user_id", userID.String(),
@@ -447,6 +450,7 @@ func (h *AdminHandler) EnrollTOTP(w http.ResponseWriter, r *http.Request) {
 	h.logAdminAudit(r.Context(), "enroll_mfa", session.UserID, map[string]interface{}{
 		"method": "totp",
 	})
+	observability.RecordAdminAction(r.Context(), "enroll_mfa")
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -517,6 +521,7 @@ func (h *AdminHandler) VerifyTOTP(w http.ResponseWriter, r *http.Request) {
 	h.logAdminAudit(r.Context(), "enable_mfa", session.UserID, map[string]interface{}{
 		"method": "totp",
 	})
+	observability.RecordAdminAction(r.Context(), "enable_mfa")
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -567,6 +572,7 @@ func (h *AdminHandler) HardDeletePost(w http.ResponseWriter, r *http.Request) {
 		ID:      postID,
 		Message: "Post permanently deleted",
 	}
+	observability.RecordAdminAction(r.Context(), "hard_delete_post")
 
 	observability.LogInfo(r.Context(), "post hard deleted",
 		"post_id", postID.String(),
@@ -622,6 +628,7 @@ func (h *AdminHandler) HardDeleteComment(w http.ResponseWriter, r *http.Request)
 		ID:      commentID,
 		Message: "Comment permanently deleted",
 	}
+	observability.RecordAdminAction(r.Context(), "hard_delete_comment")
 
 	observability.LogInfo(r.Context(), "comment hard deleted",
 		"comment_id", commentID.String(),
@@ -679,6 +686,7 @@ func (h *AdminHandler) AdminRestorePost(w http.ResponseWriter, r *http.Request) 
 	response := models.RestorePostResponse{
 		Post: *post,
 	}
+	observability.RecordAdminAction(r.Context(), "restore_post")
 
 	observability.LogInfo(r.Context(), "post restored",
 		"post_id", postID.String(),
@@ -736,6 +744,7 @@ func (h *AdminHandler) AdminRestoreComment(w http.ResponseWriter, r *http.Reques
 	response := models.RestoreCommentResponse{
 		Comment: *comment,
 	}
+	observability.RecordAdminAction(r.Context(), "restore_comment")
 
 	observability.LogInfo(r.Context(), "comment restored",
 		"comment_id", commentID.String(),
@@ -824,6 +833,7 @@ func (h *AdminHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 			"old_value": previousConfig.LinkMetadataEnabled,
 			"new_value": config.LinkMetadataEnabled,
 		})
+		observability.RecordAdminAction(r.Context(), "toggle_link_metadata")
 	}
 	if mfaRequired != nil && previousConfig.MFARequired != config.MFARequired {
 		h.logAdminAudit(r.Context(), "toggle_mfa_requirement", uuid.Nil, map[string]interface{}{
@@ -831,6 +841,7 @@ func (h *AdminHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 			"old_value": previousConfig.MFARequired,
 			"new_value": config.MFARequired,
 		})
+		observability.RecordAdminAction(r.Context(), "toggle_mfa_requirement")
 	}
 
 	adminUserID, err := middleware.GetUserIDFromContext(r.Context())
@@ -1083,6 +1094,7 @@ func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 		HasMore:    hasMore,
 		NextCursor: nextCursor,
 	}
+	observability.RecordAdminAuditLogView(r.Context())
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -1386,6 +1398,7 @@ func (h *AdminHandler) GeneratePasswordResetToken(w http.ResponseWriter, r *http
 		ExpiresAt: token.ExpiresAt,
 	}
 	h.logAdminAudit(r.Context(), "generate_password_reset_token", req.UserID, nil)
+	observability.RecordAdminAction(r.Context(), "generate_password_reset_token")
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

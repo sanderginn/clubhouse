@@ -78,6 +78,7 @@ func (h *SectionHandler) GetSection(w http.ResponseWriter, r *http.Request) {
 		writeError(r.Context(), w, http.StatusInternalServerError, "GET_SECTION_FAILED", "Failed to get section")
 		return
 	}
+	observability.RecordSectionView(r.Context(), sectionID.String())
 
 	response := models.GetSectionResponse{
 		Section: *section,
