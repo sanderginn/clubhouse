@@ -21,6 +21,7 @@
     417,
     419,
     420,
+    424,
     425,
     426,
     427,
@@ -618,7 +619,7 @@
     {
       "issue_number": 424,
       "title": "[Medium] Migrate update_post/update_comment audit logging to audit service",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769766037-22058",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769766037-22058",
       "dependencies": [
@@ -631,7 +632,9 @@
         "backend"
       ],
       "branch": "feat/issue-424-medium-migrate-updatepostupdatecomment-a",
-      "claimed_at": "2026-01-30T09:40:37Z"
+      "claimed_at": "2026-01-30T09:40:37Z",
+      "pr_number": 465,
+      "completed_at": "2026-01-30T09:53:00Z"
     },
     {
       "issue_number": 425,
