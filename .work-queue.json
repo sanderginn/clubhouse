@@ -12,6 +12,7 @@
     489,
     490,
     491,
+    492,
     495
   ],
   "issues": [
@@ -159,7 +160,7 @@
     {
       "issue_number": 492,
       "title": "Cannot delete image when editing a post",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         489,
         490
@@ -174,7 +175,9 @@
       "assigned_to": "agent-1769800938-60497",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769800938-60497",
       "branch": "fix/issue-492-cannot-delete-image-when-editing-a-post",
-      "claimed_at": "2026-01-30T19:22:18Z"
+      "claimed_at": "2026-01-30T19:22:18Z",
+      "pr_number": 503,
+      "completed_at": "2026-01-30T19:40:48Z"
     },
     {
       "issue_number": 493,
