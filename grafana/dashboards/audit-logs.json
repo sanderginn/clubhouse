@@ -92,7 +92,7 @@
             "uid": "postgres"
           },
           "editorMode": "code",
-          "format": "table",
+          "format": "time_series",
           "rawQuery": true,
           "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), COUNT(*) AS \"Events\"\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND ('$action' = '' OR a.action = '$action')\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\n  AND ('$target_user' = '' OR a.target_user_id::text = '$target_user' OR a.related_user_id::text = '$target_user')\nGROUP BY 1\nORDER BY 1",
           "refId": "A"
@@ -227,7 +227,7 @@
             "uid": "postgres"
           },
           "editorMode": "code",
-          "format": "time_series",
+          "format": "table",
           "rawQuery": true,
           "rawSql": "SELECT admin_label AS metric, event_count AS \"Events\"\nFROM (\n  SELECT COALESCE(admin.username, a.admin_user_id::text, 'system') AS admin_label, COUNT(*) AS event_count\n  FROM audit_logs a\n  LEFT JOIN users admin ON admin.id = a.admin_user_id\n  WHERE $__timeFilter(a.created_at)\n    AND ('$action' = '' OR a.action = '$action')\n    AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\n    AND ('$target_user' = '' OR a.target_user_id::text = '$target_user' OR a.related_user_id::text = '$target_user')\n  GROUP BY admin_label\n  ORDER BY event_count DESC\n  LIMIT 10\n) ranked\nORDER BY event_count DESC",
           "refId": "A"
