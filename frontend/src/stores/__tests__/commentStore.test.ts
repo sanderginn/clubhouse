@@ -296,4 +296,47 @@ describe('commentStore', () => {
     expect(state.comments[0].user?.profilePictureUrl).toBe('new-url');
     expect(state.comments[0].replies?.[0].user?.profilePictureUrl).toBe('keep-url');
   });
+
+  it('removes comment threads and returns removed count', () => {
+    resetStore();
+
+    commentStore.setThread(
+      'post-7',
+      [
+        {
+          id: 'comment-60',
+          userId: 'user-1',
+          postId: 'post-7',
+          content: 'Parent',
+          createdAt: '2025-01-01T00:00:00Z',
+          replies: [
+            {
+              id: 'reply-60',
+              userId: 'user-2',
+              postId: 'post-7',
+              parentCommentId: 'comment-60',
+              content: 'Reply',
+              createdAt: '2025-01-02T00:00:00Z',
+            },
+            {
+              id: 'reply-61',
+              userId: 'user-3',
+              postId: 'post-7',
+              parentCommentId: 'comment-60',
+              content: 'Reply two',
+              createdAt: '2025-01-03T00:00:00Z',
+            },
+          ],
+        },
+      ],
+      null,
+      true
+    );
+
+    const removedCount = commentStore.removeComment('post-7', 'comment-60');
+
+    const state = get(commentStore)['post-7'];
+    expect(state.comments).toHaveLength(0);
+    expect(removedCount).toBe(3);
+  });
 });

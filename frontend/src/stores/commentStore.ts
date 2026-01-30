@@ -419,11 +419,11 @@ function createCommentStore() {
         ...thread,
         comments: updateCommentById(thread.comments, comment),
       })),
-    removeComment: (postId: string, commentId: string) => {
-      let removed = false;
+    removeComment: (postId: string, commentId: string): number => {
+      let removedCount = 0;
       updateThread(postId, (thread) => {
         const result = removeCommentById(thread.comments, commentId);
-        removed = result.removed;
+        removedCount = result.removed ? result.removedIds.size : 0;
         if (!result.removed) {
           return thread;
         }
@@ -437,7 +437,7 @@ function createCommentStore() {
           seenCommentIds,
         };
       });
-      return removed;
+      return removedCount;
     },
     updateUserProfilePicture: (userId: string, profilePictureUrl?: string) =>
       update((state) => {
