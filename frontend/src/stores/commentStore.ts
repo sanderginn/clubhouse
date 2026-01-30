@@ -231,6 +231,47 @@ function createCommentStore() {
     });
   }
 
+  function collectCommentIds(comment: Comment, ids: Set<string>) {
+    ids.add(comment.id);
+    if (comment.replies?.length) {
+      for (const reply of comment.replies) {
+        collectCommentIds(reply, ids);
+      }
+    }
+  }
+
+  function removeCommentById(
+    comments: Comment[],
+    commentId: string
+  ): { comments: Comment[]; removed: boolean; removedIds: Set<string> } {
+    let removed = false;
+    const removedIds = new Set<string>();
+    const next = comments.flatMap((comment) => {
+      if (comment.id === commentId) {
+        removed = true;
+        collectCommentIds(comment, removedIds);
+        return [];
+      }
+      if (comment.replies?.length) {
+        const nested = removeCommentById(comment.replies, commentId);
+        if (nested.removed) {
+          removed = true;
+          for (const id of nested.removedIds) {
+            removedIds.add(id);
+          }
+          return [
+            {
+              ...comment,
+              replies: nested.comments,
+            },
+          ];
+        }
+      }
+      return [comment];
+    });
+    return { comments: next, removed, removedIds };
+  }
+
   function updateProfilePictures(
     comments: Comment[],
     userId: string,
@@ -378,6 +419,26 @@ function createCommentStore() {
         ...thread,
         comments: updateCommentById(thread.comments, comment),
       })),
+    removeComment: (postId: string, commentId: string): number => {
+      let removedCount = 0;
+      updateThread(postId, (thread) => {
+        const result = removeCommentById(thread.comments, commentId);
+        removedCount = result.removed ? result.removedIds.size : 0;
+        if (!result.removed) {
+          return thread;
+        }
+        const seenCommentIds = new Set(thread.seenCommentIds);
+        for (const id of result.removedIds) {
+          seenCommentIds.delete(id);
+        }
+        return {
+          ...thread,
+          comments: result.comments,
+          seenCommentIds,
+        };
+      });
+      return removedCount;
+    },
     updateUserProfilePicture: (userId: string, profilePictureUrl?: string) =>
       update((state) => {
         const nextState: CommentStoreState = {};

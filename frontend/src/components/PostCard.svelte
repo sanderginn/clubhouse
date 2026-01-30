@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import type { Link, Post } from '../stores/postStore';
-  import { postStore, currentUser } from '../stores';
+  import { postStore, currentUser, isAdmin } from '../stores';
   import { api } from '../services/api';
   import CommentThread from './comments/CommentThread.svelte';
   import EditedBadge from './EditedBadge.svelte';
@@ -37,6 +37,8 @@
   let isImageLightboxOpen = false;
   let lightboxImageUrl: string | null = null;
   let lightboxAltText = 'Full size image';
+  let isDeleting = false;
+  let deleteError: string | null = null;
 
   const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
   const MAX_UPLOAD_LABEL = '10 MB';
@@ -228,6 +230,7 @@
       ? stripInternalUploadUrls(post.content)
       : post.content;
   $: canEdit = $currentUser?.id === post.userId;
+  $: canDelete = $currentUser?.id === post.userId || $isAdmin;
   $: imageLinks = (post.links ?? []).filter((item) => Boolean(getImageLinkUrl(item)));
   $: originalImageUrl =
     imageLinks.length > 0 ? getImageLinkUrl(imageLinks[0] as Link) : undefined;
@@ -343,6 +346,28 @@
     return undefined;
   }
 
+  async function deletePost() {
+    if (typeof window !== 'undefined') {
+      const confirmed = window.confirm('Delete this post?');
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    isDeleting = true;
+    deleteError = null;
+
+    try {
+      await api.deletePost(post.id);
+      postStore.removePost(post.id);
+    } catch (err) {
+      deleteError = err instanceof Error ? err.message : 'Failed to delete post';
+      logError('Failed to delete post', { postId: post.id }, err);
+    } finally {
+      isDeleting = false;
+    }
+  }
+
   const renderStart = typeof performance !== 'undefined' ? performance.now() : null;
   onMount(() => {
     if (renderStart === null) {
@@ -426,6 +451,21 @@
               <span>Edit</span>
             </button>
           {/if}
+          {#if canDelete}
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-60"
+              on:click={deletePost}
+              disabled={isDeleting}
+            >
+              <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path
+                  d="M6 7a1 1 0 011 1v6a1 1 0 11-2 0V8a1 1 0 011-1zm4 0a1 1 0 011 1v6a1 1 0 11-2 0V8a1 1 0 011-1zm-1-5a1 1 0 00-1 1v1H5a1 1 0 000 2h10a1 1 0 100-2h-3V3a1 1 0 00-1-1H9z"
+                />
+              </svg>
+              <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
+            </button>
+          {/if}
           <button
             type="button"
             class="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50"
@@ -452,6 +492,10 @@
           {/if}
         </div>
       </div>
+
+      {#if deleteError}
+        <div class="mb-2 text-xs text-red-600">{deleteError}</div>
+      {/if}
 
       {#if isEditing}
         <div class="mb-3 space-y-2">

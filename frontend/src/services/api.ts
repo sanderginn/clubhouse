@@ -472,6 +472,10 @@ class ApiClient {
     return { comment: mapApiComment(response.comment) };
   }
 
+  async deleteComment(commentId: string): Promise<void> {
+    return this.delete(`/comments/${commentId}`);
+  }
+
   async addPostReaction(postId: string, emoji: string): Promise<void> {
     await this.post(`/posts/${postId}/reactions`, { emoji });
   }

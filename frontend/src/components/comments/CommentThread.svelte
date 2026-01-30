@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount, tick } from 'svelte';
   import { commentStore, type CommentThreadState } from '../../stores/commentStore';
-  import { currentUser } from '../../stores';
+  import { currentUser, isAdmin, postStore } from '../../stores';
   import { loadThreadComments, loadMoreThreadComments } from '../../stores/commentFeedStore';
   import { api } from '../../services/api';
   import { buildProfileHref, handleProfileNavigation } from '../../services/profileNavigation';
@@ -36,6 +36,8 @@
   let editCommentContent = '';
   let editCommentError: string | null = null;
   let isSavingComment = false;
+  let deletingCommentIds = new Set<string>();
+  let deleteCommentErrors: Record<string, string | null> = {};
   let lastHighlightId: string | null = null;
 
   const renderStart = typeof performance !== 'undefined' ? performance.now() : null;
@@ -123,6 +125,38 @@
       editCommentError = err instanceof Error ? err.message : 'Failed to update comment';
     } finally {
       isSavingComment = false;
+    }
+  }
+
+  async function deleteComment(commentId: string) {
+    if (typeof window !== 'undefined') {
+      const confirmed = window.confirm('Delete this comment?');
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    deleteCommentErrors = { ...deleteCommentErrors, [commentId]: null };
+    deletingCommentIds = new Set(deletingCommentIds).add(commentId);
+    try {
+      await api.deleteComment(commentId);
+      const removedCount = commentStore.removeComment(postId, commentId);
+      if (removedCount > 0) {
+        postStore.incrementCommentCount(postId, -removedCount);
+      }
+      if (editingCommentId === commentId) {
+        cancelEdit();
+      }
+    } catch (err) {
+      deleteCommentErrors = {
+        ...deleteCommentErrors,
+        [commentId]: err instanceof Error ? err.message : 'Failed to delete comment',
+      };
+      logError('Failed to delete comment', { commentId, postId }, err);
+    } finally {
+      const nextDeleting = new Set(deletingCommentIds);
+      nextDeleting.delete(commentId);
+      deletingCommentIds = nextDeleting;
     }
   }
 
@@ -304,19 +338,29 @@
                 <span class="text-gray-400 text-xs">·</span>
                 <RelativeTime dateString={comment.createdAt} className="text-gray-500 text-xs" />
                 <EditedBadge createdAt={comment.createdAt} updatedAt={comment.updatedAt} />
-                {#if $currentUser?.id === comment.userId}
-                  <div class="ml-auto">
+                {#if $currentUser?.id === comment.userId || $isAdmin}
+                  <div class="ml-auto flex items-center gap-2">
+                    {#if $currentUser?.id === comment.userId}
+                      <button
+                        type="button"
+                        class="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                        on:click={() => startEdit(comment.id, comment.content)}
+                      >
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path
+                            d="M4 13.5V16h2.5l7.35-7.35-2.5-2.5L4 13.5zM16.85 5.65a.5.5 0 000-.7l-1.8-1.8a.5.5 0 00-.7 0l-1.6 1.6 2.5 2.5 1.6-1.6z"
+                          />
+                        </svg>
+                        <span>Edit</span>
+                      </button>
+                    {/if}
                     <button
                       type="button"
-                      class="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-                      on:click={() => startEdit(comment.id, comment.content)}
+                      class="inline-flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-60"
+                      on:click={() => deleteComment(comment.id)}
+                      disabled={deletingCommentIds.has(comment.id)}
                     >
-                      <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path
-                          d="M4 13.5V16h2.5l7.35-7.35-2.5-2.5L4 13.5zM16.85 5.65a.5.5 0 000-.7l-1.8-1.8a.5.5 0 00-.7 0l-1.6 1.6 2.5 2.5 1.6-1.6z"
-                        />
-                      </svg>
-                      <span>Edit</span>
+                      {deletingCommentIds.has(comment.id) ? 'Deleting...' : 'Delete'}
                     </button>
                   </div>
                 {/if}
@@ -357,6 +401,10 @@
                   className="text-gray-800 text-sm whitespace-pre-wrap break-words"
                   linkClassName="text-blue-600 hover:text-blue-800 underline"
                 />
+              {/if}
+
+              {#if deleteCommentErrors[comment.id]}
+                <div class="mt-2 text-xs text-red-600">{deleteCommentErrors[comment.id]}</div>
               {/if}
 
               {#if editingCommentId !== comment.id && comment.links?.length}
@@ -512,19 +560,29 @@
                           <span class="text-gray-400 text-xs">·</span>
                           <RelativeTime dateString={reply.createdAt} className="text-gray-500 text-xs" />
                           <EditedBadge createdAt={reply.createdAt} updatedAt={reply.updatedAt} />
-                          {#if $currentUser?.id === reply.userId}
-                            <div class="ml-auto">
+                          {#if $currentUser?.id === reply.userId || $isAdmin}
+                            <div class="ml-auto flex items-center gap-2">
+                              {#if $currentUser?.id === reply.userId}
+                                <button
+                                  type="button"
+                                  class="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                                  on:click={() => startEdit(reply.id, reply.content)}
+                                >
+                                  <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path
+                                      d="M4 13.5V16h2.5l7.35-7.35-2.5-2.5L4 13.5zM16.85 5.65a.5.5 0 000-.7l-1.8-1.8a.5.5 0 00-.7 0l-1.6 1.6 2.5 2.5 1.6-1.6z"
+                                    />
+                                  </svg>
+                                  <span>Edit</span>
+                                </button>
+                              {/if}
                               <button
                                 type="button"
-                                class="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-                                on:click={() => startEdit(reply.id, reply.content)}
+                                class="inline-flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-60"
+                                on:click={() => deleteComment(reply.id)}
+                                disabled={deletingCommentIds.has(reply.id)}
                               >
-                                <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                  <path
-                                    d="M4 13.5V16h2.5l7.35-7.35-2.5-2.5L4 13.5zM16.85 5.65a.5.5 0 000-.7l-1.8-1.8a.5.5 0 00-.7 0l-1.6 1.6 2.5 2.5 1.6-1.6z"
-                                  />
-                                </svg>
-                                <span>Edit</span>
+                                {deletingCommentIds.has(reply.id) ? 'Deleting...' : 'Delete'}
                               </button>
                             </div>
                           {/if}
@@ -564,6 +622,9 @@
                             className="text-gray-800 text-sm whitespace-pre-wrap break-words"
                             linkClassName="text-blue-600 hover:text-blue-800 underline"
                           />
+                          {#if deleteCommentErrors[reply.id]}
+                            <div class="mt-2 text-xs text-red-600">{deleteCommentErrors[reply.id]}</div>
+                          {/if}
                           <div class="mt-2">
                             <ReactionBar
                               reactionCounts={reply.reactionCounts ?? {}}
