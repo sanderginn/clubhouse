@@ -15,6 +15,7 @@
     492,
     493,
     495,
+    496,
     497,
     498
   ],
@@ -248,7 +249,7 @@
     {
       "issue_number": 496,
       "title": "User tagging with @ does not work",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         489,
         490
@@ -263,7 +264,9 @@
       "assigned_to": "agent-1769800941-60613",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769800941-60613",
       "branch": "fix/issue-496-user-tagging-with-does-not-work",
-      "claimed_at": "2026-01-30T19:22:21Z"
+      "claimed_at": "2026-01-30T19:22:21Z",
+      "pr_number": 506,
+      "completed_at": "2026-01-30T20:06:30Z"
     },
     {
       "issue_number": 497,
