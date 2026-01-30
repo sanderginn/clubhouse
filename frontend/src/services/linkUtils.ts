@@ -15,6 +15,10 @@ const IMAGE_FORMATS = new Set([
   'tiff',
   'image',
 ]);
+const INTERNAL_UPLOAD_URL_PATTERN =
+  /(?:https?:\/\/[^\s<>"{}|\\^`[\]]*\/api\/v1\/uploads[^\s<>"{}|\\^`[\]]*|\/api\/v1\/uploads[^\s<>"{}|\\^`[\]]*)/gi;
+const INTERNAL_UPLOAD_MATCH = /^(?:https?:\/\/[^/]+)?\/api\/v1\/uploads(?:\/|$)/i;
+const TRAILING_PUNCTUATION = /[).,;:!?]+$/;
 
 export function looksLikeImageUrl(value: string): boolean {
   if (!value) {
@@ -31,6 +35,23 @@ export function looksLikeImageUrl(value: string): boolean {
   }
 
   return IMAGE_FORMATS.has(match[1]);
+}
+
+export function isInternalUploadUrl(value: string): boolean {
+  if (!value) {
+    return false;
+  }
+  return INTERNAL_UPLOAD_MATCH.test(value.trim());
+}
+
+export function stripInternalUploadUrls(value: string): string {
+  if (!value) {
+    return value;
+  }
+  return value.replace(INTERNAL_UPLOAD_URL_PATTERN, (match) => {
+    const trailing = match.match(TRAILING_PUNCTUATION)?.[0] ?? '';
+    return trailing;
+  });
 }
 
 export function getImageLinkUrl(link?: Link): string | undefined {

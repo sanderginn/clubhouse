@@ -90,6 +90,24 @@ describe('PostCard', () => {
     expect(screen.getByRole('img', { name: 'Uploaded image' })).toBeInTheDocument();
   });
 
+  it('hides internal upload URLs from post content when an image is rendered', () => {
+    const postWithInternalImage: Post = {
+      ...basePost,
+      content: 'Look /api/v1/uploads/user-1/photo.png',
+      links: [
+        {
+          url: '/api/v1/uploads/user-1/photo.png',
+        },
+      ],
+    };
+
+    render(PostCard, { post: postWithInternalImage });
+
+    expect(screen.getByRole('img', { name: 'Uploaded image' })).toBeInTheDocument();
+    expect(screen.getByText('Look')).toBeInTheDocument();
+    expect(screen.queryByText('/api/v1/uploads/user-1/photo.png')).not.toBeInTheDocument();
+  });
+
   it('shows avatar fallback when no profile image', () => {
     render(PostCard, { post: basePost });
     expect(screen.getByText('S')).toBeInTheDocument();

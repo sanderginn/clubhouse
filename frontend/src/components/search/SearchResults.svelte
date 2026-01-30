@@ -24,6 +24,7 @@
   import { buildProfileHref, handleProfileNavigation } from '../../services/profileNavigation';
   import { buildThreadHref, pushPath } from '../../services/routeNavigation';
   import { getSectionSlug } from '../../services/sectionSlug';
+  import { getImageLinkUrl, isInternalUploadUrl, stripInternalUploadUrls } from '../../services/linkUtils';
   import type { Post } from '../../stores/postStore';
   import type { CommentResult, SearchResult } from '../../stores/searchStore';
   import { logError } from '../../lib/observability/logger';
@@ -307,6 +308,14 @@
                 {@const parentPost = result.post}
                 <article class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 space-y-4">
                   {#if parentPost}
+                    {@const parentPostHasInternalImage =
+                      parentPost.links?.some((link) => isInternalUploadUrl(link.url) && getImageLinkUrl(link)) ??
+                      false}
+                    {@const parentPostContent = parentPostHasInternalImage
+                      ? stripInternalUploadUrls(parentPost.content)
+                      : parentPost.content}
+                    {@const parentPostLink =
+                      parentPost.links?.find((link) => !isInternalUploadUrl(link.url)) ?? null}
                     <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
                       <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
                         <div class="flex items-center gap-2">
@@ -345,17 +354,17 @@
                             <EditedBadge createdAt={parentPost.createdAt} updatedAt={parentPost.updatedAt} />
                           </div>
                           <p class="text-gray-800 text-sm whitespace-pre-wrap break-words line-clamp-3">
-                            {parentPost.content}
+                            {parentPostContent}
                           </p>
-                          {#if parentPost.links && parentPost.links.length > 0}
+                          {#if parentPostLink}
                             <div class="mt-2 text-xs text-blue-600 break-all">
                               <a
-                                href={parentPost.links[0].url}
+                                href={parentPostLink.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 class="underline"
                               >
-                                {parentPost.links[0].url}
+                                {parentPostLink.url}
                               </a>
                             </div>
                           {/if}

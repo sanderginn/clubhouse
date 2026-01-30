@@ -10,7 +10,7 @@
   import { buildProfileHref, handleProfileNavigation } from '../services/profileNavigation';
   import { buildThreadHref } from '../services/routeNavigation';
   import LinkifiedText from './LinkifiedText.svelte';
-  import { getImageLinkUrl } from '../services/linkUtils';
+  import { getImageLinkUrl, isInternalUploadUrl, stripInternalUploadUrls } from '../services/linkUtils';
   import { sections } from '../stores/sectionStore';
   import { getSectionSlugById } from '../services/sectionSlug';
   import { logError } from '../lib/observability/logger';
@@ -157,6 +157,11 @@
   $: link = post.links?.[0];
   $: metadata = link?.metadata;
   $: imageUrl = getImageLinkUrl(link);
+  $: isInternalUploadLink = link ? isInternalUploadUrl(link.url) : false;
+  $: displayContent =
+    !isEditing && imageUrl && isInternalUploadLink
+      ? stripInternalUploadUrls(post.content)
+      : post.content;
   $: canEdit = $currentUser?.id === post.userId;
 
   let imageLoadFailed = false;
@@ -298,7 +303,7 @@
         </div>
       {:else}
         <LinkifiedText
-          text={post.content}
+          text={displayContent}
           className="text-gray-800 whitespace-pre-wrap break-words mb-3"
         />
       {/if}
@@ -321,15 +326,17 @@
             />
           {/if}
         </div>
-        <a
-          href={link.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm break-all"
-        >
-          <span>🔗</span>
-          <span class="underline">{link.url}</span>
-        </a>
+        {#if !isInternalUploadLink}
+          <a
+            href={link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm break-all"
+          >
+            <span>🔗</span>
+            <span class="underline">{link.url}</span>
+          </a>
+        {/if}
       {:else if !isEditing && link && metadata}
         <a
           href={link.url}
