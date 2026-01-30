@@ -848,7 +848,7 @@
       },
       "id": 11,
       "options": {
-        "content": "## Pre-built Log Queries\n\n- `{job=\"clubhouse\"} |= \"error\" | json`\n- `{job=\"clubhouse\"} | json | level=\"error\" | line_format \"{{.message}}\"`\n- `{job=\"clubhouse\"} | json | error_code != \"\"`\n\nTip: combine with `$severity`, `$error_code`, and `$user_id` filters in this dashboard.",
+        "content": "## Pre-built Log Queries\n\n- `{job=\"clubhouse\"} | json | severity=\"ERROR\"`\n- `{job=\"clubhouse\"} | json | severity=\"ERROR\" | line_format \"{{.message}}\"`\n- `{job=\"clubhouse\"} | json | label_format error_code=\"{{ index .attributes \\\"error.code\\\" }}\" | error_code != \"\"`\n\nTip: combine with `$severity`, `$error_code`, and `$user_id` filters in this dashboard.",
         "mode": "markdown"
       },
       "targets": [],
