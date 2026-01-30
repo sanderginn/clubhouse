@@ -360,7 +360,7 @@
     {
       "issue_number": 512,
       "title": "Fix search box: don't clear container until search is executed",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 1,
@@ -368,7 +368,11 @@
         "bug",
         "frontend",
         "ux"
-      ]
+      ],
+      "assigned_to": "agent-1769813435-76423",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769813435-76423",
+      "branch": "fix/issue-512-fix-search-box-dont-clear-container-unti",
+      "claimed_at": "2026-01-30T22:50:35Z"
     },
     {
       "issue_number": 513,
