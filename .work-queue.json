@@ -19,6 +19,7 @@
     496,
     497,
     498,
+    509,
     512,
     513,
     530
@@ -321,7 +322,7 @@
     {
       "issue_number": 509,
       "title": "Add delete button for posts and comments",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 0,
@@ -333,7 +334,9 @@
       "assigned_to": "agent-1769813433-76403",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769813433-76403",
       "branch": "fix/issue-509-add-delete-button-for-posts-and-comments",
-      "claimed_at": "2026-01-30T22:50:33Z"
+      "claimed_at": "2026-01-30T22:50:33Z",
+      "pr_number": 534,
+      "completed_at": "2026-01-30T23:14:56Z"
     },
     {
       "issue_number": 510,
