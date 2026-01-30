@@ -575,7 +575,7 @@
     {
       "issue_number": 422,
       "title": "[Medium] Add missing metrics (search, cache, uploads, admin actions)",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         415
       ],
@@ -584,7 +584,11 @@
       "labels": [
         "observability",
         "backend"
-      ]
+      ],
+      "assigned_to": "agent-1769765919-19187",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769765919-19187",
+      "branch": "feat/issue-422-medium-add-missing-metrics-search-cache-",
+      "claimed_at": "2026-01-30T09:38:39Z"
     },
     {
       "issue_number": 423,
