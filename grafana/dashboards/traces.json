@@ -490,7 +490,7 @@
             "uid": "tempo"
           },
           "queryType": "traceql",
-          "query": "{resource.service.name=\"$service\", span.name=\"$operation\", status.code=\"$status\"} | duration > ${min_duration_ms}ms",
+          "query": "{resource.service.name=\"$service\", span.name=\"$operation\", status.code=\"$status\"} | duration > ${min_duration_ms}ms | span[\"$tag_key\"] = \"$tag_value\"",
           "limit": 200,
           "refId": "A"
         }
@@ -647,6 +647,41 @@
         "query": "50,100,250,500,1000,2000",
         "skipUrlSync": false,
         "type": "custom"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "user_id",
+          "value": "user_id"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "tag_key",
+        "options": [
+          {"selected": true, "text": "user_id", "value": "user_id"},
+          {"selected": false, "text": "post_id", "value": "post_id"},
+          {"selected": false, "text": "comment_id", "value": "comment_id"},
+          {"selected": false, "text": "section_id", "value": "section_id"}
+        ],
+        "query": "user_id,post_id,comment_id,section_id",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "tag_value",
+        "options": [],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
       },
       {
         "current": {
