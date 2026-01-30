@@ -58,7 +58,12 @@ func main() {
 	// Initialize database
 	dbConn, err := db.Init(ctx)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to initialize database: %v\n", err)
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to initialize database",
+			Code:       "DB_INIT_FAILED",
+			StatusCode: http.StatusInternalServerError,
+			Err:        err,
+		})
 		os.Exit(1)
 	}
 	defer dbConn.Close()
@@ -100,7 +105,12 @@ func main() {
 	// Initialize Redis
 	redisConn, err := cache.Init(ctx)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to initialize Redis: %v\n", err)
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to initialize redis",
+			Code:       "REDIS_INIT_FAILED",
+			StatusCode: http.StatusInternalServerError,
+			Err:        err,
+		})
 		os.Exit(1)
 	}
 	defer redisConn.Close()
@@ -389,9 +399,14 @@ func main() {
 
 	// Start server in goroutine
 	go func() {
-		fmt.Printf("Starting HTTP server on %s\n", server.Addr)
+		observability.LogInfo(ctx, "starting http server", "addr", server.Addr)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			fmt.Fprintf(os.Stderr, "server error: %v\n", err)
+			observability.LogError(ctx, observability.ErrorLog{
+				Message:    "server error",
+				Code:       "SERVER_START_FAILED",
+				StatusCode: http.StatusInternalServerError,
+				Err:        err,
+			})
 			os.Exit(1)
 		}
 	}()
@@ -402,14 +417,19 @@ func main() {
 	<-sigChan
 
 	// Graceful shutdown
-	fmt.Println("Shutting down server...")
+	observability.LogInfo(ctx, "shutting down server")
 	ctxShutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctxShutdown); err != nil {
-		fmt.Fprintf(os.Stderr, "server shutdown error: %v\n", err)
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "server shutdown error",
+			Code:       "SERVER_SHUTDOWN_FAILED",
+			StatusCode: http.StatusInternalServerError,
+			Err:        err,
+		})
 		os.Exit(1)
 	}
 
-	fmt.Println("Server stopped")
+	observability.LogInfo(ctx, "server stopped")
 }
