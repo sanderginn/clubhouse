@@ -137,6 +137,66 @@ func TestCreatePostRequiresContentOrLinks(t *testing.T) {
 	}
 }
 
+func TestUpdatePostCreatesAuditLogWithMetadata(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "updatepostuser", "updatepost@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Update Post Section", "general")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Original post content")
+
+	service := NewPostService(db)
+	req := &models.UpdatePostRequest{
+		Content: "Updated post content",
+	}
+
+	_, err := service.UpdatePost(context.Background(), uuid.MustParse(postID), uuid.MustParse(userID), req)
+	if err != nil {
+		t.Fatalf("UpdatePost failed: %v", err)
+	}
+
+	var metadataBytes []byte
+	err = db.QueryRow(`
+		SELECT metadata
+		FROM audit_logs
+		WHERE admin_user_id = $1 AND action = 'update_post'
+	`, userID).Scan(&metadataBytes)
+	if err != nil {
+		t.Fatalf("failed to query audit log: %v", err)
+	}
+
+	var metadata map[string]interface{}
+	if err := json.Unmarshal(metadataBytes, &metadata); err != nil {
+		t.Fatalf("failed to unmarshal metadata: %v", err)
+	}
+	if metadata["post_id"] != postID {
+		t.Errorf("expected post_id %s, got %v", postID, metadata["post_id"])
+	}
+	if metadata["section_id"] != sectionID {
+		t.Errorf("expected section_id %s, got %v", sectionID, metadata["section_id"])
+	}
+	if metadata["previous_content"] != "Original post content" {
+		t.Errorf("expected previous_content %q, got %v", "Original post content", metadata["previous_content"])
+	}
+	if metadata["content_excerpt"] != "Updated post content" {
+		t.Errorf("expected content_excerpt %q, got %v", "Updated post content", metadata["content_excerpt"])
+	}
+	linksChanged, ok := metadata["links_changed"].(bool)
+	if !ok {
+		t.Fatalf("expected links_changed to be bool, got %T", metadata["links_changed"])
+	}
+	if linksChanged {
+		t.Errorf("expected links_changed false, got %v", linksChanged)
+	}
+	linksProvided, ok := metadata["links_provided"].(bool)
+	if !ok {
+		t.Fatalf("expected links_provided to be bool, got %T", metadata["links_provided"])
+	}
+	if linksProvided {
+		t.Errorf("expected links_provided false, got %v", linksProvided)
+	}
+}
+
 func TestDeletePostOwner(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })

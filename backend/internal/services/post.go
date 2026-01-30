@@ -167,11 +167,13 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 	linksChanged := false
 
 	var ownerID uuid.UUID
+	var previousContent string
+	var sectionID uuid.UUID
 	err := s.db.QueryRowContext(ctx, `
-		SELECT user_id
+		SELECT user_id, content, section_id
 		FROM posts
 		WHERE id = $1 AND deleted_at IS NULL
-	`, postID).Scan(&ownerID)
+	`, postID).Scan(&ownerID, &previousContent, &sectionID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("post not found")
@@ -237,11 +239,20 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 		}
 	}
 
-	_, err = tx.ExecContext(ctx, `
-		INSERT INTO audit_logs (admin_user_id, action, related_post_id, related_user_id, created_at)
-		VALUES ($1, 'update_post', $2, $3, now())
-	`, userID, postID, ownerID)
-	if err != nil {
+	metadata := map[string]interface{}{
+		"post_id":          postID.String(),
+		"section_id":       sectionID.String(),
+		"content_excerpt":  truncateAuditExcerpt(trimmedContent),
+		"previous_content": previousContent,
+		"links_changed":    linksChanged,
+		"links_provided":   req.Links != nil,
+	}
+	if req.Links != nil {
+		metadata["link_count"] = len(*req.Links)
+	}
+
+	auditService := NewAuditService(tx)
+	if err := auditService.LogAuditWithMetadata(ctx, "update_post", userID, ownerID, metadata); err != nil {
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
