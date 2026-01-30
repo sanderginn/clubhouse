@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+	"github.com/sanderginn/clubhouse/internal/observability"
 )
 
 const (
@@ -66,10 +67,12 @@ func (s *CSRFService) ValidateToken(ctx context.Context, token string, sessionID
 	value, err := s.redis.Get(ctx, key).Result()
 	if err != nil {
 		if err == redis.Nil {
+			observability.RecordCacheMiss(ctx, "csrf", "validate")
 			return ErrCSRFTokenNotFound
 		}
 		return fmt.Errorf("failed to get CSRF token from Redis: %w", err)
 	}
+	observability.RecordCacheHit(ctx, "csrf", "validate")
 
 	// Verify the token is for this session and user
 	expectedValue := fmt.Sprintf("%s:%s", sessionID, userID.String())

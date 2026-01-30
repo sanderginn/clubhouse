@@ -137,6 +137,7 @@ func (h *AdminHandler) ApproveUser(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	observability.RecordAdminAction(r.Context(), "approve_user")
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -204,6 +205,7 @@ func (h *AdminHandler) PromoteUser(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 	}
+	observability.RecordAdminAction(r.Context(), "promote_user")
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -253,6 +255,7 @@ func (h *AdminHandler) RejectUser(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	observability.RecordAdminAction(r.Context(), "reject_user")
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -309,6 +312,7 @@ func (h *AdminHandler) EnrollTOTP(w http.ResponseWriter, r *http.Request) {
 	h.logAdminAudit(r.Context(), "enroll_mfa", session.UserID, map[string]interface{}{
 		"method": "totp",
 	})
+	observability.RecordAdminAction(r.Context(), "enroll_mfa")
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -379,6 +383,7 @@ func (h *AdminHandler) VerifyTOTP(w http.ResponseWriter, r *http.Request) {
 	h.logAdminAudit(r.Context(), "enable_mfa", session.UserID, map[string]interface{}{
 		"method": "totp",
 	})
+	observability.RecordAdminAction(r.Context(), "enable_mfa")
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -429,6 +434,7 @@ func (h *AdminHandler) HardDeletePost(w http.ResponseWriter, r *http.Request) {
 		ID:      postID,
 		Message: "Post permanently deleted",
 	}
+	observability.RecordAdminAction(r.Context(), "hard_delete_post")
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -479,6 +485,7 @@ func (h *AdminHandler) HardDeleteComment(w http.ResponseWriter, r *http.Request)
 		ID:      commentID,
 		Message: "Comment permanently deleted",
 	}
+	observability.RecordAdminAction(r.Context(), "hard_delete_comment")
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -531,6 +538,7 @@ func (h *AdminHandler) AdminRestorePost(w http.ResponseWriter, r *http.Request) 
 	response := models.RestorePostResponse{
 		Post: *post,
 	}
+	observability.RecordAdminAction(r.Context(), "restore_post")
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -583,6 +591,7 @@ func (h *AdminHandler) AdminRestoreComment(w http.ResponseWriter, r *http.Reques
 	response := models.RestoreCommentResponse{
 		Comment: *comment,
 	}
+	observability.RecordAdminAction(r.Context(), "restore_comment")
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -666,6 +675,7 @@ func (h *AdminHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 			"old_value": previousConfig.LinkMetadataEnabled,
 			"new_value": config.LinkMetadataEnabled,
 		})
+		observability.RecordAdminAction(r.Context(), "toggle_link_metadata")
 	}
 	if mfaRequired != nil && previousConfig.MFARequired != config.MFARequired {
 		h.logAdminAudit(r.Context(), "toggle_mfa_requirement", uuid.Nil, map[string]interface{}{
@@ -673,6 +683,7 @@ func (h *AdminHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 			"old_value": previousConfig.MFARequired,
 			"new_value": config.MFARequired,
 		})
+		observability.RecordAdminAction(r.Context(), "toggle_mfa_requirement")
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -1218,6 +1229,7 @@ func (h *AdminHandler) GeneratePasswordResetToken(w http.ResponseWriter, r *http
 		ExpiresAt: token.ExpiresAt,
 	}
 	h.logAdminAudit(r.Context(), "generate_password_reset_token", req.UserID, nil)
+	observability.RecordAdminAction(r.Context(), "generate_password_reset_token")
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

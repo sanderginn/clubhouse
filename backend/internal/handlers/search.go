@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/middleware"
@@ -85,8 +86,10 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 		limit = parsedLimit
 	}
 
+	searchStart := time.Now()
 	meaningful, err := h.searchService.IsQueryMeaningful(r.Context(), q)
 	if err != nil {
+		observability.RecordSearchFailure(r.Context(), scope, "query_check_failed")
 		writeError(r.Context(), w, http.StatusInternalServerError, "SEARCH_FAILED", "Failed to search")
 		return
 	}
@@ -100,9 +103,11 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 
 	results, err := h.searchService.Search(r.Context(), q, scope, sectionID, limit, userID)
 	if err != nil {
+		observability.RecordSearchFailure(r.Context(), scope, "search_failed")
 		writeError(r.Context(), w, http.StatusInternalServerError, "SEARCH_FAILED", "Failed to search")
 		return
 	}
+	observability.RecordSearchRequest(r.Context(), scope, len(results) > 0, time.Since(searchStart))
 
 	response := models.SearchResponse{Results: results}
 	w.Header().Set("Content-Type", "application/json")

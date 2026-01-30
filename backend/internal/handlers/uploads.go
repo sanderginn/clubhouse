@@ -73,12 +73,14 @@ func (h *UploadHandler) UploadDir() string {
 // UploadImage handles POST /api/v1/uploads.
 func (h *UploadHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
+		observability.RecordUploadFailure(r.Context(), "method_not_allowed")
 		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST requests are allowed")
 		return
 	}
 
 	userID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil || userID == uuid.Nil {
+		observability.RecordUploadFailure(r.Context(), "unauthorized")
 		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
 		return
 	}
@@ -86,9 +88,11 @@ func (h *UploadHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, h.maxBytes+uploadFormOverhead)
 	if err := r.ParseMultipartForm(h.maxBytes); err != nil {
 		if isRequestBodyTooLarge(err) {
+			observability.RecordUploadFailure(r.Context(), "file_too_large")
 			writeError(r.Context(), w, http.StatusRequestEntityTooLarge, "FILE_TOO_LARGE", "Image exceeds the upload size limit")
 			return
 		}
+		observability.RecordUploadFailure(r.Context(), "invalid_request")
 		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid upload payload")
 		return
 	}
@@ -101,15 +105,18 @@ func (h *UploadHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 	file, header, err := r.FormFile("file")
 	if err != nil {
 		if errors.Is(err, http.ErrMissingFile) {
+			observability.RecordUploadFailure(r.Context(), "file_required")
 			writeError(r.Context(), w, http.StatusBadRequest, "FILE_REQUIRED", "Select an image to upload")
 			return
 		}
+		observability.RecordUploadFailure(r.Context(), "invalid_request")
 		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid upload payload")
 		return
 	}
 	defer file.Close()
 
 	if header.Size > h.maxBytes {
+		observability.RecordUploadFailure(r.Context(), "file_too_large")
 		writeError(r.Context(), w, http.StatusRequestEntityTooLarge, "FILE_TOO_LARGE", "Image exceeds the upload size limit")
 		return
 	}
@@ -117,10 +124,12 @@ func (h *UploadHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 	sniffBuffer := make([]byte, 512)
 	n, err := io.ReadFull(file, sniffBuffer)
 	if err != nil && !errors.Is(err, io.ErrUnexpectedEOF) {
+		observability.RecordUploadFailure(r.Context(), "file_read_failed")
 		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Unable to read uploaded file")
 		return
 	}
 	if n == 0 {
+		observability.RecordUploadFailure(r.Context(), "file_empty")
 		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Uploaded file is empty")
 		return
 	}
@@ -129,12 +138,14 @@ func (h *UploadHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 	mediaType, _, _ := mime.ParseMediaType(contentType)
 	resolvedExt, ok := h.allowedTypes[mediaType]
 	if !ok {
+		observability.RecordUploadFailure(r.Context(), "invalid_type")
 		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_FILE_TYPE", "Only image uploads are supported")
 		return
 	}
 
 	userDir := filepath.Join(h.uploadDir, userID.String())
 	if err := os.MkdirAll(userDir, 0o755); err != nil {
+		observability.RecordUploadFailure(r.Context(), "store_failed")
 		writeError(r.Context(), w, http.StatusInternalServerError, "UPLOAD_FAILED", "Failed to store image")
 		return
 	}
@@ -143,15 +154,18 @@ func (h *UploadHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 	filePath := filepath.Join(userDir, fileName)
 	if err := writeUploadFile(filePath, sniffBuffer[:n], file, h.maxBytes); err != nil {
 		if errors.Is(err, errUploadTooLarge) {
+			observability.RecordUploadFailure(r.Context(), "file_too_large")
 			writeError(r.Context(), w, http.StatusRequestEntityTooLarge, "FILE_TOO_LARGE", "Image exceeds the upload size limit")
 			return
 		}
+		observability.RecordUploadFailure(r.Context(), "store_failed")
 		writeError(r.Context(), w, http.StatusInternalServerError, "UPLOAD_FAILED", "Failed to store image")
 		return
 	}
 
 	url := fmt.Sprintf("/api/v1/uploads/%s/%s", userID.String(), fileName)
 	observability.LogInfo(r.Context(), "image uploaded", "user_id", userID.String(), "path", fileName)
+	observability.RecordUploadSuccess(r.Context(), header.Size, mediaType)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
