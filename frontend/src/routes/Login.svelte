@@ -1,6 +1,7 @@
 <script lang="ts">
   import { api } from '../services/api';
-  import { authStore, type User } from '../stores';
+  import { authStore, type User, uiStore } from '../stores';
+  import { buildSettingsHref, replacePath } from '../services/routeNavigation';
 
   let username = '';
   let password = '';
@@ -10,6 +11,7 @@
   let isLoading = false;
   let needsTotp = false;
   let totpAttempted = false;
+  let mfaSetupRequired = false;
 
   interface LoginResponse {
     id: string;
@@ -39,6 +41,9 @@
     if (errorCode) {
       errorCode = null;
     }
+    if (mfaSetupRequired) {
+      mfaSetupRequired = false;
+    }
     if (totpAttempted) {
       totpAttempted = false;
     }
@@ -47,6 +52,7 @@
   async function handleSubmit() {
     error = '';
     errorCode = null;
+    mfaSetupRequired = false;
     const trimmedUsername = username.trim();
     const trimmedTotp = totpCode.replace(/\s+/g, '');
 
@@ -90,13 +96,24 @@
         totpAttempted = false;
       }
     } catch (e) {
-      const errorWithCode = e as Error & { code?: string };
-      errorCode = errorWithCode.code ?? null;
+      const errorWithCode = e as Error & { code?: string; mfaRequired?: boolean };
+      errorCode = errorWithCode.code ?? (errorWithCode.mfaRequired ? 'MFA_SETUP_REQUIRED' : null);
       if (errorWithCode.code === 'TOTP_REQUIRED') {
         needsTotp = true;
         totpAttempted = false;
         authStore.setMfaChallenge({ username: trimmedUsername });
         error = '';
+      } else if (errorWithCode.code === 'MFA_SETUP_REQUIRED' || errorWithCode.mfaRequired) {
+        needsTotp = false;
+        totpAttempted = false;
+        const hasSession = await authStore.checkSession();
+        if (hasSession) {
+          uiStore.setActiveView('settings');
+          replacePath(buildSettingsHref());
+          return;
+        }
+        mfaSetupRequired = true;
+        error = errorWithCode.message || 'Multi-factor authentication is required to continue.';
       } else if (errorWithCode.code === 'USER_NOT_APPROVED') {
         needsTotp = false;
         totpAttempted = false;
@@ -135,10 +152,19 @@
       {#if error}
         <div
           class={`rounded-md p-4 ${
-            errorCode === 'USER_NOT_APPROVED' ? 'bg-blue-50 text-blue-700' : 'bg-red-50 text-red-700'
+            errorCode === 'USER_NOT_APPROVED'
+              ? 'bg-blue-50 text-blue-700'
+              : errorCode === 'MFA_SETUP_REQUIRED'
+                ? 'bg-amber-50 text-amber-700'
+                : 'bg-red-50 text-red-700'
           }`}
         >
           <p class="text-sm">{error}</p>
+          {#if mfaSetupRequired}
+            <p class="mt-2 text-xs text-amber-700/80">
+              Finish enrollment in your account settings to regain access.
+            </p>
+          {/if}
         </div>
       {/if}
 

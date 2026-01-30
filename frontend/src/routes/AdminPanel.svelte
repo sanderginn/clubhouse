@@ -4,6 +4,7 @@
   import AuditLogs from '../components/admin/AuditLogs.svelte';
   import UserResetLinks from '../components/admin/UserResetLinks.svelte';
   import AdminTotpSetup from '../components/admin/AdminTotpSetup.svelte';
+  import AdminMfaRequirement from '../components/admin/AdminMfaRequirement.svelte';
 
   type AdminTab = 'pending' | 'users' | 'audit' | 'security';
 
@@ -104,7 +105,10 @@
       {:else if activeTab === 'audit'}
         <AuditLogs />
       {:else}
-        <AdminTotpSetup />
+        <div class="space-y-6">
+          <AdminMfaRequirement />
+          <AdminTotpSetup />
+        </div>
       {/if}
     </div>
   </section>

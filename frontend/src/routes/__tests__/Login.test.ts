@@ -166,4 +166,37 @@ describe('Login', () => {
 
     expect(await screen.findByText('Your account is awaiting admin approval.')).toBeInTheDocument();
   });
+
+  it('prompts for MFA setup when required by policy', async () => {
+    const mfaError = new Error('MFA setup required') as Error & {
+      code?: string;
+      mfaRequired?: boolean;
+    };
+    mfaError.code = 'MFA_SETUP_REQUIRED';
+    mfaError.mfaRequired = true;
+
+    apiPost.mockRejectedValueOnce(mfaError);
+
+    const checkSessionSpy = vi.spyOn(authStore, 'checkSession').mockResolvedValue(false);
+
+    render(Login, { onNavigate: vi.fn() });
+
+    await fireEvent.input(screen.getByLabelText('Username'), {
+      target: { value: 'sander' },
+    });
+    await fireEvent.input(screen.getByLabelText('Password'), {
+      target: { value: 'secret' },
+    });
+    await fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+    await waitFor(() => {
+      expect(checkSessionSpy).toHaveBeenCalled();
+    });
+
+    expect(
+      await screen.findByText('MFA setup required')
+    ).toBeInTheDocument();
+
+    checkSessionSpy.mockRestore();
+  });
 });

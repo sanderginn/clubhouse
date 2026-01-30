@@ -37,6 +37,7 @@ describe('UserResetLinks', () => {
         username: 'lena',
         email: 'lena@example.com',
         is_admin: false,
+        totp_enabled: false,
         approved_at: '2024-01-02T00:00:00Z',
         created_at: '2024-01-01T00:00:00Z',
       },
@@ -49,6 +50,7 @@ describe('UserResetLinks', () => {
     const profileLink = await screen.findByRole('link', { name: "View lena's profile" });
     expect(profileLink).toHaveAttribute('href', '/users/user-1');
     expect(screen.getByText('lena@example.com')).toBeInTheDocument();
+    expect(screen.getByText('MFA Missing')).toBeInTheDocument();
     if (typeof AbortController === 'undefined') {
       expect(apiGet).toHaveBeenCalledWith('/admin/users/approved');
     } else {
