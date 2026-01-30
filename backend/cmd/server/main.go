@@ -152,12 +152,12 @@ func main() {
 	frontendMetricsHandler := handlers.NewMetricsHandler()
 	pushHandler := handlers.NewPushHandler(dbConn, pushService)
 	uploadHandler := handlers.NewUploadHandler()
-	requireAuth := middleware.RequireAuth(redisConn)
+	requireAuth := middleware.RequireAuth(redisConn, dbConn)
 	requireCSRF := middleware.RequireCSRF(redisConn)
 	requireAuthCSRF := func(h http.Handler) http.Handler {
 		return requireAuth(requireCSRF(h))
 	}
-	requireAdmin := middleware.RequireAdmin(redisConn)
+	requireAdmin := middleware.RequireAdmin(redisConn, dbConn)
 	requireAdminCSRF := func(h http.Handler) http.Handler {
 		return requireAdmin(requireCSRF(h))
 	}
@@ -220,15 +220,15 @@ func main() {
 		}
 		// GET /api/v1/users/{id}/posts
 		if r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/posts") {
-			postsHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(userHandler.GetUserPosts))
+			postsHandler := middleware.RequireAuth(redisConn, dbConn)(http.HandlerFunc(userHandler.GetUserPosts))
 			postsHandler.ServeHTTP(w, r)
 		} else if r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/comments") {
 			// GET /api/v1/users/{id}/comments
-			commentsHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(userHandler.GetUserComments))
+			commentsHandler := middleware.RequireAuth(redisConn, dbConn)(http.HandlerFunc(userHandler.GetUserComments))
 			commentsHandler.ServeHTTP(w, r)
 		} else if r.Method == http.MethodGet {
 			// GET /api/v1/users/{id}
-			profileHandler := middleware.RequireAuth(redisConn)(http.HandlerFunc(userHandler.GetProfile))
+			profileHandler := middleware.RequireAuth(redisConn, dbConn)(http.HandlerFunc(userHandler.GetProfile))
 			profileHandler.ServeHTTP(w, r)
 		} else {
 			writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
@@ -330,6 +330,10 @@ func main() {
 			adminHandler.PromoteUser(w, r)
 		} else if strings.Contains(r.URL.Path, "/approve") {
 			adminHandler.ApproveUser(w, r)
+		} else if strings.Contains(r.URL.Path, "/unsuspend") {
+			adminHandler.UnsuspendUser(w, r)
+		} else if strings.Contains(r.URL.Path, "/suspend") {
+			adminHandler.SuspendUser(w, r)
 		} else if r.Method == http.MethodDelete {
 			adminHandler.RejectUser(w, r)
 		} else {

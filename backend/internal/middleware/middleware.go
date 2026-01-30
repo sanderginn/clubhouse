@@ -3,6 +3,7 @@ package middleware
 import (
 	"bufio"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -109,7 +110,12 @@ func (r *statusRecorder) Push(target string, opts *http.PushOptions) error {
 }
 
 // RequireAuth middleware validates session cookie and injects user context
-func RequireAuth(redis *redis.Client) Middleware {
+func RequireAuth(redis *redis.Client, db *sql.DB) Middleware {
+	var userService *services.UserService
+	if db != nil {
+		userService = services.NewUserService(db)
+	}
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Get session cookie
@@ -129,6 +135,28 @@ func RequireAuth(redis *redis.Client) Middleware {
 				return
 			}
 
+			if userService != nil {
+				suspended, err := userService.IsUserSuspended(r.Context(), session.UserID)
+				if err != nil {
+					_ = sessionService.DeleteSession(r.Context(), sessionID)
+					writeAuthError(r.Context(), w, http.StatusUnauthorized, "INVALID_SESSION", "Session not found or expired")
+					return
+				}
+				if suspended {
+					if _, err := sessionService.DeleteAllSessionsForUser(r.Context(), session.UserID); err != nil {
+						observability.LogError(r.Context(), observability.ErrorLog{
+							Message:    "failed to revoke sessions for suspended user",
+							Code:       "SESSION_REVOKE_FAILED",
+							StatusCode: http.StatusForbidden,
+							UserID:     session.UserID.String(),
+							Err:        err,
+						})
+					}
+					writeAuthError(r.Context(), w, http.StatusForbidden, "USER_SUSPENDED", "User account suspended")
+					return
+				}
+			}
+
 			// Inject session and user into context
 			ctx := context.WithValue(r.Context(), SessionIDContextKey, sessionID)
 			ctx = context.WithValue(ctx, UserContextKey, session)
@@ -144,7 +172,12 @@ func RequireAuth(redis *redis.Client) Middleware {
 }
 
 // RequireAdmin middleware validates that the authenticated user is an admin
-func RequireAdmin(redis *redis.Client) Middleware {
+func RequireAdmin(redis *redis.Client, db *sql.DB) Middleware {
+	var userService *services.UserService
+	if db != nil {
+		userService = services.NewUserService(db)
+	}
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// First, validate authentication
@@ -162,6 +195,28 @@ func RequireAdmin(redis *redis.Client) Middleware {
 			if err != nil {
 				writeAuthError(r.Context(), w, http.StatusUnauthorized, "INVALID_SESSION", "Session not found or expired")
 				return
+			}
+
+			if userService != nil {
+				suspended, err := userService.IsUserSuspended(r.Context(), session.UserID)
+				if err != nil {
+					_ = sessionService.DeleteSession(r.Context(), sessionID)
+					writeAuthError(r.Context(), w, http.StatusUnauthorized, "INVALID_SESSION", "Session not found or expired")
+					return
+				}
+				if suspended {
+					if _, err := sessionService.DeleteAllSessionsForUser(r.Context(), session.UserID); err != nil {
+						observability.LogError(r.Context(), observability.ErrorLog{
+							Message:    "failed to revoke sessions for suspended admin",
+							Code:       "SESSION_REVOKE_FAILED",
+							StatusCode: http.StatusForbidden,
+							UserID:     session.UserID.String(),
+							Err:        err,
+						})
+					}
+					writeAuthError(r.Context(), w, http.StatusForbidden, "USER_SUSPENDED", "User account suspended")
+					return
+				}
 			}
 
 			// Check if user is admin

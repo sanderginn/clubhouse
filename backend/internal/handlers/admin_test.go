@@ -285,6 +285,151 @@ func TestPromoteUserCannotPromoteSelf(t *testing.T) {
 	}
 }
 
+func TestSuspendUser(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	redisServer := miniredis.RunT(t)
+	redisClient := redis.NewClient(&redis.Options{Addr: redisServer.Addr()})
+
+	adminID := uuid.New()
+	_, err := db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'suspendadmin', 'suspendadmin@example.com', '$2a$12$test', true, now(), now())
+	`, adminID)
+	if err != nil {
+		t.Fatalf("failed to create admin user: %v", err)
+	}
+
+	userID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'suspenduser', 'suspenduser@example.com', '$2a$12$test', false, now(), now())
+	`, userID)
+	if err != nil {
+		t.Fatalf("failed to create user: %v", err)
+	}
+
+	sessionService := services.NewSessionService(redisClient)
+	session, err := sessionService.CreateSession(t.Context(), userID, "suspenduser", false)
+	if err != nil {
+		t.Fatalf("failed to create session: %v", err)
+	}
+
+	handler := NewAdminHandler(db, redisClient)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/users/"+userID.String()+"/suspend", strings.NewReader(`{"reason":"spam"}`))
+	req = req.WithContext(createTestUserContext(req.Context(), adminID, "suspendadmin", true))
+	w := httptest.NewRecorder()
+
+	handler.SuspendUser(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response models.SuspendUserResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if response.ID != userID {
+		t.Fatalf("expected user ID %s, got %s", userID, response.ID)
+	}
+	if response.SuspendedAt.IsZero() {
+		t.Fatalf("expected suspended_at to be set")
+	}
+
+	var suspendedAt sql.NullTime
+	if err := db.QueryRow("SELECT suspended_at FROM users WHERE id = $1", userID).Scan(&suspendedAt); err != nil {
+		t.Fatalf("failed to query user: %v", err)
+	}
+	if !suspendedAt.Valid {
+		t.Fatalf("expected suspended_at to be set")
+	}
+
+	var auditMetadata []byte
+	err = db.QueryRow(`
+		SELECT metadata
+		FROM audit_logs
+		WHERE action = 'suspend_user' AND admin_user_id = $1 AND related_user_id = $2
+	`, adminID, userID).Scan(&auditMetadata)
+	if err != nil {
+		t.Fatalf("failed to query audit log: %v", err)
+	}
+
+	var metadata map[string]interface{}
+	if err := json.Unmarshal(auditMetadata, &metadata); err != nil {
+		t.Fatalf("failed to unmarshal audit metadata: %v", err)
+	}
+	if metadata["reason"] != "spam" {
+		t.Fatalf("expected reason metadata to be %q, got %v", "spam", metadata["reason"])
+	}
+
+	if _, err := sessionService.GetSession(t.Context(), session.ID); err == nil {
+		t.Fatalf("expected session to be revoked")
+	}
+}
+
+func TestUnsuspendUser(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	adminID := uuid.New()
+	_, err := db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'unsuspendadmin', 'unsuspendadmin@example.com', '$2a$12$test', true, now(), now())
+	`, adminID)
+	if err != nil {
+		t.Fatalf("failed to create admin user: %v", err)
+	}
+
+	userID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, suspended_at, created_at)
+		VALUES ($1, 'unsuspenduser', 'unsuspenduser@example.com', '$2a$12$test', false, now(), now(), now())
+	`, userID)
+	if err != nil {
+		t.Fatalf("failed to create user: %v", err)
+	}
+
+	handler := NewAdminHandler(db, nil)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/users/"+userID.String()+"/unsuspend", nil)
+	req = req.WithContext(createTestUserContext(req.Context(), adminID, "unsuspendadmin", true))
+	w := httptest.NewRecorder()
+
+	handler.UnsuspendUser(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response models.UnsuspendUserResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if response.ID != userID {
+		t.Fatalf("expected user ID %s, got %s", userID, response.ID)
+	}
+
+	var suspendedAt sql.NullTime
+	if err := db.QueryRow("SELECT suspended_at FROM users WHERE id = $1", userID).Scan(&suspendedAt); err != nil {
+		t.Fatalf("failed to query user: %v", err)
+	}
+	if suspendedAt.Valid {
+		t.Fatalf("expected suspended_at to be cleared")
+	}
+
+	var auditCount int
+	err = db.QueryRow("SELECT COUNT(*) FROM audit_logs WHERE action = 'unsuspend_user' AND admin_user_id = $1 AND related_user_id = $2", adminID, userID).Scan(&auditCount)
+	if err != nil {
+		t.Fatalf("failed to query audit log count: %v", err)
+	}
+	if auditCount != 1 {
+		t.Fatalf("expected 1 audit log entry, found %d", auditCount)
+	}
+}
+
 // TestRejectUser tests rejecting a pending user
 func TestRejectUser(t *testing.T) {
 	db := testutil.RequireTestDB(t)
