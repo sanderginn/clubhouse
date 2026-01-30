@@ -134,6 +134,72 @@ func TestGetProfileInvalidID(t *testing.T) {
 	}
 }
 
+func TestAutocompleteUsers(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	testutil.CreateTestUser(t, db, "alice", "alice@example.com", false, true)
+	testutil.CreateTestUser(t, db, "alex", "alex@example.com", false, true)
+	testutil.CreateTestUser(t, db, "bob", "bob@example.com", false, true)
+	testutil.CreateTestUser(t, db, "pendinguser", "pending@example.com", false, false)
+
+	handler := NewUserHandler(db)
+	req := httptest.NewRequest("GET", "/api/v1/users/autocomplete?q=al&limit=5", nil)
+	w := httptest.NewRecorder()
+
+	handler.AutocompleteUsers(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response models.UserAutocompleteResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if len(response.Users) < 2 {
+		t.Fatalf("expected at least 2 users, got %d", len(response.Users))
+	}
+
+	found := map[string]bool{}
+	for _, user := range response.Users {
+		found[user.Username] = true
+	}
+	if !found["alice"] || !found["alex"] {
+		t.Fatalf("expected users alice and alex, got %+v", response.Users)
+	}
+}
+
+func TestLookupUserByUsername(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := uuid.MustParse(testutil.CreateTestUser(t, db, "Sander", "sander@example.com", false, true))
+	handler := NewUserHandler(db)
+
+	req := httptest.NewRequest("GET", "/api/v1/users/lookup?username=sander", nil)
+	w := httptest.NewRecorder()
+
+	handler.LookupUserByUsername(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response models.UserLookupResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if response.User.ID != userID {
+		t.Errorf("expected user ID %s, got %s", userID, response.User.ID)
+	}
+	if response.User.Username != "Sander" {
+		t.Errorf("expected username Sander, got %s", response.User.Username)
+	}
+}
+
 // TestGetProfileMethodNotAllowed tests with non-GET method
 func TestGetProfileMethodNotAllowed(t *testing.T) {
 	db := testutil.RequireTestDB(t)

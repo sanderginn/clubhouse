@@ -42,6 +42,12 @@ export interface ApiReactionGroup {
   users: ApiReactionUser[];
 }
 
+export interface ApiUserSummary {
+  id: string;
+  username: string;
+  profile_picture_url?: string | null;
+}
+
 class ApiClient {
   private tracer = trace.getTracer('clubhouse-frontend');
   private csrfToken: string | null = null;
@@ -257,6 +263,22 @@ class ApiClient {
 
   async delete<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, { method: 'DELETE' });
+  }
+
+  async searchUsers(query: string, limit = 8): Promise<{ users: ApiUserSummary[] }> {
+    const params = new URLSearchParams();
+    if (query) {
+      params.set('q', query);
+    } else {
+      params.set('q', '');
+    }
+    params.set('limit', String(limit));
+    return this.get(`/users/autocomplete?${params.toString()}`);
+  }
+
+  async lookupUserByUsername(username: string): Promise<{ user: ApiUserSummary }> {
+    const params = new URLSearchParams({ username });
+    return this.get(`/users/lookup?${params.toString()}`);
   }
 
   private async uploadWithRetry(

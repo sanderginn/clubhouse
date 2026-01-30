@@ -50,6 +50,8 @@
   let stats: { postCount: number; commentCount: number } | null = null;
   let isLoadingProfile = false;
   let profileError: string | null = null;
+  let resolvedUserId: string | null = null;
+  let resolveRequestId = 0;
 
   let posts: Post[] = [];
   let postsCursor: string | null = null;
@@ -98,13 +100,11 @@
   }
 
   $: if (userId) {
-    resetProfile();
-    void loadProfile(userId);
-    void loadPosts(userId, true);
+    void resolveProfileTarget(userId);
   }
 
-  $: if (userId && activeTab === 'comments' && !commentsLoaded && !commentsLoading) {
-    void loadComments(userId, true);
+  $: if (resolvedUserId && activeTab === 'comments' && !commentsLoaded && !commentsLoading) {
+    void loadComments(resolvedUserId, true);
   }
 
   function resetProfile() {
@@ -143,6 +143,36 @@
     activeTab = 'posts';
   }
 
+  function isUuid(value: string): boolean {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      value
+    );
+  }
+
+  async function resolveProfileTarget(identifier: string) {
+    const requestId = (resolveRequestId += 1);
+    resetProfile();
+    resolvedUserId = null;
+    profileError = null;
+
+    try {
+      if (isUuid(identifier)) {
+        resolvedUserId = identifier;
+      } else {
+        const response = await api.lookupUserByUsername(identifier);
+        resolvedUserId = response.user.id;
+      }
+    } catch (error) {
+      if (requestId !== resolveRequestId) return;
+      profileError = error instanceof Error ? error.message : 'User not found.';
+      return;
+    }
+
+    if (requestId !== resolveRequestId || !resolvedUserId) return;
+    void loadProfile(resolvedUserId);
+    void loadPosts(resolvedUserId, true);
+  }
+
   async function loadProfile(id: string) {
     currentController?.abort();
     const controller = new AbortController();
@@ -153,7 +183,7 @@
     try {
       const response = await api.get<ApiProfileResponse>(`/users/${id}`, { signal: controller.signal });
 
-      if (currentController !== controller || id !== userId) return;
+      if (currentController !== controller || id !== resolvedUserId) return;
 
       const { user: apiUser, stats: apiStats } = normalizeProfileResponse(response);
       profile = {
@@ -168,7 +198,7 @@
         commentCount: apiStats.commentCount ?? apiStats.comment_count ?? 0,
       };
     } catch (error) {
-      if (currentController !== controller || id !== userId) return;
+      if (currentController !== controller || id !== resolvedUserId) return;
       profileError = error instanceof Error ? error.message : 'Failed to load profile.';
     } finally {
       if (currentController === controller) {
@@ -200,7 +230,7 @@
         has_more?: boolean;
       }>(`/users/${id}/posts?${params.toString()}`, { signal: controller.signal });
 
-      if (requestId !== postsRequestId || id !== userId) {
+      if (requestId !== postsRequestId || id !== resolvedUserId) {
         return;
       }
 
@@ -213,7 +243,7 @@
       postsCursor = nextCursor;
       postsHasMore = nextHasMore;
     } catch (error) {
-      if (requestId !== postsRequestId || id !== userId) {
+      if (requestId !== postsRequestId || id !== resolvedUserId) {
         return;
       }
       postsError = error instanceof Error ? error.message : 'Failed to load posts.';
@@ -247,7 +277,7 @@
         has_more?: boolean;
       }>(`/users/${id}/comments?${params.toString()}`, { signal: controller.signal });
 
-      if (requestId !== commentsRequestId || id !== userId) {
+      if (requestId !== commentsRequestId || id !== resolvedUserId) {
         return;
       }
 
@@ -261,7 +291,7 @@
       commentsHasMore = nextHasMore;
       commentsLoaded = true;
     } catch (error) {
-      if (requestId !== commentsRequestId || id !== userId) {
+      if (requestId !== commentsRequestId || id !== resolvedUserId) {
         return;
       }
       commentsError = error instanceof Error ? error.message : 'Failed to load comments.';
@@ -551,9 +581,7 @@
       <button
         on:click={() => {
           if (!userId) return;
-          resetProfile();
-          void loadProfile(userId);
-          void loadPosts(userId, true);
+          void resolveProfileTarget(userId);
         }}
         class="mt-2 text-sm text-red-700 underline hover:no-underline"
       >
@@ -638,8 +666,9 @@
             <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-600">
               <p>{postsError}</p>
               <button
-                on:click={() => userId && loadPosts(userId, true)}
+                on:click={() => resolvedUserId && loadPosts(resolvedUserId, true)}
                 class="mt-2 text-xs text-red-700 underline hover:no-underline"
+                disabled={!resolvedUserId}
               >
                 Try again
               </button>
@@ -656,9 +685,9 @@
             <div class="flex justify-center">
               <button
                 type="button"
-                on:click={() => userId && loadPosts(userId, false)}
+                on:click={() => resolvedUserId && loadPosts(resolvedUserId, false)}
                 class="text-sm text-gray-600 hover:text-gray-900"
-                disabled={postsLoading}
+                disabled={postsLoading || !resolvedUserId}
               >
                 {postsLoading ? 'Loading...' : 'Load more posts'}
               </button>
@@ -681,8 +710,9 @@
             <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-600">
               <p>{commentsError}</p>
               <button
-                on:click={() => userId && loadComments(userId, true)}
+                on:click={() => resolvedUserId && loadComments(resolvedUserId, true)}
                 class="mt-2 text-xs text-red-700 underline hover:no-underline"
+                disabled={!resolvedUserId}
               >
                 Try again
               </button>
@@ -884,9 +914,9 @@
             <div class="flex justify-center">
               <button
                 type="button"
-                on:click={() => userId && loadComments(userId, false)}
+                on:click={() => resolvedUserId && loadComments(resolvedUserId, false)}
                 class="text-sm text-gray-600 hover:text-gray-900"
-                disabled={commentsLoading}
+                disabled={commentsLoading || !resolvedUserId}
               >
                 {commentsLoading ? 'Loading...' : 'Load more comments'}
               </button>

@@ -151,7 +151,7 @@ func resolveMentionedUserIDs(ctx context.Context, userService *services.UserServ
 
 	userIDs := make([]uuid.UUID, 0, len(usernames))
 	for _, username := range usernames {
-		user, err := userService.GetUserByUsername(ctx, username)
+		user, err := userService.LookupUserByUsername(ctx, username)
 		if err != nil {
 			if err.Error() == "user not found" {
 				continue

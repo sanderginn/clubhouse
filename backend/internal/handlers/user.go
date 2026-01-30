@@ -203,6 +203,88 @@ func (h *UserHandler) GetUserComments(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// AutocompleteUsers handles GET /api/v1/users/autocomplete?q=prefix&limit=8
+func (h *UserHandler) AutocompleteUsers(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		return
+	}
+
+	query := strings.TrimSpace(r.URL.Query().Get("q"))
+	if len(query) > 50 {
+		writeError(r.Context(), w, http.StatusBadRequest, "QUERY_TOO_LONG", "Query is too long")
+		return
+	}
+
+	limit := 8
+	if limitStr := strings.TrimSpace(r.URL.Query().Get("limit")); limitStr != "" {
+		parsedLimit, err := parseIntParam(limitStr)
+		if err != nil || parsedLimit <= 0 {
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_LIMIT", "Limit must be a positive number")
+			return
+		}
+		limit = parsedLimit
+	}
+
+	users, err := h.userService.SearchUsersByUsernamePrefix(r.Context(), query, limit)
+	if err != nil {
+		writeError(r.Context(), w, http.StatusInternalServerError, "USER_SEARCH_FAILED", "Failed to search users")
+		return
+	}
+
+	response := models.UserAutocompleteResponse{Users: users}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode user autocomplete response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}
+
+// LookupUserByUsername handles GET /api/v1/users/lookup?username=...
+func (h *UserHandler) LookupUserByUsername(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		return
+	}
+
+	username := strings.TrimSpace(r.URL.Query().Get("username"))
+	if username == "" {
+		writeError(r.Context(), w, http.StatusBadRequest, "USERNAME_REQUIRED", "Username is required")
+		return
+	}
+	if len(username) > 50 {
+		writeError(r.Context(), w, http.StatusBadRequest, "USERNAME_TOO_LONG", "Username is too long")
+		return
+	}
+
+	user, err := h.userService.LookupUserByUsername(r.Context(), username)
+	if err != nil {
+		if err.Error() == "user not found" {
+			writeError(r.Context(), w, http.StatusNotFound, "USER_NOT_FOUND", "User not found")
+			return
+		}
+		writeError(r.Context(), w, http.StatusInternalServerError, "USER_LOOKUP_FAILED", "Failed to lookup user")
+		return
+	}
+
+	response := models.UserLookupResponse{User: *user}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode user lookup response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}
+
 // UpdateMe handles PATCH /api/v1/users/me
 func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
