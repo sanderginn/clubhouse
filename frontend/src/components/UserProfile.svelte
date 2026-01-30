@@ -581,9 +581,7 @@
       <button
         on:click={() => {
           if (!userId) return;
-          resetProfile();
-          void loadProfile(userId);
-          void loadPosts(userId, true);
+          void resolveProfileTarget(userId);
         }}
         class="mt-2 text-sm text-red-700 underline hover:no-underline"
       >
@@ -668,8 +666,9 @@
             <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-600">
               <p>{postsError}</p>
               <button
-                on:click={() => userId && loadPosts(userId, true)}
+                on:click={() => resolvedUserId && loadPosts(resolvedUserId, true)}
                 class="mt-2 text-xs text-red-700 underline hover:no-underline"
+                disabled={!resolvedUserId}
               >
                 Try again
               </button>
@@ -686,9 +685,9 @@
             <div class="flex justify-center">
               <button
                 type="button"
-                on:click={() => userId && loadPosts(userId, false)}
+                on:click={() => resolvedUserId && loadPosts(resolvedUserId, false)}
                 class="text-sm text-gray-600 hover:text-gray-900"
-                disabled={postsLoading}
+                disabled={postsLoading || !resolvedUserId}
               >
                 {postsLoading ? 'Loading...' : 'Load more posts'}
               </button>
@@ -711,8 +710,9 @@
             <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-600">
               <p>{commentsError}</p>
               <button
-                on:click={() => userId && loadComments(userId, true)}
+                on:click={() => resolvedUserId && loadComments(resolvedUserId, true)}
                 class="mt-2 text-xs text-red-700 underline hover:no-underline"
+                disabled={!resolvedUserId}
               >
                 Try again
               </button>
@@ -914,9 +914,9 @@
             <div class="flex justify-center">
               <button
                 type="button"
-                on:click={() => userId && loadComments(userId, false)}
+                on:click={() => resolvedUserId && loadComments(resolvedUserId, false)}
                 class="text-sm text-gray-600 hover:text-gray-900"
-                disabled={commentsLoading}
+                disabled={commentsLoading || !resolvedUserId}
               >
                 {commentsLoading ? 'Loading...' : 'Load more comments'}
               </button>

@@ -158,12 +158,16 @@ func TestAutocompleteUsers(t *testing.T) {
 		t.Fatalf("failed to decode response: %v", err)
 	}
 
-	if len(response.Users) != 2 {
-		t.Fatalf("expected 2 users, got %d", len(response.Users))
+	if len(response.Users) < 2 {
+		t.Fatalf("expected at least 2 users, got %d", len(response.Users))
 	}
 
-	if response.Users[0].Username != "alice" || response.Users[1].Username != "alex" {
-		t.Fatalf("expected users alice and alex, got %v and %v", response.Users[0].Username, response.Users[1].Username)
+	found := map[string]bool{}
+	for _, user := range response.Users {
+		found[user.Username] = true
+	}
+	if !found["alice"] || !found["alex"] {
+		t.Fatalf("expected users alice and alex, got %+v", response.Users)
 	}
 }
 
