@@ -996,7 +996,7 @@
           "refId": "A"
         }
       ],
-      "title": "Session Error Rate",
+      "title": "Errored Sessions",
       "type": "timeseries"
     },
     {
