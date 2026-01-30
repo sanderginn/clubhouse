@@ -7,6 +7,7 @@
   "completed_issues": [
     365,
     366,
+    375,
     378,
     382,
     383,
@@ -91,7 +92,7 @@
     {
       "issue_number": 375,
       "title": "Enhancement: Profile page comments show thread context with emphasis",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769769503-27836",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769769503-27836",
       "dependencies": [],
@@ -105,7 +106,9 @@
         "ui"
       ],
       "branch": "feat/issue-375-enhancement-profile-page-comments-show-t",
-      "claimed_at": "2026-01-30T10:38:23Z"
+      "claimed_at": "2026-01-30T10:38:23Z",
+      "pr_number": 478,
+      "completed_at": "2026-01-30T11:02:14Z"
     },
     {
       "issue_number": 378,
