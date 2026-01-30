@@ -549,9 +549,7 @@
     {
       "issue_number": 421,
       "title": "[Medium] Add audit logging for reaction operations",
-      "status": "in_progress",
-      "assigned_to": "agent-1769765365-6921",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769765365-6921",
+      "status": "available",
       "dependencies": [
         415
       ],
@@ -560,16 +558,12 @@
       "labels": [
         "observability",
         "backend"
-      ],
-      "branch": "feat/issue-421-medium-add-audit-logging-for-reaction-op",
-      "claimed_at": "2026-01-30T09:29:25Z"
+      ]
     },
     {
       "issue_number": 422,
       "title": "[Medium] Add missing metrics (search, cache, uploads, admin actions)",
-      "status": "in_progress",
-      "assigned_to": "agent-1769765368-7053",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769765368-7053",
+      "status": "available",
       "dependencies": [
         415
       ],
@@ -578,9 +572,7 @@
       "labels": [
         "observability",
         "backend"
-      ],
-      "branch": "feat/issue-422-medium-add-missing-metrics-search-cache-",
-      "claimed_at": "2026-01-30T09:29:28Z"
+      ]
     },
     {
       "issue_number": 423,
