@@ -123,7 +123,8 @@ describe('PostCard', () => {
     });
 
     render(PostCard, { post: basePost });
-    expect(screen.getByRole('button', { name: 'Open post actions' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Share' })).toBeInTheDocument();
   });
 
   it('hides edit action for other users', () => {
@@ -136,7 +137,8 @@ describe('PostCard', () => {
     });
 
     render(PostCard, { post: basePost });
-    expect(screen.queryByRole('button', { name: 'Open post actions' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Share' })).toBeInTheDocument();
   });
 
   it('removes only the first image link when editing', async () => {
@@ -164,8 +166,7 @@ describe('PostCard', () => {
 
     render(PostCard, { post: postWithImages });
 
-    await fireEvent.click(screen.getByRole('button', { name: 'Open post actions' }));
-    await fireEvent.click(screen.getByRole('menuitem', { name: 'Edit' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
     await fireEvent.click(screen.getByRole('button', { name: 'Remove image' }));
     await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
@@ -204,8 +205,7 @@ describe('PostCard', () => {
 
     const { container } = render(PostCard, { post: postWithImages });
 
-    await fireEvent.click(screen.getByRole('button', { name: 'Open post actions' }));
-    await fireEvent.click(screen.getByRole('menuitem', { name: 'Edit' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
 
     await fireEvent.click(screen.getByRole('button', { name: 'Replace image' }));
 
