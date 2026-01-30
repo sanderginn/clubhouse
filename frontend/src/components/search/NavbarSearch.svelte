@@ -130,11 +130,11 @@
 
   <form
     on:submit|preventDefault={handleSubmit}
-    class={`absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-md bg-white border border-gray-200 shadow-lg rounded-xl p-3 space-y-3 transform transition-all duration-200 ease-out origin-top-right ${expandedClasses} lg:static lg:mt-0 lg:w-96 lg:shadow-none lg:border-gray-200 lg:rounded-lg lg:opacity-100 lg:translate-y-0 lg:scale-100 lg:pointer-events-auto`}
+    class={`absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-md bg-white border border-gray-200 shadow-lg rounded-xl p-3 space-y-3 transform transition-all duration-200 ease-out origin-top-right ${expandedClasses} lg:static lg:mt-0 lg:w-[28rem] lg:shadow-none lg:rounded-lg lg:opacity-100 lg:translate-y-0 lg:scale-100 lg:pointer-events-auto lg:flex lg:items-center lg:gap-3 lg:space-y-0 lg:p-2`}
     aria-hidden={!isPanelActive}
     inert={!isPanelActive}
   >
-    <div class="relative">
+    <div class="relative lg:flex-1">
       <label for="navbar-search-input" class="sr-only">Search</label>
       <input
         id="navbar-search-input"
@@ -145,7 +145,7 @@
         placeholder="Search posts and comments..."
         disabled={!isPanelActive}
         tabindex={isPanelActive ? 0 : -1}
-        class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+        class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent lg:text-xs lg:py-1.5"
       />
       <svg
         class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
@@ -162,13 +162,13 @@
       </svg>
     </div>
 
-    <div class="flex flex-wrap items-center gap-2">
+    <div class="flex flex-wrap items-center gap-2 lg:flex-nowrap">
       <select
         value={scope}
         on:change={handleScopeChange}
         disabled={!isPanelActive}
         tabindex={isPanelActive ? 0 : -1}
-        class="w-full sm:w-auto min-w-[10rem] px-3 py-2 pr-8 border border-gray-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary focus:border-transparent"
+        class="w-full sm:w-auto min-w-[10rem] px-3 py-2 pr-8 border border-gray-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary focus:border-transparent lg:py-1.5"
       >
         <option value="section">
           {#if $activeSection}
@@ -186,7 +186,7 @@
           on:click={handleClear}
           disabled={!isPanelActive}
           tabindex={isPanelActive ? 0 : -1}
-          class="px-3 py-2 text-xs text-gray-600 hover:text-gray-900"
+          class="px-3 py-2 text-xs text-gray-600 hover:text-gray-900 lg:py-1.5"
         >
           Clear
         </button>
@@ -196,7 +196,7 @@
         type="submit"
         disabled={!isPanelActive}
         tabindex={isPanelActive ? 0 : -1}
-        class="px-3 py-2 text-xs bg-primary text-white font-medium rounded-lg hover:bg-secondary transition-colors"
+        class="px-3 py-2 text-xs bg-primary text-white font-medium rounded-lg hover:bg-secondary transition-colors lg:py-1.5"
       >
         Search
       </button>
