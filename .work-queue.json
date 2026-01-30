@@ -226,7 +226,7 @@
     {
       "issue_number": 496,
       "title": "User tagging with @ does not work",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         489,
         490
@@ -237,7 +237,11 @@
         "bug",
         "frontend",
         "backend"
-      ]
+      ],
+      "assigned_to": "agent-1769800941-60613",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769800941-60613",
+      "branch": "fix/issue-496-user-tagging-with-does-not-work",
+      "claimed_at": "2026-01-30T19:22:21Z"
     },
     {
       "issue_number": 497,
