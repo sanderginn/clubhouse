@@ -587,14 +587,18 @@
     {
       "issue_number": 527,
       "title": "Fix Grafana plugins-bundled directory warning on startup",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 5,
       "labels": [
         "bug",
         "observability"
-      ]
+      ],
+      "assigned_to": "agent-1769814929-8445",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769814929-8445",
+      "branch": "fix/issue-527-fix-grafana-pluginsbundled-directory-war",
+      "claimed_at": "2026-01-30T23:15:29Z"
     },
     {
       "issue_number": 528,
