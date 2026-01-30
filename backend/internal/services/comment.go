@@ -185,11 +185,15 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 	linksChanged := false
 
 	var ownerID uuid.UUID
+	var previousContent string
+	var postID uuid.UUID
+	var sectionID uuid.UUID
 	err := s.db.QueryRowContext(ctx, `
-		SELECT user_id
-		FROM comments
-		WHERE id = $1 AND deleted_at IS NULL
-	`, commentID).Scan(&ownerID)
+		SELECT c.user_id, c.content, c.post_id, p.section_id
+		FROM comments c
+		JOIN posts p ON c.post_id = p.id
+		WHERE c.id = $1 AND c.deleted_at IS NULL
+	`, commentID).Scan(&ownerID, &previousContent, &postID, &sectionID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("comment not found")
@@ -255,11 +259,21 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 		}
 	}
 
-	_, err = tx.ExecContext(ctx, `
-		INSERT INTO audit_logs (admin_user_id, action, related_comment_id, related_user_id, created_at)
-		VALUES ($1, 'update_comment', $2, $3, now())
-	`, userID, commentID, ownerID)
-	if err != nil {
+	metadata := map[string]interface{}{
+		"comment_id":       commentID.String(),
+		"post_id":          postID.String(),
+		"section_id":       sectionID.String(),
+		"content_excerpt":  truncateAuditExcerpt(trimmedContent),
+		"previous_content": previousContent,
+		"links_changed":    linksChanged,
+		"links_provided":   req.Links != nil,
+	}
+	if req.Links != nil {
+		metadata["link_count"] = len(*req.Links)
+	}
+
+	auditService := NewAuditService(tx)
+	if err := auditService.LogAuditWithMetadata(ctx, "update_comment", userID, ownerID, metadata); err != nil {
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 

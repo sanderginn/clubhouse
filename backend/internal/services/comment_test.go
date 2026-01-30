@@ -165,6 +165,70 @@ func TestValidateCreateCommentInput(t *testing.T) {
 	}
 }
 
+func TestUpdateCommentCreatesAuditLogWithMetadata(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "updatecommentuser", "updatecomment@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Update Comment Section", "general")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Post for comment update")
+	commentID := testutil.CreateTestComment(t, db, userID, postID, "Original comment content")
+
+	service := NewCommentService(db)
+	req := &models.UpdateCommentRequest{
+		Content: "Updated comment content",
+	}
+
+	_, err := service.UpdateComment(context.Background(), uuid.MustParse(commentID), uuid.MustParse(userID), req)
+	if err != nil {
+		t.Fatalf("UpdateComment failed: %v", err)
+	}
+
+	var metadataBytes []byte
+	err = db.QueryRow(`
+		SELECT metadata
+		FROM audit_logs
+		WHERE admin_user_id = $1 AND action = 'update_comment'
+	`, userID).Scan(&metadataBytes)
+	if err != nil {
+		t.Fatalf("failed to query audit log: %v", err)
+	}
+
+	var metadata map[string]interface{}
+	if err := json.Unmarshal(metadataBytes, &metadata); err != nil {
+		t.Fatalf("failed to unmarshal metadata: %v", err)
+	}
+	if metadata["comment_id"] != commentID {
+		t.Errorf("expected comment_id %s, got %v", commentID, metadata["comment_id"])
+	}
+	if metadata["post_id"] != postID {
+		t.Errorf("expected post_id %s, got %v", postID, metadata["post_id"])
+	}
+	if metadata["section_id"] != sectionID {
+		t.Errorf("expected section_id %s, got %v", sectionID, metadata["section_id"])
+	}
+	if metadata["previous_content"] != "Original comment content" {
+		t.Errorf("expected previous_content %q, got %v", "Original comment content", metadata["previous_content"])
+	}
+	if metadata["content_excerpt"] != "Updated comment content" {
+		t.Errorf("expected content_excerpt %q, got %v", "Updated comment content", metadata["content_excerpt"])
+	}
+	linksChanged, ok := metadata["links_changed"].(bool)
+	if !ok {
+		t.Fatalf("expected links_changed to be bool, got %T", metadata["links_changed"])
+	}
+	if linksChanged {
+		t.Errorf("expected links_changed false, got %v", linksChanged)
+	}
+	linksProvided, ok := metadata["links_provided"].(bool)
+	if !ok {
+		t.Fatalf("expected links_provided to be bool, got %T", metadata["links_provided"])
+	}
+	if linksProvided {
+		t.Errorf("expected links_provided false, got %v", linksProvided)
+	}
+}
+
 func TestAdminDeleteCommentCreatesAuditLogWithMetadata(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })

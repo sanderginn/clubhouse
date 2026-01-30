@@ -351,12 +351,12 @@ func TestUpdateCommentSuccess(t *testing.T) {
 		t.Fatalf("failed to marshal body: %v", err)
 	}
 
-	mock.ExpectQuery("SELECT user_id").WithArgs(commentID).
-		WillReturnRows(sqlmock.NewRows([]string{"user_id"}).AddRow(userID))
+	mock.ExpectQuery("SELECT c.user_id, c.content, c.post_id, p.section_id").WithArgs(commentID).
+		WillReturnRows(sqlmock.NewRows([]string{"user_id", "content", "post_id", "section_id"}).AddRow(userID, "Original comment", postID, sectionID))
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE comments").WithArgs("Updated comment", commentID).
 		WillReturnResult(sqlmock.NewResult(0, 1))
-	mock.ExpectExec("INSERT INTO audit_logs").WithArgs(userID, commentID, userID).
+	mock.ExpectExec("INSERT INTO audit_logs").WithArgs(userID, "update_comment", userID, userID, sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
@@ -463,9 +463,9 @@ func TestUpdateCommentForbidden(t *testing.T) {
 		t.Fatalf("failed to marshal body: %v", err)
 	}
 
-	mock.ExpectQuery("SELECT user_id").
+	mock.ExpectQuery("SELECT c.user_id, c.content, c.post_id, p.section_id").
 		WithArgs(commentID).
-		WillReturnRows(sqlmock.NewRows([]string{"user_id"}).AddRow(uuid.New()))
+		WillReturnRows(sqlmock.NewRows([]string{"user_id", "content", "post_id", "section_id"}).AddRow(uuid.New(), "Original comment", uuid.New(), uuid.New()))
 
 	req, err := http.NewRequest(http.MethodPatch, "/api/v1/comments/"+commentID.String(), bytes.NewReader(body))
 	if err != nil {
