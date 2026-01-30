@@ -18,6 +18,7 @@
     390,
     391,
     392,
+    393,
     416,
     417,
     419,
@@ -349,7 +350,7 @@
     {
       "issue_number": 393,
       "title": "Frontend: Add search component to navbar",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769770081-41166",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769770081-41166",
       "dependencies": [],
@@ -362,7 +363,9 @@
         "ui"
       ],
       "branch": "feat/issue-393-frontend-add-search-component-to-navbar",
-      "claimed_at": "2026-01-30T10:48:01Z"
+      "claimed_at": "2026-01-30T10:48:01Z",
+      "pr_number": 479,
+      "completed_at": "2026-01-30T10:58:13Z"
     },
     {
       "issue_number": 394,
