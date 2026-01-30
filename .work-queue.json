@@ -264,7 +264,7 @@
     {
       "issue_number": 497,
       "title": "Redesign post actions: replace triple-dot menu with Edit and Share buttons",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         489,
         490
@@ -275,7 +275,11 @@
         "enhancement",
         "frontend",
         "ux"
-      ]
+      ],
+      "assigned_to": "agent-1769802151-5286",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769802151-5286",
+      "branch": "feat/issue-497-redesign-post-actions-replace-tripledot-",
+      "claimed_at": "2026-01-30T19:42:31Z"
     },
     {
       "issue_number": 498,
