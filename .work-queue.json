@@ -16,6 +16,7 @@
     388,
     389,
     390,
+    391,
     416,
     419,
     426,
@@ -286,7 +287,7 @@
     {
       "issue_number": 391,
       "title": "Backend: MFA requirement config and login enforcement",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769761933-38677",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769761933-38677",
       "dependencies": [
@@ -301,7 +302,9 @@
         "auth"
       ],
       "branch": "feat/issue-391-backend-mfa-requirement-config-and-login",
-      "claimed_at": "2026-01-30T08:32:13Z"
+      "claimed_at": "2026-01-30T08:32:13Z",
+      "pr_number": 462,
+      "completed_at": "2026-01-30T08:58:49Z"
     },
     {
       "issue_number": 392,
