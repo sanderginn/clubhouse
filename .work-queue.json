@@ -21,6 +21,7 @@
     392,
     393,
     397,
+    398,
     416,
     417,
     419,
@@ -449,7 +450,7 @@
     {
       "issue_number": 398,
       "title": "Backend: Add admin timezone configuration endpoint",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769771559-72362",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769771559-72362",
       "dependencies": [],
@@ -461,7 +462,9 @@
         "admin"
       ],
       "branch": "feat/issue-398-backend-add-admin-timezone-configuration",
-      "claimed_at": "2026-01-30T11:12:39Z"
+      "claimed_at": "2026-01-30T11:12:39Z",
+      "pr_number": 481,
+      "completed_at": "2026-01-30T11:39:59Z"
     },
     {
       "issue_number": 399,
