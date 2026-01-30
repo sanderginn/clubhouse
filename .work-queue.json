@@ -309,7 +309,7 @@
     {
       "issue_number": 392,
       "title": "Frontend: Admin MFA requirement toggle and user status display",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         391
       ],
@@ -321,7 +321,11 @@
         "admin",
         "auth",
         "ui"
-      ]
+      ],
+      "assigned_to": "agent-1769765905-17823",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769765905-17823",
+      "branch": "feat/issue-392-frontend-admin-mfa-requirement-toggle-an",
+      "claimed_at": "2026-01-30T09:38:25Z"
     },
     {
       "issue_number": 393,
