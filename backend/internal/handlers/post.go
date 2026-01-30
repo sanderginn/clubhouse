@@ -93,6 +93,9 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		post.User = user
 	}
 
+	mentioningUser := userSummaryFromUser(post.User)
+	contentExcerpt := truncateMentionExcerpt(post.Content)
+
 	response := models.CreatePostResponse{
 		Post: *post,
 	}
@@ -102,7 +105,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	mentionedUserIDs, _ := resolveMentionedUserIDs(publishCtx, h.userService, post.Content, userID)
 	_ = h.notify.CreateMentionNotifications(publishCtx, mentionedUserIDs, userID, post.SectionID, post.ID, nil)
 	_ = publishEvent(publishCtx, h.redis, formatChannel(sectionPrefix, post.SectionID), "new_post", postEventData{Post: post})
-	_ = publishMentions(publishCtx, h.redis, mentionedUserIDs, userID, &post.ID, nil)
+	_ = publishMentions(publishCtx, h.redis, mentionedUserIDs, userID, &post.ID, nil, mentioningUser, contentExcerpt)
 	cancel()
 
 	observability.LogInfo(r.Context(), "post created",
@@ -188,7 +191,14 @@ func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 	publishCtx, cancel := publishContext()
 	mentionedUserIDs, _ := resolveMentionedUserIDs(publishCtx, h.userService, post.Content, userID)
 	_ = h.notify.CreateMentionNotifications(publishCtx, mentionedUserIDs, userID, post.SectionID, post.ID, nil)
-	_ = publishMentions(publishCtx, h.redis, mentionedUserIDs, userID, &post.ID, nil)
+	mentioningUser := userSummaryFromUser(post.User)
+	if mentioningUser == nil {
+		if user, err := h.userService.GetUserByID(publishCtx, userID); err == nil {
+			mentioningUser = userSummaryFromUser(user)
+		}
+	}
+	contentExcerpt := truncateMentionExcerpt(post.Content)
+	_ = publishMentions(publishCtx, h.redis, mentionedUserIDs, userID, &post.ID, nil, mentioningUser, contentExcerpt)
 	cancel()
 
 	observability.LogInfo(r.Context(), "post updated",

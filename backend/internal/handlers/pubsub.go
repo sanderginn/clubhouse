@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 	"unicode"
 
@@ -35,10 +36,12 @@ type commentEventData struct {
 }
 
 type mentionEventData struct {
-	MentionedUserID  uuid.UUID  `json:"mentioned_user_id"`
-	MentioningUserID uuid.UUID  `json:"mentioning_user_id"`
-	PostID           *uuid.UUID `json:"post_id,omitempty"`
-	CommentID        *uuid.UUID `json:"comment_id,omitempty"`
+	MentionedUserID  uuid.UUID           `json:"mentioned_user_id"`
+	MentioningUserID uuid.UUID           `json:"mentioning_user_id"`
+	MentioningUser   *models.UserSummary `json:"mentioning_user,omitempty"`
+	ContentExcerpt   *string             `json:"content_excerpt,omitempty"`
+	PostID           *uuid.UUID          `json:"post_id,omitempty"`
+	CommentID        *uuid.UUID          `json:"comment_id,omitempty"`
 }
 
 type reactionEventData struct {
@@ -168,7 +171,7 @@ func resolveMentionedUserIDs(ctx context.Context, userService *services.UserServ
 	return userIDs, nil
 }
 
-func publishMentions(ctx context.Context, redisClient *redis.Client, mentionedUserIDs []uuid.UUID, authorID uuid.UUID, postID *uuid.UUID, commentID *uuid.UUID) error {
+func publishMentions(ctx context.Context, redisClient *redis.Client, mentionedUserIDs []uuid.UUID, authorID uuid.UUID, postID *uuid.UUID, commentID *uuid.UUID, mentioningUser *models.UserSummary, contentExcerpt *string) error {
 	if redisClient == nil {
 		return nil
 	}
@@ -177,6 +180,8 @@ func publishMentions(ctx context.Context, redisClient *redis.Client, mentionedUs
 		data := mentionEventData{
 			MentionedUserID:  mentionedUserID,
 			MentioningUserID: authorID,
+			MentioningUser:   mentioningUser,
+			ContentExcerpt:   contentExcerpt,
 			PostID:           postID,
 			CommentID:        commentID,
 		}
@@ -187,4 +192,29 @@ func publishMentions(ctx context.Context, redisClient *redis.Client, mentionedUs
 	}
 
 	return nil
+}
+
+func userSummaryFromUser(user *models.User) *models.UserSummary {
+	if user == nil {
+		return nil
+	}
+	return &models.UserSummary{
+		ID:                user.ID,
+		Username:          user.Username,
+		ProfilePictureURL: user.ProfilePictureURL,
+	}
+}
+
+const mentionExcerptLimit = 100
+
+func truncateMentionExcerpt(text string) *string {
+	trimmed := strings.TrimSpace(text)
+	if trimmed == "" {
+		return nil
+	}
+	runes := []rune(trimmed)
+	if len(runes) > mentionExcerptLimit {
+		trimmed = string(runes[:mentionExcerptLimit])
+	}
+	return &trimmed
 }

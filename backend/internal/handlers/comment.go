@@ -99,6 +99,9 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		Comment: *comment,
 	}
 
+	mentioningUser := userSummaryFromUser(comment.User)
+	contentExcerpt := truncateMentionExcerpt(comment.Content)
+
 	publishCtx, cancel := publishContext()
 	_ = h.notify.CreateNotificationForPostComment(publishCtx, comment.PostID, comment.ID, userID)
 	mentionedUserIDs, _ := resolveMentionedUserIDs(publishCtx, h.userService, comment.Content, userID)
@@ -107,7 +110,7 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		_ = h.notify.CreateMentionNotifications(publishCtx, mentionedUserIDs, userID, sectionID, comment.PostID, &comment.ID)
 		_ = publishEvent(publishCtx, h.redis, formatChannel(sectionPrefix, sectionID), "new_comment", commentEventData{Comment: comment})
 	}
-	_ = publishMentions(publishCtx, h.redis, mentionedUserIDs, userID, &comment.PostID, &comment.ID)
+	_ = publishMentions(publishCtx, h.redis, mentionedUserIDs, userID, &comment.PostID, &comment.ID, mentioningUser, contentExcerpt)
 	cancel()
 
 	sectionID := ""
@@ -202,7 +205,14 @@ func (h *CommentHandler) UpdateComment(w http.ResponseWriter, r *http.Request) {
 	} else if sectionID, err := h.postService.GetSectionIDByPostID(publishCtx, comment.PostID); err == nil {
 		_ = h.notify.CreateMentionNotifications(publishCtx, mentionedUserIDs, userID, sectionID, comment.PostID, &comment.ID)
 	}
-	_ = publishMentions(publishCtx, h.redis, mentionedUserIDs, userID, &comment.PostID, &comment.ID)
+	mentioningUser := userSummaryFromUser(comment.User)
+	if mentioningUser == nil {
+		if user, err := h.userService.GetUserByID(publishCtx, userID); err == nil {
+			mentioningUser = userSummaryFromUser(user)
+		}
+	}
+	contentExcerpt := truncateMentionExcerpt(comment.Content)
+	_ = publishMentions(publishCtx, h.redis, mentionedUserIDs, userID, &comment.PostID, &comment.ID, mentioningUser, contentExcerpt)
 	cancel()
 
 	sectionID := ""
