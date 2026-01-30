@@ -420,7 +420,7 @@
     {
       "issue_number": 514,
       "title": "Improve search box alignment with main container",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 2,
@@ -428,7 +428,11 @@
         "enhancement",
         "frontend",
         "ux"
-      ]
+      ],
+      "assigned_to": "agent-1769815947-38679",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769815947-38679",
+      "branch": "feat/issue-514-improve-search-box-alignment-with-main-c",
+      "claimed_at": "2026-01-30T23:32:27Z"
     },
     {
       "issue_number": 515,
