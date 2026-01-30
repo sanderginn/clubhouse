@@ -196,6 +196,55 @@ func TestGetNotificationsUnauthorized(t *testing.T) {
 	}
 }
 
+func TestGetNotificationsIncludesMentionDetails(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	mentionerID := uuid.MustParse(testutil.CreateTestUser(t, db, "mentioner", "mentioner@test.com", false, true))
+	mentionedID := uuid.MustParse(testutil.CreateTestUser(t, db, "mentioned", "mentioned@test.com", false, true))
+	sectionID := uuid.MustParse(testutil.CreateTestSection(t, db, "Mentions", "music"))
+	postContent := "  Hello mention world  "
+	postID := uuid.MustParse(testutil.CreateTestPost(t, db, mentionerID.String(), sectionID.String(), postContent))
+
+	notificationID := uuid.New()
+	_, err := db.Exec(`
+		INSERT INTO notifications (id, user_id, type, related_post_id, related_user_id, created_at)
+		VALUES ($1, $2, $3, $4, $5, now())
+	`, notificationID, mentionedID, "mention", postID, mentionerID)
+	if err != nil {
+		t.Fatalf("failed to insert notification: %v", err)
+	}
+
+	handler := NewNotificationHandler(db, nil)
+	req := httptest.NewRequest("GET", "/api/v1/notifications", nil)
+	req = req.WithContext(createTestUserContext(req.Context(), mentionedID, "mentioned", false))
+	w := httptest.NewRecorder()
+
+	handler.GetNotifications(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response models.GetNotificationsResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if len(response.Notifications) != 1 {
+		t.Fatalf("expected 1 notification, got %d", len(response.Notifications))
+	}
+
+	notification := response.Notifications[0]
+	if notification.RelatedUser == nil || notification.RelatedUser.Username != "mentioner" {
+		t.Fatalf("expected related user mentioner, got %+v", notification.RelatedUser)
+	}
+
+	if notification.ContentExcerpt == nil || *notification.ContentExcerpt != "Hello mention world" {
+		t.Fatalf("expected content excerpt %q, got %v", "Hello mention world", notification.ContentExcerpt)
+	}
+}
+
 func TestMarkNotificationReadSuccess(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })

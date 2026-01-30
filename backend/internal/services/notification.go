@@ -22,6 +22,7 @@ const (
 	notificationTypeNewComment = "new_comment"
 	notificationTypeMention    = "mention"
 	notificationTypeReaction   = "reaction"
+	notificationExcerptLimit   = 100
 )
 
 // NotificationService handles notification creation.
@@ -438,9 +439,14 @@ func (s *NotificationService) GetNotifications(ctx context.Context, userID uuid.
 	}
 
 	query := `
-		SELECT id, user_id, type, related_post_id, related_comment_id, related_user_id, read_at, created_at
-		FROM notifications
-		WHERE user_id = $1
+		SELECT n.id, n.user_id, n.type, n.related_post_id, n.related_comment_id, n.related_user_id, n.read_at, n.created_at,
+		       ru.username, ru.profile_picture_url,
+		       COALESCE(c.content, p.content) AS content
+		FROM notifications n
+		LEFT JOIN users ru ON ru.id = n.related_user_id AND ru.deleted_at IS NULL
+		LEFT JOIN comments c ON c.id = n.related_comment_id AND c.deleted_at IS NULL
+		LEFT JOIN posts p ON p.id = n.related_post_id AND p.deleted_at IS NULL
+		WHERE n.user_id = $1
 	`
 
 	args := []interface{}{userID}
@@ -453,12 +459,12 @@ func (s *NotificationService) GetNotifications(ctx context.Context, userID uuid.
 			return nil, nil, false, unreadCount, err
 		}
 
-		query += fmt.Sprintf(" AND (created_at, id) < ($%d, $%d)", argIndex, argIndex+1)
+		query += fmt.Sprintf(" AND (n.created_at, n.id) < ($%d, $%d)", argIndex, argIndex+1)
 		args = append(args, cursorTime, cursorID)
 		argIndex += 2
 	}
 
-	query += fmt.Sprintf(" ORDER BY created_at DESC, id DESC LIMIT $%d", argIndex)
+	query += fmt.Sprintf(" ORDER BY n.created_at DESC, n.id DESC LIMIT $%d", argIndex)
 	args = append(args, limit+1)
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
@@ -470,43 +476,13 @@ func (s *NotificationService) GetNotifications(ctx context.Context, userID uuid.
 
 	notifications := make([]models.Notification, 0)
 	for rows.Next() {
-		var notification models.Notification
-		var relatedPostID sql.NullString
-		var relatedCommentID sql.NullString
-		var relatedUserID sql.NullString
-		var readAt sql.NullTime
-
-		if err := rows.Scan(
-			&notification.ID,
-			&notification.UserID,
-			&notification.Type,
-			&relatedPostID,
-			&relatedCommentID,
-			&relatedUserID,
-			&readAt,
-			&notification.CreatedAt,
-		); err != nil {
+		notification, err := scanNotificationRow(rows)
+		if err != nil {
 			recordSpanError(span, err)
 			return nil, nil, false, unreadCount, fmt.Errorf("failed to scan notification: %w", err)
 		}
 
-		if relatedPostID.Valid {
-			id, _ := uuid.Parse(relatedPostID.String)
-			notification.RelatedPostID = &id
-		}
-		if relatedCommentID.Valid {
-			id, _ := uuid.Parse(relatedCommentID.String)
-			notification.RelatedCommentID = &id
-		}
-		if relatedUserID.Valid {
-			id, _ := uuid.Parse(relatedUserID.String)
-			notification.RelatedUserID = &id
-		}
-		if readAt.Valid {
-			notification.ReadAt = &readAt.Time
-		}
-
-		notifications = append(notifications, notification)
+		notifications = append(notifications, *notification)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -607,16 +583,42 @@ func (s *NotificationService) MarkNotificationRead(ctx context.Context, userID u
 		UPDATE notifications
 		SET read_at = CASE WHEN read_at IS NULL THEN now() ELSE read_at END
 		WHERE id = $1 AND user_id = $2
-		RETURNING id, user_id, type, related_post_id, related_comment_id, related_user_id, read_at, created_at
 	`
 
+	if _, err := s.db.ExecContext(ctx, query, notificationID, userID); err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("failed to mark notification read: %w", err)
+	}
+
+	notification, err := s.getNotificationDetails(ctx, userID, notificationID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			notFoundErr := errors.New("notification not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
+		}
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("failed to load notification: %w", err)
+	}
+
+	return notification, nil
+}
+
+type notificationScanner interface {
+	Scan(dest ...any) error
+}
+
+func scanNotificationRow(scanner notificationScanner) (*models.Notification, error) {
 	var notification models.Notification
 	var relatedPostID sql.NullString
 	var relatedCommentID sql.NullString
 	var relatedUserID sql.NullString
 	var readAt sql.NullTime
+	var relatedUsername sql.NullString
+	var relatedProfilePicture sql.NullString
+	var content sql.NullString
 
-	err := s.db.QueryRowContext(ctx, query, notificationID, userID).Scan(
+	if err := scanner.Scan(
 		&notification.ID,
 		&notification.UserID,
 		&notification.Type,
@@ -625,15 +627,11 @@ func (s *NotificationService) MarkNotificationRead(ctx context.Context, userID u
 		&relatedUserID,
 		&readAt,
 		&notification.CreatedAt,
-	)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			notFoundErr := errors.New("notification not found")
-			recordSpanError(span, notFoundErr)
-			return nil, notFoundErr
-		}
-		recordSpanError(span, err)
-		return nil, fmt.Errorf("failed to mark notification read: %w", err)
+		&relatedUsername,
+		&relatedProfilePicture,
+		&content,
+	); err != nil {
+		return nil, err
 	}
 
 	if relatedPostID.Valid {
@@ -647,10 +645,51 @@ func (s *NotificationService) MarkNotificationRead(ctx context.Context, userID u
 	if relatedUserID.Valid {
 		id, _ := uuid.Parse(relatedUserID.String)
 		notification.RelatedUserID = &id
+		if relatedUsername.Valid {
+			summary := models.UserSummary{
+				ID:       id,
+				Username: relatedUsername.String,
+			}
+			if relatedProfilePicture.Valid {
+				summary.ProfilePictureURL = &relatedProfilePicture.String
+			}
+			notification.RelatedUser = &summary
+		}
 	}
 	if readAt.Valid {
 		notification.ReadAt = &readAt.Time
 	}
+	if content.Valid {
+		notification.ContentExcerpt = truncateNotificationExcerpt(content.String)
+	}
 
 	return &notification, nil
+}
+
+func truncateNotificationExcerpt(text string) *string {
+	trimmed := strings.TrimSpace(text)
+	if trimmed == "" {
+		return nil
+	}
+	runes := []rune(trimmed)
+	if len(runes) > notificationExcerptLimit {
+		trimmed = string(runes[:notificationExcerptLimit])
+	}
+	return &trimmed
+}
+
+func (s *NotificationService) getNotificationDetails(ctx context.Context, userID uuid.UUID, notificationID uuid.UUID) (*models.Notification, error) {
+	query := `
+		SELECT n.id, n.user_id, n.type, n.related_post_id, n.related_comment_id, n.related_user_id, n.read_at, n.created_at,
+		       ru.username, ru.profile_picture_url,
+		       COALESCE(c.content, p.content) AS content
+		FROM notifications n
+		LEFT JOIN users ru ON ru.id = n.related_user_id AND ru.deleted_at IS NULL
+		LEFT JOIN comments c ON c.id = n.related_comment_id AND c.deleted_at IS NULL
+		LEFT JOIN posts p ON p.id = n.related_post_id AND p.deleted_at IS NULL
+		WHERE n.id = $1 AND n.user_id = $2
+	`
+
+	row := s.db.QueryRowContext(ctx, query, notificationID, userID)
+	return scanNotificationRow(row)
 }

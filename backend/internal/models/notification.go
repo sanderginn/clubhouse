@@ -8,14 +8,16 @@ import (
 
 // Notification represents a notification for a user.
 type Notification struct {
-	ID               uuid.UUID  `json:"id"`
-	UserID           uuid.UUID  `json:"user_id"`
-	Type             string     `json:"type"`
-	RelatedPostID    *uuid.UUID `json:"related_post_id,omitempty"`
-	RelatedCommentID *uuid.UUID `json:"related_comment_id,omitempty"`
-	RelatedUserID    *uuid.UUID `json:"related_user_id,omitempty"`
-	ReadAt           *time.Time `json:"read_at,omitempty"`
-	CreatedAt        time.Time  `json:"created_at"`
+	ID               uuid.UUID    `json:"id"`
+	UserID           uuid.UUID    `json:"user_id"`
+	Type             string       `json:"type"`
+	RelatedPostID    *uuid.UUID   `json:"related_post_id,omitempty"`
+	RelatedCommentID *uuid.UUID   `json:"related_comment_id,omitempty"`
+	RelatedUserID    *uuid.UUID   `json:"related_user_id,omitempty"`
+	RelatedUser      *UserSummary `json:"related_user,omitempty"`
+	ContentExcerpt   *string      `json:"content_excerpt,omitempty"`
+	ReadAt           *time.Time   `json:"read_at,omitempty"`
+	CreatedAt        time.Time    `json:"created_at"`
 }
 
 // NotificationMeta represents pagination metadata for notifications.
