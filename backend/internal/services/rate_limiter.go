@@ -94,6 +94,7 @@ func (l *RateLimiter) Allow(ctx context.Context, key string) (bool, error) {
 		return false, err
 	}
 	if current <= 1 {
+		observability.RecordRateLimitCacheKey(ctx, l.limitType)
 		observability.RecordCacheMiss(ctx, "rate_limit")
 	} else {
 		observability.RecordCacheHit(ctx, "rate_limit")
