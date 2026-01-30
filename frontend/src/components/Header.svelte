@@ -3,6 +3,7 @@
   import { buildProfileHref, handleProfileNavigation } from '../services/profileNavigation';
   import { buildSettingsHref } from '../services/routeNavigation';
   import { handleSettingsNavigation } from '../services/settingsNavigation';
+  import NavbarSearch from './search/NavbarSearch.svelte';
 
   let menuOpen = false;
 
@@ -51,6 +52,7 @@
     </div>
 
     <div class="flex items-center gap-4">
+      <NavbarSearch />
       {#if $isAuthenticated && $currentUser}
         <div class="relative">
           <button
