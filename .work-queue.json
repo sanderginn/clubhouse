@@ -11,7 +11,8 @@
     439,
     489,
     490,
-    491
+    491,
+    495
   ],
   "issues": [
     {
@@ -210,7 +211,7 @@
     {
       "issue_number": 495,
       "title": "Navigation from standalone post back to section does not load feed",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         489,
         490
@@ -224,7 +225,9 @@
       "assigned_to": "agent-1769800936-60365",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769800936-60365",
       "branch": "fix/issue-495-navigation-from-standalone-post-back-to-",
-      "claimed_at": "2026-01-30T19:22:16Z"
+      "claimed_at": "2026-01-30T19:22:16Z",
+      "pr_number": 502,
+      "completed_at": "2026-01-30T19:33:59Z"
     },
     {
       "issue_number": 496,
