@@ -9,7 +9,8 @@
     417,
     418,
     439,
-    489
+    489,
+    490
   ],
   "issues": [
     {
@@ -115,7 +116,7 @@
     {
       "issue_number": 490,
       "title": "Fix Tempo config: deprecated `enabled` fields in metrics_generator",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 0,
@@ -128,7 +129,9 @@
       "assigned_to": "agent-1769800592-47747",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769800592-47747",
       "branch": "fix/issue-490-fix-tempo-config-deprecated-enabled-fiel",
-      "claimed_at": "2026-01-30T19:16:32Z"
+      "claimed_at": "2026-01-30T19:16:32Z",
+      "pr_number": 500,
+      "completed_at": "2026-01-30T19:21:49Z"
     },
     {
       "issue_number": 491,
