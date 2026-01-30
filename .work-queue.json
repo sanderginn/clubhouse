@@ -35,6 +35,7 @@
     434,
     436,
     437,
+    438,
     441
   ],
   "issues": [
@@ -909,7 +910,7 @@
     {
       "issue_number": 438,
       "title": "Loki: Create audit log visualization dashboard",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769767696-76680",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769767696-76680",
       "dependencies": [],
@@ -922,7 +923,9 @@
         "dashboard"
       ],
       "branch": "feat/issue-438-loki-create-audit-log-visualization-dash",
-      "claimed_at": "2026-01-30T10:08:16Z"
+      "claimed_at": "2026-01-30T10:08:16Z",
+      "pr_number": 474,
+      "completed_at": "2026-01-30T10:29:08Z"
     },
     {
       "issue_number": 439,
