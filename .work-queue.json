@@ -13,6 +13,7 @@
     490,
     491,
     492,
+    493,
     495,
     497,
     498
@@ -184,7 +185,7 @@
     {
       "issue_number": 493,
       "title": "Hide image URL text on posts with images",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         489,
         490
@@ -199,7 +200,9 @@
       "assigned_to": "agent-1769801667-80663",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769801667-80663",
       "branch": "feat/issue-493-hide-image-url-text-on-posts-with-images",
-      "claimed_at": "2026-01-30T19:34:27Z"
+      "claimed_at": "2026-01-30T19:34:27Z",
+      "pr_number": 505,
+      "completed_at": "2026-01-30T20:04:35Z"
     },
     {
       "issue_number": 494,
