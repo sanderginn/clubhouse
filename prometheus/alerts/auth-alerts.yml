@@ -9,3 +9,29 @@ groups:
         annotations:
           summary: "Clubhouse auth unavailable"
           description: "Backend scrape is failing; auth endpoints may be unavailable."
+      - alert: PossibleBruteForce
+        expr: sum(rate(clubhouse_auth_failures{reason="invalid_credentials"}[5m])) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High rate of failed login attempts - possible brute force"
+      - alert: HighRateLimitViolations
+        expr: sum(rate(clubhouse_ratelimit_violations[5m])) > 50
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Unusual rate limit violation rate"
+      - alert: AccountLockouts
+        expr: sum(increase(clubhouse_ratelimit_lockouts[1h])) > 5
+        for: 0m
+        labels:
+          severity: info
+        annotations:
+          summary: "Multiple account lockouts in the past hour"
+      - alert: SessionCreationSpike
+        expr: sum(rate(clubhouse_auth_sessions_created[5m])) > 100
+        for: 2m
+        labels:
+          severity: warning
