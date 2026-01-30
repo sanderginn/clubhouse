@@ -20,6 +20,7 @@
     391,
     392,
     393,
+    397,
     416,
     417,
     419,
@@ -429,7 +430,7 @@
     {
       "issue_number": 397,
       "title": "Frontend: Add timestamp hover tooltip with exact time",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769771555-72182",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769771555-72182",
       "dependencies": [],
@@ -441,7 +442,9 @@
         "ui"
       ],
       "branch": "feat/issue-397-frontend-add-timestamp-hover-tooltip-wit",
-      "claimed_at": "2026-01-30T11:12:35Z"
+      "claimed_at": "2026-01-30T11:12:35Z",
+      "pr_number": 482,
+      "completed_at": "2026-01-30T11:37:10Z"
     },
     {
       "issue_number": 398,
