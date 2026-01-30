@@ -21,6 +21,7 @@
     498,
     509,
     510,
+    511,
     512,
     513,
     526,
@@ -362,7 +363,7 @@
     {
       "issue_number": 511,
       "title": "Add escape mechanism for @ symbol to prevent unwanted mentions",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 1,
@@ -374,7 +375,9 @@
       "assigned_to": "agent-1769814933-8603",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769814933-8603",
       "branch": "feat/issue-511-add-escape-mechanism-for-symbol-to-preve",
-      "claimed_at": "2026-01-30T23:15:33Z"
+      "claimed_at": "2026-01-30T23:15:33Z",
+      "pr_number": 539,
+      "completed_at": "2026-01-30T23:31:57Z"
     },
     {
       "issue_number": 512,
