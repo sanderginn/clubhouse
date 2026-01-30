@@ -285,9 +285,9 @@
     {
       "issue_number": 391,
       "title": "Backend: MFA requirement config and login enforcement",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769761933-38677",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769761933-38677",
       "dependencies": [
         390
       ],
@@ -298,7 +298,9 @@
         "backend",
         "admin",
         "auth"
-      ]
+      ],
+      "branch": "feat/issue-391-backend-mfa-requirement-config-and-login",
+      "claimed_at": "2026-01-30T08:32:13Z"
     },
     {
       "issue_number": 392,
