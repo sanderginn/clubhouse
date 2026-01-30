@@ -31,6 +31,7 @@
     429,
     430,
     431,
+    432,
     433,
     434,
     435,
@@ -789,7 +790,7 @@
     {
       "issue_number": 432,
       "title": "Grafana: Create cache performance dashboard",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         422
       ],
@@ -803,7 +804,9 @@
       "assigned_to": "agent-1769768855-11554",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769768855-11554",
       "branch": "feat/issue-432-grafana-create-cache-performance-dashboa",
-      "claimed_at": "2026-01-30T10:27:35Z"
+      "claimed_at": "2026-01-30T10:27:35Z",
+      "pr_number": 472,
+      "completed_at": "2026-01-30T10:37:51Z"
     },
     {
       "issue_number": 433,
