@@ -20,6 +20,7 @@
     427,
     428,
     430,
+    433,
     441
   ],
   "issues": [
@@ -743,7 +744,7 @@
     {
       "issue_number": 433,
       "title": "Prometheus: Add HTTP and API alerting rules",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769760794-10845",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769760794-10845",
       "dependencies": [
@@ -757,7 +758,9 @@
         "alerting"
       ],
       "branch": "feat/issue-433-prometheus-add-http-and-api-alerting-rul",
-      "claimed_at": "2026-01-30T08:13:14Z"
+      "claimed_at": "2026-01-30T08:13:14Z",
+      "pr_number": 457,
+      "completed_at": "2026-01-30T08:30:09Z"
     },
     {
       "issue_number": 434,
