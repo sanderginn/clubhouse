@@ -221,6 +221,54 @@ func (f *Fetcher) validateURL(ctx context.Context, u *url.URL) error {
 	return nil
 }
 
+// ClassifyFetchError returns a short error type for link metadata fetch failures.
+func ClassifyFetchError(err error) string {
+	if err == nil {
+		return ""
+	}
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+		return "timeout"
+	}
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return "timeout"
+	}
+	msg := strings.ToLower(err.Error())
+	switch {
+	case strings.Contains(msg, "missing url"),
+		strings.Contains(msg, "unsupported url scheme"),
+		strings.Contains(msg, "parse url"):
+		return "invalid_url"
+	case strings.Contains(msg, "blocked host"),
+		strings.Contains(msg, "blocked ip"):
+		return "blocked"
+	case strings.Contains(msg, "unexpected status"):
+		return "http_status"
+	case strings.Contains(msg, "resolve host"):
+		return "dns"
+	case strings.Contains(msg, "too many redirects"):
+		return "redirect"
+	default:
+		return "fetch_error"
+	}
+}
+
+// ExtractDomain returns a lowercased hostname for the provided URL string.
+func ExtractDomain(rawURL string) string {
+	if strings.TrimSpace(rawURL) == "" {
+		return ""
+	}
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return ""
+	}
+	host := strings.ToLower(strings.TrimSpace(parsed.Hostname()))
+	if host == "" {
+		return ""
+	}
+	return host
+}
+
 func isBlockedHostname(host string) bool {
 	switch host {
 	case "localhost", "metadata.google.internal":

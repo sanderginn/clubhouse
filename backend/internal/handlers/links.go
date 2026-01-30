@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/observability"
@@ -53,14 +54,20 @@ func (h *LinkHandler) PreviewLink(w http.ResponseWriter, r *http.Request) {
 	}
 
 	observability.RecordLinkMetadataFetchAttempt(r.Context(), 1)
+	start := time.Now()
 	metadata, err := linkmeta.FetchMetadata(r.Context(), trimmedURL)
+	observability.RecordLinkMetadataFetchDuration(r.Context(), time.Since(start))
+	domain := linkmeta.ExtractDomain(trimmedURL)
 	if err != nil {
-		observability.RecordLinkMetadataFetchFailure(r.Context(), 1)
+		errorType := linkmeta.ClassifyFetchError(err)
+		observability.RecordLinkMetadataFetchFailure(r.Context(), 1, domain, errorType)
+		observability.LogWarn(r.Context(), "link metadata fetch failed", "link_url", trimmedURL, "link_domain", domain, "error_type", errorType, "error", err.Error())
 		writeError(r.Context(), w, http.StatusBadGateway, "LINK_METADATA_FETCH_FAILED", "Failed to fetch link metadata")
 		return
 	}
 	if len(metadata) == 0 {
-		observability.RecordLinkMetadataFetchFailure(r.Context(), 1)
+		observability.RecordLinkMetadataFetchFailure(r.Context(), 1, domain, "empty_metadata")
+		observability.LogWarn(r.Context(), "link metadata fetch empty", "link_url", trimmedURL, "link_domain", domain, "error_type", "empty_metadata")
 	} else {
 		observability.RecordLinkMetadataFetchSuccess(r.Context(), 1)
 	}
