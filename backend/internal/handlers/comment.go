@@ -110,6 +110,17 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	_ = publishMentions(publishCtx, h.redis, mentionedUserIDs, userID, &comment.PostID, &comment.ID)
 	cancel()
 
+	sectionID := ""
+	if comment.SectionID != nil {
+		sectionID = comment.SectionID.String()
+	}
+	observability.LogInfo(r.Context(), "comment created",
+		"comment_id", comment.ID.String(),
+		"user_id", userID.String(),
+		"post_id", comment.PostID.String(),
+		"section_id", sectionID,
+	)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -192,6 +203,17 @@ func (h *CommentHandler) UpdateComment(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = publishMentions(publishCtx, h.redis, mentionedUserIDs, userID, &comment.PostID, &comment.ID)
 	cancel()
+
+	sectionID := ""
+	if comment.SectionID != nil {
+		sectionID = comment.SectionID.String()
+	}
+	observability.LogInfo(r.Context(), "comment updated",
+		"comment_id", comment.ID.String(),
+		"user_id", userID.String(),
+		"post_id", comment.PostID.String(),
+		"section_id", sectionID,
+	)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -381,6 +403,18 @@ func (h *CommentHandler) DeleteComment(w http.ResponseWriter, r *http.Request) {
 		Message: "Comment deleted successfully",
 	}
 
+	sectionID := ""
+	if comment.SectionID != nil {
+		sectionID = comment.SectionID.String()
+	}
+	observability.LogInfo(r.Context(), "comment deleted",
+		"comment_id", comment.ID.String(),
+		"user_id", userID.String(),
+		"post_id", comment.PostID.String(),
+		"section_id", sectionID,
+		"is_admin", strconv.FormatBool(isAdmin),
+	)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -443,6 +477,18 @@ func (h *CommentHandler) RestoreComment(w http.ResponseWriter, r *http.Request) 
 	response := models.RestoreCommentResponse{
 		Comment: *comment,
 	}
+
+	sectionID := ""
+	if comment.SectionID != nil {
+		sectionID = comment.SectionID.String()
+	}
+	observability.LogInfo(r.Context(), "comment restored",
+		"comment_id", comment.ID.String(),
+		"user_id", userID.String(),
+		"post_id", comment.PostID.String(),
+		"section_id", sectionID,
+		"is_admin", strconv.FormatBool(session.IsAdmin),
+	)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
