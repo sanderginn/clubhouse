@@ -32,7 +32,6 @@
   let rootEl: HTMLElement | null = null;
   let observer: IntersectionObserver | null = null;
   let isVisible = false;
-  let openMenuFor: string | null = null;
   let editingCommentId: string | null = null;
   let editCommentContent = '';
   let editCommentError: string | null = null;
@@ -94,19 +93,10 @@
     openReplies = new Set([...openReplies].filter((id) => id !== commentId));
   }
 
-  function toggleMenu(commentId: string) {
-    openMenuFor = openMenuFor === commentId ? null : commentId;
-  }
-
-  function closeMenus() {
-    openMenuFor = null;
-  }
-
   function startEdit(commentId: string, content: string) {
     editingCommentId = commentId;
     editCommentContent = content;
     editCommentError = null;
-    closeMenus();
   }
 
   function cancelEdit() {
@@ -215,8 +205,6 @@
   }
 </script>
 
-<svelte:window on:click={closeMenus} />
-
 <div class="space-y-4" bind:this={rootEl}>
   <div class="border border-gray-200 rounded-lg p-3 bg-gray-50">
     <CommentForm {postId} />
@@ -317,34 +305,19 @@
                 <RelativeTime dateString={comment.createdAt} className="text-gray-500 text-xs" />
                 <EditedBadge createdAt={comment.createdAt} updatedAt={comment.updatedAt} />
                 {#if $currentUser?.id === comment.userId}
-                  <div class="ml-auto relative">
+                  <div class="ml-auto">
                     <button
                       type="button"
-                      class="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                      aria-haspopup="true"
-                      aria-expanded={openMenuFor === comment.id}
-                      aria-label="Open comment actions"
-                      on:click|stopPropagation={() => toggleMenu(comment.id)}
+                      class="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                      on:click={() => startEdit(comment.id, comment.content)}
                     >
-                      <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path
+                          d="M4 13.5V16h2.5l7.35-7.35-2.5-2.5L4 13.5zM16.85 5.65a.5.5 0 000-.7l-1.8-1.8a.5.5 0 00-.7 0l-1.6 1.6 2.5 2.5 1.6-1.6z"
+                        />
                       </svg>
+                      <span>Edit</span>
                     </button>
-                    {#if openMenuFor === comment.id}
-                      <div
-                        class="absolute right-0 mt-2 w-28 rounded-lg border border-gray-200 bg-white shadow-lg py-1 z-20"
-                        role="menu"
-                      >
-                        <button
-                          type="button"
-                          class="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
-                          on:click={() => startEdit(comment.id, comment.content)}
-                          role="menuitem"
-                        >
-                          Edit
-                        </button>
-                      </div>
-                    {/if}
                   </div>
                 {/if}
               </div>
@@ -540,34 +513,19 @@
                           <RelativeTime dateString={reply.createdAt} className="text-gray-500 text-xs" />
                           <EditedBadge createdAt={reply.createdAt} updatedAt={reply.updatedAt} />
                           {#if $currentUser?.id === reply.userId}
-                            <div class="ml-auto relative">
+                            <div class="ml-auto">
                               <button
                                 type="button"
-                                class="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                                aria-haspopup="true"
-                                aria-expanded={openMenuFor === reply.id}
-                                aria-label="Open comment actions"
-                                on:click|stopPropagation={() => toggleMenu(reply.id)}
+                                class="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                                on:click={() => startEdit(reply.id, reply.content)}
                               >
-                                <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                                  <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                  <path
+                                    d="M4 13.5V16h2.5l7.35-7.35-2.5-2.5L4 13.5zM16.85 5.65a.5.5 0 000-.7l-1.8-1.8a.5.5 0 00-.7 0l-1.6 1.6 2.5 2.5 1.6-1.6z"
+                                  />
                                 </svg>
+                                <span>Edit</span>
                               </button>
-                              {#if openMenuFor === reply.id}
-                                <div
-                                  class="absolute right-0 mt-2 w-28 rounded-lg border border-gray-200 bg-white shadow-lg py-1 z-20"
-                                  role="menu"
-                                >
-                                  <button
-                                    type="button"
-                                    class="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
-                                    on:click={() => startEdit(reply.id, reply.content)}
-                                    role="menuitem"
-                                  >
-                                    Edit
-                                  </button>
-                                </div>
-                              {/if}
                             </div>
                           {/if}
                         </div>

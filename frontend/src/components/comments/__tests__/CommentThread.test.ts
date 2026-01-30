@@ -134,6 +134,6 @@ describe('CommentThread', () => {
     ], null, false);
 
     render(CommentThread, { postId: 'post-1', commentCount: 1 });
-    expect(screen.getByRole('button', { name: 'Open comment actions' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
   });
 });
