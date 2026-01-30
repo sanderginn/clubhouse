@@ -21,19 +21,27 @@ function createThreadRouteStore() {
 
   return {
     subscribe,
-    setTarget: (postId: string, sectionId: string) =>
+    setTarget: (postId: string, sectionId: string | null) =>
       set({ postId, sectionId, status: 'idle', error: null }),
     clearTarget: () => set({ postId: null, sectionId: null, status: 'idle', error: null }),
     setLoading: () => update((state) => ({ ...state, status: 'loading', error: null })),
     setReady: () => update((state) => ({ ...state, status: 'ready', error: null })),
     setNotFound: () => update((state) => ({ ...state, status: 'not_found', error: null })),
     setError: (error: string) => update((state) => ({ ...state, status: 'error', error })),
+    setSectionId: (sectionId: string | null) =>
+      update((state) => ({
+        ...state,
+        sectionId,
+      })),
   };
 }
 
 export const threadRouteStore = createThreadRouteStore();
 
-export async function loadThreadTargetPost(postId: string, sectionId: string): Promise<void> {
+export async function loadThreadTargetPost(
+  postId: string,
+  sectionId: string | null
+): Promise<void> {
   threadRouteStore.setLoading();
   try {
     const response = await api.getPost(postId);
@@ -41,9 +49,21 @@ export async function loadThreadTargetPost(postId: string, sectionId: string): P
     if (current.postId !== postId || current.sectionId !== sectionId) {
       return;
     }
-    if (!response.post || response.post.sectionId !== sectionId) {
+    if (!response.post) {
       threadRouteStore.setNotFound();
       return;
+    }
+    const responseSectionId = response.post.sectionId ?? null;
+    if (current.sectionId && !responseSectionId) {
+      threadRouteStore.setNotFound();
+      return;
+    }
+    if (current.sectionId && responseSectionId && current.sectionId !== responseSectionId) {
+      threadRouteStore.setNotFound();
+      return;
+    }
+    if (!current.sectionId && responseSectionId) {
+      threadRouteStore.setSectionId(responseSectionId);
     }
     postStore.upsertPost(response.post);
     threadRouteStore.setReady();

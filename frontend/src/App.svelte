@@ -3,6 +3,7 @@
   import { onMount, onDestroy } from 'svelte';
   import './styles/globals.css';
   import { Layout, PostForm, SectionFeed, SearchResults, InstallPrompt } from './components';
+  import ThreadView from './components/ThreadView.svelte';
   import UserProfile from './components/UserProfile.svelte';
   import { Login, Register, AdminPanel, PasswordReset, Settings } from './routes';
   import {
@@ -26,7 +27,9 @@
     buildThreadHref,
     isAdminPath,
     isSettingsPath,
+    parseStandaloneThreadPostId,
     parseSectionSlug,
+    parseThreadCommentId,
     parseThreadPostId,
     replacePath,
   } from './services/routeNavigation';
@@ -41,6 +44,7 @@
   let pendingSectionIdentifier: string | null = null;
   let pendingThreadPostId: string | null = null;
   let sectionNotFound: string | null = null;
+  let highlightCommentId: string | null = null;
 
   onMount(() => {
     authStore.checkSession();
@@ -63,6 +67,7 @@
   function syncRouteFromLocation() {
     if (typeof window === 'undefined') return;
     const path = window.location.pathname;
+    highlightCommentId = parseThreadCommentId(window.location.search);
     sectionNotFound = null;
     const { isReset, token } = parseResetRoute(window.location);
     if (isReset) {
@@ -70,6 +75,7 @@
       resetToken = token;
       pendingSectionIdentifier = null;
       pendingThreadPostId = null;
+      highlightCommentId = null;
       return;
     }
     const profileUserId = parseProfileUserId(path);
@@ -78,7 +84,16 @@
       threadRouteStore.clearTarget();
       pendingSectionIdentifier = null;
       pendingThreadPostId = null;
+      highlightCommentId = null;
     } else {
+      const standaloneThreadPostId = parseStandaloneThreadPostId(path);
+      if (standaloneThreadPostId) {
+        uiStore.setActiveView('thread');
+        threadRouteStore.setTarget(standaloneThreadPostId, null);
+        pendingSectionIdentifier = null;
+        pendingThreadPostId = null;
+        return;
+      }
       const threadPostId = parseThreadPostId(path);
       const sectionIdentifier = parseSectionSlug(path);
       if (threadPostId && sectionIdentifier) {
@@ -87,16 +102,20 @@
           const match = findSectionByIdentifier(availableSections, sectionIdentifier);
           if (match) {
             threadRouteStore.setTarget(threadPostId, match.id);
+            uiStore.setActiveView('thread');
           } else {
             threadRouteStore.clearTarget();
             sectionNotFound = sectionIdentifier;
           }
           pendingThreadPostId = null;
         } else {
+          uiStore.setActiveView('thread');
           pendingThreadPostId = threadPostId;
+          threadRouteStore.setTarget(threadPostId, null);
         }
       } else {
         threadRouteStore.clearTarget();
+        highlightCommentId = null;
       }
       if (sectionIdentifier) {
         const availableSections = get(sections);
@@ -118,15 +137,17 @@
         } else {
           pendingSectionIdentifier = sectionIdentifier;
         }
-        uiStore.setActiveView('feed');
+        uiStore.setActiveView(threadPostId ? 'thread' : 'feed');
       } else if (isSettingsPath(path)) {
         pendingSectionIdentifier = null;
         pendingThreadPostId = null;
         threadRouteStore.clearTarget();
         uiStore.setActiveView('settings');
+        highlightCommentId = null;
       } else if (isAdminPath(path)) {
         pendingSectionIdentifier = null;
         pendingThreadPostId = null;
+        highlightCommentId = null;
         if (get(isAdmin)) {
           uiStore.setActiveView('admin');
         } else {
@@ -142,6 +163,7 @@
         pendingSectionIdentifier = null;
         pendingThreadPostId = null;
         uiStore.setActiveView('feed');
+        highlightCommentId = null;
       }
     }
     resetToken = null;
@@ -174,9 +196,11 @@
       sectionStore.setActiveSection(match);
       if (pendingThreadPostId) {
         threadRouteStore.setTarget(pendingThreadPostId, match.id);
+        uiStore.setActiveView('thread');
         replacePath(buildThreadHref(getSectionSlug(match), pendingThreadPostId));
         pendingThreadPostId = null;
       } else if (!hasThreadTarget) {
+        uiStore.setActiveView('feed');
         replacePath(buildFeedHref(getSectionSlug(match)));
       }
     } else {
@@ -256,6 +280,8 @@
               from the sidebar.
             </p>
           </div>
+        {:else if $activeView === 'thread'}
+          <ThreadView {highlightCommentId} />
         {:else if $activeSection}
           <div class="flex items-center gap-3">
             <span class="text-3xl">{$activeSection.icon}</span>
