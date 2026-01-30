@@ -24,6 +24,7 @@
     511,
     512,
     513,
+    514,
     526,
     527,
     530
@@ -420,7 +421,7 @@
     {
       "issue_number": 514,
       "title": "Improve search box alignment with main container",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 2,
@@ -432,7 +433,9 @@
       "assigned_to": "agent-1769815947-38679",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769815947-38679",
       "branch": "feat/issue-514-improve-search-box-alignment-with-main-c",
-      "claimed_at": "2026-01-30T23:32:27Z"
+      "claimed_at": "2026-01-30T23:32:27Z",
+      "pr_number": 541,
+      "completed_at": "2026-01-30T23:40:48Z"
     },
     {
       "issue_number": 515,
