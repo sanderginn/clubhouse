@@ -157,6 +157,37 @@ func TestDeletePostOwner(t *testing.T) {
 	if post.DeletedByUserID == nil || post.DeletedByUserID.String() != userID {
 		t.Errorf("expected deleted_by_user_id %s, got %v", userID, post.DeletedByUserID)
 	}
+
+	var metadataBytes []byte
+	err = db.QueryRow(`
+		SELECT metadata
+		FROM audit_logs
+		WHERE admin_user_id = $1 AND action = 'delete_post' AND related_post_id = $2
+	`, userID, postID).Scan(&metadataBytes)
+	if err != nil {
+		t.Fatalf("failed to query audit log: %v", err)
+	}
+
+	var metadata map[string]interface{}
+	if err := json.Unmarshal(metadataBytes, &metadata); err != nil {
+		t.Fatalf("failed to unmarshal metadata: %v", err)
+	}
+	if metadata["post_id"] != postID {
+		t.Errorf("expected post_id %s, got %v", postID, metadata["post_id"])
+	}
+	if metadata["section_id"] != sectionID {
+		t.Errorf("expected section_id %s, got %v", sectionID, metadata["section_id"])
+	}
+	if metadata["deleted_by_user_id"] != userID {
+		t.Errorf("expected deleted_by_user_id %s, got %v", userID, metadata["deleted_by_user_id"])
+	}
+	isSelfDelete, ok := metadata["is_self_delete"].(bool)
+	if !ok {
+		t.Fatalf("expected is_self_delete to be bool, got %T", metadata["is_self_delete"])
+	}
+	if !isSelfDelete {
+		t.Errorf("expected is_self_delete true, got %v", metadata["is_self_delete"])
+	}
 }
 
 func TestDeletePostAdmin(t *testing.T) {
@@ -333,6 +364,20 @@ func TestAdminDeletePostCreatesAuditLogWithMetadata(t *testing.T) {
 	}
 	if metadata["deleted_by_user_id"] != adminID {
 		t.Errorf("expected deleted_by_user_id %s, got %v", adminID, metadata["deleted_by_user_id"])
+	}
+	isSelfDelete, ok := metadata["is_self_delete"].(bool)
+	if !ok {
+		t.Fatalf("expected is_self_delete to be bool, got %T", metadata["is_self_delete"])
+	}
+	if isSelfDelete {
+		t.Errorf("expected is_self_delete false, got %v", metadata["is_self_delete"])
+	}
+	deletedByAdmin, ok := metadata["deleted_by_admin"].(bool)
+	if !ok {
+		t.Fatalf("expected deleted_by_admin to be bool, got %T", metadata["deleted_by_admin"])
+	}
+	if !deletedByAdmin {
+		t.Errorf("expected deleted_by_admin true, got %v", metadata["deleted_by_admin"])
 	}
 	excerpt, ok := metadata["content_excerpt"].(string)
 	if !ok {
