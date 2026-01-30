@@ -321,7 +321,7 @@ git worktree remove <WORKTREE_PATH> --force
 
 ```bash
 # Use GitHub MCP server's github_merge_pull_request tool
-# Specify merge method as "merge" and delete_branch as true
+# Specify merge method as "merge"
 ```
 
 #### Update the Work Queue
