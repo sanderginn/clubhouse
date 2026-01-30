@@ -10,6 +10,7 @@
   import ReactionBar from '../reactions/ReactionBar.svelte';
   import LinkifiedText from '../LinkifiedText.svelte';
   import EditedBadge from '../EditedBadge.svelte';
+  import RelativeTime from '../RelativeTime.svelte';
   import { logError } from '../../lib/observability/logger';
   import { recordComponentRender } from '../../lib/observability/performance';
 
@@ -131,26 +132,6 @@
     } finally {
       isSavingComment = false;
     }
-  }
-
-  function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffMins < 1) return 'just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
-    });
   }
 
   function getProviderIcon(provider: string | undefined): string {
@@ -311,9 +292,7 @@
                   </span>
                 {/if}
                 <span class="text-gray-400 text-xs">·</span>
-                <time class="text-gray-500 text-xs" datetime={comment.createdAt}>
-                  {formatDate(comment.createdAt)}
-                </time>
+                <RelativeTime dateString={comment.createdAt} className="text-gray-500 text-xs" />
                 <EditedBadge createdAt={comment.createdAt} updatedAt={comment.updatedAt} />
                 {#if $currentUser?.id === comment.userId}
                   <div class="ml-auto relative">
@@ -531,9 +510,7 @@
                             </span>
                           {/if}
                           <span class="text-gray-400 text-xs">·</span>
-                          <time class="text-gray-500 text-xs" datetime={reply.createdAt}>
-                            {formatDate(reply.createdAt)}
-                          </time>
+                          <RelativeTime dateString={reply.createdAt} className="text-gray-500 text-xs" />
                           <EditedBadge createdAt={reply.createdAt} updatedAt={reply.updatedAt} />
                           {#if $currentUser?.id === reply.userId}
                             <div class="ml-auto relative">

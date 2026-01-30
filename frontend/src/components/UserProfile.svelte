@@ -9,6 +9,7 @@
   import ReactionBar from './reactions/ReactionBar.svelte';
   import LinkifiedText from './LinkifiedText.svelte';
   import EditedBadge from './EditedBadge.svelte';
+  import RelativeTime from './RelativeTime.svelte';
   import { buildProfileHref, handleProfileNavigation, returnToFeed } from '../services/profileNavigation';
   import { buildThreadHref } from '../services/routeNavigation';
   import { sections } from '../stores/sectionStore';
@@ -448,26 +449,6 @@
     return items.slice(start, end);
   }
 
-  function formatRelative(dateString: string): string {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffMins < 1) return 'just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
-    });
-  }
-
   async function toggleCommentReaction(comment: Comment, emoji: string) {
     const key = `${comment.id}-${emoji}`;
     if (pendingCommentReactions.has(key)) return;
@@ -804,9 +785,7 @@
                         </span>
                       {/if}
                       <span class="text-gray-400 text-sm">commented</span>
-                      <time class="text-gray-500 text-sm" datetime={comment.createdAt}>
-                        {formatRelative(comment.createdAt)}
-                      </time>
+                      <RelativeTime dateString={comment.createdAt} className="text-gray-500 text-sm" />
                       <EditedBadge createdAt={comment.createdAt} updatedAt={comment.updatedAt} />
                     </div>
 
@@ -879,7 +858,7 @@
                         >
                           <div class="text-xs text-gray-500">
                             {item.comment.user?.username ?? 'Unknown'} ·{' '}
-                            {formatRelative(item.comment.createdAt)}
+                            <RelativeTime dateString={item.comment.createdAt} className="text-gray-500 text-xs" />
                           </div>
                           <div class="text-sm text-gray-800">
                             {truncateText(item.comment.content, 160)}
