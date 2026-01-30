@@ -10,7 +10,7 @@ groups:
           summary: "Clubhouse database unavailable"
           description: "Backend has been unreachable for 5 minutes. Verify database connectivity."
       - alert: DatabaseConnectionPoolNearExhaustion
-        expr: sql_client_connections_usage{state="active"} / sql_client_connections_usage{state="max"} > 0.8
+        expr: db_sql_connection_open{status="inuse"} / db_sql_connection_max_open > 0.8
         for: 5m
         labels:
           severity: warning
@@ -18,7 +18,7 @@ groups:
           summary: "Database connection pool > 80% utilized"
           description: "Database connection pool usage has been above 80% for 5 minutes."
       - alert: DatabaseConnectionPoolExhausted
-        expr: sql_client_connections_usage{state="active"} >= sql_client_connections_usage{state="max"}
+        expr: db_sql_connection_open{status="inuse"} >= db_sql_connection_max_open
         for: 1m
         labels:
           severity: critical
@@ -26,7 +26,7 @@ groups:
           summary: "Database connection pool exhausted"
           description: "Active database connections are at or above the configured maximum."
       - alert: HighDatabaseQueryLatency
-        expr: histogram_quantile(0.95, rate(sql_client_statements_duration_bucket[5m])) > 0.5
+        expr: histogram_quantile(0.95, rate(db_client_operation_duration_bucket[5m])) > 0.5
         for: 5m
         labels:
           severity: warning
@@ -34,7 +34,7 @@ groups:
           summary: "95th percentile DB query latency > 500ms"
           description: "The 95th percentile DB query latency has exceeded 500ms for 5 minutes."
       - alert: DatabaseConnectionErrors
-        expr: increase(sql_client_connections_wait_time_count[5m]) > 10
+        expr: increase(db_sql_connection_wait_total[5m]) > 10
         for: 2m
         labels:
           severity: warning
