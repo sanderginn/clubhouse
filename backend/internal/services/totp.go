@@ -432,6 +432,22 @@ func (s *TOTPService) VerifyLogin(ctx context.Context, userID uuid.UUID, code st
 	if code == "" {
 		return ErrTOTPRequired
 	}
+	normalized := normalizeBackupCode(code)
+	switch len(normalized) {
+	case totpCodeLength:
+		code = normalized
+	case totpBackupCodeDigits:
+		consumed, consumeErr := s.consumeBackupCode(ctx, userID, normalized)
+		if consumeErr != nil {
+			return consumeErr
+		}
+		if !consumed {
+			return ErrTOTPInvalid
+		}
+		return nil
+	default:
+		return ErrTOTPInvalid
+	}
 	if len(encrypted) == 0 {
 		return ErrTOTPNotEnrolled
 	}
@@ -450,13 +466,7 @@ func (s *TOTPService) VerifyLogin(ctx context.Context, userID uuid.UUID, code st
 		return err
 	}
 	if !valid {
-		consumed, consumeErr := s.consumeBackupCode(ctx, userID, code)
-		if consumeErr != nil {
-			return consumeErr
-		}
-		if !consumed {
-			return ErrTOTPInvalid
-		}
+		return ErrTOTPInvalid
 	}
 
 	return nil
