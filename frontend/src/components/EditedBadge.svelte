@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { displayTimezone } from '../stores';
+  import { formatInTimezone } from '../lib/time';
 
   export let createdAt: string | null | undefined;
   export let updatedAt: string | null | undefined;
@@ -25,17 +27,25 @@
   function formatEditedAt(dateString: string): string {
     const date = new Date(dateString);
     if (Number.isNaN(date.getTime())) return '';
-    const datePart = date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-    const timePart = date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-    });
+    const datePart = formatInTimezone(
+      date,
+      {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      },
+      $displayTimezone
+    );
+    const timePart = formatInTimezone(
+      date,
+      {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      },
+      $displayTimezone
+    );
     return `${datePart} ${timePart}`;
   }
 

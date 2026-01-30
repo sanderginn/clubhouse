@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api } from '../../services/api';
+  import { displayTimezone } from '../../stores';
+  import { formatInTimezone } from '../../lib/time';
   import { replacePath } from '../../services/routeNavigation';
 
   interface AuditLog {
@@ -65,6 +67,8 @@
     delete_post: 'Deleted post',
     delete_comment: 'Deleted comment',
     toggle_link_metadata: 'Toggled link metadata',
+    toggle_mfa_requirement: 'Toggled MFA requirement',
+    update_display_timezone: 'Updated display timezone',
     register_user: 'Registered user',
     update_profile: 'Updated profile',
     suspend_user: 'Suspended user',
@@ -89,8 +93,15 @@
   ]);
 
   const formatAction = (action: string) => actionLabels[action] ?? action.replace(/_/g, ' ');
-  const formatDate = (value: string) =>
-    new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+  const formatDate = (value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Unknown date';
+    return formatInTimezone(
+      date,
+      { dateStyle: 'medium', timeStyle: 'short' },
+      $displayTimezone
+    );
+  };
 
   const getMetadataValue = (metadata: Record<string, unknown> | null | undefined, key: string) => {
     if (!metadata) return null;

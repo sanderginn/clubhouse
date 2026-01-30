@@ -5,6 +5,7 @@
   import UserResetLinks from '../components/admin/UserResetLinks.svelte';
   import AdminTotpSetup from '../components/admin/AdminTotpSetup.svelte';
   import AdminMfaRequirement from '../components/admin/AdminMfaRequirement.svelte';
+  import AdminTimezoneSetting from '../components/admin/AdminTimezoneSetting.svelte';
 
   type AdminTab = 'pending' | 'users' | 'audit' | 'security';
 
@@ -106,6 +107,7 @@
         <AuditLogs />
       {:else}
         <div class="space-y-6">
+          <AdminTimezoneSetting />
           <AdminMfaRequirement />
           <AdminTotpSetup />
         </div>

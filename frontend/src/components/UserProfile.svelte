@@ -12,8 +12,10 @@
   import RelativeTime from './RelativeTime.svelte';
   import { buildProfileHref, handleProfileNavigation, returnToFeed } from '../services/profileNavigation';
   import { buildThreadHref } from '../services/routeNavigation';
+  import { displayTimezone } from '../stores';
   import { sections } from '../stores/sectionStore';
   import { getSectionSlugById } from '../services/sectionSlug';
+  import { formatInTimezone } from '../lib/time';
 
   export let userId: string | null;
 
@@ -434,11 +436,15 @@
   function formatDate(dateString?: string | null): string {
     if (!dateString) return 'Unknown date';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    return formatInTimezone(
+      date,
+      {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      },
+      $displayTimezone
+    );
   }
 
   function getPreviewWindow(items: { comment: Comment; depth: number }[], targetId: string) {
