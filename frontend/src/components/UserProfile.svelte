@@ -550,10 +550,10 @@
     <button
       type="button"
       on:click={returnToFeed}
-      class="text-sm text-gray-500 hover:text-gray-800 flex items-center gap-2"
+      class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 hover:border-gray-300"
     >
-      <span aria-hidden="true">&larr;</span>
-      Back to feed
+      <span aria-hidden="true">←</span>
+      <span>Back to feed</span>
     </button>
   </div>
 
