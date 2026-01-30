@@ -9,3 +9,24 @@ groups:
         annotations:
           summary: "Clubhouse WebSocket unavailable"
           description: "Backend scrape is failing; WebSocket traffic is likely impacted."
+      - alert: HighWebSocketErrorRate
+        expr: sum(rate(clubhouse_websocket_errors[5m])) / sum(rate(clubhouse_websocket_messages_received[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "WebSocket error rate > 5%"
+      - alert: HighWebSocketDisconnectionRate
+        expr: sum(rate(clubhouse_websocket_disconnects[5m])) > sum(rate(clubhouse_websocket_connects[5m])) * 1.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "WebSocket disconnections significantly higher than connections"
+      - alert: NoActiveWebSocketConnections
+        expr: clubhouse_websocket_connections == 0
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "No active WebSocket connections for 10 minutes"
