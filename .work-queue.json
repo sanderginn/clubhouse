@@ -21,6 +21,7 @@
     417,
     419,
     420,
+    423,
     424,
     425,
     426,
@@ -601,7 +602,7 @@
     {
       "issue_number": 423,
       "title": "[Medium] Implement suspend_user and unsuspend_user functionality",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769765929-19423",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769765929-19423",
       "dependencies": [
@@ -614,7 +615,9 @@
         "backend"
       ],
       "branch": "feat/issue-423-medium-implement-suspenduser-and-unsuspe",
-      "claimed_at": "2026-01-30T09:38:49Z"
+      "claimed_at": "2026-01-30T09:38:49Z",
+      "pr_number": 467,
+      "completed_at": "2026-01-30T09:57:04Z"
     },
     {
       "issue_number": 424,
