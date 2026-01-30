@@ -21,6 +21,7 @@
     417,
     419,
     420,
+    422,
     423,
     424,
     425,
@@ -585,7 +586,7 @@
     {
       "issue_number": 422,
       "title": "[Medium] Add missing metrics (search, cache, uploads, admin actions)",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         415
       ],
@@ -598,7 +599,9 @@
       "assigned_to": "agent-1769765919-19187",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769765919-19187",
       "branch": "feat/issue-422-medium-add-missing-metrics-search-cache-",
-      "claimed_at": "2026-01-30T09:38:39Z"
+      "claimed_at": "2026-01-30T09:38:39Z",
+      "pr_number": 464,
+      "completed_at": "2026-01-30T10:01:00Z"
     },
     {
       "issue_number": 423,
