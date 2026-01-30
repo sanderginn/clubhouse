@@ -20,6 +20,7 @@
     391,
     392,
     393,
+    394,
     397,
     398,
     416,
@@ -377,7 +378,7 @@
     {
       "issue_number": 394,
       "title": "Frontend: Remove old search location and add polish",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         393
       ],
@@ -392,7 +393,9 @@
       "assigned_to": "agent-1769773841-10492",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769773841-10492",
       "branch": "feat/issue-394-frontend-remove-old-search-location-and-",
-      "claimed_at": "2026-01-30T11:50:41Z"
+      "claimed_at": "2026-01-30T11:50:41Z",
+      "pr_number": 483,
+      "completed_at": "2026-01-30T12:01:15Z"
     },
     {
       "issue_number": 395,
