@@ -18,6 +18,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -73,13 +75,23 @@ type TOTPEnrollment struct {
 
 // EnrollAdmin generates a new TOTP secret for an admin and stores it encrypted.
 func (s *TOTPService) EnrollAdmin(ctx context.Context, userID uuid.UUID, username string) (*TOTPEnrollment, error) {
+	ctx, span := otel.Tracer("clubhouse.totp").Start(ctx, "TOTPService.EnrollAdmin")
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.Bool("has_username", strings.TrimSpace(username) != ""),
+	)
+	defer span.End()
+
 	if err := s.requireKey(); err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 
 	username = strings.TrimSpace(username)
 	if username == "" {
-		return nil, fmt.Errorf("username is required")
+		missingErr := fmt.Errorf("username is required")
+		recordSpanError(span, missingErr)
+		return nil, missingErr
 	}
 
 	var isAdmin bool
@@ -91,14 +103,18 @@ func (s *TOTPService) EnrollAdmin(ctx context.Context, userID uuid.UUID, usernam
 	`, userID).Scan(&isAdmin, &enabled)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			recordSpanError(span, ErrTOTPUserNotFound)
 			return nil, ErrTOTPUserNotFound
 		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to load admin status: %w", err)
 	}
 	if !isAdmin {
+		recordSpanError(span, ErrTOTPAdminRequired)
 		return nil, ErrTOTPAdminRequired
 	}
 	if enabled {
+		recordSpanError(span, ErrTOTPAlreadyEnabled)
 		return nil, ErrTOTPAlreadyEnabled
 	}
 
@@ -107,11 +123,13 @@ func (s *TOTPService) EnrollAdmin(ctx context.Context, userID uuid.UUID, usernam
 		AccountName: username,
 	})
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to generate totp secret: %w", err)
 	}
 
 	encryptedSecret, err := encryptTOTPSecret(s.key, key.Secret())
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 
@@ -123,6 +141,7 @@ func (s *TOTPService) EnrollAdmin(ctx context.Context, userID uuid.UUID, usernam
 		WHERE id = $2 AND deleted_at IS NULL
 	`, encryptedSecret, userID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to store totp secret: %w", err)
 	}
 
@@ -134,13 +153,23 @@ func (s *TOTPService) EnrollAdmin(ctx context.Context, userID uuid.UUID, usernam
 
 // EnrollUser generates a new TOTP secret for a user and stores it encrypted.
 func (s *TOTPService) EnrollUser(ctx context.Context, userID uuid.UUID, username string) (*TOTPEnrollment, error) {
+	ctx, span := otel.Tracer("clubhouse.totp").Start(ctx, "TOTPService.EnrollUser")
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.Bool("has_username", strings.TrimSpace(username) != ""),
+	)
+	defer span.End()
+
 	if err := s.requireKey(); err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 
 	username = strings.TrimSpace(username)
 	if username == "" {
-		return nil, fmt.Errorf("username is required")
+		missingErr := fmt.Errorf("username is required")
+		recordSpanError(span, missingErr)
+		return nil, missingErr
 	}
 
 	var enabled bool
@@ -151,11 +180,14 @@ func (s *TOTPService) EnrollUser(ctx context.Context, userID uuid.UUID, username
 	`, userID).Scan(&enabled)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			recordSpanError(span, ErrTOTPUserNotFound)
 			return nil, ErrTOTPUserNotFound
 		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to load totp status: %w", err)
 	}
 	if enabled {
+		recordSpanError(span, ErrTOTPAlreadyEnabled)
 		return nil, ErrTOTPAlreadyEnabled
 	}
 
@@ -164,11 +196,13 @@ func (s *TOTPService) EnrollUser(ctx context.Context, userID uuid.UUID, username
 		AccountName: username,
 	})
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to generate totp secret: %w", err)
 	}
 
 	encryptedSecret, err := encryptTOTPSecret(s.key, key.Secret())
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 
@@ -180,6 +214,7 @@ func (s *TOTPService) EnrollUser(ctx context.Context, userID uuid.UUID, username
 		WHERE id = $2 AND deleted_at IS NULL
 	`, encryptedSecret, userID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to store totp secret: %w", err)
 	}
 
@@ -191,11 +226,21 @@ func (s *TOTPService) EnrollUser(ctx context.Context, userID uuid.UUID, username
 
 // VerifyAdmin verifies a TOTP code and enables MFA for the admin.
 func (s *TOTPService) VerifyAdmin(ctx context.Context, userID uuid.UUID, code string) error {
+	ctx, span := otel.Tracer("clubhouse.totp").Start(ctx, "TOTPService.VerifyAdmin")
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.Bool("has_code", strings.TrimSpace(code) != ""),
+		attribute.Int("code_length", len(strings.TrimSpace(code))),
+	)
+	defer span.End()
+
 	code = strings.TrimSpace(code)
 	if code == "" {
+		recordSpanError(span, ErrTOTPRequired)
 		return ErrTOTPRequired
 	}
 	if len(code) != totpCodeLength {
+		recordSpanError(span, ErrTOTPInvalid)
 		return ErrTOTPInvalid
 	}
 
@@ -208,31 +253,39 @@ func (s *TOTPService) VerifyAdmin(ctx context.Context, userID uuid.UUID, code st
 	`, userID).Scan(&encrypted, &enabled)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			recordSpanError(span, ErrTOTPUserNotFound)
 			return ErrTOTPUserNotFound
 		}
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to load totp secret: %w", err)
 	}
 	if enabled {
+		recordSpanError(span, ErrTOTPAlreadyEnabled)
 		return ErrTOTPAlreadyEnabled
 	}
 	if len(encrypted) == 0 {
+		recordSpanError(span, ErrTOTPNotEnrolled)
 		return ErrTOTPNotEnrolled
 	}
 
 	if err := s.requireKey(); err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 
 	secret, err := decryptTOTPSecret(s.key, encrypted)
 	if err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 
 	valid, err := validateTOTP(secret, code)
 	if err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 	if !valid {
+		recordSpanError(span, ErrTOTPInvalid)
 		return ErrTOTPInvalid
 	}
 
@@ -243,6 +296,7 @@ func (s *TOTPService) VerifyAdmin(ctx context.Context, userID uuid.UUID, code st
 		WHERE id = $1 AND deleted_at IS NULL
 	`, userID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to enable totp: %w", err)
 	}
 
@@ -251,11 +305,22 @@ func (s *TOTPService) VerifyAdmin(ctx context.Context, userID uuid.UUID, code st
 
 // EnableUserWithBackupCodes verifies the TOTP code, enables MFA, and stores backup codes.
 func (s *TOTPService) EnableUserWithBackupCodes(ctx context.Context, userID uuid.UUID, code string, backupCodes []string) error {
+	ctx, span := otel.Tracer("clubhouse.totp").Start(ctx, "TOTPService.EnableUserWithBackupCodes")
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.Bool("has_code", strings.TrimSpace(code) != ""),
+		attribute.Int("code_length", len(strings.TrimSpace(code))),
+		attribute.Int("backup_code_count", len(backupCodes)),
+	)
+	defer span.End()
+
 	code = strings.TrimSpace(code)
 	if code == "" {
+		recordSpanError(span, ErrTOTPRequired)
 		return ErrTOTPRequired
 	}
 	if len(code) != totpCodeLength {
+		recordSpanError(span, ErrTOTPInvalid)
 		return ErrTOTPInvalid
 	}
 
@@ -268,36 +333,45 @@ func (s *TOTPService) EnableUserWithBackupCodes(ctx context.Context, userID uuid
 	`, userID).Scan(&encrypted, &enabled)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			recordSpanError(span, ErrTOTPUserNotFound)
 			return ErrTOTPUserNotFound
 		}
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to load totp secret: %w", err)
 	}
 	if enabled {
+		recordSpanError(span, ErrTOTPAlreadyEnabled)
 		return ErrTOTPAlreadyEnabled
 	}
 	if len(encrypted) == 0 {
+		recordSpanError(span, ErrTOTPNotEnrolled)
 		return ErrTOTPNotEnrolled
 	}
 
 	if err := s.requireKey(); err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 
 	secret, err := decryptTOTPSecret(s.key, encrypted)
 	if err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 
 	valid, err := validateTOTP(secret, code)
 	if err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 	if !valid {
+		recordSpanError(span, ErrTOTPInvalid)
 		return ErrTOTPInvalid
 	}
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to begin totp transaction: %w", err)
 	}
 	defer func() {
@@ -313,14 +387,17 @@ func (s *TOTPService) EnableUserWithBackupCodes(ctx context.Context, userID uuid
 		WHERE id = $1 AND deleted_at IS NULL
 	`, userID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to enable totp: %w", err)
 	}
 
 	if err := storeBackupCodes(ctx, tx, userID, backupCodes); err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to commit totp transaction: %w", err)
 	}
 	tx = nil
@@ -330,11 +407,21 @@ func (s *TOTPService) EnableUserWithBackupCodes(ctx context.Context, userID uuid
 
 // DisableUser disables MFA after verifying a TOTP code.
 func (s *TOTPService) DisableUser(ctx context.Context, userID uuid.UUID, code string) error {
+	ctx, span := otel.Tracer("clubhouse.totp").Start(ctx, "TOTPService.DisableUser")
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.Bool("has_code", strings.TrimSpace(code) != ""),
+		attribute.Int("code_length", len(strings.TrimSpace(code))),
+	)
+	defer span.End()
+
 	code = strings.TrimSpace(code)
 	if code == "" {
+		recordSpanError(span, ErrTOTPRequired)
 		return ErrTOTPRequired
 	}
 	if len(code) != totpCodeLength {
+		recordSpanError(span, ErrTOTPInvalid)
 		return ErrTOTPInvalid
 	}
 
@@ -347,36 +434,45 @@ func (s *TOTPService) DisableUser(ctx context.Context, userID uuid.UUID, code st
 	`, userID).Scan(&encrypted, &enabled)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			recordSpanError(span, ErrTOTPUserNotFound)
 			return ErrTOTPUserNotFound
 		}
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to load totp settings: %w", err)
 	}
 	if !enabled {
+		recordSpanError(span, ErrTOTPNotEnabled)
 		return ErrTOTPNotEnabled
 	}
 	if len(encrypted) == 0 {
+		recordSpanError(span, ErrTOTPNotEnrolled)
 		return ErrTOTPNotEnrolled
 	}
 
 	if err := s.requireKey(); err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 
 	secret, err := decryptTOTPSecret(s.key, encrypted)
 	if err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 
 	valid, err := validateTOTP(secret, code)
 	if err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 	if !valid {
+		recordSpanError(span, ErrTOTPInvalid)
 		return ErrTOTPInvalid
 	}
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to begin totp transaction: %w", err)
 	}
 	defer func() {
@@ -393,14 +489,17 @@ func (s *TOTPService) DisableUser(ctx context.Context, userID uuid.UUID, code st
 		WHERE id = $1 AND deleted_at IS NULL
 	`, userID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to disable totp: %w", err)
 	}
 
 	if _, err := tx.ExecContext(ctx, `DELETE FROM mfa_backup_codes WHERE user_id = $1`, userID); err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to clear backup codes: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to commit totp transaction: %w", err)
 	}
 	tx = nil
@@ -410,6 +509,14 @@ func (s *TOTPService) DisableUser(ctx context.Context, userID uuid.UUID, code st
 
 // VerifyLogin checks a login TOTP code if MFA is enabled.
 func (s *TOTPService) VerifyLogin(ctx context.Context, userID uuid.UUID, code string) error {
+	ctx, span := otel.Tracer("clubhouse.totp").Start(ctx, "TOTPService.VerifyLogin")
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.Bool("has_code", strings.TrimSpace(code) != ""),
+		attribute.Int("code_length", len(strings.TrimSpace(code))),
+	)
+	defer span.End()
+
 	var encrypted []byte
 	var enabled bool
 	err := s.db.QueryRowContext(ctx, `
@@ -419,8 +526,10 @@ func (s *TOTPService) VerifyLogin(ctx context.Context, userID uuid.UUID, code st
 	`, userID).Scan(&encrypted, &enabled)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			recordSpanError(span, ErrTOTPUserNotFound)
 			return ErrTOTPUserNotFound
 		}
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to load totp settings: %w", err)
 	}
 
@@ -430,6 +539,7 @@ func (s *TOTPService) VerifyLogin(ctx context.Context, userID uuid.UUID, code st
 
 	code = strings.TrimSpace(code)
 	if code == "" {
+		recordSpanError(span, ErrTOTPRequired)
 		return ErrTOTPRequired
 	}
 	normalized := normalizeBackupCode(code)
@@ -439,33 +549,41 @@ func (s *TOTPService) VerifyLogin(ctx context.Context, userID uuid.UUID, code st
 	case totpBackupCodeDigits:
 		consumed, consumeErr := s.consumeBackupCode(ctx, userID, normalized)
 		if consumeErr != nil {
+			recordSpanError(span, consumeErr)
 			return consumeErr
 		}
 		if !consumed {
+			recordSpanError(span, ErrTOTPInvalid)
 			return ErrTOTPInvalid
 		}
 		return nil
 	default:
+		recordSpanError(span, ErrTOTPInvalid)
 		return ErrTOTPInvalid
 	}
 	if len(encrypted) == 0 {
+		recordSpanError(span, ErrTOTPNotEnrolled)
 		return ErrTOTPNotEnrolled
 	}
 
 	if err := s.requireKey(); err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 
 	secret, err := decryptTOTPSecret(s.key, encrypted)
 	if err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 
 	valid, err := validateTOTP(secret, code)
 	if err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 	if !valid {
+		recordSpanError(span, ErrTOTPInvalid)
 		return ErrTOTPInvalid
 	}
 

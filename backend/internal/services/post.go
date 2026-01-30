@@ -28,6 +28,10 @@ func NewPostService(db *sql.DB) *PostService {
 
 // GetSectionIDByPostID fetches the section id for a post.
 func (s *PostService) GetSectionIDByPostID(ctx context.Context, postID uuid.UUID) (uuid.UUID, error) {
+	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.GetSectionIDByPostID")
+	span.SetAttributes(attribute.String("post_id", postID.String()))
+	defer span.End()
+
 	query := `
 		SELECT section_id
 		FROM posts
@@ -36,6 +40,7 @@ func (s *PostService) GetSectionIDByPostID(ctx context.Context, postID uuid.UUID
 
 	var sectionID uuid.UUID
 	if err := s.db.QueryRowContext(ctx, query, postID).Scan(&sectionID); err != nil {
+		recordSpanError(span, err)
 		return uuid.UUID{}, err
 	}
 
@@ -54,12 +59,14 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 
 	// Validate input
 	if err := validateCreatePostInput(req); err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 
 	// Parse and validate section ID
 	sectionID, err := uuid.Parse(req.SectionID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("invalid section id")
 	}
 	span.SetAttributes(attribute.String("section_id", sectionID.String()))
@@ -69,6 +76,10 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 	err = s.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM sections WHERE id = $1)", sectionID).
 		Scan(&sectionExists)
 	if err != nil || !sectionExists {
+		if err == nil {
+			err = fmt.Errorf("section not found")
+		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("section not found")
 	}
 
@@ -81,6 +92,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 	// Begin transaction
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
@@ -99,6 +111,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 		Scan(&post.ID, &post.UserID, &post.SectionID, &post.Content, &post.CreatedAt)
 
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create post: %w", err)
 	}
 
@@ -126,6 +139,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 				Scan(&link.ID, &link.URL, &link.CreatedAt)
 
 			if err != nil {
+				recordSpanError(span, err)
 				return nil, fmt.Errorf("failed to create link: %w", err)
 			}
 
@@ -139,6 +153,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 
 	// Commit transaction
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -150,17 +165,19 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 
 func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID uuid.UUID, req *models.UpdatePostRequest) (*models.Post, error) {
 	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.UpdatePost")
+	defer span.End()
+
+	if err := validateUpdatePostInput(req); err != nil {
+		recordSpanError(span, err)
+		return nil, err
+	}
+
 	span.SetAttributes(
 		attribute.String("user_id", userID.String()),
 		attribute.String("post_id", postID.String()),
 		attribute.Int("content_length", len(strings.TrimSpace(req.Content))),
 		attribute.Bool("has_links", req.Links != nil && len(*req.Links) > 0),
 	)
-	defer span.End()
-
-	if err := validateUpdatePostInput(req); err != nil {
-		return nil, err
-	}
 
 	trimmedContent := strings.TrimSpace(req.Content)
 	var linkMetadata []models.JSONMap
@@ -176,18 +193,24 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 	`, postID).Scan(&ownerID, &previousContent, &sectionID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("post not found")
+			notFoundErr := errors.New("post not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to fetch post owner: %w", err)
 	}
 
 	if ownerID != userID {
-		return nil, errors.New("unauthorized to edit this post")
+		unauthorizedErr := errors.New("unauthorized to edit this post")
+		recordSpanError(span, unauthorizedErr)
+		return nil, unauthorizedErr
 	}
 
 	if req.Links != nil {
 		existingURLs, err := getPostLinkURLs(ctx, s.db, postID)
 		if err != nil {
+			recordSpanError(span, err)
 			return nil, fmt.Errorf("failed to fetch post links: %w", err)
 		}
 
@@ -199,6 +222,7 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
@@ -211,11 +235,13 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 		WHERE id = $2
 	`, trimmedContent, postID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to update post: %w", err)
 	}
 
 	if req.Links != nil && linksChanged {
 		if _, err := tx.ExecContext(ctx, "DELETE FROM links WHERE post_id = $1", postID); err != nil {
+			recordSpanError(span, err)
 			return nil, fmt.Errorf("failed to delete post links: %w", err)
 		}
 
@@ -233,6 +259,7 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 					VALUES ($1, $2, $3, $4, now())
 				`, linkID, postID, linkReq.URL, metadataValue)
 				if err != nil {
+					recordSpanError(span, err)
 					return nil, fmt.Errorf("failed to create link: %w", err)
 				}
 			}
@@ -253,10 +280,12 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 
 	auditService := NewAuditService(tx)
 	if err := auditService.LogAuditWithMetadata(ctx, "update_post", userID, ownerID, metadata); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -265,6 +294,13 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 
 // GetPostByID retrieves a post by ID with all related data
 func (s *PostService) GetPostByID(ctx context.Context, postID uuid.UUID, userID uuid.UUID) (*models.Post, error) {
+	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.GetPostByID")
+	span.SetAttributes(
+		attribute.String("post_id", postID.String()),
+		attribute.String("user_id", userID.String()),
+	)
+	defer span.End()
+
 	query := `
 		SELECT
 			p.id, p.user_id, p.section_id, p.content,
@@ -290,8 +326,11 @@ func (s *PostService) GetPostByID(ctx context.Context, postID uuid.UUID, userID 
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("post not found")
+			notFoundErr := errors.New("post not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, err
 	}
 
@@ -300,6 +339,7 @@ func (s *PostService) GetPostByID(ctx context.Context, postID uuid.UUID, userID 
 	// Fetch links for this post
 	links, err := s.getPostLinks(ctx, postID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 	post.Links = links
@@ -307,6 +347,7 @@ func (s *PostService) GetPostByID(ctx context.Context, postID uuid.UUID, userID 
 	// Fetch reactions
 	counts, viewerReactions, err := s.getPostReactions(ctx, postID, userID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 	post.ReactionCounts = counts
@@ -435,6 +476,15 @@ func (s *PostService) getPostReactions(ctx context.Context, postID uuid.UUID, vi
 
 // GetFeed retrieves a paginated feed of posts for a section using cursor-based pagination
 func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *string, limit int, userID uuid.UUID) (*models.FeedResponse, error) {
+	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.GetFeed")
+	span.SetAttributes(
+		attribute.String("section_id", sectionID.String()),
+		attribute.String("user_id", userID.String()),
+		attribute.Int("limit", limit),
+		attribute.Bool("has_cursor", cursor != nil && *cursor != ""),
+	)
+	defer span.End()
+
 	if limit <= 0 || limit > 100 {
 		limit = 20
 	}
@@ -467,6 +517,7 @@ func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -483,6 +534,7 @@ func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *
 			&post.CommentCount,
 		)
 		if err != nil {
+			recordSpanError(span, err)
 			return nil, err
 		}
 
@@ -491,6 +543,7 @@ func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *
 		// Fetch links for this post
 		links, err := s.getPostLinks(ctx, post.ID)
 		if err != nil {
+			recordSpanError(span, err)
 			return nil, err
 		}
 		post.Links = links
@@ -498,6 +551,7 @@ func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *
 		// Fetch reactions
 		counts, viewerReactions, err := s.getPostReactions(ctx, post.ID, userID)
 		if err != nil {
+			recordSpanError(span, err)
 			return nil, err
 		}
 		post.ReactionCounts = counts
@@ -507,6 +561,7 @@ func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *
 	}
 
 	if err = rows.Err(); err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 
@@ -534,22 +589,36 @@ func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *
 
 // DeletePost soft-deletes a post (only post owner or admin can delete)
 func (s *PostService) DeletePost(ctx context.Context, postID uuid.UUID, userID uuid.UUID, isAdmin bool) (*models.Post, error) {
+	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.DeletePost")
+	span.SetAttributes(
+		attribute.String("post_id", postID.String()),
+		attribute.String("user_id", userID.String()),
+		attribute.Bool("is_admin", isAdmin),
+	)
+	defer span.End()
+
 	// Fetch the post to verify ownership
 	post, err := s.GetPostByID(ctx, postID, userID)
 	if err != nil {
 		if err.Error() == "post not found" {
-			return nil, errors.New("post not found")
+			notFoundErr := errors.New("post not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, err
 	}
 
 	// Check authorization: owner or admin can delete
 	if post.UserID != userID && !isAdmin {
-		return nil, errors.New("unauthorized to delete this post")
+		unauthorizedErr := errors.New("unauthorized to delete this post")
+		recordSpanError(span, unauthorizedErr)
+		return nil, unauthorizedErr
 	}
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
@@ -571,6 +640,7 @@ func (s *PostService) DeletePost(ctx context.Context, postID uuid.UUID, userID u
 	)
 
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to delete post: %w", err)
 	}
 
@@ -595,10 +665,12 @@ func (s *PostService) DeletePost(ctx context.Context, postID uuid.UUID, userID u
 		uuid.Nil,
 		metadata,
 	); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -615,6 +687,14 @@ func (s *PostService) DeletePost(ctx context.Context, postID uuid.UUID, userID u
 // RestorePost restores a soft-deleted post
 // Only the post owner (within 7 days) or an admin can restore
 func (s *PostService) RestorePost(ctx context.Context, postID uuid.UUID, userID uuid.UUID, isAdmin bool) (*models.Post, error) {
+	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.RestorePost")
+	span.SetAttributes(
+		attribute.String("post_id", postID.String()),
+		attribute.String("user_id", userID.String()),
+		attribute.Bool("is_admin", isAdmin),
+	)
+	defer span.End()
+
 	// First, fetch the deleted post
 	query := `
 		SELECT
@@ -641,22 +721,29 @@ func (s *PostService) RestorePost(ctx context.Context, postID uuid.UUID, userID 
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("post not found")
+			notFoundErr := errors.New("post not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, err
 	}
 
 	// Check permissions
 	// Only owner (within 7 days) or admin can restore
 	if !isAdmin && post.UserID != userID {
-		return nil, errors.New("unauthorized")
+		unauthorizedErr := errors.New("unauthorized")
+		recordSpanError(span, unauthorizedErr)
+		return nil, unauthorizedErr
 	}
 
 	if !isAdmin && post.DeletedAt != nil {
 		// Check if within 7 days
 		sevenDaysAgo := time.Now().AddDate(0, 0, -7)
 		if post.DeletedAt.Before(sevenDaysAgo) {
-			return nil, errors.New("post permanently deleted")
+			permanentErr := errors.New("post permanently deleted")
+			recordSpanError(span, permanentErr)
+			return nil, permanentErr
 		}
 	}
 
@@ -674,6 +761,7 @@ func (s *PostService) RestorePost(ctx context.Context, postID uuid.UUID, userID 
 	)
 
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to restore post: %w", err)
 	}
 
@@ -682,6 +770,7 @@ func (s *PostService) RestorePost(ctx context.Context, postID uuid.UUID, userID 
 	// Fetch links for this post
 	links, err := s.getPostLinks(ctx, postID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 	post.Links = links
@@ -689,6 +778,7 @@ func (s *PostService) RestorePost(ctx context.Context, postID uuid.UUID, userID 
 	// Fetch reactions
 	counts, viewerReactions, err := s.getPostReactions(ctx, postID, userID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 	post.ReactionCounts = counts
@@ -700,6 +790,15 @@ func (s *PostService) RestorePost(ctx context.Context, postID uuid.UUID, userID 
 
 // GetPostsByUserID retrieves a paginated list of posts by a specific user using cursor-based pagination
 func (s *PostService) GetPostsByUserID(ctx context.Context, targetUserID uuid.UUID, cursor *string, limit int, viewerID uuid.UUID) (*models.FeedResponse, error) {
+	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.GetPostsByUserID")
+	span.SetAttributes(
+		attribute.String("target_user_id", targetUserID.String()),
+		attribute.String("viewer_id", viewerID.String()),
+		attribute.Int("limit", limit),
+		attribute.Bool("has_cursor", cursor != nil && *cursor != ""),
+	)
+	defer span.End()
+
 	if limit <= 0 || limit > 100 {
 		limit = 20
 	}
@@ -732,6 +831,7 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, targetUserID uuid.UU
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -748,6 +848,7 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, targetUserID uuid.UU
 			&post.CommentCount,
 		)
 		if err != nil {
+			recordSpanError(span, err)
 			return nil, err
 		}
 
@@ -756,6 +857,7 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, targetUserID uuid.UU
 		// Fetch links for this post
 		links, err := s.getPostLinks(ctx, post.ID)
 		if err != nil {
+			recordSpanError(span, err)
 			return nil, err
 		}
 		post.Links = links
@@ -763,6 +865,7 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, targetUserID uuid.UU
 		// Fetch reactions
 		counts, viewerReactions, err := s.getPostReactions(ctx, post.ID, viewerID)
 		if err != nil {
+			recordSpanError(span, err)
 			return nil, err
 		}
 		post.ReactionCounts = counts
@@ -772,6 +875,7 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, targetUserID uuid.UU
 	}
 
 	if err = rows.Err(); err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 
@@ -799,8 +903,16 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, targetUserID uuid.UU
 
 // HardDeletePost permanently deletes a post and all related data (admin only)
 func (s *PostService) HardDeletePost(ctx context.Context, postID uuid.UUID, adminUserID uuid.UUID) error {
+	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.HardDeletePost")
+	span.SetAttributes(
+		attribute.String("post_id", postID.String()),
+		attribute.String("admin_user_id", adminUserID.String()),
+	)
+	defer span.End()
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
@@ -811,9 +923,11 @@ func (s *PostService) HardDeletePost(ctx context.Context, postID uuid.UUID, admi
 	var exists bool
 	err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM posts WHERE id = $1)", postID).Scan(&exists)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to check post existence: %w", err)
 	}
 	if !exists {
+		recordSpanError(span, ErrPostNotFound)
 		return ErrPostNotFound
 	}
 
@@ -824,72 +938,85 @@ func (s *PostService) HardDeletePost(ctx context.Context, postID uuid.UUID, admi
 	`
 	_, err = tx.ExecContext(ctx, auditQuery, adminUserID, postID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to create audit log: %w", err)
 	}
 
 	// Delete links associated with comments on this post
 	_, err = tx.ExecContext(ctx, "DELETE FROM links WHERE comment_id IN (SELECT id FROM comments WHERE post_id = $1)", postID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to delete comment links: %w", err)
 	}
 
 	// Delete reactions on comments of this post
 	_, err = tx.ExecContext(ctx, "DELETE FROM reactions WHERE comment_id IN (SELECT id FROM comments WHERE post_id = $1)", postID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to delete comment reactions: %w", err)
 	}
 
 	// Delete mentions from comments on this post
 	_, err = tx.ExecContext(ctx, "DELETE FROM mentions WHERE comment_id IN (SELECT id FROM comments WHERE post_id = $1)", postID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to delete comment mentions: %w", err)
 	}
 
 	// Delete notifications related to this post or its comments
 	_, err = tx.ExecContext(ctx, "DELETE FROM notifications WHERE related_post_id = $1 OR related_comment_id IN (SELECT id FROM comments WHERE post_id = $1)", postID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to delete notifications: %w", err)
 	}
 
 	// Delete comments on this post
 	_, err = tx.ExecContext(ctx, "DELETE FROM comments WHERE post_id = $1", postID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to delete comments: %w", err)
 	}
 
 	// Delete reactions on this post
 	_, err = tx.ExecContext(ctx, "DELETE FROM reactions WHERE post_id = $1", postID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to delete post reactions: %w", err)
 	}
 
 	// Delete mentions from this post
 	_, err = tx.ExecContext(ctx, "DELETE FROM mentions WHERE post_id = $1", postID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to delete post mentions: %w", err)
 	}
 
 	// Delete links associated with this post
 	_, err = tx.ExecContext(ctx, "DELETE FROM links WHERE post_id = $1", postID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to delete post links: %w", err)
 	}
 
 	// Delete the post
 	result, err := tx.ExecContext(ctx, "DELETE FROM posts WHERE id = $1", postID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to delete post: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to get rows affected: %w", err)
 	}
 	if rowsAffected == 0 {
+		recordSpanError(span, ErrPostNotFound)
 		return ErrPostNotFound
 	}
 
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -900,8 +1027,16 @@ func (s *PostService) HardDeletePost(ctx context.Context, postID uuid.UUID, admi
 
 // AdminRestorePost restores a soft-deleted post (admin only) with audit logging
 func (s *PostService) AdminRestorePost(ctx context.Context, postID uuid.UUID, adminUserID uuid.UUID) (*models.Post, error) {
+	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.AdminRestorePost")
+	span.SetAttributes(
+		attribute.String("post_id", postID.String()),
+		attribute.String("admin_user_id", adminUserID.String()),
+	)
+	defer span.End()
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
@@ -916,13 +1051,17 @@ func (s *PostService) AdminRestorePost(ctx context.Context, postID uuid.UUID, ad
 		       EXISTS(SELECT 1 FROM posts WHERE id = $1 AND deleted_at IS NOT NULL)
 	`, postID).Scan(&exists, &isDeleted)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to check post: %w", err)
 	}
 	if !exists {
+		recordSpanError(span, ErrPostNotFound)
 		return nil, ErrPostNotFound
 	}
 	if !isDeleted {
-		return nil, errors.New("post is not deleted")
+		notDeletedErr := errors.New("post is not deleted")
+		recordSpanError(span, notDeletedErr)
+		return nil, notDeletedErr
 	}
 
 	// Restore the post
@@ -937,6 +1076,7 @@ func (s *PostService) AdminRestorePost(ctx context.Context, postID uuid.UUID, ad
 		&post.CreatedAt, &post.UpdatedAt, &post.DeletedAt, &post.DeletedByUserID,
 	)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to restore post: %w", err)
 	}
 
@@ -958,16 +1098,19 @@ func (s *PostService) AdminRestorePost(ctx context.Context, postID uuid.UUID, ad
 		uuid.Nil,
 		metadata,
 	); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	// Fetch the full post with user info
 	fullPost, err := s.GetPostByID(ctx, postID, adminUserID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to fetch restored post: %w", err)
 	}
 	observability.RecordPostRestored(ctx)

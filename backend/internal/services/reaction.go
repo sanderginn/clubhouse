@@ -9,6 +9,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/models"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // ReactionService handles reaction-related operations
@@ -23,16 +25,27 @@ func NewReactionService(db *sql.DB) *ReactionService {
 
 // AddReactionToPost adds a reaction to a post
 func (s *ReactionService) AddReactionToPost(ctx context.Context, postID uuid.UUID, userID uuid.UUID, emoji string) (*models.Reaction, error) {
+	ctx, span := otel.Tracer("clubhouse.reactions").Start(ctx, "ReactionService.AddReactionToPost")
+	span.SetAttributes(
+		attribute.String("post_id", postID.String()),
+		attribute.String("user_id", userID.String()),
+		attribute.String("emoji", strings.TrimSpace(emoji)),
+	)
+	defer span.End()
+
 	if err := validateEmoji(emoji); err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 
 	if err := s.verifyPostExists(ctx, postID); err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 
 	existingReaction, err := s.getExistingPostReaction(ctx, postID, userID, emoji)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 
@@ -40,6 +53,7 @@ func (s *ReactionService) AddReactionToPost(ctx context.Context, postID uuid.UUI
 		if existingReaction.DeletedAt != nil {
 			reaction, err := s.restoreReaction(ctx, existingReaction.ID)
 			if err != nil {
+				recordSpanError(span, err)
 				return nil, err
 			}
 			if err := s.logReactionAudit(ctx, "add_reaction", userID, map[string]interface{}{
@@ -48,6 +62,7 @@ func (s *ReactionService) AddReactionToPost(ctx context.Context, postID uuid.UUI
 				"post_id":   postID.String(),
 				"emoji":     emoji,
 			}); err != nil {
+				recordSpanError(span, err)
 				return nil, err
 			}
 			return reaction, nil
@@ -57,6 +72,7 @@ func (s *ReactionService) AddReactionToPost(ctx context.Context, postID uuid.UUI
 
 	reaction, err := s.createPostReaction(ctx, postID, userID, emoji)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 	if err := s.logReactionAudit(ctx, "add_reaction", userID, map[string]interface{}{
@@ -65,6 +81,7 @@ func (s *ReactionService) AddReactionToPost(ctx context.Context, postID uuid.UUI
 		"post_id":   postID.String(),
 		"emoji":     emoji,
 	}); err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 	return reaction, nil
@@ -72,15 +89,33 @@ func (s *ReactionService) AddReactionToPost(ctx context.Context, postID uuid.UUI
 
 // GetPostReactions retrieves reactions for a post grouped by emoji.
 func (s *ReactionService) GetPostReactions(ctx context.Context, postID uuid.UUID) ([]models.ReactionGroup, error) {
+	ctx, span := otel.Tracer("clubhouse.reactions").Start(ctx, "ReactionService.GetPostReactions")
+	span.SetAttributes(attribute.String("post_id", postID.String()))
+	defer span.End()
+
 	if err := s.verifyPostExists(ctx, postID); err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
-	return s.getReactions(ctx, "post_id", postID)
+	reactions, err := s.getReactions(ctx, "post_id", postID)
+	if err != nil {
+		recordSpanError(span, err)
+		return nil, err
+	}
+	return reactions, nil
 }
 
 // RemoveReactionFromPost removes a reaction from a post
 // Users can only remove their own reactions
 func (s *ReactionService) RemoveReactionFromPost(ctx context.Context, postID uuid.UUID, emoji string, userID uuid.UUID) error {
+	ctx, span := otel.Tracer("clubhouse.reactions").Start(ctx, "ReactionService.RemoveReactionFromPost")
+	span.SetAttributes(
+		attribute.String("post_id", postID.String()),
+		attribute.String("user_id", userID.String()),
+		attribute.String("emoji", strings.TrimSpace(emoji)),
+	)
+	defer span.End()
+
 	query := `
 		DELETE FROM reactions
 		WHERE post_id = $1 AND emoji = $2 AND user_id = $3 AND deleted_at IS NULL
@@ -88,16 +123,20 @@ func (s *ReactionService) RemoveReactionFromPost(ctx context.Context, postID uui
 
 	result, err := s.db.ExecContext(ctx, query, postID, emoji, userID)
 	if err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 
 	if rowsAffected == 0 {
-		return errors.New("reaction not found")
+		notFoundErr := errors.New("reaction not found")
+		recordSpanError(span, notFoundErr)
+		return notFoundErr
 	}
 
 	if err := s.logReactionAudit(ctx, "remove_reaction", userID, map[string]interface{}{
@@ -106,6 +145,7 @@ func (s *ReactionService) RemoveReactionFromPost(ctx context.Context, postID uui
 		"post_id":   postID.String(),
 		"emoji":     emoji,
 	}); err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 
@@ -114,17 +154,29 @@ func (s *ReactionService) RemoveReactionFromPost(ctx context.Context, postID uui
 
 // AddReactionToComment adds a reaction to a comment
 func (s *ReactionService) AddReactionToComment(ctx context.Context, commentID uuid.UUID, userID uuid.UUID, emoji string) (*models.Reaction, error) {
+	ctx, span := otel.Tracer("clubhouse.reactions").Start(ctx, "ReactionService.AddReactionToComment")
+	span.SetAttributes(
+		attribute.String("comment_id", commentID.String()),
+		attribute.String("user_id", userID.String()),
+		attribute.String("emoji", strings.TrimSpace(emoji)),
+	)
+	defer span.End()
+
 	if err := validateEmoji(emoji); err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 
 	postID, err := s.getCommentPostID(ctx, commentID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
+	span.SetAttributes(attribute.String("post_id", postID.String()))
 
 	existingReaction, err := s.getExistingCommentReaction(ctx, commentID, userID, emoji)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 
@@ -132,6 +184,7 @@ func (s *ReactionService) AddReactionToComment(ctx context.Context, commentID uu
 		if existingReaction.DeletedAt != nil {
 			reaction, err := s.restoreReaction(ctx, existingReaction.ID)
 			if err != nil {
+				recordSpanError(span, err)
 				return nil, err
 			}
 			if err := s.logReactionAudit(ctx, "add_reaction", userID, map[string]interface{}{
@@ -141,6 +194,7 @@ func (s *ReactionService) AddReactionToComment(ctx context.Context, commentID uu
 				"post_id":    postID.String(),
 				"emoji":      emoji,
 			}); err != nil {
+				recordSpanError(span, err)
 				return nil, err
 			}
 			return reaction, nil
@@ -150,6 +204,7 @@ func (s *ReactionService) AddReactionToComment(ctx context.Context, commentID uu
 
 	reaction, err := s.createCommentReaction(ctx, commentID, userID, emoji)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 	if err := s.logReactionAudit(ctx, "add_reaction", userID, map[string]interface{}{
@@ -159,6 +214,7 @@ func (s *ReactionService) AddReactionToComment(ctx context.Context, commentID uu
 		"post_id":    postID.String(),
 		"emoji":      emoji,
 	}); err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 	return reaction, nil
@@ -166,19 +222,39 @@ func (s *ReactionService) AddReactionToComment(ctx context.Context, commentID uu
 
 // GetCommentReactions retrieves reactions for a comment grouped by emoji.
 func (s *ReactionService) GetCommentReactions(ctx context.Context, commentID uuid.UUID) ([]models.ReactionGroup, error) {
+	ctx, span := otel.Tracer("clubhouse.reactions").Start(ctx, "ReactionService.GetCommentReactions")
+	span.SetAttributes(attribute.String("comment_id", commentID.String()))
+	defer span.End()
+
 	if err := s.verifyCommentExists(ctx, commentID); err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
-	return s.getReactions(ctx, "comment_id", commentID)
+	reactions, err := s.getReactions(ctx, "comment_id", commentID)
+	if err != nil {
+		recordSpanError(span, err)
+		return nil, err
+	}
+	return reactions, nil
 }
 
 // RemoveReactionFromComment removes a reaction from a comment
 // Users can only remove their own reactions
 func (s *ReactionService) RemoveReactionFromComment(ctx context.Context, commentID uuid.UUID, emoji string, userID uuid.UUID) error {
+	ctx, span := otel.Tracer("clubhouse.reactions").Start(ctx, "ReactionService.RemoveReactionFromComment")
+	span.SetAttributes(
+		attribute.String("comment_id", commentID.String()),
+		attribute.String("user_id", userID.String()),
+		attribute.String("emoji", strings.TrimSpace(emoji)),
+	)
+	defer span.End()
+
 	postID, err := s.getCommentPostID(ctx, commentID)
 	if err != nil {
+		recordSpanError(span, err)
 		return err
 	}
+	span.SetAttributes(attribute.String("post_id", postID.String()))
 
 	query := `
 		DELETE FROM reactions
@@ -187,16 +263,20 @@ func (s *ReactionService) RemoveReactionFromComment(ctx context.Context, comment
 
 	result, err := s.db.ExecContext(ctx, query, commentID, emoji, userID)
 	if err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 
 	if rowsAffected == 0 {
-		return errors.New("reaction not found")
+		notFoundErr := errors.New("reaction not found")
+		recordSpanError(span, notFoundErr)
+		return notFoundErr
 	}
 
 	if err := s.logReactionAudit(ctx, "remove_reaction", userID, map[string]interface{}{
@@ -206,6 +286,7 @@ func (s *ReactionService) RemoveReactionFromComment(ctx context.Context, comment
 		"post_id":    postID.String(),
 		"emoji":      emoji,
 	}); err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 

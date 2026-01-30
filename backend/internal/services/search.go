@@ -31,8 +31,13 @@ func NewSearchService(db *sql.DB) *SearchService {
 
 // IsQueryMeaningful checks if a query produces a non-empty tsquery.
 func (s *SearchService) IsQueryMeaningful(ctx context.Context, query string) (bool, error) {
+	ctx, span := otel.Tracer("clubhouse.search").Start(ctx, "SearchService.IsQueryMeaningful")
+	span.SetAttributes(attribute.Int("query_length", len(query)))
+	defer span.End()
+
 	var tsquery string
 	if err := s.db.QueryRowContext(ctx, "SELECT plainto_tsquery('english', $1)::text", query).Scan(&tsquery); err != nil {
+		recordSpanError(span, err)
 		return false, err
 	}
 	return strings.TrimSpace(tsquery) != "", nil
@@ -130,6 +135,7 @@ func (s *SearchService) Search(ctx context.Context, query string, scope string, 
 
 	rows, err := s.db.QueryContext(ctx, queryText, args...)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -142,6 +148,7 @@ func (s *SearchService) Search(ctx context.Context, query string, scope string, 
 		var rank float64
 
 		if err := rows.Scan(&resultType, &id, &rank); err != nil {
+			recordSpanError(span, err)
 			return nil, err
 		}
 
@@ -190,6 +197,7 @@ func (s *SearchService) Search(ctx context.Context, query string, scope string, 
 	}
 
 	if err := rows.Err(); err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 

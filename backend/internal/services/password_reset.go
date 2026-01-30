@@ -12,6 +12,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/sanderginn/clubhouse/internal/observability"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const (
@@ -50,9 +52,14 @@ func NewPasswordResetService(redis *redis.Client) *PasswordResetService {
 
 // GenerateToken creates a new password reset token for a user
 func (s *PasswordResetService) GenerateToken(ctx context.Context, userID uuid.UUID) (*PasswordResetToken, error) {
+	ctx, span := otel.Tracer("clubhouse.password_reset").Start(ctx, "PasswordResetService.GenerateToken")
+	span.SetAttributes(attribute.String("user_id", userID.String()))
+	defer span.End()
+
 	// Generate random token
 	tokenBytes := make([]byte, PasswordResetTokenLength)
 	if _, err := rand.Read(tokenBytes); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to generate random token: %w", err)
 	}
 	token := base64.URLEncoding.EncodeToString(tokenBytes)
@@ -71,12 +78,14 @@ func (s *PasswordResetService) GenerateToken(ctx context.Context, userID uuid.UU
 	// Marshal token to JSON
 	tokenJSON, err := json.Marshal(resetToken)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to marshal password reset token: %w", err)
 	}
 
 	// Store in Redis with expiration
 	key := PasswordResetTokenPrefix + token
 	if err := s.redis.Set(ctx, key, tokenJSON, PasswordResetTokenDuration).Err(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to store password reset token in Redis: %w", err)
 	}
 
@@ -85,19 +94,29 @@ func (s *PasswordResetService) GenerateToken(ctx context.Context, userID uuid.UU
 
 // GetToken retrieves a password reset token from Redis
 func (s *PasswordResetService) GetToken(ctx context.Context, token string) (*PasswordResetToken, error) {
+	ctx, span := otel.Tracer("clubhouse.password_reset").Start(ctx, "PasswordResetService.GetToken")
+	span.SetAttributes(
+		attribute.Bool("has_token", token != ""),
+		attribute.Int("token_length", len(token)),
+	)
+	defer span.End()
+
 	key := PasswordResetTokenPrefix + token
 	tokenJSON, err := s.redis.Get(ctx, key).Result()
 	if err != nil {
 		if err == redis.Nil {
 			observability.RecordCacheMiss(ctx, "password_reset")
+			recordSpanError(span, ErrPasswordResetTokenNotFound)
 			return nil, ErrPasswordResetTokenNotFound
 		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to get password reset token from Redis: %w", err)
 	}
 	observability.RecordCacheHit(ctx, "password_reset")
 
 	var resetToken PasswordResetToken
 	if err := json.Unmarshal([]byte(tokenJSON), &resetToken); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to unmarshal password reset token: %w", err)
 	}
 
@@ -107,7 +126,17 @@ func (s *PasswordResetService) GetToken(ctx context.Context, token string) (*Pas
 // MarkTokenAsUsed marks a password reset token as used (single-use enforcement)
 // Uses Lua script for atomic check-and-set to prevent race conditions
 func (s *PasswordResetService) MarkTokenAsUsed(ctx context.Context, token string) error {
+	ctx, span := otel.Tracer("clubhouse.password_reset").Start(ctx, "PasswordResetService.MarkTokenAsUsed")
+	span.SetAttributes(
+		attribute.Bool("has_token", token != ""),
+		attribute.Int("token_length", len(token)),
+	)
+	defer span.End()
+
 	_, err := s.ClaimToken(ctx, token)
+	if err != nil {
+		recordSpanError(span, err)
+	}
 	return err
 }
 
@@ -115,6 +144,13 @@ func (s *PasswordResetService) MarkTokenAsUsed(ctx context.Context, token string
 // This prevents race conditions where concurrent requests could both read Used=false.
 // Uses Lua script for atomic check-and-set.
 func (s *PasswordResetService) ClaimToken(ctx context.Context, token string) (*PasswordResetToken, error) {
+	ctx, span := otel.Tracer("clubhouse.password_reset").Start(ctx, "PasswordResetService.ClaimToken")
+	span.SetAttributes(
+		attribute.Bool("has_token", token != ""),
+		attribute.Int("token_length", len(token)),
+	)
+	defer span.End()
+
 	key := PasswordResetTokenPrefix + token
 
 	// Lua script for atomic check-and-set
@@ -146,25 +182,30 @@ func (s *PasswordResetService) ClaimToken(ctx context.Context, token string) (*P
 	if err != nil {
 		if err == redis.Nil {
 			observability.RecordCacheMiss(ctx, "password_reset")
+			recordSpanError(span, ErrPasswordResetTokenNotFound)
 			return nil, ErrPasswordResetTokenNotFound
 		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to execute atomic claim-token script: %w", err)
 	}
 
 	resultStr, ok := result.(string)
 	if !ok {
 		observability.RecordCacheMiss(ctx, "password_reset")
+		recordSpanError(span, ErrPasswordResetTokenNotFound)
 		return nil, ErrPasswordResetTokenNotFound
 	}
 
 	if resultStr == "" {
 		observability.RecordCacheHit(ctx, "password_reset")
+		recordSpanError(span, ErrPasswordResetTokenAlreadyUsed)
 		return nil, ErrPasswordResetTokenAlreadyUsed
 	}
 	observability.RecordCacheHit(ctx, "password_reset")
 
 	var resetToken PasswordResetToken
 	if err := json.Unmarshal([]byte(resultStr), &resetToken); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to unmarshal password reset token: %w", err)
 	}
 
@@ -173,8 +214,16 @@ func (s *PasswordResetService) ClaimToken(ctx context.Context, token string) (*P
 
 // DeleteToken removes a password reset token from Redis
 func (s *PasswordResetService) DeleteToken(ctx context.Context, token string) error {
+	ctx, span := otel.Tracer("clubhouse.password_reset").Start(ctx, "PasswordResetService.DeleteToken")
+	span.SetAttributes(
+		attribute.Bool("has_token", token != ""),
+		attribute.Int("token_length", len(token)),
+	)
+	defer span.End()
+
 	key := PasswordResetTokenPrefix + token
 	if err := s.redis.Del(ctx, key).Err(); err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to delete password reset token from Redis: %w", err)
 	}
 	return nil

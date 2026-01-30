@@ -15,6 +15,8 @@ import (
 
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/observability"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type pushConfig struct {
@@ -131,17 +133,31 @@ func NewPushService(db *sql.DB) *PushService {
 
 // PublicKey returns the configured VAPID public key.
 func (s *PushService) PublicKey() (string, error) {
+	_, span := otel.Tracer("clubhouse.push").Start(context.Background(), "PushService.PublicKey")
+	defer span.End()
+
 	if strings.TrimSpace(pushConfigData.publicKey) == "" {
-		return "", errors.New("vapid public key not configured")
+		err := errors.New("vapid public key not configured")
+		recordSpanError(span, err)
+		return "", err
 	}
 	if !pushConfigData.enabled {
-		return "", errors.New("vapid keys incomplete")
+		err := errors.New("vapid keys incomplete")
+		recordSpanError(span, err)
+		return "", err
 	}
 	return pushConfigData.publicKey, nil
 }
 
 // UpsertSubscription stores or refreshes a push subscription for a user.
 func (s *PushService) UpsertSubscription(ctx context.Context, userID uuid.UUID, sub models.PushSubscriptionRequest) error {
+	ctx, span := otel.Tracer("clubhouse.push").Start(ctx, "PushService.UpsertSubscription")
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.Bool("has_endpoint", strings.TrimSpace(sub.Endpoint) != ""),
+	)
+	defer span.End()
+
 	query := `
 		INSERT INTO push_subscriptions (user_id, endpoint, auth_key, p256dh_key)
 		VALUES ($1, $2, $3, $4)
@@ -155,6 +171,7 @@ func (s *PushService) UpsertSubscription(ctx context.Context, userID uuid.UUID, 
 
 	_, err := s.db.ExecContext(ctx, query, userID, sub.Endpoint, sub.Keys.Auth, sub.Keys.P256dh)
 	if err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 
@@ -163,16 +180,30 @@ func (s *PushService) UpsertSubscription(ctx context.Context, userID uuid.UUID, 
 
 // DeleteSubscriptions removes all active subscriptions for a user.
 func (s *PushService) DeleteSubscriptions(ctx context.Context, userID uuid.UUID) error {
+	ctx, span := otel.Tracer("clubhouse.push").Start(ctx, "PushService.DeleteSubscriptions")
+	span.SetAttributes(attribute.String("user_id", userID.String()))
+	defer span.End()
+
 	_, err := s.db.ExecContext(ctx, `
 		UPDATE push_subscriptions
 		SET deleted_at = now()
 		WHERE user_id = $1 AND deleted_at IS NULL
 	`, userID)
+	if err != nil {
+		recordSpanError(span, err)
+	}
 	return err
 }
 
 // SendNotification delivers a push notification to all active subscriptions for a user.
 func (s *PushService) SendNotification(ctx context.Context, userID uuid.UUID, payload models.PushNotificationPayload) (PushDeliveryResult, error) {
+	ctx, span := otel.Tracer("clubhouse.push").Start(ctx, "PushService.SendNotification")
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.String("notification_type", payload.Type),
+	)
+	defer span.End()
+
 	result := PushDeliveryResult{}
 	if !pushConfigData.enabled {
 		return result, nil
@@ -181,6 +212,7 @@ func (s *PushService) SendNotification(ctx context.Context, userID uuid.UUID, pa
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		recordPushFailure(&result, "payload_error")
+		recordSpanError(span, err)
 		return result, &PushDeliveryError{Type: "payload_error", Err: err}
 	}
 
@@ -190,6 +222,7 @@ func (s *PushService) SendNotification(ctx context.Context, userID uuid.UUID, pa
 		WHERE user_id = $1 AND deleted_at IS NULL
 	`, userID)
 	if err != nil {
+		recordSpanError(span, err)
 		return result, err
 	}
 	defer rows.Close()
@@ -200,6 +233,7 @@ func (s *PushService) SendNotification(ctx context.Context, userID uuid.UUID, pa
 		var authKey string
 		var p256dhKey string
 		if err := rows.Scan(&endpoint, &authKey, &p256dhKey); err != nil {
+			recordSpanError(span, err)
 			return result, err
 		}
 
@@ -240,14 +274,25 @@ func (s *PushService) SendNotification(ctx context.Context, userID uuid.UUID, pa
 	}
 
 	if err := rows.Err(); err != nil {
+		recordSpanError(span, err)
 		return result, err
 	}
 
+	if sendErr != nil {
+		recordSpanError(span, sendErr)
+	}
 	return result, sendErr
 }
 
 // SendNotificationToUsers delivers the same push payload to multiple users.
 func (s *PushService) SendNotificationToUsers(ctx context.Context, userIDs []uuid.UUID, payload models.PushNotificationPayload) (PushDeliveryResult, error) {
+	ctx, span := otel.Tracer("clubhouse.push").Start(ctx, "PushService.SendNotificationToUsers")
+	span.SetAttributes(
+		attribute.Int("user_count", len(userIDs)),
+		attribute.String("notification_type", payload.Type),
+	)
+	defer span.End()
+
 	result := PushDeliveryResult{}
 	var sendErr error
 	for _, userID := range userIDs {
@@ -262,6 +307,9 @@ func (s *PushService) SendNotificationToUsers(ctx context.Context, userIDs []uui
 		if err != nil && sendErr == nil {
 			sendErr = err
 		}
+	}
+	if sendErr != nil {
+		recordSpanError(span, sendErr)
 	}
 	return result, sendErr
 }

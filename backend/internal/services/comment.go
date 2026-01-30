@@ -38,12 +38,14 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 
 	// Validate input
 	if err := validateCreateCommentInput(req); err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 
 	// Parse and validate post ID
 	postID, err := uuid.Parse(req.PostID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("invalid post id")
 	}
 	span.SetAttributes(attribute.String("post_id", postID.String()))
@@ -53,6 +55,10 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 	err = s.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM posts WHERE id = $1 AND deleted_at IS NULL)", postID).
 		Scan(&postExists)
 	if err != nil || !postExists {
+		if err == nil {
+			err = fmt.Errorf("post not found")
+		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("post not found")
 	}
 
@@ -61,6 +67,7 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 	if req.ParentCommentID != nil {
 		parsedParentID, err := uuid.Parse(*req.ParentCommentID)
 		if err != nil {
+			recordSpanError(span, err)
 			return nil, fmt.Errorf("invalid parent comment id")
 		}
 
@@ -73,6 +80,10 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 			postID,
 		).Scan(&parentExists)
 		if err != nil || !parentExists {
+			if err == nil {
+				err = fmt.Errorf("parent comment not found")
+			}
+			recordSpanError(span, err)
 			return nil, fmt.Errorf("parent comment not found")
 		}
 
@@ -87,6 +98,7 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 	// Begin transaction
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
@@ -105,6 +117,7 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 		Scan(&comment.ID, &comment.UserID, &comment.PostID, &comment.ParentCommentID, &comment.Content, &comment.CreatedAt)
 
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create comment: %w", err)
 	}
 
@@ -132,6 +145,7 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 				Scan(&link.ID, &link.URL, &link.CreatedAt)
 
 			if err != nil {
+				recordSpanError(span, err)
 				return nil, fmt.Errorf("failed to create link: %w", err)
 			}
 
@@ -151,12 +165,14 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 		&user.ID, &user.Username, &user.Email, &user.ProfilePictureURL, &user.Bio, &user.IsAdmin, &user.CreatedAt,
 	)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to fetch comment user: %w", err)
 	}
 	comment.User = &user
 
 	// Commit transaction
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -168,17 +184,19 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 
 func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID, userID uuid.UUID, req *models.UpdateCommentRequest) (*models.Comment, error) {
 	ctx, span := otel.Tracer("clubhouse.comments").Start(ctx, "CommentService.UpdateComment")
+	defer span.End()
+
+	if err := validateUpdateCommentInput(req); err != nil {
+		recordSpanError(span, err)
+		return nil, err
+	}
+
 	span.SetAttributes(
 		attribute.String("user_id", userID.String()),
 		attribute.String("comment_id", commentID.String()),
 		attribute.Int("content_length", len(strings.TrimSpace(req.Content))),
 		attribute.Bool("has_links", req.Links != nil && len(*req.Links) > 0),
 	)
-	defer span.End()
-
-	if err := validateUpdateCommentInput(req); err != nil {
-		return nil, err
-	}
 
 	trimmedContent := strings.TrimSpace(req.Content)
 	var linkMetadata []models.JSONMap
@@ -196,18 +214,24 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 	`, commentID).Scan(&ownerID, &previousContent, &postID, &sectionID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("comment not found")
+			notFoundErr := errors.New("comment not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to fetch comment owner: %w", err)
 	}
 
 	if ownerID != userID {
-		return nil, errors.New("unauthorized to edit this comment")
+		unauthorizedErr := errors.New("unauthorized to edit this comment")
+		recordSpanError(span, unauthorizedErr)
+		return nil, unauthorizedErr
 	}
 
 	if req.Links != nil {
 		existingURLs, err := getCommentLinkURLs(ctx, s.db, commentID)
 		if err != nil {
+			recordSpanError(span, err)
 			return nil, fmt.Errorf("failed to fetch comment links: %w", err)
 		}
 
@@ -219,6 +243,7 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
@@ -231,11 +256,13 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 		WHERE id = $2
 	`, trimmedContent, commentID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to update comment: %w", err)
 	}
 
 	if req.Links != nil && linksChanged {
 		if _, err := tx.ExecContext(ctx, "DELETE FROM links WHERE comment_id = $1", commentID); err != nil {
+			recordSpanError(span, err)
 			return nil, fmt.Errorf("failed to delete comment links: %w", err)
 		}
 
@@ -253,6 +280,7 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 					VALUES ($1, $2, $3, $4, now())
 				`, linkID, commentID, linkReq.URL, metadataValue)
 				if err != nil {
+					recordSpanError(span, err)
 					return nil, fmt.Errorf("failed to create link: %w", err)
 				}
 			}
@@ -274,10 +302,12 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 
 	auditService := NewAuditService(tx)
 	if err := auditService.LogAuditWithMetadata(ctx, "update_comment", userID, ownerID, metadata); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -286,6 +316,13 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 
 // GetCommentByID retrieves a comment by ID with all related data
 func (s *CommentService) GetCommentByID(ctx context.Context, commentID uuid.UUID, userID uuid.UUID) (*models.Comment, error) {
+	ctx, span := otel.Tracer("clubhouse.comments").Start(ctx, "CommentService.GetCommentByID")
+	span.SetAttributes(
+		attribute.String("comment_id", commentID.String()),
+		attribute.String("user_id", userID.String()),
+	)
+	defer span.End()
+
 	query := `
 		SELECT
 			c.id, c.user_id, c.post_id, p.section_id, c.parent_comment_id, c.content,
@@ -309,8 +346,11 @@ func (s *CommentService) GetCommentByID(ctx context.Context, commentID uuid.UUID
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("comment not found")
+			notFoundErr := errors.New("comment not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, err
 	}
 
@@ -320,6 +360,7 @@ func (s *CommentService) GetCommentByID(ctx context.Context, commentID uuid.UUID
 	// Fetch links for this comment
 	links, err := s.getCommentLinks(ctx, commentID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 	comment.Links = links
@@ -327,6 +368,7 @@ func (s *CommentService) GetCommentByID(ctx context.Context, commentID uuid.UUID
 	// Fetch reactions
 	counts, viewerReactions, err := s.getCommentReactions(ctx, commentID, userID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 	comment.ReactionCounts = counts
@@ -337,6 +379,10 @@ func (s *CommentService) GetCommentByID(ctx context.Context, commentID uuid.UUID
 
 // GetCommentContext retrieves the post and section IDs for a comment.
 func (s *CommentService) GetCommentContext(ctx context.Context, commentID uuid.UUID) (uuid.UUID, uuid.UUID, error) {
+	ctx, span := otel.Tracer("clubhouse.comments").Start(ctx, "CommentService.GetCommentContext")
+	span.SetAttributes(attribute.String("comment_id", commentID.String()))
+	defer span.End()
+
 	query := `
 		SELECT c.post_id, p.section_id
 		FROM comments c
@@ -348,8 +394,11 @@ func (s *CommentService) GetCommentContext(ctx context.Context, commentID uuid.U
 	var sectionID uuid.UUID
 	if err := s.db.QueryRowContext(ctx, query, commentID).Scan(&postID, &sectionID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return uuid.UUID{}, uuid.UUID{}, errors.New("comment not found")
+			notFoundErr := errors.New("comment not found")
+			recordSpanError(span, notFoundErr)
+			return uuid.UUID{}, uuid.UUID{}, notFoundErr
 		}
+		recordSpanError(span, err)
 		return uuid.UUID{}, uuid.UUID{}, err
 	}
 
@@ -503,6 +552,15 @@ func validateCreateCommentInput(req *models.CreateCommentRequest) error {
 
 // GetThreadComments retrieves all comments for a post with cursor-based pagination
 func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID, limit int, cursor *string, userID uuid.UUID) ([]models.Comment, *string, bool, error) {
+	ctx, span := otel.Tracer("clubhouse.comments").Start(ctx, "CommentService.GetThreadComments")
+	span.SetAttributes(
+		attribute.String("post_id", postID.String()),
+		attribute.String("user_id", userID.String()),
+		attribute.Int("limit", limit),
+		attribute.Bool("has_cursor", cursor != nil && *cursor != ""),
+	)
+	defer span.End()
+
 	if limit <= 0 || limit > 100 {
 		limit = 50
 	}
@@ -511,10 +569,13 @@ func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID
 	var postExists bool
 	err := s.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM posts WHERE id = $1 AND deleted_at IS NULL)", postID).Scan(&postExists)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, nil, false, fmt.Errorf("failed to check post existence: %w", err)
 	}
 	if !postExists {
-		return nil, nil, false, errors.New("post not found")
+		notFoundErr := errors.New("post not found")
+		recordSpanError(span, notFoundErr)
+		return nil, nil, false, notFoundErr
 	}
 
 	// Build query for top-level comments
@@ -534,16 +595,21 @@ func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID
 	if cursor != nil && *cursor != "" {
 		cursorID, err := uuid.Parse(*cursor)
 		if err != nil {
-			return nil, nil, false, errors.New("invalid cursor")
+			invalidErr := errors.New("invalid cursor")
+			recordSpanError(span, invalidErr)
+			return nil, nil, false, invalidErr
 		}
 
 		// Get cursor comment's creation time
 		var cursorTime sql.NullTime
 		err = s.db.QueryRowContext(ctx, "SELECT created_at FROM comments WHERE id = $1", cursorID).Scan(&cursorTime)
 		if err == sql.ErrNoRows {
-			return nil, nil, false, errors.New("cursor not found")
+			cursorErr := errors.New("cursor not found")
+			recordSpanError(span, cursorErr)
+			return nil, nil, false, cursorErr
 		}
 		if err != nil {
+			recordSpanError(span, err)
 			return nil, nil, false, fmt.Errorf("failed to get cursor time: %w", err)
 		}
 
@@ -556,6 +622,7 @@ func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, nil, false, fmt.Errorf("failed to query comments: %w", err)
 	}
 	defer rows.Close()
@@ -575,6 +642,7 @@ func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID
 			&user.ID, &user.Username, &user.Email, &user.ProfilePictureURL, &user.Bio, &user.IsAdmin, &user.CreatedAt,
 		)
 		if err != nil {
+			recordSpanError(span, err)
 			return nil, nil, false, fmt.Errorf("failed to scan comment: %w", err)
 		}
 
@@ -598,6 +666,7 @@ func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID
 		// Fetch links for this comment
 		links, err := s.getCommentLinks(ctx, c.ID)
 		if err != nil {
+			recordSpanError(span, err)
 			return nil, nil, false, fmt.Errorf("failed to get comment links: %w", err)
 		}
 		c.Links = links
@@ -605,6 +674,7 @@ func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID
 		// Fetch reactions
 		counts, viewerReactions, err := s.getCommentReactions(ctx, c.ID, userID)
 		if err != nil {
+			recordSpanError(span, err)
 			return nil, nil, false, fmt.Errorf("failed to get comment reactions: %w", err)
 		}
 		c.ReactionCounts = counts
@@ -614,6 +684,7 @@ func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID
 	}
 
 	if err = rows.Err(); err != nil {
+		recordSpanError(span, err)
 		return nil, nil, false, fmt.Errorf("error iterating rows: %w", err)
 	}
 
@@ -631,6 +702,7 @@ func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID
 	for i := range comments {
 		replies, err := s.getCommentReplies(ctx, comments[i].ID, userID)
 		if err != nil {
+			recordSpanError(span, err)
 			return nil, nil, false, fmt.Errorf("failed to get comment replies: %w", err)
 		}
 		comments[i].Replies = replies
@@ -718,17 +790,29 @@ func (s *CommentService) getCommentReplies(ctx context.Context, parentCommentID 
 // Only the comment owner or an admin can delete
 // If admin deletes, an audit log entry is created
 func (s *CommentService) DeleteComment(ctx context.Context, commentID uuid.UUID, userID uuid.UUID, isAdmin bool) (*models.Comment, error) {
+	ctx, span := otel.Tracer("clubhouse.comments").Start(ctx, "CommentService.DeleteComment")
+	span.SetAttributes(
+		attribute.String("comment_id", commentID.String()),
+		attribute.String("user_id", userID.String()),
+		attribute.Bool("is_admin", isAdmin),
+	)
+	defer span.End()
+
 	comment, err := s.GetCommentByID(ctx, commentID, userID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 
 	if comment.UserID != userID && !isAdmin {
-		return nil, errors.New("unauthorized to delete this comment")
+		unauthorizedErr := errors.New("unauthorized to delete this comment")
+		recordSpanError(span, unauthorizedErr)
+		return nil, unauthorizedErr
 	}
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
@@ -751,6 +835,7 @@ func (s *CommentService) DeleteComment(ctx context.Context, commentID uuid.UUID,
 		&updatedComment.CreatedAt, &updatedAt, &updatedComment.DeletedAt, &updatedComment.DeletedByUserID,
 	)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to delete comment: %w", err)
 	}
 
@@ -783,10 +868,12 @@ func (s *CommentService) DeleteComment(ctx context.Context, commentID uuid.UUID,
 		comment.ID,
 		metadata,
 	); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -802,6 +889,14 @@ func (s *CommentService) DeleteComment(ctx context.Context, commentID uuid.UUID,
 // RestoreComment restores a soft-deleted comment
 // Only the comment owner (within 7 days) or an admin can restore
 func (s *CommentService) RestoreComment(ctx context.Context, commentID uuid.UUID, userID uuid.UUID, isAdmin bool) (*models.Comment, error) {
+	ctx, span := otel.Tracer("clubhouse.comments").Start(ctx, "CommentService.RestoreComment")
+	span.SetAttributes(
+		attribute.String("comment_id", commentID.String()),
+		attribute.String("user_id", userID.String()),
+		attribute.Bool("is_admin", isAdmin),
+	)
+	defer span.End()
+
 	query := `
 		SELECT
 			c.id, c.user_id, c.post_id, c.parent_comment_id, c.content,
@@ -827,8 +922,11 @@ func (s *CommentService) RestoreComment(ctx context.Context, commentID uuid.UUID
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("comment not found")
+			notFoundErr := errors.New("comment not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, err
 	}
 
@@ -850,13 +948,17 @@ func (s *CommentService) RestoreComment(ctx context.Context, commentID uuid.UUID
 	comment.User = &user
 
 	if !isAdmin && comment.UserID != userID {
-		return nil, errors.New("unauthorized")
+		unauthorizedErr := errors.New("unauthorized")
+		recordSpanError(span, unauthorizedErr)
+		return nil, unauthorizedErr
 	}
 
 	if !isAdmin && comment.DeletedAt != nil {
 		sevenDaysAgo := time.Now().AddDate(0, 0, -7)
 		if comment.DeletedAt.Before(sevenDaysAgo) {
-			return nil, errors.New("comment permanently deleted")
+			permanentErr := errors.New("comment permanently deleted")
+			recordSpanError(span, permanentErr)
+			return nil, permanentErr
 		}
 	}
 
@@ -877,6 +979,7 @@ func (s *CommentService) RestoreComment(ctx context.Context, commentID uuid.UUID
 	)
 
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to restore comment: %w", err)
 	}
 
@@ -892,6 +995,7 @@ func (s *CommentService) RestoreComment(ctx context.Context, commentID uuid.UUID
 
 	links, err := s.getCommentLinks(ctx, commentID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 	restoredComment.Links = links
@@ -899,6 +1003,7 @@ func (s *CommentService) RestoreComment(ctx context.Context, commentID uuid.UUID
 	// Fetch reactions
 	counts, viewerReactions, err := s.getCommentReactions(ctx, commentID, userID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 	restoredComment.ReactionCounts = counts
@@ -910,8 +1015,16 @@ func (s *CommentService) RestoreComment(ctx context.Context, commentID uuid.UUID
 
 // HardDeleteComment permanently deletes a comment and all related data (admin only)
 func (s *CommentService) HardDeleteComment(ctx context.Context, commentID uuid.UUID, adminUserID uuid.UUID) error {
+	ctx, span := otel.Tracer("clubhouse.comments").Start(ctx, "CommentService.HardDeleteComment")
+	span.SetAttributes(
+		attribute.String("comment_id", commentID.String()),
+		attribute.String("admin_user_id", adminUserID.String()),
+	)
+	defer span.End()
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
@@ -922,9 +1035,11 @@ func (s *CommentService) HardDeleteComment(ctx context.Context, commentID uuid.U
 	var exists bool
 	err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM comments WHERE id = $1)", commentID).Scan(&exists)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to check comment existence: %w", err)
 	}
 	if !exists {
+		recordSpanError(span, ErrCommentNotFound)
 		return ErrCommentNotFound
 	}
 
@@ -935,78 +1050,92 @@ func (s *CommentService) HardDeleteComment(ctx context.Context, commentID uuid.U
 	`
 	_, err = tx.ExecContext(ctx, auditQuery, adminUserID, commentID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to create audit log: %w", err)
 	}
 
 	// Delete links associated with replies to this comment
 	_, err = tx.ExecContext(ctx, "DELETE FROM links WHERE comment_id IN (SELECT id FROM comments WHERE parent_comment_id = $1)", commentID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to delete reply links: %w", err)
 	}
 
 	// Delete reactions on replies to this comment
 	_, err = tx.ExecContext(ctx, "DELETE FROM reactions WHERE comment_id IN (SELECT id FROM comments WHERE parent_comment_id = $1)", commentID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to delete reply reactions: %w", err)
 	}
 
 	// Delete mentions from replies to this comment
 	_, err = tx.ExecContext(ctx, "DELETE FROM mentions WHERE comment_id IN (SELECT id FROM comments WHERE parent_comment_id = $1)", commentID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to delete reply mentions: %w", err)
 	}
 
 	// Delete notifications related to replies
 	_, err = tx.ExecContext(ctx, "DELETE FROM notifications WHERE related_comment_id IN (SELECT id FROM comments WHERE parent_comment_id = $1)", commentID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to delete reply notifications: %w", err)
 	}
 
 	// Delete replies to this comment
 	_, err = tx.ExecContext(ctx, "DELETE FROM comments WHERE parent_comment_id = $1", commentID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to delete replies: %w", err)
 	}
 
 	// Delete links associated with this comment
 	_, err = tx.ExecContext(ctx, "DELETE FROM links WHERE comment_id = $1", commentID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to delete comment links: %w", err)
 	}
 
 	// Delete reactions on this comment
 	_, err = tx.ExecContext(ctx, "DELETE FROM reactions WHERE comment_id = $1", commentID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to delete comment reactions: %w", err)
 	}
 
 	// Delete mentions from this comment
 	_, err = tx.ExecContext(ctx, "DELETE FROM mentions WHERE comment_id = $1", commentID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to delete comment mentions: %w", err)
 	}
 
 	// Delete notifications related to this comment
 	_, err = tx.ExecContext(ctx, "DELETE FROM notifications WHERE related_comment_id = $1", commentID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to delete comment notifications: %w", err)
 	}
 
 	// Delete the comment
 	result, err := tx.ExecContext(ctx, "DELETE FROM comments WHERE id = $1", commentID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to delete comment: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to get rows affected: %w", err)
 	}
 	if rowsAffected == 0 {
+		recordSpanError(span, ErrCommentNotFound)
 		return ErrCommentNotFound
 	}
 
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -1017,8 +1146,16 @@ func (s *CommentService) HardDeleteComment(ctx context.Context, commentID uuid.U
 
 // AdminRestoreComment restores a soft-deleted comment (admin only) with audit logging
 func (s *CommentService) AdminRestoreComment(ctx context.Context, commentID uuid.UUID, adminUserID uuid.UUID) (*models.Comment, error) {
+	ctx, span := otel.Tracer("clubhouse.comments").Start(ctx, "CommentService.AdminRestoreComment")
+	span.SetAttributes(
+		attribute.String("comment_id", commentID.String()),
+		attribute.String("admin_user_id", adminUserID.String()),
+	)
+	defer span.End()
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
@@ -1033,13 +1170,17 @@ func (s *CommentService) AdminRestoreComment(ctx context.Context, commentID uuid
 		       EXISTS(SELECT 1 FROM comments WHERE id = $1 AND deleted_at IS NOT NULL)
 	`, commentID).Scan(&exists, &isDeleted)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to check comment: %w", err)
 	}
 	if !exists {
+		recordSpanError(span, ErrCommentNotFound)
 		return nil, ErrCommentNotFound
 	}
 	if !isDeleted {
-		return nil, errors.New("comment is not deleted")
+		notDeletedErr := errors.New("comment is not deleted")
+		recordSpanError(span, notDeletedErr)
+		return nil, notDeletedErr
 	}
 
 	// Restore the comment
@@ -1056,6 +1197,7 @@ func (s *CommentService) AdminRestoreComment(ctx context.Context, commentID uuid
 		&comment.CreatedAt, &updatedAt, &comment.DeletedAt, &comment.DeletedByUserID,
 	)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to restore comment: %w", err)
 	}
 
@@ -1085,10 +1227,12 @@ func (s *CommentService) AdminRestoreComment(ctx context.Context, commentID uuid
 		comment.ID,
 		metadata,
 	); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -1101,6 +1245,7 @@ func (s *CommentService) AdminRestoreComment(ctx context.Context, commentID uuid
 		&user.ID, &user.Username, &user.Email, &user.ProfilePictureURL, &user.Bio, &user.IsAdmin, &user.CreatedAt,
 	)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to fetch user: %w", err)
 	}
 	comment.User = &user
@@ -1108,6 +1253,7 @@ func (s *CommentService) AdminRestoreComment(ctx context.Context, commentID uuid
 	// Fetch links
 	links, err := s.getCommentLinks(ctx, commentID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 	comment.Links = links
@@ -1115,6 +1261,7 @@ func (s *CommentService) AdminRestoreComment(ctx context.Context, commentID uuid
 	// Fetch reactions
 	counts, viewerReactions, err := s.getCommentReactions(ctx, commentID, adminUserID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 	comment.ReactionCounts = counts

@@ -13,6 +13,8 @@ import (
 
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/observability"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const (
@@ -35,6 +37,14 @@ func NewNotificationService(db *sql.DB, pushService *PushService) *NotificationS
 
 // CreateNotificationsForNewPost creates notifications for all subscribed users in a section.
 func (s *NotificationService) CreateNotificationsForNewPost(ctx context.Context, postID, sectionID, authorID uuid.UUID) error {
+	ctx, span := otel.Tracer("clubhouse.notifications").Start(ctx, "NotificationService.CreateNotificationsForNewPost")
+	span.SetAttributes(
+		attribute.String("post_id", postID.String()),
+		attribute.String("section_id", sectionID.String()),
+		attribute.String("author_id", authorID.String()),
+	)
+	defer span.End()
+
 	query := `
 		INSERT INTO notifications (user_id, type, related_post_id, related_user_id)
 		SELECT u.id, $1, $2, $3
@@ -50,6 +60,7 @@ func (s *NotificationService) CreateNotificationsForNewPost(ctx context.Context,
 
 	result, err := s.db.ExecContext(ctx, query, notificationTypeNewPost, postID, authorID, sectionID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to create new post notifications: %w", err)
 	}
 	if rows, err := result.RowsAffected(); err == nil {
@@ -63,8 +74,17 @@ func (s *NotificationService) CreateNotificationsForNewPost(ctx context.Context,
 
 // CreateNotificationForPostComment notifies a post owner about a new comment.
 func (s *NotificationService) CreateNotificationForPostComment(ctx context.Context, postID, commentID, commenterID uuid.UUID) error {
+	ctx, span := otel.Tracer("clubhouse.notifications").Start(ctx, "NotificationService.CreateNotificationForPostComment")
+	span.SetAttributes(
+		attribute.String("post_id", postID.String()),
+		attribute.String("comment_id", commentID.String()),
+		attribute.String("commenter_id", commenterID.String()),
+	)
+	defer span.End()
+
 	postOwnerID, sectionID, err := s.getPostOwnerAndSectionID(ctx, postID)
 	if err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 	if postOwnerID == commenterID {
@@ -73,17 +93,32 @@ func (s *NotificationService) CreateNotificationForPostComment(ctx context.Conte
 
 	subscribed, err := s.isUserSubscribedToSection(ctx, postOwnerID, sectionID)
 	if err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 	if !subscribed {
 		return nil
 	}
 
-	return s.insertNotification(ctx, postOwnerID, notificationTypeNewComment, &postID, &commentID, &commenterID)
+	if err := s.insertNotification(ctx, postOwnerID, notificationTypeNewComment, &postID, &commentID, &commenterID); err != nil {
+		recordSpanError(span, err)
+		return err
+	}
+	return nil
 }
 
 // CreateMentionNotifications creates notifications for mentioned users.
 func (s *NotificationService) CreateMentionNotifications(ctx context.Context, mentionedUserIDs []uuid.UUID, mentionerID uuid.UUID, sectionID uuid.UUID, postID uuid.UUID, commentID *uuid.UUID) error {
+	ctx, span := otel.Tracer("clubhouse.notifications").Start(ctx, "NotificationService.CreateMentionNotifications")
+	span.SetAttributes(
+		attribute.Int("mentioned_user_count", len(mentionedUserIDs)),
+		attribute.String("mentioner_id", mentionerID.String()),
+		attribute.String("section_id", sectionID.String()),
+		attribute.String("post_id", postID.String()),
+		attribute.Bool("has_comment_id", commentID != nil),
+	)
+	defer span.End()
+
 	if len(mentionedUserIDs) == 0 {
 		return nil
 	}
@@ -95,6 +130,7 @@ func (s *NotificationService) CreateMentionNotifications(ctx context.Context, me
 
 		subscribed, err := s.isUserSubscribedToSection(ctx, mentionedUserID, sectionID)
 		if err != nil {
+			recordSpanError(span, err)
 			return err
 		}
 		if !subscribed {
@@ -103,6 +139,7 @@ func (s *NotificationService) CreateMentionNotifications(ctx context.Context, me
 
 		postIDCopy := postID
 		if err := s.insertNotification(ctx, mentionedUserID, notificationTypeMention, &postIDCopy, commentID, &mentionerID); err != nil {
+			recordSpanError(span, err)
 			return err
 		}
 	}
@@ -112,8 +149,16 @@ func (s *NotificationService) CreateMentionNotifications(ctx context.Context, me
 
 // CreateNotificationForPostReaction notifies a post owner about a reaction.
 func (s *NotificationService) CreateNotificationForPostReaction(ctx context.Context, postID, reactorID uuid.UUID) error {
+	ctx, span := otel.Tracer("clubhouse.notifications").Start(ctx, "NotificationService.CreateNotificationForPostReaction")
+	span.SetAttributes(
+		attribute.String("post_id", postID.String()),
+		attribute.String("reactor_id", reactorID.String()),
+	)
+	defer span.End()
+
 	postOwnerID, sectionID, err := s.getPostOwnerAndSectionID(ctx, postID)
 	if err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 	if postOwnerID == reactorID {
@@ -122,34 +167,56 @@ func (s *NotificationService) CreateNotificationForPostReaction(ctx context.Cont
 
 	subscribed, err := s.isUserSubscribedToSection(ctx, postOwnerID, sectionID)
 	if err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 	if !subscribed {
 		return nil
 	}
 
-	return s.insertNotification(ctx, postOwnerID, notificationTypeReaction, &postID, nil, &reactorID)
+	if err := s.insertNotification(ctx, postOwnerID, notificationTypeReaction, &postID, nil, &reactorID); err != nil {
+		recordSpanError(span, err)
+		return err
+	}
+	return nil
 }
 
 // CreateNotificationForCommentReaction notifies a comment owner about a reaction.
 func (s *NotificationService) CreateNotificationForCommentReaction(ctx context.Context, commentID, reactorID uuid.UUID) error {
+	ctx, span := otel.Tracer("clubhouse.notifications").Start(ctx, "NotificationService.CreateNotificationForCommentReaction")
+	span.SetAttributes(
+		attribute.String("comment_id", commentID.String()),
+		attribute.String("reactor_id", reactorID.String()),
+	)
+	defer span.End()
+
 	commentOwnerID, postID, sectionID, err := s.getCommentOwnerPostAndSection(ctx, commentID)
 	if err != nil {
+		recordSpanError(span, err)
 		return err
 	}
+	span.SetAttributes(
+		attribute.String("post_id", postID.String()),
+		attribute.String("section_id", sectionID.String()),
+	)
 	if commentOwnerID == reactorID {
 		return nil
 	}
 
 	subscribed, err := s.isUserSubscribedToSection(ctx, commentOwnerID, sectionID)
 	if err != nil {
+		recordSpanError(span, err)
 		return err
 	}
 	if !subscribed {
 		return nil
 	}
 
-	return s.insertNotification(ctx, commentOwnerID, notificationTypeReaction, &postID, &commentID, &reactorID)
+	if err := s.insertNotification(ctx, commentOwnerID, notificationTypeReaction, &postID, &commentID, &reactorID); err != nil {
+		recordSpanError(span, err)
+		return err
+	}
+	return nil
 }
 
 func (s *NotificationService) insertNotification(ctx context.Context, userID uuid.UUID, notificationType string, postID *uuid.UUID, commentID *uuid.UUID, relatedUserID *uuid.UUID) error {
@@ -352,12 +419,21 @@ func (s *NotificationService) isUserSubscribedToSection(ctx context.Context, use
 
 // GetNotifications retrieves notifications for a user with cursor-based pagination and unread count.
 func (s *NotificationService) GetNotifications(ctx context.Context, userID uuid.UUID, limit int, cursor *string) ([]models.Notification, *string, bool, int, error) {
+	ctx, span := otel.Tracer("clubhouse.notifications").Start(ctx, "NotificationService.GetNotifications")
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.Int("limit", limit),
+		attribute.Bool("has_cursor", cursor != nil && *cursor != ""),
+	)
+	defer span.End()
+
 	if limit <= 0 || limit > 100 {
 		limit = 50
 	}
 
 	unreadCount, err := s.getUnreadCount(ctx, userID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, nil, false, 0, err
 	}
 
@@ -373,6 +449,7 @@ func (s *NotificationService) GetNotifications(ctx context.Context, userID uuid.
 	if cursor != nil && *cursor != "" {
 		cursorTime, cursorID, err := s.resolveNotificationCursor(ctx, userID, *cursor)
 		if err != nil {
+			recordSpanError(span, err)
 			return nil, nil, false, unreadCount, err
 		}
 
@@ -386,6 +463,7 @@ func (s *NotificationService) GetNotifications(ctx context.Context, userID uuid.
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, nil, false, unreadCount, fmt.Errorf("failed to query notifications: %w", err)
 	}
 	defer rows.Close()
@@ -408,6 +486,7 @@ func (s *NotificationService) GetNotifications(ctx context.Context, userID uuid.
 			&readAt,
 			&notification.CreatedAt,
 		); err != nil {
+			recordSpanError(span, err)
 			return nil, nil, false, unreadCount, fmt.Errorf("failed to scan notification: %w", err)
 		}
 
@@ -431,6 +510,7 @@ func (s *NotificationService) GetNotifications(ctx context.Context, userID uuid.
 	}
 
 	if err := rows.Err(); err != nil {
+		recordSpanError(span, err)
 		return nil, nil, false, unreadCount, fmt.Errorf("error iterating notifications: %w", err)
 	}
 
@@ -499,16 +579,28 @@ func (s *NotificationService) resolveNotificationCursor(ctx context.Context, use
 
 // MarkNotificationRead sets read_at for a notification and returns the updated notification.
 func (s *NotificationService) MarkNotificationRead(ctx context.Context, userID uuid.UUID, notificationID uuid.UUID) (*models.Notification, error) {
+	ctx, span := otel.Tracer("clubhouse.notifications").Start(ctx, "NotificationService.MarkNotificationRead")
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.String("notification_id", notificationID.String()),
+	)
+	defer span.End()
+
 	var ownerID uuid.UUID
 	if err := s.db.QueryRowContext(ctx, "SELECT user_id FROM notifications WHERE id = $1", notificationID).Scan(&ownerID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("notification not found")
+			notFoundErr := errors.New("notification not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to load notification owner: %w", err)
 	}
 
 	if ownerID != userID {
-		return nil, errors.New("forbidden")
+		forbiddenErr := errors.New("forbidden")
+		recordSpanError(span, forbiddenErr)
+		return nil, forbiddenErr
 	}
 
 	query := `
@@ -536,8 +628,11 @@ func (s *NotificationService) MarkNotificationRead(ctx context.Context, userID u
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("notification not found")
+			notFoundErr := errors.New("notification not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to mark notification read: %w", err)
 	}
 

@@ -12,6 +12,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/models"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -42,13 +44,22 @@ func NewUserService(db *sql.DB) *UserService {
 
 // RegisterUser registers a new user with password hashing
 func (s *UserService) RegisterUser(ctx context.Context, req *models.RegisterRequest) (*models.User, error) {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.RegisterUser")
+	span.SetAttributes(
+		attribute.Bool("has_username", req != nil && strings.TrimSpace(req.Username) != ""),
+		attribute.Bool("has_email", req != nil && strings.TrimSpace(req.Email) != ""),
+	)
+	defer span.End()
+
 	// Validate input
 	if err := validateRegisterInput(req); err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
@@ -58,6 +69,7 @@ func (s *UserService) RegisterUser(ctx context.Context, req *models.RegisterRequ
 	// Hash password
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcryptCost)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 
@@ -84,12 +96,17 @@ func (s *UserService) RegisterUser(ctx context.Context, req *models.RegisterRequ
 		// Check for unique constraint violations
 		if strings.Contains(err.Error(), "duplicate key") {
 			if strings.Contains(err.Error(), "username") {
-				return nil, fmt.Errorf("username already exists")
+				duplicateErr := fmt.Errorf("username already exists")
+				recordSpanError(span, duplicateErr)
+				return nil, duplicateErr
 			}
 			if strings.Contains(err.Error(), "email") {
-				return nil, fmt.Errorf("email already exists")
+				duplicateErr := fmt.Errorf("email already exists")
+				recordSpanError(span, duplicateErr)
+				return nil, duplicateErr
 			}
 		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
@@ -99,10 +116,12 @@ func (s *UserService) RegisterUser(ctx context.Context, req *models.RegisterRequ
 		"email":    user.Email,
 	}
 	if err := auditService.LogAuditWithMetadata(ctx, "register_user", uuid.Nil, user.ID, metadata); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -111,6 +130,9 @@ func (s *UserService) RegisterUser(ctx context.Context, req *models.RegisterRequ
 
 // AdminExists checks if there is at least one active admin user.
 func (s *UserService) AdminExists(ctx context.Context) (bool, error) {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.AdminExists")
+	defer span.End()
+
 	query := `
 		SELECT EXISTS (
 			SELECT 1
@@ -122,6 +144,7 @@ func (s *UserService) AdminExists(ctx context.Context) (bool, error) {
 
 	var exists bool
 	if err := s.db.QueryRowContext(ctx, query).Scan(&exists); err != nil {
+		recordSpanError(span, err)
 		return false, fmt.Errorf("failed to check admin existence: %w", err)
 	}
 
@@ -131,17 +154,26 @@ func (s *UserService) AdminExists(ctx context.Context) (bool, error) {
 // BootstrapAdmin creates the first admin user if none exist.
 // Returns created=false when an admin already exists.
 func (s *UserService) BootstrapAdmin(ctx context.Context, username, email, password string) (*models.User, bool, error) {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.BootstrapAdmin")
+	span.SetAttributes(
+		attribute.Bool("has_username", strings.TrimSpace(username) != ""),
+		attribute.Bool("has_email", strings.TrimSpace(email) != ""),
+	)
+	defer span.End()
+
 	req := &models.RegisterRequest{
 		Username: username,
 		Email:    email,
 		Password: password,
 	}
 	if err := validateRegisterInput(req); err != nil {
+		recordSpanError(span, err)
 		return nil, false, err
 	}
 
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcryptCost)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, false, fmt.Errorf("failed to hash password: %w", err)
 	}
 
@@ -174,12 +206,17 @@ func (s *UserService) BootstrapAdmin(ctx context.Context, username, email, passw
 		}
 		if strings.Contains(err.Error(), "duplicate key") {
 			if strings.Contains(err.Error(), "username") {
-				return nil, false, fmt.Errorf("username already exists")
+				duplicateErr := fmt.Errorf("username already exists")
+				recordSpanError(span, duplicateErr)
+				return nil, false, duplicateErr
 			}
 			if strings.Contains(err.Error(), "email") {
-				return nil, false, fmt.Errorf("email already exists")
+				duplicateErr := fmt.Errorf("email already exists")
+				recordSpanError(span, duplicateErr)
+				return nil, false, duplicateErr
 			}
 		}
+		recordSpanError(span, err)
 		return nil, false, fmt.Errorf("failed to create bootstrap admin: %w", err)
 	}
 
@@ -188,6 +225,10 @@ func (s *UserService) BootstrapAdmin(ctx context.Context, username, email, passw
 
 // GetUserByID retrieves a user by ID
 func (s *UserService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.GetUserByID")
+	span.SetAttributes(attribute.String("user_id", id.String()))
+	defer span.End()
+
 	query := `
 		SELECT id, username, COALESCE(email, '') as email, password_hash, profile_picture_url, bio, is_admin, totp_enabled, totp_secret_encrypted, approved_at, suspended_at, created_at, updated_at, deleted_at
 		FROM users
@@ -201,8 +242,11 @@ func (s *UserService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.Us
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("user not found")
+			notFoundErr := fmt.Errorf("user not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 
@@ -211,6 +255,10 @@ func (s *UserService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.Us
 
 // GetUserByUsername retrieves a user by username
 func (s *UserService) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.GetUserByUsername")
+	span.SetAttributes(attribute.Bool("has_username", strings.TrimSpace(username) != ""))
+	defer span.End()
+
 	query := `
 		SELECT id, username, COALESCE(email, '') as email, password_hash, profile_picture_url, bio, is_admin, totp_enabled, totp_secret_encrypted, approved_at, suspended_at, created_at, updated_at, deleted_at
 		FROM users
@@ -224,8 +272,11 @@ func (s *UserService) GetUserByUsername(ctx context.Context, username string) (*
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("user not found")
+			notFoundErr := fmt.Errorf("user not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 
@@ -234,6 +285,10 @@ func (s *UserService) GetUserByUsername(ctx context.Context, username string) (*
 
 // GetUserByEmail retrieves a user by email
 func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.GetUserByEmail")
+	span.SetAttributes(attribute.Bool("has_email", strings.TrimSpace(email) != ""))
+	defer span.End()
+
 	query := `
 		SELECT id, username, COALESCE(email, '') as email, password_hash, profile_picture_url, bio, is_admin, totp_enabled, totp_secret_encrypted, approved_at, suspended_at, created_at, updated_at, deleted_at
 		FROM users
@@ -247,8 +302,11 @@ func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*models
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("user not found")
+			notFoundErr := fmt.Errorf("user not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 
@@ -257,8 +315,13 @@ func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*models
 
 // LoginUser authenticates a user with username and password
 func (s *UserService) LoginUser(ctx context.Context, req *models.LoginRequest) (*models.User, error) {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.LoginUser")
+	span.SetAttributes(attribute.Bool("has_username", req != nil && strings.TrimSpace(req.Username) != ""))
+	defer span.End()
+
 	// Validate input
 	if err := validateLoginInput(req); err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 
@@ -266,20 +329,24 @@ func (s *UserService) LoginUser(ctx context.Context, req *models.LoginRequest) (
 	user, err := s.GetUserByUsername(ctx, req.Username)
 	if err != nil {
 		_ = bcrypt.CompareHashAndPassword(dummyPasswordHash, []byte(req.Password))
+		recordSpanError(span, ErrInvalidCredentials)
 		return nil, ErrInvalidCredentials
 	}
 
 	// Verify password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
+		recordSpanError(span, ErrInvalidCredentials)
 		return nil, ErrInvalidCredentials
 	}
 
 	// Check if user is approved
 	if user.ApprovedAt == nil {
+		recordSpanError(span, ErrUserNotApproved)
 		return nil, ErrUserNotApproved
 	}
 
 	if user.SuspendedAt != nil {
+		recordSpanError(span, ErrUserSuspended)
 		return nil, ErrUserSuspended
 	}
 
@@ -288,8 +355,14 @@ func (s *UserService) LoginUser(ctx context.Context, req *models.LoginRequest) (
 
 // IsUserSuspended returns true when the user is currently suspended.
 func (s *UserService) IsUserSuspended(ctx context.Context, userID uuid.UUID) (bool, error) {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.IsUserSuspended")
+	span.SetAttributes(attribute.String("user_id", userID.String()))
+	defer span.End()
+
 	if s == nil || s.db == nil {
-		return false, fmt.Errorf("user service is not configured")
+		err := fmt.Errorf("user service is not configured")
+		recordSpanError(span, err)
+		return false, err
 	}
 
 	query := `
@@ -301,8 +374,11 @@ func (s *UserService) IsUserSuspended(ctx context.Context, userID uuid.UUID) (bo
 	var suspendedAt sql.NullTime
 	if err := s.db.QueryRowContext(ctx, query, userID).Scan(&suspendedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return false, fmt.Errorf("user not found")
+			notFoundErr := fmt.Errorf("user not found")
+			recordSpanError(span, notFoundErr)
+			return false, notFoundErr
 		}
+		recordSpanError(span, err)
 		return false, fmt.Errorf("failed to check user suspension: %w", err)
 	}
 
@@ -373,6 +449,9 @@ func isValidEmail(email string) bool {
 
 // GetPendingUsers retrieves all users pending admin approval
 func (s *UserService) GetPendingUsers(ctx context.Context) ([]*models.PendingUser, error) {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.GetPendingUsers")
+	defer span.End()
+
 	query := `
 		SELECT id, username, COALESCE(email, '') as email, created_at
 		FROM users
@@ -382,6 +461,7 @@ func (s *UserService) GetPendingUsers(ctx context.Context) ([]*models.PendingUse
 
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to get pending users: %w", err)
 	}
 	defer rows.Close()
@@ -390,12 +470,14 @@ func (s *UserService) GetPendingUsers(ctx context.Context) ([]*models.PendingUse
 	for rows.Next() {
 		var user models.PendingUser
 		if err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.CreatedAt); err != nil {
+			recordSpanError(span, err)
 			return nil, fmt.Errorf("failed to scan pending user: %w", err)
 		}
 		pendingUsers = append(pendingUsers, &user)
 	}
 
 	if err := rows.Err(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("error iterating pending users: %w", err)
 	}
 
@@ -404,6 +486,9 @@ func (s *UserService) GetPendingUsers(ctx context.Context) ([]*models.PendingUse
 
 // GetApprovedUsers retrieves all approved users for admin listings
 func (s *UserService) GetApprovedUsers(ctx context.Context) ([]*models.ApprovedUser, error) {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.GetApprovedUsers")
+	defer span.End()
+
 	query := `
 		SELECT id, username, COALESCE(email, '') as email, is_admin, approved_at, created_at
 		FROM users
@@ -413,6 +498,7 @@ func (s *UserService) GetApprovedUsers(ctx context.Context) ([]*models.ApprovedU
 
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to get approved users: %w", err)
 	}
 	defer rows.Close()
@@ -421,12 +507,14 @@ func (s *UserService) GetApprovedUsers(ctx context.Context) ([]*models.ApprovedU
 	for rows.Next() {
 		var user models.ApprovedUser
 		if err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.IsAdmin, &user.ApprovedAt, &user.CreatedAt); err != nil {
+			recordSpanError(span, err)
 			return nil, fmt.Errorf("failed to scan approved user: %w", err)
 		}
 		approvedUsers = append(approvedUsers, &user)
 	}
 
 	if err := rows.Err(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("error iterating approved users: %w", err)
 	}
 
@@ -435,8 +523,16 @@ func (s *UserService) GetApprovedUsers(ctx context.Context) ([]*models.ApprovedU
 
 // ApproveUser marks a user as approved by setting approved_at timestamp
 func (s *UserService) ApproveUser(ctx context.Context, userID uuid.UUID, adminUserID uuid.UUID) (*models.ApproveUserResponse, error) {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.ApproveUser")
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.String("admin_user_id", adminUserID.String()),
+	)
+	defer span.End()
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
@@ -456,19 +552,26 @@ func (s *UserService) ApproveUser(ctx context.Context, userID uuid.UUID, adminUs
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("user not found")
+			notFoundErr := fmt.Errorf("user not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 
 	// Check if user is already approved
 	if user.ApprovedAt != nil {
-		return nil, fmt.Errorf("user already approved")
+		alreadyApprovedErr := fmt.Errorf("user already approved")
+		recordSpanError(span, alreadyApprovedErr)
+		return nil, alreadyApprovedErr
 	}
 
 	// Check if user is deleted
 	if user.DeletedAt != nil {
-		return nil, fmt.Errorf("user has been deleted")
+		deletedErr := fmt.Errorf("user has been deleted")
+		recordSpanError(span, deletedErr)
+		return nil, deletedErr
 	}
 
 	// Update approved_at timestamp
@@ -484,6 +587,7 @@ func (s *UserService) ApproveUser(ctx context.Context, userID uuid.UUID, adminUs
 		Scan(&approvedUser.ID, &approvedUser.Username, &approvedUser.Email)
 
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to approve user: %w", err)
 	}
 
@@ -493,10 +597,12 @@ func (s *UserService) ApproveUser(ctx context.Context, userID uuid.UUID, adminUs
 		"target_user_id": userID.String(),
 	}
 	if err := auditService.LogAuditWithMetadata(ctx, "approve_user", adminUserID, userID, metadata); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -510,12 +616,22 @@ func (s *UserService) ApproveUser(ctx context.Context, userID uuid.UUID, adminUs
 
 // PromoteUserToAdmin grants admin privileges to a user (admin-only operation).
 func (s *UserService) PromoteUserToAdmin(ctx context.Context, userID uuid.UUID, adminUserID uuid.UUID) (*models.PromoteUserResponse, error) {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.PromoteUserToAdmin")
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.String("admin_user_id", adminUserID.String()),
+	)
+	defer span.End()
+
 	if userID == adminUserID {
-		return nil, fmt.Errorf("cannot promote self")
+		selfErr := fmt.Errorf("cannot promote self")
+		recordSpanError(span, selfErr)
+		return nil, selfErr
 	}
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
@@ -533,16 +649,23 @@ func (s *UserService) PromoteUserToAdmin(ctx context.Context, userID uuid.UUID, 
 		Scan(&user.ID, &user.Username, &user.Email, &user.IsAdmin, &user.DeletedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("user not found")
+			notFoundErr := fmt.Errorf("user not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 
 	if user.DeletedAt != nil {
-		return nil, fmt.Errorf("user has been deleted")
+		deletedErr := fmt.Errorf("user has been deleted")
+		recordSpanError(span, deletedErr)
+		return nil, deletedErr
 	}
 	if user.IsAdmin {
-		return nil, fmt.Errorf("user already admin")
+		alreadyAdminErr := fmt.Errorf("user already admin")
+		recordSpanError(span, alreadyAdminErr)
+		return nil, alreadyAdminErr
 	}
 
 	updateQuery := `
@@ -556,6 +679,7 @@ func (s *UserService) PromoteUserToAdmin(ctx context.Context, userID uuid.UUID, 
 	err = tx.QueryRowContext(ctx, updateQuery, userID).
 		Scan(&promotedUser.ID, &promotedUser.Username, &promotedUser.Email, &promotedUser.IsAdmin)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to promote user: %w", err)
 	}
 
@@ -566,10 +690,12 @@ func (s *UserService) PromoteUserToAdmin(ctx context.Context, userID uuid.UUID, 
 		"previous_is_admin": user.IsAdmin,
 	}
 	if err := auditService.LogAuditWithMetadata(ctx, "promote_to_admin", adminUserID, userID, metadata); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -584,8 +710,17 @@ func (s *UserService) PromoteUserToAdmin(ctx context.Context, userID uuid.UUID, 
 
 // SuspendUser suspends a user account (admin-only operation).
 func (s *UserService) SuspendUser(ctx context.Context, adminUserID uuid.UUID, targetUserID uuid.UUID, reason string) (*models.SuspendUserResponse, error) {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.SuspendUser")
+	span.SetAttributes(
+		attribute.String("admin_user_id", adminUserID.String()),
+		attribute.String("target_user_id", targetUserID.String()),
+		attribute.Bool("has_reason", strings.TrimSpace(reason) != ""),
+	)
+	defer span.End()
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
@@ -603,16 +738,23 @@ func (s *UserService) SuspendUser(ctx context.Context, adminUserID uuid.UUID, ta
 		Scan(&user.ID, &user.Username, &user.SuspendedAt, &user.DeletedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("user not found")
+			notFoundErr := fmt.Errorf("user not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 
 	if user.DeletedAt != nil {
-		return nil, fmt.Errorf("user has been deleted")
+		deletedErr := fmt.Errorf("user has been deleted")
+		recordSpanError(span, deletedErr)
+		return nil, deletedErr
 	}
 	if user.SuspendedAt != nil {
-		return nil, fmt.Errorf("user already suspended")
+		alreadySuspendedErr := fmt.Errorf("user already suspended")
+		recordSpanError(span, alreadySuspendedErr)
+		return nil, alreadySuspendedErr
 	}
 
 	updateQuery := `
@@ -625,6 +767,7 @@ func (s *UserService) SuspendUser(ctx context.Context, adminUserID uuid.UUID, ta
 	var suspendedAt time.Time
 	var updatedUserID uuid.UUID
 	if err := tx.QueryRowContext(ctx, updateQuery, targetUserID).Scan(&updatedUserID, &suspendedAt); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to suspend user: %w", err)
 	}
 
@@ -636,10 +779,12 @@ func (s *UserService) SuspendUser(ctx context.Context, adminUserID uuid.UUID, ta
 		metadata["reason"] = strings.TrimSpace(reason)
 	}
 	if err := auditService.LogAuditWithMetadata(ctx, "suspend_user", adminUserID, targetUserID, metadata); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -652,8 +797,16 @@ func (s *UserService) SuspendUser(ctx context.Context, adminUserID uuid.UUID, ta
 
 // UnsuspendUser removes a user suspension (admin-only operation).
 func (s *UserService) UnsuspendUser(ctx context.Context, adminUserID uuid.UUID, targetUserID uuid.UUID) (*models.UnsuspendUserResponse, error) {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.UnsuspendUser")
+	span.SetAttributes(
+		attribute.String("admin_user_id", adminUserID.String()),
+		attribute.String("target_user_id", targetUserID.String()),
+	)
+	defer span.End()
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
@@ -671,16 +824,23 @@ func (s *UserService) UnsuspendUser(ctx context.Context, adminUserID uuid.UUID, 
 		Scan(&user.ID, &user.SuspendedAt, &user.DeletedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("user not found")
+			notFoundErr := fmt.Errorf("user not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 
 	if user.DeletedAt != nil {
-		return nil, fmt.Errorf("user has been deleted")
+		deletedErr := fmt.Errorf("user has been deleted")
+		recordSpanError(span, deletedErr)
+		return nil, deletedErr
 	}
 	if user.SuspendedAt == nil {
-		return nil, fmt.Errorf("user not suspended")
+		notSuspendedErr := fmt.Errorf("user not suspended")
+		recordSpanError(span, notSuspendedErr)
+		return nil, notSuspendedErr
 	}
 
 	updateQuery := `
@@ -692,6 +852,7 @@ func (s *UserService) UnsuspendUser(ctx context.Context, adminUserID uuid.UUID, 
 
 	var updatedUserID uuid.UUID
 	if err := tx.QueryRowContext(ctx, updateQuery, targetUserID).Scan(&updatedUserID); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to unsuspend user: %w", err)
 	}
 
@@ -700,10 +861,12 @@ func (s *UserService) UnsuspendUser(ctx context.Context, adminUserID uuid.UUID, 
 		"target_user_id": targetUserID.String(),
 	}
 	if err := auditService.LogAuditWithMetadata(ctx, "unsuspend_user", adminUserID, targetUserID, metadata); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -715,8 +878,16 @@ func (s *UserService) UnsuspendUser(ctx context.Context, adminUserID uuid.UUID, 
 
 // RejectUser hard-deletes a pending user (must not be approved yet)
 func (s *UserService) RejectUser(ctx context.Context, userID uuid.UUID, adminUserID uuid.UUID) (*models.RejectUserResponse, error) {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.RejectUser")
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.String("admin_user_id", adminUserID.String()),
+	)
+	defer span.End()
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
@@ -736,14 +907,19 @@ func (s *UserService) RejectUser(ctx context.Context, userID uuid.UUID, adminUse
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("user not found")
+			notFoundErr := fmt.Errorf("user not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 
 	// Check if user is already approved
 	if user.ApprovedAt != nil {
-		return nil, fmt.Errorf("cannot reject approved user")
+		approvedErr := fmt.Errorf("cannot reject approved user")
+		recordSpanError(span, approvedErr)
+		return nil, approvedErr
 	}
 
 	// Create audit log entry BEFORE deleting the user (FK constraint)
@@ -752,6 +928,7 @@ func (s *UserService) RejectUser(ctx context.Context, userID uuid.UUID, adminUse
 		"target_user_id": userID.String(),
 	}
 	if err := auditService.LogAuditWithMetadata(ctx, "reject_user", adminUserID, userID, metadata); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
@@ -763,19 +940,24 @@ func (s *UserService) RejectUser(ctx context.Context, userID uuid.UUID, adminUse
 
 	result, err := tx.ExecContext(ctx, deleteQuery, userID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to reject user: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to get affected rows: %w", err)
 	}
 
 	if rowsAffected == 0 {
-		return nil, fmt.Errorf("user not found")
+		notFoundErr := fmt.Errorf("user not found")
+		recordSpanError(span, notFoundErr)
+		return nil, notFoundErr
 	}
 
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -787,6 +969,10 @@ func (s *UserService) RejectUser(ctx context.Context, userID uuid.UUID, adminUse
 
 // GetUserProfile retrieves a user profile with stats by ID
 func (s *UserService) GetUserProfile(ctx context.Context, id uuid.UUID) (*models.UserProfileResponse, error) {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.GetUserProfile")
+	span.SetAttributes(attribute.String("user_id", id.String()))
+	defer span.End()
+
 	query := `
 		SELECT
 			u.id, u.username, u.bio, u.profile_picture_url, u.created_at,
@@ -803,8 +989,11 @@ func (s *UserService) GetUserProfile(ctx context.Context, id uuid.UUID) (*models
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("user not found")
+			notFoundErr := fmt.Errorf("user not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to get user profile: %w", err)
 	}
 
@@ -861,16 +1050,27 @@ func (s *UserService) getCommentReactions(ctx context.Context, commentID uuid.UU
 
 // GetUserComments retrieves a paginated list of comments by a user
 func (s *UserService) GetUserComments(ctx context.Context, userID uuid.UUID, cursor *string, limit int) (*models.GetThreadResponse, error) {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.GetUserComments")
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.Bool("has_cursor", cursor != nil && *cursor != ""),
+		attribute.Int("limit", limit),
+	)
+	defer span.End()
+
 	// First verify the user exists and is approved
 	var exists bool
 	err := s.db.QueryRowContext(ctx, `
 		SELECT EXISTS(SELECT 1 FROM users WHERE id = $1 AND deleted_at IS NULL AND approved_at IS NOT NULL)
 	`, userID).Scan(&exists)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to check user: %w", err)
 	}
 	if !exists {
-		return nil, fmt.Errorf("user not found")
+		notFoundErr := fmt.Errorf("user not found")
+		recordSpanError(span, notFoundErr)
+		return nil, notFoundErr
 	}
 
 	if limit <= 0 || limit > 100 {
@@ -903,6 +1103,7 @@ func (s *UserService) GetUserComments(ctx context.Context, userID uuid.UUID, cur
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to query comments: %w", err)
 	}
 	defer rows.Close()
@@ -918,6 +1119,7 @@ func (s *UserService) GetUserComments(ctx context.Context, userID uuid.UUID, cur
 			&user.ID, &user.Username, &user.ProfilePictureURL,
 		)
 		if err != nil {
+			recordSpanError(span, err)
 			return nil, fmt.Errorf("failed to scan comment: %w", err)
 		}
 
@@ -931,6 +1133,7 @@ func (s *UserService) GetUserComments(ctx context.Context, userID uuid.UUID, cur
 		// Actually, I should update the signature.
 		counts, _, err := s.getCommentReactions(ctx, comment.ID, uuid.Nil)
 		if err != nil {
+			recordSpanError(span, err)
 			return nil, fmt.Errorf("failed to get comment reactions: %w", err)
 		}
 		comment.ReactionCounts = counts
@@ -940,6 +1143,7 @@ func (s *UserService) GetUserComments(ctx context.Context, userID uuid.UUID, cur
 	}
 
 	if err = rows.Err(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("error iterating comments: %w", err)
 	}
 
@@ -968,20 +1172,32 @@ func (s *UserService) GetUserComments(ctx context.Context, userID uuid.UUID, cur
 
 // UpdateProfile updates the user's own profile (bio and profile picture URL)
 func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *models.UpdateUserRequest) (*models.UpdateUserResponse, error) {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.UpdateProfile")
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.Bool("has_bio", req != nil && req.Bio != nil),
+		attribute.Bool("has_profile_picture_url", req != nil && req.ProfilePictureUrl != nil),
+	)
+	defer span.End()
+
 	// Validate profile picture URL if provided
 	if req.ProfilePictureUrl != nil && *req.ProfilePictureUrl != "" {
 		if err := validateProfilePictureURL(*req.ProfilePictureUrl); err != nil {
+			recordSpanError(span, err)
 			return nil, err
 		}
 	}
 
 	// Check if at least one field is provided
 	if req.Bio == nil && req.ProfilePictureUrl == nil {
-		return nil, fmt.Errorf("at least one field (bio or profile_picture_url) is required")
+		missingErr := fmt.Errorf("at least one field (bio or profile_picture_url) is required")
+		recordSpanError(span, missingErr)
+		return nil, missingErr
 	}
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
@@ -997,8 +1213,11 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *
 	`
 	if err := tx.QueryRowContext(ctx, currentQuery, userID).Scan(&currentBio, &currentProfilePictureURL); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("user not found")
+			notFoundErr := fmt.Errorf("user not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to load current profile: %w", err)
 	}
 
@@ -1035,8 +1254,11 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("user not found")
+			notFoundErr := fmt.Errorf("user not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to update profile: %w", err)
 	}
 
@@ -1081,10 +1303,12 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *
 
 	auditService := NewAuditService(tx)
 	if err := auditService.LogAuditWithMetadata(ctx, "update_profile", uuid.Nil, userID, metadata); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -1113,6 +1337,10 @@ func validateProfilePictureURL(urlStr string) error {
 
 // GetSectionSubscriptions lists section opt-outs for a user.
 func (s *UserService) GetSectionSubscriptions(ctx context.Context, userID uuid.UUID) ([]models.SectionSubscription, error) {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.GetSectionSubscriptions")
+	span.SetAttributes(attribute.String("user_id", userID.String()))
+	defer span.End()
+
 	query := `
 		SELECT section_id, opted_out_at
 		FROM section_subscriptions
@@ -1122,6 +1350,7 @@ func (s *UserService) GetSectionSubscriptions(ctx context.Context, userID uuid.U
 
 	rows, err := s.db.QueryContext(ctx, query, userID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to list section subscriptions: %w", err)
 	}
 	defer rows.Close()
@@ -1130,12 +1359,14 @@ func (s *UserService) GetSectionSubscriptions(ctx context.Context, userID uuid.U
 	for rows.Next() {
 		var subscription models.SectionSubscription
 		if err := rows.Scan(&subscription.SectionID, &subscription.OptedOutAt); err != nil {
+			recordSpanError(span, err)
 			return nil, fmt.Errorf("failed to scan section subscription: %w", err)
 		}
 		subscriptions = append(subscriptions, subscription)
 	}
 
 	if err := rows.Err(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("error iterating section subscriptions: %w", err)
 	}
 
@@ -1144,12 +1375,23 @@ func (s *UserService) GetSectionSubscriptions(ctx context.Context, userID uuid.U
 
 // UpdateSectionSubscription sets a user's opt-out preference for a section.
 func (s *UserService) UpdateSectionSubscription(ctx context.Context, userID uuid.UUID, sectionID uuid.UUID, optedOut bool) (*models.UpdateSectionSubscriptionResponse, error) {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.UpdateSectionSubscription")
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.String("section_id", sectionID.String()),
+		attribute.Bool("opted_out", optedOut),
+	)
+	defer span.End()
+
 	var sectionExists bool
 	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM sections WHERE id = $1)`, sectionID).Scan(&sectionExists); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to check section: %w", err)
 	}
 	if !sectionExists {
-		return nil, fmt.Errorf("section not found")
+		notFoundErr := fmt.Errorf("section not found")
+		recordSpanError(span, notFoundErr)
+		return nil, notFoundErr
 	}
 
 	if optedOut {
@@ -1162,6 +1404,7 @@ func (s *UserService) UpdateSectionSubscription(ctx context.Context, userID uuid
 			RETURNING opted_out_at
 		`
 		if err := s.db.QueryRowContext(ctx, query, userID, sectionID).Scan(&optedOutAt); err != nil {
+			recordSpanError(span, err)
 			return nil, fmt.Errorf("failed to opt out of section: %w", err)
 		}
 
@@ -1174,6 +1417,7 @@ func (s *UserService) UpdateSectionSubscription(ctx context.Context, userID uuid
 
 	_, err := s.db.ExecContext(ctx, `DELETE FROM section_subscriptions WHERE user_id = $1 AND section_id = $2`, userID, sectionID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to opt in to section: %w", err)
 	}
 
@@ -1185,14 +1429,24 @@ func (s *UserService) UpdateSectionSubscription(ctx context.Context, userID uuid
 
 // ResetPassword resets a user's password (called after token verification)
 func (s *UserService) ResetPassword(ctx context.Context, userID uuid.UUID, newPassword string) error {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.ResetPassword")
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.Bool("has_password", strings.TrimSpace(newPassword) != ""),
+	)
+	defer span.End()
+
 	// Validate password
 	if len(newPassword) < 12 {
-		return fmt.Errorf("password must be at least 12 characters")
+		err := fmt.Errorf("password must be at least 12 characters")
+		recordSpanError(span, err)
+		return err
 	}
 
 	// Hash password
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcryptCost)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to hash password: %w", err)
 	}
 
@@ -1205,16 +1459,20 @@ func (s *UserService) ResetPassword(ctx context.Context, userID uuid.UUID, newPa
 
 	result, err := s.db.ExecContext(ctx, query, string(passwordHash), userID)
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to reset password: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		recordSpanError(span, err)
 		return fmt.Errorf("failed to check rows affected: %w", err)
 	}
 
 	if rowsAffected == 0 {
-		return fmt.Errorf("user not found")
+		notFoundErr := fmt.Errorf("user not found")
+		recordSpanError(span, notFoundErr)
+		return notFoundErr
 	}
 
 	return nil
