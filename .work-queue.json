@@ -318,7 +318,7 @@
     {
       "issue_number": 509,
       "title": "Add delete button for posts and comments",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 0,
@@ -331,7 +331,7 @@
     {
       "issue_number": 510,
       "title": "Send notifications when a user is mentioned with @",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 0,
@@ -343,7 +343,7 @@
     {
       "issue_number": 511,
       "title": "Add escape mechanism for @ symbol to prevent unwanted mentions",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 1,
@@ -356,7 +356,7 @@
     {
       "issue_number": 512,
       "title": "Fix search box: don't clear container until search is executed",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 1,
@@ -369,7 +369,7 @@
     {
       "issue_number": 513,
       "title": "Fix quirky edit button styling on thread replies",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 2,
@@ -382,7 +382,7 @@
     {
       "issue_number": 514,
       "title": "Improve search box alignment with main container",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 2,
@@ -395,7 +395,7 @@
     {
       "issue_number": 515,
       "title": "Backend: Support multiple images per post",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "phase": "feature",
       "priority": 3,
@@ -407,7 +407,7 @@
     {
       "issue_number": 516,
       "title": "Frontend: Upload multiple images in post creation",
-      "status": "pending",
+      "status": "available",
       "dependencies": [
         515
       ],
@@ -422,7 +422,7 @@
     {
       "issue_number": 517,
       "title": "Frontend: Display multiple post images as carousel",
-      "status": "pending",
+      "status": "available",
       "dependencies": [
         515,
         516
@@ -438,7 +438,7 @@
     {
       "issue_number": 518,
       "title": "Frontend: Add lightbox navigation between multiple images",
-      "status": "pending",
+      "status": "available",
       "dependencies": [
         515,
         517
@@ -454,7 +454,7 @@
     {
       "issue_number": 519,
       "title": "Add reply-to-specific-image functionality",
-      "status": "pending",
+      "status": "available",
       "dependencies": [
         515,
         517
@@ -471,7 +471,7 @@
     {
       "issue_number": 520,
       "title": "Improve moderation console layout",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 4,
@@ -484,7 +484,7 @@
     {
       "issue_number": 521,
       "title": "Standardize \"Back to feed\" navigation text across all pages",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 4,
@@ -497,7 +497,7 @@
     {
       "issue_number": 522,
       "title": "Unify thread UI in user profile comments section",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 4,
@@ -510,7 +510,7 @@
     {
       "issue_number": 523,
       "title": "Improve post editing image buttons layout",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 4,
@@ -523,7 +523,7 @@
     {
       "issue_number": 524,
       "title": "Improve replies emoji and counter layout",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 4,
@@ -536,7 +536,7 @@
     {
       "issue_number": 525,
       "title": "Reduce padding on highlighted words (@mentions and search matches)",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 4,
@@ -549,7 +549,7 @@
     {
       "issue_number": 526,
       "title": "Fix Grafana xychart plugin registration error on startup",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 5,
@@ -561,7 +561,7 @@
     {
       "issue_number": 527,
       "title": "Fix Grafana plugins-bundled directory warning on startup",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 5,
@@ -573,7 +573,7 @@
     {
       "issue_number": 528,
       "title": "Make Alertmanager log level configurable",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 5,
@@ -585,7 +585,7 @@
     {
       "issue_number": 529,
       "title": "Make frontend Vite proxy log level configurable",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 5,
