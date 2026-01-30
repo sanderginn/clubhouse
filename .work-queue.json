@@ -22,6 +22,7 @@
     393,
     394,
     395,
+    396,
     397,
     398,
     399,
@@ -421,7 +422,7 @@
     {
       "issue_number": 396,
       "title": "Frontend: Add back navigation from standalone thread view",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769792806-78886",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769792806-78886",
       "dependencies": [
@@ -435,7 +436,9 @@
         "ui"
       ],
       "branch": "feat/issue-396-frontend-add-back-navigation-from-standa",
-      "claimed_at": "2026-01-30T17:06:46Z"
+      "claimed_at": "2026-01-30T17:06:46Z",
+      "pr_number": 486,
+      "completed_at": "2026-01-30T17:23:03Z"
     },
     {
       "issue_number": 397,
