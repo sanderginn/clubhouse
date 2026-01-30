@@ -165,18 +165,19 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 
 func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID uuid.UUID, req *models.UpdatePostRequest) (*models.Post, error) {
 	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.UpdatePost")
-	span.SetAttributes(
-		attribute.String("user_id", userID.String()),
-		attribute.String("post_id", postID.String()),
-		attribute.Int("content_length", len(strings.TrimSpace(req.Content))),
-		attribute.Bool("has_links", req.Links != nil && len(*req.Links) > 0),
-	)
 	defer span.End()
 
 	if err := validateUpdatePostInput(req); err != nil {
 		recordSpanError(span, err)
 		return nil, err
 	}
+
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.String("post_id", postID.String()),
+		attribute.Int("content_length", len(strings.TrimSpace(req.Content))),
+		attribute.Bool("has_links", req.Links != nil && len(*req.Links) > 0),
+	)
 
 	trimmedContent := strings.TrimSpace(req.Content)
 	var linkMetadata []models.JSONMap

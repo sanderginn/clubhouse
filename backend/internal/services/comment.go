@@ -184,18 +184,19 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 
 func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID, userID uuid.UUID, req *models.UpdateCommentRequest) (*models.Comment, error) {
 	ctx, span := otel.Tracer("clubhouse.comments").Start(ctx, "CommentService.UpdateComment")
-	span.SetAttributes(
-		attribute.String("user_id", userID.String()),
-		attribute.String("comment_id", commentID.String()),
-		attribute.Int("content_length", len(strings.TrimSpace(req.Content))),
-		attribute.Bool("has_links", req.Links != nil && len(*req.Links) > 0),
-	)
 	defer span.End()
 
 	if err := validateUpdateCommentInput(req); err != nil {
 		recordSpanError(span, err)
 		return nil, err
 	}
+
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.String("comment_id", commentID.String()),
+		attribute.Int("content_length", len(strings.TrimSpace(req.Content))),
+		attribute.Bool("has_links", req.Links != nil && len(*req.Links) > 0),
+	)
 
 	trimmedContent := strings.TrimSpace(req.Content)
 	var linkMetadata []models.JSONMap
