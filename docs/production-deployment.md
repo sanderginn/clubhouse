@@ -190,6 +190,7 @@ The backup/restore scripts source `.env.production` automatically when present.
 
 Grafana dashboards are provisioned from `grafana/dashboards`.
 The Grafana entrypoint ensures `/usr/share/grafana/plugins-bundled` exists to avoid startup warnings.
+Grafana startup removes any legacy external xychart plugin from the data volume to avoid duplicate registration with the built-in panel.
 
 Pinned observability image versions (see `docker-compose.yml` and `docker-compose.prod.yml`):
 
