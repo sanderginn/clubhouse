@@ -158,7 +158,7 @@ func TestLoginMFASetupRequired(t *testing.T) {
 	t.Cleanup(services.ResetConfigServiceForTests)
 
 	required := true
-	if _, err := services.GetConfigService().UpdateConfig(context.Background(), nil, &required); err != nil {
+	if _, err := services.GetConfigService().UpdateConfig(context.Background(), nil, &required, nil); err != nil {
 		t.Fatalf("failed to enable mfa_required: %v", err)
 	}
 

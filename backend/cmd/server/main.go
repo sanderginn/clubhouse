@@ -138,6 +138,7 @@ func main() {
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(dbConn, redisConn)
+	configHandler := handlers.NewConfigHandler()
 	pushService := services.NewPushService(dbConn)
 	postHandler := handlers.NewPostHandler(dbConn, redisConn, pushService)
 	commentHandler := handlers.NewCommentHandler(dbConn, redisConn, pushService)
@@ -163,6 +164,7 @@ func main() {
 	}
 
 	// API routes
+	mux.Handle("/api/v1/config", http.HandlerFunc(configHandler.GetPublicConfig))
 	mux.HandleFunc("/api/v1/auth/register", authHandler.Register)
 	mux.HandleFunc("/api/v1/auth/login", authHandler.Login)
 	mux.Handle("/api/v1/auth/logout", requireAuthCSRF(http.HandlerFunc(authHandler.Logout)))

@@ -765,9 +765,11 @@ func (h *AdminHandler) AdminRestoreComment(w http.ResponseWriter, r *http.Reques
 
 // UpdateConfigRequest represents the request body for updating config
 type UpdateConfigRequest struct {
-	LinkMetadataEnabled *bool `json:"linkMetadataEnabled"`
-	MFARequired         *bool `json:"mfa_required"`
-	MFARequiredAlt      *bool `json:"mfaRequired"`
+	LinkMetadataEnabled *bool   `json:"linkMetadataEnabled"`
+	MFARequired         *bool   `json:"mfa_required"`
+	MFARequiredAlt      *bool   `json:"mfaRequired"`
+	DisplayTimezone     *string `json:"display_timezone"`
+	DisplayTimezoneAlt  *string `json:"displayTimezone"`
 }
 
 // ConfigResponse wraps the config in a response object per API spec
@@ -820,8 +822,24 @@ func (h *AdminHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 	if mfaRequired == nil {
 		mfaRequired = req.MFARequiredAlt
 	}
+	displayTimezone := req.DisplayTimezone
+	if displayTimezone == nil {
+		displayTimezone = req.DisplayTimezoneAlt
+	}
+	if displayTimezone != nil {
+		trimmed := strings.TrimSpace(*displayTimezone)
+		if trimmed == "" {
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Display timezone is required")
+			return
+		}
+		if _, err := time.LoadLocation(trimmed); err != nil {
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid display timezone")
+			return
+		}
+		displayTimezone = &trimmed
+	}
 
-	config, err := configService.UpdateConfig(r.Context(), req.LinkMetadataEnabled, mfaRequired)
+	config, err := configService.UpdateConfig(r.Context(), req.LinkMetadataEnabled, mfaRequired, displayTimezone)
 	if err != nil {
 		writeError(r.Context(), w, http.StatusInternalServerError, "CONFIG_UPDATE_FAILED", "Failed to update config")
 		return
@@ -843,6 +861,14 @@ func (h *AdminHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 		})
 		observability.RecordAdminAction(r.Context(), "toggle_mfa_requirement")
 	}
+	if displayTimezone != nil && previousConfig.DisplayTimezone != config.DisplayTimezone {
+		h.logAdminAudit(r.Context(), "update_display_timezone", uuid.Nil, map[string]interface{}{
+			"setting":   "display_timezone",
+			"old_value": previousConfig.DisplayTimezone,
+			"new_value": config.DisplayTimezone,
+		})
+		observability.RecordAdminAction(r.Context(), "update_display_timezone")
+	}
 
 	adminUserID, err := middleware.GetUserIDFromContext(r.Context())
 	if err != nil {
@@ -852,6 +878,7 @@ func (h *AdminHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 		"admin_user_id", adminUserID.String(),
 		"link_metadata_enabled", strconv.FormatBool(config.LinkMetadataEnabled),
 		"mfa_required", strconv.FormatBool(config.MFARequired),
+		"display_timezone", config.DisplayTimezone,
 	)
 
 	w.Header().Set("Content-Type", "application/json")

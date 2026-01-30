@@ -453,11 +453,11 @@ func disableLinkMetadata(t *testing.T) {
 	config := GetConfigService()
 	current := config.GetConfig().LinkMetadataEnabled
 	disabled := false
-	if _, err := config.UpdateConfig(context.Background(), &disabled, nil); err != nil {
+	if _, err := config.UpdateConfig(context.Background(), &disabled, nil, nil); err != nil {
 		t.Fatalf("failed to disable link metadata: %v", err)
 	}
 	t.Cleanup(func() {
-		if _, err := config.UpdateConfig(context.Background(), &current, nil); err != nil {
+		if _, err := config.UpdateConfig(context.Background(), &current, nil, nil); err != nil {
 			t.Fatalf("failed to restore link metadata: %v", err)
 		}
 	})

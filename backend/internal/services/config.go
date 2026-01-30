@@ -9,8 +9,9 @@ import (
 
 // Config holds application configuration that can be toggled at runtime
 type Config struct {
-	LinkMetadataEnabled bool `json:"linkMetadataEnabled"`
-	MFARequired         bool `json:"mfaRequired"`
+	LinkMetadataEnabled bool   `json:"linkMetadataEnabled"`
+	MFARequired         bool   `json:"mfaRequired"`
+	DisplayTimezone     string `json:"displayTimezone"`
 }
 
 // ConfigService provides thread-safe access to runtime configuration
@@ -31,6 +32,7 @@ func GetConfigService() *ConfigService {
 			config: Config{
 				LinkMetadataEnabled: true, // Enabled by default
 				MFARequired:         false,
+				DisplayTimezone:     "UTC",
 			},
 		}
 	})
@@ -55,7 +57,7 @@ func (s *ConfigService) GetConfig() Config {
 }
 
 // UpdateConfig updates the configuration with the provided values
-func (s *ConfigService) UpdateConfig(ctx context.Context, linkMetadataEnabled *bool, mfaRequired *bool) (Config, error) {
+func (s *ConfigService) UpdateConfig(ctx context.Context, linkMetadataEnabled *bool, mfaRequired *bool, displayTimezone *string) (Config, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -65,6 +67,9 @@ func (s *ConfigService) UpdateConfig(ctx context.Context, linkMetadataEnabled *b
 	}
 	if mfaRequired != nil {
 		updated.MFARequired = *mfaRequired
+	}
+	if displayTimezone != nil {
+		updated.DisplayTimezone = *displayTimezone
 	}
 
 	if s.db != nil {
@@ -103,6 +108,7 @@ func ResetConfigServiceForTests() {
 	service.config = Config{
 		LinkMetadataEnabled: true,
 		MFARequired:         false,
+		DisplayTimezone:     "UTC",
 	}
 }
 
@@ -120,10 +126,10 @@ func (s *ConfigService) loadFromDB(ctx context.Context) error {
 
 	var config Config
 	err := db.QueryRowContext(ctx, `
-		SELECT link_metadata_enabled, mfa_required
+		SELECT link_metadata_enabled, mfa_required, display_timezone
 		FROM admin_config
 		WHERE id = 1
-	`).Scan(&config.LinkMetadataEnabled, &config.MFARequired)
+	`).Scan(&config.LinkMetadataEnabled, &config.MFARequired, &config.DisplayTimezone)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			if err := s.persistConfig(ctx, defaults); err != nil {
@@ -136,6 +142,9 @@ func (s *ConfigService) loadFromDB(ctx context.Context) error {
 		}
 		return err
 	}
+	if config.DisplayTimezone == "" {
+		config.DisplayTimezone = "UTC"
+	}
 
 	s.mu.Lock()
 	s.config = config
@@ -145,12 +154,13 @@ func (s *ConfigService) loadFromDB(ctx context.Context) error {
 
 func (s *ConfigService) persistConfig(ctx context.Context, config Config) error {
 	_, err := s.db.ExecContext(ctx, `
-		INSERT INTO admin_config (id, link_metadata_enabled, mfa_required)
-		VALUES (1, $1, $2)
+		INSERT INTO admin_config (id, link_metadata_enabled, mfa_required, display_timezone)
+		VALUES (1, $1, $2, $3)
 		ON CONFLICT (id) DO UPDATE
 		SET link_metadata_enabled = EXCLUDED.link_metadata_enabled,
 			mfa_required = EXCLUDED.mfa_required,
+			display_timezone = EXCLUDED.display_timezone,
 			updated_at = now()
-	`, config.LinkMetadataEnabled, config.MFARequired)
+	`, config.LinkMetadataEnabled, config.MFARequired, config.DisplayTimezone)
 	return err
 }

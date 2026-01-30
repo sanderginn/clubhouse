@@ -1025,7 +1025,8 @@ func TestGetConfig(t *testing.T) {
 
 	var response struct {
 		Config struct {
-			LinkMetadataEnabled bool `json:"linkMetadataEnabled"`
+			LinkMetadataEnabled bool   `json:"linkMetadataEnabled"`
+			DisplayTimezone     string `json:"displayTimezone"`
 		} `json:"config"`
 	}
 	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
@@ -1036,14 +1037,17 @@ func TestGetConfig(t *testing.T) {
 	if !response.Config.LinkMetadataEnabled {
 		t.Errorf("expected linkMetadataEnabled to be true by default")
 	}
+	if response.Config.DisplayTimezone != "UTC" {
+		t.Errorf("expected displayTimezone to be UTC by default")
+	}
 }
 
 // TestUpdateConfig tests updating the config
 func TestUpdateConfig(t *testing.T) {
 	handler := NewAdminHandler(nil, nil) // No DB needed for config
 
-	// Test disabling link metadata
-	body := `{"linkMetadataEnabled": false, "mfa_required": true}`
+	// Test disabling link metadata and setting timezone
+	body := `{"linkMetadataEnabled": false, "mfa_required": true, "display_timezone": "Europe/Amsterdam"}`
 	req := httptest.NewRequest("PATCH", "/api/v1/admin/config", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -1056,8 +1060,9 @@ func TestUpdateConfig(t *testing.T) {
 
 	var response struct {
 		Config struct {
-			LinkMetadataEnabled bool `json:"linkMetadataEnabled"`
-			MFARequired         bool `json:"mfaRequired"`
+			LinkMetadataEnabled bool   `json:"linkMetadataEnabled"`
+			MFARequired         bool   `json:"mfaRequired"`
+			DisplayTimezone     string `json:"displayTimezone"`
 		} `json:"config"`
 	}
 	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
@@ -1069,6 +1074,9 @@ func TestUpdateConfig(t *testing.T) {
 	}
 	if !response.Config.MFARequired {
 		t.Errorf("expected mfaRequired to be true after update")
+	}
+	if response.Config.DisplayTimezone != "Europe/Amsterdam" {
+		t.Errorf("expected displayTimezone to be Europe/Amsterdam after update")
 	}
 
 	// Verify the change persists by getting config again
@@ -1084,8 +1092,8 @@ func TestUpdateConfig(t *testing.T) {
 		t.Errorf("expected linkMetadataEnabled to still be false")
 	}
 
-	// Test re-enabling link metadata
-	body = `{"linkMetadataEnabled": true, "mfa_required": false}`
+	// Test re-enabling link metadata and resetting timezone
+	body = `{"linkMetadataEnabled": true, "mfa_required": false, "displayTimezone": "UTC"}`
 	req = httptest.NewRequest("PATCH", "/api/v1/admin/config", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	w = httptest.NewRecorder()
@@ -1106,6 +1114,24 @@ func TestUpdateConfig(t *testing.T) {
 	if response.Config.MFARequired {
 		t.Errorf("expected mfaRequired to be false after update")
 	}
+	if response.Config.DisplayTimezone != "UTC" {
+		t.Errorf("expected displayTimezone to be UTC after update")
+	}
+}
+
+func TestUpdateConfigInvalidTimezone(t *testing.T) {
+	handler := NewAdminHandler(nil, nil)
+
+	body := `{"display_timezone": "Not/AZone"}`
+	req := httptest.NewRequest("PATCH", "/api/v1/admin/config", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.UpdateConfig(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+	}
 }
 
 func TestUpdateConfigAuditLog(t *testing.T) {
@@ -1123,7 +1149,7 @@ func TestUpdateConfigAuditLog(t *testing.T) {
 	current := configService.GetConfig().LinkMetadataEnabled
 	t.Cleanup(func() {
 		restore := current
-		if _, err := configService.UpdateConfig(context.Background(), &restore, nil); err != nil {
+		if _, err := configService.UpdateConfig(context.Background(), &restore, nil, nil); err != nil {
 			t.Fatalf("failed to restore link metadata config: %v", err)
 		}
 	})
@@ -1184,7 +1210,7 @@ func TestUpdateConfigAuditLogMFARequired(t *testing.T) {
 	current := configService.GetConfig().MFARequired
 	t.Cleanup(func() {
 		restore := current
-		if _, err := configService.UpdateConfig(context.Background(), nil, &restore); err != nil {
+		if _, err := configService.UpdateConfig(context.Background(), nil, &restore, nil); err != nil {
 			t.Fatalf("failed to restore mfa_required config: %v", err)
 		}
 	})
@@ -1230,6 +1256,70 @@ func TestUpdateConfigAuditLogMFARequired(t *testing.T) {
 	}
 }
 
+func TestUpdateConfigAuditLogDisplayTimezone(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() {
+		testutil.CleanupTables(t, db)
+		services.ResetConfigServiceForTests()
+	})
+	services.ResetConfigServiceForTests()
+
+	adminID := uuid.MustParse(testutil.CreateTestUser(t, db, "tzadmin", "tzadmin@example.com", true, true))
+	handler := NewAdminHandler(db, nil)
+
+	configService := services.GetConfigService()
+	current := configService.GetConfig().DisplayTimezone
+	t.Cleanup(func() {
+		restore := current
+		if _, err := configService.UpdateConfig(context.Background(), nil, nil, &restore); err != nil {
+			t.Fatalf("failed to restore display_timezone config: %v", err)
+		}
+	})
+
+	next := "Europe/Amsterdam"
+	if current == next {
+		next = "UTC"
+	}
+	body := fmt.Sprintf(`{"display_timezone": "%s"}`, next)
+	req := httptest.NewRequest("PATCH", "/api/v1/admin/config", strings.NewReader(body))
+	req = req.WithContext(createTestUserContext(req.Context(), adminID, "tzadmin", true))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.UpdateConfig(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var metadataBytes []byte
+	err := db.QueryRow(`
+		SELECT metadata
+		FROM audit_logs
+		WHERE admin_user_id = $1 AND action = 'update_display_timezone'
+		ORDER BY created_at DESC
+		LIMIT 1
+	`, adminID).Scan(&metadataBytes)
+	if err != nil {
+		t.Fatalf("failed to query audit log: %v", err)
+	}
+
+	var metadata map[string]interface{}
+	if err := json.Unmarshal(metadataBytes, &metadata); err != nil {
+		t.Fatalf("failed to unmarshal metadata: %v", err)
+	}
+
+	if metadata["setting"] != "display_timezone" {
+		t.Errorf("expected setting 'display_timezone', got %v", metadata["setting"])
+	}
+	if metadata["old_value"] != current {
+		t.Errorf("expected old_value %v, got %v", current, metadata["old_value"])
+	}
+	if metadata["new_value"] != next {
+		t.Errorf("expected new_value %v, got %v", next, metadata["new_value"])
+	}
+}
+
 func TestUpdateConfigPersistsToDB(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() {
@@ -1243,7 +1333,7 @@ func TestUpdateConfigPersistsToDB(t *testing.T) {
 	}
 
 	handler := NewAdminHandler(db, nil)
-	body := `{"linkMetadataEnabled": false, "mfa_required": true}`
+	body := `{"linkMetadataEnabled": false, "mfa_required": true, "display_timezone": "America/New_York"}`
 	req := httptest.NewRequest("PATCH", "/api/v1/admin/config", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -1256,11 +1346,12 @@ func TestUpdateConfigPersistsToDB(t *testing.T) {
 
 	var linkMetadataEnabled bool
 	var mfaRequired bool
+	var displayTimezone string
 	err := db.QueryRow(`
-		SELECT link_metadata_enabled, mfa_required
+		SELECT link_metadata_enabled, mfa_required, display_timezone
 		FROM admin_config
 		WHERE id = 1
-	`).Scan(&linkMetadataEnabled, &mfaRequired)
+	`).Scan(&linkMetadataEnabled, &mfaRequired, &displayTimezone)
 	if err != nil {
 		t.Fatalf("failed to query admin_config: %v", err)
 	}
@@ -1269,6 +1360,9 @@ func TestUpdateConfigPersistsToDB(t *testing.T) {
 	}
 	if !mfaRequired {
 		t.Errorf("expected mfa_required true, got false")
+	}
+	if displayTimezone != "America/New_York" {
+		t.Errorf("expected display_timezone America/New_York, got %s", displayTimezone)
 	}
 }
 
