@@ -18,6 +18,7 @@ type User struct {
 	TotpEnabled         bool       `json:"-"`
 	TotpSecretEncrypted []byte     `json:"-"`
 	ApprovedAt          *time.Time `json:"approved_at,omitempty"`
+	SuspendedAt         *time.Time `json:"suspended_at,omitempty"`
 	CreatedAt           time.Time  `json:"created_at"`
 	UpdatedAt           *time.Time `json:"updated_at,omitempty"`
 	DeletedAt           *time.Time `json:"deleted_at,omitempty"`
@@ -109,6 +110,24 @@ type PromoteUserResponse struct {
 
 // RejectUserResponse represents the response from rejecting a user
 type RejectUserResponse struct {
+	ID      uuid.UUID `json:"id"`
+	Message string    `json:"message"`
+}
+
+// SuspendUserRequest represents the request body to suspend a user
+type SuspendUserRequest struct {
+	Reason string `json:"reason"`
+}
+
+// SuspendUserResponse represents the response from suspending a user
+type SuspendUserResponse struct {
+	ID          uuid.UUID `json:"id"`
+	SuspendedAt time.Time `json:"suspended_at"`
+	Message     string    `json:"message"`
+}
+
+// UnsuspendUserResponse represents the response from unsuspending a user
+type UnsuspendUserResponse struct {
 	ID      uuid.UUID `json:"id"`
 	Message string    `json:"message"`
 }

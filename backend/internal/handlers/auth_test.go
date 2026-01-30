@@ -127,6 +127,32 @@ func TestLoginUnapprovedUser(t *testing.T) {
 	}
 }
 
+func TestLoginSuspendedUser(t *testing.T) {
+	handler := &AuthHandler{
+		userService: &stubAuthUserService{loginErr: services.ErrUserSuspended},
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(`{"username":"TestUser","password":"Password123"}`))
+	w := httptest.NewRecorder()
+
+	handler.Login(w, req)
+
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected status 403, got %d", w.Code)
+	}
+
+	var resp models.ErrorResponse
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if resp.Code != "USER_SUSPENDED" {
+		t.Fatalf("expected USER_SUSPENDED code, got %s", resp.Code)
+	}
+	if resp.Error != "Your account has been suspended." {
+		t.Fatalf("expected suspended message, got %s", resp.Error)
+	}
+}
+
 func TestLoginMFASetupRequired(t *testing.T) {
 	services.ResetConfigServiceForTests()
 	t.Cleanup(services.ResetConfigServiceForTests)

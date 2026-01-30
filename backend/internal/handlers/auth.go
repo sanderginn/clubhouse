@@ -204,6 +204,15 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 				UserAgent:  r.UserAgent(),
 			})
 			writeError(r.Context(), w, http.StatusForbidden, "USER_NOT_APPROVED", "Your account is awaiting admin approval.")
+		case errors.Is(err, services.ErrUserSuspended):
+			observability.RecordAuthFailure(ctx, "suspended")
+			h.logAuthEvent(ctx, &models.AuthEventCreate{
+				Identifier: req.Username,
+				EventType:  "login_suspended",
+				IPAddress:  clientIP,
+				UserAgent:  r.UserAgent(),
+			})
+			writeError(r.Context(), w, http.StatusForbidden, "USER_SUSPENDED", "Your account has been suspended.")
 		case errors.Is(err, services.ErrInvalidCredentials):
 			h.logAuthEvent(ctx, &models.AuthEventCreate{
 				Identifier: req.Username,

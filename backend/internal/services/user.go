@@ -27,6 +27,7 @@ var (
 	ErrPasswordRequired   = errors.New("password is required")
 	ErrInvalidCredentials = errors.New("invalid username or password")
 	ErrUserNotApproved    = errors.New("user not approved")
+	ErrUserSuspended      = errors.New("user suspended")
 )
 
 // UserService handles user-related operations
@@ -188,7 +189,7 @@ func (s *UserService) BootstrapAdmin(ctx context.Context, username, email, passw
 // GetUserByID retrieves a user by ID
 func (s *UserService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	query := `
-		SELECT id, username, COALESCE(email, '') as email, password_hash, profile_picture_url, bio, is_admin, totp_enabled, totp_secret_encrypted, approved_at, created_at, updated_at, deleted_at
+		SELECT id, username, COALESCE(email, '') as email, password_hash, profile_picture_url, bio, is_admin, totp_enabled, totp_secret_encrypted, approved_at, suspended_at, created_at, updated_at, deleted_at
 		FROM users
 		WHERE id = $1 AND deleted_at IS NULL
 	`
@@ -196,7 +197,7 @@ func (s *UserService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.Us
 	var user models.User
 	err := s.db.QueryRowContext(ctx, query, id).
 		Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.ProfilePictureURL,
-			&user.Bio, &user.IsAdmin, &user.TotpEnabled, &user.TotpSecretEncrypted, &user.ApprovedAt, &user.CreatedAt, &user.UpdatedAt, &user.DeletedAt)
+			&user.Bio, &user.IsAdmin, &user.TotpEnabled, &user.TotpSecretEncrypted, &user.ApprovedAt, &user.SuspendedAt, &user.CreatedAt, &user.UpdatedAt, &user.DeletedAt)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -211,7 +212,7 @@ func (s *UserService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.Us
 // GetUserByUsername retrieves a user by username
 func (s *UserService) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
 	query := `
-		SELECT id, username, COALESCE(email, '') as email, password_hash, profile_picture_url, bio, is_admin, totp_enabled, totp_secret_encrypted, approved_at, created_at, updated_at, deleted_at
+		SELECT id, username, COALESCE(email, '') as email, password_hash, profile_picture_url, bio, is_admin, totp_enabled, totp_secret_encrypted, approved_at, suspended_at, created_at, updated_at, deleted_at
 		FROM users
 		WHERE username = $1 AND deleted_at IS NULL
 	`
@@ -219,7 +220,7 @@ func (s *UserService) GetUserByUsername(ctx context.Context, username string) (*
 	var user models.User
 	err := s.db.QueryRowContext(ctx, query, username).
 		Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.ProfilePictureURL,
-			&user.Bio, &user.IsAdmin, &user.TotpEnabled, &user.TotpSecretEncrypted, &user.ApprovedAt, &user.CreatedAt, &user.UpdatedAt, &user.DeletedAt)
+			&user.Bio, &user.IsAdmin, &user.TotpEnabled, &user.TotpSecretEncrypted, &user.ApprovedAt, &user.SuspendedAt, &user.CreatedAt, &user.UpdatedAt, &user.DeletedAt)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -234,7 +235,7 @@ func (s *UserService) GetUserByUsername(ctx context.Context, username string) (*
 // GetUserByEmail retrieves a user by email
 func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	query := `
-		SELECT id, username, COALESCE(email, '') as email, password_hash, profile_picture_url, bio, is_admin, totp_enabled, totp_secret_encrypted, approved_at, created_at, updated_at, deleted_at
+		SELECT id, username, COALESCE(email, '') as email, password_hash, profile_picture_url, bio, is_admin, totp_enabled, totp_secret_encrypted, approved_at, suspended_at, created_at, updated_at, deleted_at
 		FROM users
 		WHERE email = $1 AND deleted_at IS NULL
 	`
@@ -242,7 +243,7 @@ func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*models
 	var user models.User
 	err := s.db.QueryRowContext(ctx, query, email).
 		Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.ProfilePictureURL,
-			&user.Bio, &user.IsAdmin, &user.TotpEnabled, &user.TotpSecretEncrypted, &user.ApprovedAt, &user.CreatedAt, &user.UpdatedAt, &user.DeletedAt)
+			&user.Bio, &user.IsAdmin, &user.TotpEnabled, &user.TotpSecretEncrypted, &user.ApprovedAt, &user.SuspendedAt, &user.CreatedAt, &user.UpdatedAt, &user.DeletedAt)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -278,7 +279,34 @@ func (s *UserService) LoginUser(ctx context.Context, req *models.LoginRequest) (
 		return nil, ErrUserNotApproved
 	}
 
+	if user.SuspendedAt != nil {
+		return nil, ErrUserSuspended
+	}
+
 	return user, nil
+}
+
+// IsUserSuspended returns true when the user is currently suspended.
+func (s *UserService) IsUserSuspended(ctx context.Context, userID uuid.UUID) (bool, error) {
+	if s == nil || s.db == nil {
+		return false, fmt.Errorf("user service is not configured")
+	}
+
+	query := `
+		SELECT suspended_at
+		FROM users
+		WHERE id = $1 AND deleted_at IS NULL
+	`
+
+	var suspendedAt sql.NullTime
+	if err := s.db.QueryRowContext(ctx, query, userID).Scan(&suspendedAt); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, fmt.Errorf("user not found")
+		}
+		return false, fmt.Errorf("failed to check user suspension: %w", err)
+	}
+
+	return suspendedAt.Valid, nil
 }
 
 // validateLoginInput validates login input
@@ -551,6 +579,137 @@ func (s *UserService) PromoteUserToAdmin(ctx context.Context, userID uuid.UUID, 
 		Email:    promotedUser.Email,
 		IsAdmin:  promotedUser.IsAdmin,
 		Message:  "User promoted to admin",
+	}, nil
+}
+
+// SuspendUser suspends a user account (admin-only operation).
+func (s *UserService) SuspendUser(ctx context.Context, adminUserID uuid.UUID, targetUserID uuid.UUID, reason string) (*models.SuspendUserResponse, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	query := `
+		SELECT id, username, suspended_at, deleted_at
+		FROM users
+		WHERE id = $1
+	`
+
+	var user models.User
+	err = tx.QueryRowContext(ctx, query, targetUserID).
+		Scan(&user.ID, &user.Username, &user.SuspendedAt, &user.DeletedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	if user.DeletedAt != nil {
+		return nil, fmt.Errorf("user has been deleted")
+	}
+	if user.SuspendedAt != nil {
+		return nil, fmt.Errorf("user already suspended")
+	}
+
+	updateQuery := `
+		UPDATE users
+		SET suspended_at = now(), updated_at = now()
+		WHERE id = $1
+		RETURNING id, suspended_at
+	`
+
+	var suspendedAt time.Time
+	var updatedUserID uuid.UUID
+	if err := tx.QueryRowContext(ctx, updateQuery, targetUserID).Scan(&updatedUserID, &suspendedAt); err != nil {
+		return nil, fmt.Errorf("failed to suspend user: %w", err)
+	}
+
+	auditService := NewAuditService(tx)
+	metadata := map[string]interface{}{
+		"target_user_id": targetUserID.String(),
+	}
+	if strings.TrimSpace(reason) != "" {
+		metadata["reason"] = strings.TrimSpace(reason)
+	}
+	if err := auditService.LogAuditWithMetadata(ctx, "suspend_user", adminUserID, targetUserID, metadata); err != nil {
+		return nil, fmt.Errorf("failed to create audit log: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return &models.SuspendUserResponse{
+		ID:          updatedUserID,
+		SuspendedAt: suspendedAt,
+		Message:     "User suspended successfully",
+	}, nil
+}
+
+// UnsuspendUser removes a user suspension (admin-only operation).
+func (s *UserService) UnsuspendUser(ctx context.Context, adminUserID uuid.UUID, targetUserID uuid.UUID) (*models.UnsuspendUserResponse, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	query := `
+		SELECT id, suspended_at, deleted_at
+		FROM users
+		WHERE id = $1
+	`
+
+	var user models.User
+	err = tx.QueryRowContext(ctx, query, targetUserID).
+		Scan(&user.ID, &user.SuspendedAt, &user.DeletedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	if user.DeletedAt != nil {
+		return nil, fmt.Errorf("user has been deleted")
+	}
+	if user.SuspendedAt == nil {
+		return nil, fmt.Errorf("user not suspended")
+	}
+
+	updateQuery := `
+		UPDATE users
+		SET suspended_at = NULL, updated_at = now()
+		WHERE id = $1
+		RETURNING id
+	`
+
+	var updatedUserID uuid.UUID
+	if err := tx.QueryRowContext(ctx, updateQuery, targetUserID).Scan(&updatedUserID); err != nil {
+		return nil, fmt.Errorf("failed to unsuspend user: %w", err)
+	}
+
+	auditService := NewAuditService(tx)
+	metadata := map[string]interface{}{
+		"target_user_id": targetUserID.String(),
+	}
+	if err := auditService.LogAuditWithMetadata(ctx, "unsuspend_user", adminUserID, targetUserID, metadata); err != nil {
+		return nil, fmt.Errorf("failed to create audit log: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return &models.UnsuspendUserResponse{
+		ID:      updatedUserID,
+		Message: "User unsuspended successfully",
 	}, nil
 }
 
