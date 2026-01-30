@@ -374,9 +374,7 @@
     {
       "issue_number": 394,
       "title": "Frontend: Remove old search location and add polish",
-      "status": "in_progress",
-      "assigned_to": "agent-1769770735-57952",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769770735-57952",
+      "status": "available",
       "dependencies": [
         393
       ],
@@ -387,16 +385,12 @@
         "frontend",
         "search",
         "ui"
-      ],
-      "branch": "feat/issue-394-frontend-remove-old-search-location-and-",
-      "claimed_at": "2026-01-30T10:58:55Z"
+      ]
     },
     {
       "issue_number": 395,
       "title": "Frontend: Create standalone thread view route",
-      "status": "in_progress",
-      "assigned_to": "agent-1769770231-43781",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769770231-43781",
+      "status": "available",
       "dependencies": [],
       "phase": "feature",
       "priority": 4,
@@ -404,9 +398,7 @@
         "enhancement",
         "frontend",
         "ui"
-      ],
-      "branch": "feat/issue-395-frontend-create-standalone-thread-view-r",
-      "claimed_at": "2026-01-30T10:50:31Z"
+      ]
     },
     {
       "issue_number": 396,
@@ -535,7 +527,7 @@
     {
       "issue_number": 418,
       "title": "[High] Add distributed tracing spans to service layer",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [
         415
       ],
@@ -544,11 +536,7 @@
       "labels": [
         "observability",
         "backend"
-      ],
-      "assigned_to": "agent-1769768819-11007",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769768819-11007",
-      "branch": "feat/issue-418-high-add-distributed-tracing-spans-to-se",
-      "claimed_at": "2026-01-30T10:26:59Z"
+      ]
     },
     {
       "issue_number": 419,
@@ -593,7 +581,7 @@
     {
       "issue_number": 421,
       "title": "[Medium] Add audit logging for reaction operations",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [
         415
       ],
@@ -602,11 +590,7 @@
       "labels": [
         "observability",
         "backend"
-      ],
-      "assigned_to": "agent-1769768831-11246",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769768831-11246",
-      "branch": "feat/issue-421-medium-add-audit-logging-for-reaction-op",
-      "claimed_at": "2026-01-30T10:27:11Z"
+      ]
     },
     {
       "issue_number": 422,
