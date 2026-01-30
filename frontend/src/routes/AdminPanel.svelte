@@ -81,13 +81,9 @@
         </div>
         <p class="text-xs uppercase tracking-[0.3em] text-slate-400 font-mono">Tabs</p>
       </div>
-      <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" role="tablist" aria-label="Admin toolkit tabs">
+      <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {#each tabs as tab}
           <button
-            id={`admin-tab-${tab.id}`}
-            role="tab"
-            aria-selected={activeTab === tab.id}
-            aria-controls={`admin-panel-${tab.id}`}
             class={`rounded-xl border px-4 py-3 text-left transition shadow-sm ${
               activeTab === tab.id
                 ? 'border-amber-400 bg-amber-50 text-amber-900'
@@ -107,12 +103,7 @@
       </div>
     </div>
 
-    <div
-      id={`admin-panel-${activeTab}`}
-      class="min-h-[420px] w-full"
-      role="tabpanel"
-      aria-labelledby={`admin-tab-${activeTab}`}
-    >
+    <div class="min-h-[420px] w-full">
       {#if activeTab === 'pending'}
         <PendingUsers />
       {:else if activeTab === 'users'}
