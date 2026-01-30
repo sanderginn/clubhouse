@@ -836,9 +836,9 @@
     {
       "issue_number": 435,
       "title": "Prometheus: Add database health alerting rules",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769767052-59985",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769767052-59985",
       "dependencies": [
         441
       ],
@@ -848,7 +848,9 @@
         "observability",
         "prometheus",
         "alerting"
-      ]
+      ],
+      "branch": "feat/issue-435-prometheus-add-database-health-alerting-",
+      "claimed_at": "2026-01-30T09:57:32Z"
     },
     {
       "issue_number": 436,
