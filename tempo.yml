@@ -33,3 +33,14 @@ querier:
 metrics_generator:
   storage:
     path: /var/tempo/generator/metrics
+  traces_storage:
+    path: /var/tempo/generator/traces
+  registry:
+    external_labels:
+      source: tempo
+      cluster: clubhouse
+  processor:
+    service_graphs:
+      enabled: true
+    span_metrics:
+      enabled: true

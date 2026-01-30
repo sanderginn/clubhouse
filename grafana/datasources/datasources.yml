@@ -29,8 +29,35 @@ datasources:
       streamingEnabled: false
       tracesToLogsV2:
         datasourceUid: loki
+        spanStartTimeShift: "1h"
+        spanEndTimeShift: "1h"
+        filterByTraceID: true
+        filterBySpanID: false
+        tags:
+          - key: service.name
+            value: service
+          - key: service.namespace
+            value: namespace
+          - key: deployment.environment
+            value: environment
       tracesToMetrics:
         datasourceUid: prometheus
+        spanStartTimeShift: "5m"
+        spanEndTimeShift: "5m"
+        tags:
+          - key: service.name
+            value: service
+          - key: span.name
+            value: span
+          - key: status.code
+            value: status
+        queries:
+          - name: "Span rate"
+            query: "sum(rate(tempo_spanmetrics_calls_total{service=\"$service\", span_name=\"$span\"}[$__rate_interval]))"
+          - name: "Span error rate"
+            query: "sum(rate(tempo_spanmetrics_errors_total{service=\"$service\", span_name=\"$span\"}[$__rate_interval])) / sum(rate(tempo_spanmetrics_calls_total{service=\"$service\", span_name=\"$span\"}[$__rate_interval])) * 100"
+          - name: "p95 latency"
+            query: "histogram_quantile(0.95, sum(rate(tempo_spanmetrics_latency_bucket{service=\"$service\", span_name=\"$span\"}[$__rate_interval])) by (le))"
       nodeGraph:
         enabled: true
       lokiSearch:
