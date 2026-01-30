@@ -19,6 +19,7 @@
     391,
     416,
     419,
+    420,
     426,
     427,
     428,
@@ -539,7 +540,7 @@
     {
       "issue_number": 420,
       "title": "[Medium] Add audit logging for user self-delete operations",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769764162-92701",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769764162-92701",
       "dependencies": [
@@ -552,7 +553,9 @@
         "backend"
       ],
       "branch": "feat/issue-420-medium-add-audit-logging-for-user-selfde",
-      "claimed_at": "2026-01-30T09:09:22Z"
+      "claimed_at": "2026-01-30T09:09:22Z",
+      "pr_number": 463,
+      "completed_at": "2026-01-30T09:40:11Z"
     },
     {
       "issue_number": 421,
