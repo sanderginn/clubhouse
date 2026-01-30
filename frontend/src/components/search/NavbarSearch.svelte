@@ -6,6 +6,7 @@
   let query = '';
   let scope: SearchScope = 'section';
   let isExpanded = false;
+  let isDesktop = false;
   let inputEl: HTMLInputElement | null = null;
   let containerEl: HTMLDivElement | null = null;
 
@@ -15,12 +16,28 @@
   });
 
   onMount(() => {
+    const cleanup: Array<() => void> = [];
+    if (typeof window !== 'undefined') {
+      const mediaQuery = window.matchMedia('(min-width: 1024px)');
+      const handleMediaChange = () => {
+        isDesktop = mediaQuery.matches;
+      };
+      handleMediaChange();
+      mediaQuery.addEventListener('change', handleMediaChange);
+      cleanup.push(() => {
+        mediaQuery.removeEventListener('change', handleMediaChange);
+      });
+    }
+
     window.addEventListener('keydown', handleShortcut);
     window.addEventListener('click', handleOutsideClick);
-
-    return () => {
+    cleanup.push(() => {
       window.removeEventListener('keydown', handleShortcut);
       window.removeEventListener('click', handleOutsideClick);
+    });
+
+    return () => {
+      cleanup.forEach((fn) => fn());
     };
   });
 
@@ -86,6 +103,11 @@
     }
     focusSearch();
   }
+
+  $: expandedClasses = isExpanded
+    ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto'
+    : 'opacity-0 -translate-y-2 scale-95 pointer-events-none';
+  $: isPanelActive = isExpanded || isDesktop;
 </script>
 
 <div class="relative" bind:this={containerEl}>
@@ -93,6 +115,7 @@
     class="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100"
     type="button"
     aria-label="Open search"
+    aria-expanded={isExpanded}
     on:click={toggleExpanded}
   >
     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -107,9 +130,9 @@
 
   <form
     on:submit|preventDefault={handleSubmit}
-    class={`absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-md bg-white border border-gray-200 shadow-lg rounded-xl p-3 space-y-3 ${
-      isExpanded ? 'block' : 'hidden'
-    } lg:static lg:block lg:mt-0 lg:w-96 lg:shadow-none lg:border-gray-200 lg:rounded-lg`}
+    class={`absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-md bg-white border border-gray-200 shadow-lg rounded-xl p-3 space-y-3 transform transition-all duration-200 ease-out origin-top-right ${expandedClasses} lg:static lg:mt-0 lg:w-96 lg:shadow-none lg:border-gray-200 lg:rounded-lg lg:opacity-100 lg:translate-y-0 lg:scale-100 lg:pointer-events-auto`}
+    aria-hidden={!isPanelActive}
+    inert={!isPanelActive}
   >
     <div class="relative">
       <label for="navbar-search-input" class="sr-only">Search</label>
@@ -120,6 +143,8 @@
         value={query}
         on:input={handleInput}
         placeholder="Search posts and comments..."
+        disabled={!isPanelActive}
+        tabindex={isPanelActive ? 0 : -1}
         class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
       />
       <svg
@@ -141,6 +166,8 @@
       <select
         value={scope}
         on:change={handleScopeChange}
+        disabled={!isPanelActive}
+        tabindex={isPanelActive ? 0 : -1}
         class="w-full sm:w-auto min-w-[10rem] px-3 py-2 pr-8 border border-gray-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary focus:border-transparent"
       >
         <option value="section">
@@ -157,6 +184,8 @@
         <button
           type="button"
           on:click={handleClear}
+          disabled={!isPanelActive}
+          tabindex={isPanelActive ? 0 : -1}
           class="px-3 py-2 text-xs text-gray-600 hover:text-gray-900"
         >
           Clear
@@ -165,6 +194,8 @@
 
       <button
         type="submit"
+        disabled={!isPanelActive}
+        tabindex={isPanelActive ? 0 : -1}
         class="px-3 py-2 text-xs bg-primary text-white font-medium rounded-lg hover:bg-secondary transition-colors"
       >
         Search
