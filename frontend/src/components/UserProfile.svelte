@@ -77,6 +77,7 @@
   let commentsController: AbortController | null = null;
   let postsRequestId = 0;
   let commentsRequestId = 0;
+  let contextRequestId = 0;
   let pendingCommentReactions = new Set<string>();
 
   function normalizeProfileResponse(
@@ -109,6 +110,7 @@
     commentsController?.abort();
     postsRequestId += 1;
     commentsRequestId += 1;
+    contextRequestId += 1;
     pendingCommentReactions = new Set();
     profile = null;
     stats = null;
@@ -280,22 +282,33 @@
     if (!postId || postContext[postId] !== undefined || postContextLoading.has(postId)) {
       return;
     }
+    const requestId = contextRequestId;
+    const activeUserId = userId;
+    const isCurrentRequest = () => requestId === contextRequestId && activeUserId === userId;
     postContextLoading = new Set(postContextLoading).add(postId);
     postContextErrors = { ...postContextErrors, [postId]: null };
     try {
       const response = await api.get<{ post?: ApiPost | null }>(`/posts/${postId}`);
+      if (!isCurrentRequest()) {
+        return;
+      }
       const post = response?.post ? mapApiPost(response.post) : null;
       postContext = { ...postContext, [postId]: post };
     } catch (error) {
+      if (!isCurrentRequest()) {
+        return;
+      }
       postContext = { ...postContext, [postId]: null };
       postContextErrors = {
         ...postContextErrors,
         [postId]: error instanceof Error ? error.message : 'Failed to load post context.',
       };
     } finally {
-      const nextLoading = new Set(postContextLoading);
-      nextLoading.delete(postId);
-      postContextLoading = nextLoading;
+      if (isCurrentRequest()) {
+        const nextLoading = new Set(postContextLoading);
+        nextLoading.delete(postId);
+        postContextLoading = nextLoading;
+      }
     }
   }
 
@@ -303,22 +316,33 @@
     if (!commentId || parentCommentContext[commentId] !== undefined || parentCommentLoading.has(commentId)) {
       return;
     }
+    const requestId = contextRequestId;
+    const activeUserId = userId;
+    const isCurrentRequest = () => requestId === contextRequestId && activeUserId === userId;
     parentCommentLoading = new Set(parentCommentLoading).add(commentId);
     parentCommentErrors = { ...parentCommentErrors, [commentId]: null };
     try {
       const response = await api.get<{ comment?: ApiComment | null }>(`/comments/${commentId}`);
+      if (!isCurrentRequest()) {
+        return;
+      }
       const parent = response?.comment ? mapApiComment(response.comment) : null;
       parentCommentContext = { ...parentCommentContext, [commentId]: parent };
     } catch (error) {
+      if (!isCurrentRequest()) {
+        return;
+      }
       parentCommentContext = { ...parentCommentContext, [commentId]: null };
       parentCommentErrors = {
         ...parentCommentErrors,
         [commentId]: error instanceof Error ? error.message : 'Failed to load parent comment.',
       };
     } finally {
-      const nextLoading = new Set(parentCommentLoading);
-      nextLoading.delete(commentId);
-      parentCommentLoading = nextLoading;
+      if (isCurrentRequest()) {
+        const nextLoading = new Set(parentCommentLoading);
+        nextLoading.delete(commentId);
+        parentCommentLoading = nextLoading;
+      }
     }
   }
 
@@ -337,12 +361,18 @@
 
   async function loadThreadPreview(comment: Comment) {
     if (threadPreviewLoading.has(comment.id)) return;
+    const requestId = contextRequestId;
+    const activeUserId = userId;
+    const isCurrentRequest = () => requestId === contextRequestId && activeUserId === userId;
     threadPreviewLoading = new Set(threadPreviewLoading).add(comment.id);
     threadPreviewErrors = { ...threadPreviewErrors, [comment.id]: null };
     try {
       const response = await api.get<{ comments?: ApiComment[] }>(
         `/posts/${comment.postId}/comments?limit=12`
       );
+      if (!isCurrentRequest()) {
+        return;
+      }
       const flattened = flattenThreadPreview((response.comments ?? []).map(mapApiComment));
       const hasTarget = flattened.some((item) => item.comment.id === comment.id);
       const enriched = hasTarget
@@ -356,15 +386,20 @@
           ];
       threadPreview = { ...threadPreview, [comment.id]: enriched };
     } catch (error) {
+      if (!isCurrentRequest()) {
+        return;
+      }
       threadPreview = { ...threadPreview, [comment.id]: null };
       threadPreviewErrors = {
         ...threadPreviewErrors,
         [comment.id]: error instanceof Error ? error.message : 'Failed to load thread context.',
       };
     } finally {
-      const nextLoading = new Set(threadPreviewLoading);
-      nextLoading.delete(comment.id);
-      threadPreviewLoading = nextLoading;
+      if (isCurrentRequest()) {
+        const nextLoading = new Set(threadPreviewLoading);
+        nextLoading.delete(comment.id);
+        threadPreviewLoading = nextLoading;
+      }
     }
   }
 
