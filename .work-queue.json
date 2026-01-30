@@ -437,14 +437,18 @@
     {
       "issue_number": 515,
       "title": "Backend: Support multiple images per post",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "feature",
       "priority": 3,
       "labels": [
         "enhancement",
         "backend"
-      ]
+      ],
+      "assigned_to": "agent-1769815951-38835",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769815951-38835",
+      "branch": "feat/issue-515-backend-support-multiple-images-per-post",
+      "claimed_at": "2026-01-30T23:32:31Z"
     },
     {
       "issue_number": 516,
