@@ -557,7 +557,7 @@
     {
       "issue_number": 421,
       "title": "[Medium] Add audit logging for reaction operations",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         415
       ],
@@ -566,7 +566,11 @@
       "labels": [
         "observability",
         "backend"
-      ]
+      ],
+      "assigned_to": "agent-1769765913-19000",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769765913-19000",
+      "branch": "feat/issue-421-medium-add-audit-logging-for-reaction-op",
+      "claimed_at": "2026-01-30T09:38:33Z"
     },
     {
       "issue_number": 422,
