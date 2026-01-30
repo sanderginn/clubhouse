@@ -20,6 +20,7 @@
     427,
     428,
     430,
+    431,
     433,
     441
   ],
@@ -710,7 +711,7 @@
     {
       "issue_number": 431,
       "title": "Grafana: Create link metadata fetching dashboard",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769760792-10823",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769760792-10823",
       "dependencies": [],
@@ -722,7 +723,9 @@
         "dashboard"
       ],
       "branch": "feat/issue-431-grafana-create-link-metadata-fetching-da",
-      "claimed_at": "2026-01-30T08:13:12Z"
+      "claimed_at": "2026-01-30T08:13:12Z",
+      "pr_number": 459,
+      "completed_at": "2026-01-30T08:31:01Z"
     },
     {
       "issue_number": 432,
