@@ -6,6 +6,7 @@
 
   let showTooltip = false;
   let tooltipId = '';
+  let lastPointerType: string | null = null;
 
   $: relativeLabel = formatRelative(dateString);
   $: exactLabel = formatExact(dateString);
@@ -62,6 +63,18 @@
       showTooltip = false;
     }
   }
+
+  function handlePointerDown(event: PointerEvent) {
+    lastPointerType = event.pointerType;
+  }
+
+  function handleClick() {
+    if (lastPointerType === 'touch') {
+      showTooltip = true;
+      return;
+    }
+    showTooltip = !showTooltip;
+  }
 </script>
 
 <span class="relative inline-flex items-center">
@@ -69,12 +82,17 @@
     type="button"
     class={`inline-flex items-center bg-transparent border-0 p-0 ${className}`}
     aria-describedby={tooltipId}
-    aria-label={exactLabel ? `Exact time ${exactLabel}` : 'Exact time unavailable'}
+    aria-label={
+      exactLabel
+        ? `${relativeLabel}. Exact time ${exactLabel}`
+        : `${relativeLabel}. Exact time unavailable`
+    }
     on:mouseenter={() => (showTooltip = true)}
     on:mouseleave={() => (showTooltip = false)}
     on:focus={() => (showTooltip = true)}
     on:blur={() => (showTooltip = false)}
-    on:click={() => (showTooltip = !showTooltip)}
+    on:pointerdown={handlePointerDown}
+    on:click={handleClick}
     on:keydown={handleKeydown}
   >
     <time datetime={dateString ?? ''}>{relativeLabel}</time>
