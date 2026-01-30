@@ -102,6 +102,45 @@ describe('PostCard', () => {
     expect(screen.getByRole('img', { name: 'Uploaded image' })).toBeInTheDocument();
   });
 
+  it('hides internal upload URLs from post content when an image is rendered', () => {
+    const postWithInternalImage: Post = {
+      ...basePost,
+      content: 'Look /api/v1/uploads/user-1/photo.png',
+      links: [
+        {
+          url: '/api/v1/uploads/user-1/photo.png',
+        },
+      ],
+    };
+
+    render(PostCard, { post: postWithInternalImage });
+
+    expect(screen.getByRole('img', { name: 'Uploaded image' })).toBeInTheDocument();
+    expect(screen.getByText('Look')).toBeInTheDocument();
+    expect(screen.queryByText('/api/v1/uploads/user-1/photo.png')).not.toBeInTheDocument();
+  });
+
+  it('shows internal upload link when image fails to load', async () => {
+    const postWithInternalImage: Post = {
+      ...basePost,
+      links: [
+        {
+          url: '/api/v1/uploads/user-1/photo.png',
+        },
+      ],
+    };
+
+    render(PostCard, { post: postWithInternalImage });
+
+    const image = screen.getByRole('img', { name: 'Uploaded image' });
+    await fireEvent.error(image);
+
+    const link = screen.getByRole('link', {
+      name: /\/api\/v1\/uploads\/user-1\/photo\.png/,
+    });
+    expect(link).toHaveAttribute('href', '/api/v1/uploads/user-1/photo.png');
+  });
+
   it('shows avatar fallback when no profile image', () => {
     render(PostCard, { post: basePost });
     expect(screen.getByText('S')).toBeInTheDocument();
