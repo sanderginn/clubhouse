@@ -309,9 +309,7 @@
     {
       "issue_number": 392,
       "title": "Frontend: Admin MFA requirement toggle and user status display",
-      "status": "in_progress",
-      "assigned_to": "agent-1769764159-92593",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769764159-92593",
+      "status": "available",
       "dependencies": [
         391
       ],
@@ -323,9 +321,7 @@
         "admin",
         "auth",
         "ui"
-      ],
-      "branch": "feat/issue-392-frontend-admin-mfa-requirement-toggle-an",
-      "claimed_at": "2026-01-30T09:09:19Z"
+      ]
     },
     {
       "issue_number": 393,
@@ -501,9 +497,7 @@
     {
       "issue_number": 418,
       "title": "[High] Add distributed tracing spans to service layer",
-      "status": "in_progress",
-      "assigned_to": "agent-1769761928-38443",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769761928-38443",
+      "status": "available",
       "dependencies": [
         415
       ],
@@ -512,9 +506,7 @@
       "labels": [
         "observability",
         "backend"
-      ],
-      "branch": "feat/issue-418-high-add-distributed-tracing-spans-to-se",
-      "claimed_at": "2026-01-30T08:32:08Z"
+      ]
     },
     {
       "issue_number": 419,
