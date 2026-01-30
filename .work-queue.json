@@ -21,6 +21,7 @@
     417,
     419,
     420,
+    425,
     426,
     427,
     428,
@@ -635,7 +636,7 @@
     {
       "issue_number": 425,
       "title": "[Low] Add success logging (LogInfo) for CRUD operations",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769766156-25654",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769766156-25654",
       "dependencies": [
@@ -649,7 +650,9 @@
         "backend"
       ],
       "branch": "feat/issue-425-low-add-success-logging-loginfo-for-crud",
-      "claimed_at": "2026-01-30T09:42:36Z"
+      "claimed_at": "2026-01-30T09:42:36Z",
+      "pr_number": 466,
+      "completed_at": "2026-01-30T09:51:57Z"
     },
     {
       "issue_number": 426,
