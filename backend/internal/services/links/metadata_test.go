@@ -254,6 +254,28 @@ func TestFetchMetadataImageFallbackSkipsHTML(t *testing.T) {
 	}
 }
 
+func TestIsInternalUploadURL(t *testing.T) {
+	tests := []struct {
+		rawURL string
+		want   bool
+	}{
+		{rawURL: "/api/v1/uploads/128620aa-7f7e-47d6-9400-91699dc61e1a/photo.png", want: true},
+		{rawURL: "/api/v1/uploads", want: true},
+		{rawURL: "https://clubhouse.example/api/v1/uploads/128620aa-7f7e-47d6-9400-91699dc61e1a/photo.png", want: true},
+		{rawURL: "https://clubhouse.example/api/v1/uploads", want: true},
+		{rawURL: "https://example.com/api/v1/uploading/photo.png", want: false},
+		{rawURL: "/api/v1/upload/photo.png", want: false},
+		{rawURL: "https://example.com/photo.png", want: false},
+		{rawURL: "", want: false},
+	}
+
+	for _, tt := range tests {
+		if got := IsInternalUploadURL(tt.rawURL); got != tt.want {
+			t.Errorf("IsInternalUploadURL(%q) = %v, want %v", tt.rawURL, got, tt.want)
+		}
+	}
+}
+
 func TestValidateURLBlocksHosts(t *testing.T) {
 	fetcher := NewFetcher(&http.Client{})
 	fetcher.resolver = fakeResolver{
