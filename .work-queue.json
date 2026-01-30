@@ -431,9 +431,7 @@
     {
       "issue_number": 415,
       "title": "[Critical] Fix duplicate function definitions in post/comment handlers and services",
-      "status": "in_progress",
-      "assigned_to": "agent-1769693268-44480",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769693268-44480",
+      "status": "available",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 0,
@@ -441,9 +439,7 @@
         "observability",
         "backend",
         "bug"
-      ],
-      "branch": "fix/issue-415-critical-fix-duplicate-function-definiti",
-      "claimed_at": "2026-01-29T13:27:48Z"
+      ]
     },
     {
       "issue_number": 416,
