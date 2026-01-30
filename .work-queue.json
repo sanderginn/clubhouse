@@ -7,7 +7,8 @@
   "completed_issues": [
     415,
     417,
-    418
+    418,
+    439
   ],
   "issues": [
     {
@@ -71,7 +72,7 @@
     {
       "issue_number": 439,
       "title": "Tempo: Configure service map and trace exploration",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769797253-22758",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769797253-22758",
       "dependencies": [
@@ -87,7 +88,9 @@
         "tracing"
       ],
       "branch": "feat/issue-439-tempo-configure-service-map-and-trace-ex",
-      "claimed_at": "2026-01-30T18:20:53Z"
+      "claimed_at": "2026-01-30T18:20:53Z",
+      "pr_number": 488,
+      "completed_at": "2026-01-30T18:38:58Z"
     }
   ]
 }
