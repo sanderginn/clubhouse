@@ -428,9 +428,9 @@
     {
       "issue_number": 397,
       "title": "Frontend: Add timestamp hover tooltip with exact time",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769771555-72182",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769771555-72182",
       "dependencies": [],
       "phase": "feature",
       "priority": 5,
@@ -438,7 +438,9 @@
         "enhancement",
         "frontend",
         "ui"
-      ]
+      ],
+      "branch": "feat/issue-397-frontend-add-timestamp-hover-tooltip-wit",
+      "claimed_at": "2026-01-30T11:12:35Z"
     },
     {
       "issue_number": 398,
