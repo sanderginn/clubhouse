@@ -400,7 +400,7 @@
     {
       "issue_number": 395,
       "title": "Frontend: Create standalone thread view route",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [],
       "phase": "feature",
       "priority": 4,
@@ -408,11 +408,7 @@
         "enhancement",
         "frontend",
         "ui"
-      ],
-      "assigned_to": "agent-1769773843-10431",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769773843-10431",
-      "branch": "feat/issue-395-frontend-create-standalone-thread-view-r",
-      "claimed_at": "2026-01-30T11:50:43Z"
+      ]
     },
     {
       "issue_number": 396,
@@ -551,7 +547,7 @@
     {
       "issue_number": 418,
       "title": "[High] Add distributed tracing spans to service layer",
-      "status": "in_progress",
+      "status": "blocked",
       "dependencies": [
         415
       ],
@@ -560,11 +556,7 @@
       "labels": [
         "observability",
         "backend"
-      ],
-      "assigned_to": "agent-1769773840-10374",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769773840-10374",
-      "branch": "feat/issue-418-high-add-distributed-tracing-spans-to-se",
-      "claimed_at": "2026-01-30T11:50:40Z"
+      ]
     },
     {
       "issue_number": 419,
