@@ -863,9 +863,9 @@
     {
       "issue_number": 436,
       "title": "Prometheus: Add WebSocket health alerting rules",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769767297-67760",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769767297-67760",
       "dependencies": [
         441
       ],
@@ -875,7 +875,9 @@
         "observability",
         "prometheus",
         "alerting"
-      ]
+      ],
+      "branch": "feat/issue-436-prometheus-add-websocket-health-alerting",
+      "claimed_at": "2026-01-30T10:01:37Z"
     },
     {
       "issue_number": 437,
