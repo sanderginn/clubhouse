@@ -16,6 +16,7 @@ type Post struct {
 	SectionID       uuid.UUID      `json:"section_id"`
 	Content         string         `json:"content"`
 	Links           []Link         `json:"links,omitempty"`
+	Images          []PostImage    `json:"images,omitempty"`
 	CommentCount    int            `json:"comment_count"`
 	CreatedAt       time.Time      `json:"created_at"`
 	UpdatedAt       *time.Time     `json:"updated_at,omitempty"`
@@ -34,11 +35,22 @@ type Link struct {
 	CreatedAt time.Time              `json:"created_at"`
 }
 
+// PostImage represents an image attached to a post.
+type PostImage struct {
+	ID        uuid.UUID `json:"id"`
+	URL       string    `json:"url"`
+	Position  int       `json:"position"`
+	Caption   *string   `json:"caption,omitempty"`
+	AltText   *string   `json:"alt_text,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 // CreatePostRequest represents the request body for creating a post
 type CreatePostRequest struct {
-	SectionID string        `json:"section_id"`
-	Content   string        `json:"content"`
-	Links     []LinkRequest `json:"links,omitempty"`
+	SectionID string             `json:"section_id"`
+	Content   string             `json:"content"`
+	Links     []LinkRequest      `json:"links,omitempty"`
+	Images    []PostImageRequest `json:"images,omitempty"`
 }
 
 // LinkRequest represents a link in the request
@@ -46,10 +58,18 @@ type LinkRequest struct {
 	URL string `json:"url"`
 }
 
+// PostImageRequest represents an image in the request.
+type PostImageRequest struct {
+	URL     string  `json:"url"`
+	Caption *string `json:"caption,omitempty"`
+	AltText *string `json:"alt_text,omitempty"`
+}
+
 // UpdatePostRequest represents the request body for updating a post
 type UpdatePostRequest struct {
-	Content string         `json:"content"`
-	Links   *[]LinkRequest `json:"links,omitempty"`
+	Content string              `json:"content"`
+	Links   *[]LinkRequest      `json:"links,omitempty"`
+	Images  *[]PostImageRequest `json:"images,omitempty"`
 }
 
 // CreatePostResponse represents the response for creating a post

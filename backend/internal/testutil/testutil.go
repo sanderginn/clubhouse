@@ -101,6 +101,7 @@ func CleanupTables(t *testing.T, db *sql.DB) {
 			mentions,
 			reactions,
 			links,
+			post_images,
 			comments,
 			posts,
 			section_subscriptions,
