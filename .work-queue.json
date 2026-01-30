@@ -13,7 +13,8 @@
     490,
     491,
     492,
-    495
+    495,
+    498
   ],
   "issues": [
     {
@@ -275,7 +276,7 @@
     {
       "issue_number": 498,
       "title": "Search bar renders incorrectly",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         489,
         490
@@ -290,7 +291,9 @@
       "assigned_to": "agent-1769801666-80567",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769801666-80567",
       "branch": "fix/issue-498-search-bar-renders-incorrectly",
-      "claimed_at": "2026-01-30T19:34:26Z"
+      "claimed_at": "2026-01-30T19:34:26Z",
+      "pr_number": 504,
+      "completed_at": "2026-01-30T19:41:45Z"
     }
   ]
 }
