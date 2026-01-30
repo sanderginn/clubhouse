@@ -136,7 +136,7 @@
     {
       "issue_number": 491,
       "title": "Link metadata fetcher should skip internal upload URLs",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         489,
         490
@@ -146,7 +146,11 @@
       "labels": [
         "bug",
         "backend"
-      ]
+      ],
+      "assigned_to": "agent-1769800933-60229",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769800933-60229",
+      "branch": "fix/issue-491-link-metadata-fetcher-should-skip-intern",
+      "claimed_at": "2026-01-30T19:22:13Z"
     },
     {
       "issue_number": 492,
