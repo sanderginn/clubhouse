@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
+  import { onDestroy, onMount, tick } from 'svelte';
   import { commentStore, type CommentThreadState } from '../../stores/commentStore';
   import { currentUser } from '../../stores';
   import { loadThreadComments, loadMoreThreadComments } from '../../stores/commentFeedStore';
@@ -16,6 +16,7 @@
 
   export let postId: string;
   export let commentCount = 0;
+  export let highlightCommentId: string | null = null;
 
   const emptyThread: CommentThreadState = {
     comments: [],
@@ -36,6 +37,7 @@
   let editCommentContent = '';
   let editCommentError: string | null = null;
   let isSavingComment = false;
+  let lastHighlightId: string | null = null;
 
   const renderStart = typeof performance !== 'undefined' ? performance.now() : null;
 
@@ -196,6 +198,21 @@
   $: if (postId && shouldLoad && isVisible && !thread.loaded && !thread.isLoading && !thread.error) {
     loadThreadComments(postId);
   }
+
+  $: if (
+    highlightCommentId &&
+    highlightCommentId !== lastHighlightId &&
+    thread.loaded &&
+    typeof document !== 'undefined'
+  ) {
+    lastHighlightId = highlightCommentId;
+    tick().then(() => {
+      const el = document.getElementById(`comment-${highlightCommentId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+  }
 </script>
 
 <svelte:window on:click={closeMenus} />
@@ -237,7 +254,12 @@
   {:else}
     <div class="space-y-4">
       {#each thread.comments as comment (comment.id)}
-        <article class="bg-white border border-gray-200 rounded-lg p-3">
+        <article
+          id={`comment-${comment.id}`}
+          class={`border border-gray-200 rounded-lg p-3 ${
+            highlightCommentId === comment.id ? 'bg-amber-50 ring-2 ring-amber-300' : 'bg-white'
+          }`}
+        >
           <div class="flex items-start gap-3">
             {#if comment.user?.id}
               <a
@@ -456,7 +478,12 @@
               {#if comment.replies?.length}
                 <div class="mt-4 space-y-3 border-l border-gray-200 pl-4">
                   {#each comment.replies as reply (reply.id)}
-                    <div class="flex items-start gap-2">
+                    <div
+                      id={`comment-${reply.id}`}
+                      class={`flex items-start gap-2 ${
+                        highlightCommentId === reply.id ? 'bg-amber-50 ring-2 ring-amber-300 rounded-lg p-2' : ''
+                      }`}
+                    >
                       {#if reply.user?.id}
                         <a
                           href={buildProfileHref(reply.user.id)}

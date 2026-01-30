@@ -3,11 +3,14 @@ import {
   buildAdminHref,
   buildFeedHref,
   buildSectionHref,
+  buildStandaloneThreadHref,
   buildSettingsHref,
   buildThreadHref,
   isAdminPath,
   isSettingsPath,
+  parseStandaloneThreadPostId,
   parseSectionSlug,
+  parseThreadCommentId,
   parseThreadPostId,
 } from '../routeNavigation';
 
@@ -30,6 +33,20 @@ describe('routeNavigation', () => {
     expect(parseThreadPostId('/sections/section-1')).toBeNull();
     expect(parseThreadPostId('/sections/section-1/posts/')).toBeNull();
     expect(parseThreadPostId('/admin')).toBeNull();
+  });
+
+  it('builds and parses standalone thread hrefs', () => {
+    expect(buildStandaloneThreadHref('post-99')).toBe('/posts/post-99');
+    expect(parseStandaloneThreadPostId('/posts/post-99')).toBe('post-99');
+    expect(parseStandaloneThreadPostId('/posts/post-99/comments')).toBe('post-99');
+    expect(parseStandaloneThreadPostId('/sections/section-1/posts/post-1')).toBeNull();
+  });
+
+  it('parses comment highlight params', () => {
+    expect(parseThreadCommentId('?comment=comment-1')).toBe('comment-1');
+    expect(parseThreadCommentId('?commentId=comment-2')).toBe('comment-2');
+    expect(parseThreadCommentId('?foo=bar')).toBeNull();
+    expect(parseThreadCommentId('')).toBeNull();
   });
 
   it('builds admin hrefs and recognizes admin paths', () => {

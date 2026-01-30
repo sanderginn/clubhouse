@@ -88,7 +88,7 @@
     const targetSectionId = targetSection?.id ?? post.sectionId;
     const targetSectionSlug = targetSection ? getSectionSlug(targetSection) : post.sectionId;
     const switchingSection = targetSection && $activeSection?.id !== targetSection.id;
-    uiStore.setActiveView('feed');
+    uiStore.setActiveView('thread');
     threadRouteStore.setTarget(post.id, targetSectionId);
     pushPath(buildThreadHref(targetSectionSlug, post.id));
     if (switchingSection) {
