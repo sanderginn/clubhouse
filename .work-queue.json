@@ -22,6 +22,7 @@
     509,
     512,
     513,
+    526,
     527,
     530
   ],
@@ -580,7 +581,7 @@
     {
       "issue_number": 526,
       "title": "Fix Grafana xychart plugin registration error on startup",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 5,
@@ -591,7 +592,9 @@
       "assigned_to": "agent-1769814927-8375",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769814927-8375",
       "branch": "fix/issue-526-fix-grafana-xychart-plugin-registration-",
-      "claimed_at": "2026-01-30T23:15:27Z"
+      "claimed_at": "2026-01-30T23:15:27Z",
+      "pr_number": 536,
+      "completed_at": "2026-01-30T23:25:32Z"
     },
     {
       "issue_number": 527,
