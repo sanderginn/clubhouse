@@ -748,26 +748,28 @@ func (s *CommentService) DeleteComment(ctx context.Context, commentID uuid.UUID,
 		updatedComment.UpdatedAt = &updatedAt.Time
 	}
 
-	if isAdmin && comment.UserID != userID {
-		auditService := NewAuditService(tx)
-		metadata := map[string]interface{}{
-			"comment_id":         comment.ID.String(),
-			"post_id":            comment.PostID.String(),
-			"content_excerpt":    truncateAuditExcerpt(comment.Content),
-			"deleted_by_user_id": userID.String(),
-			"deleted_by_admin":   true,
-		}
-		if err := auditService.LogModerationAudit(
-			ctx,
-			"delete_comment",
-			userID,
-			comment.UserID,
-			uuid.Nil,
-			comment.ID,
-			metadata,
-		); err != nil {
-			return nil, fmt.Errorf("failed to create audit log: %w", err)
-		}
+	isSelfDelete := comment.UserID == userID
+	auditService := NewAuditService(tx)
+	metadata := map[string]interface{}{
+		"comment_id":         comment.ID.String(),
+		"post_id":            comment.PostID.String(),
+		"content_excerpt":    truncateAuditExcerpt(comment.Content),
+		"deleted_by_user_id": userID.String(),
+		"is_self_delete":     isSelfDelete,
+	}
+	if !isSelfDelete && isAdmin {
+		metadata["deleted_by_admin"] = true
+	}
+	if err := auditService.LogModerationAudit(
+		ctx,
+		"delete_comment",
+		userID,
+		comment.UserID,
+		uuid.Nil,
+		comment.ID,
+		metadata,
+	); err != nil {
+		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {

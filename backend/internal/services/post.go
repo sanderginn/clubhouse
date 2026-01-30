@@ -563,26 +563,28 @@ func (s *PostService) DeletePost(ctx context.Context, postID uuid.UUID, userID u
 		return nil, fmt.Errorf("failed to delete post: %w", err)
 	}
 
-	if isAdmin && post.UserID != userID {
-		auditService := NewAuditService(tx)
-		metadata := map[string]interface{}{
-			"post_id":            post.ID.String(),
-			"section_id":         post.SectionID.String(),
-			"content_excerpt":    truncateAuditExcerpt(post.Content),
-			"deleted_by_user_id": userID.String(),
-			"deleted_by_admin":   true,
-		}
-		if err := auditService.LogModerationAudit(
-			ctx,
-			"delete_post",
-			userID,
-			post.UserID,
-			post.ID,
-			uuid.Nil,
-			metadata,
-		); err != nil {
-			return nil, fmt.Errorf("failed to create audit log: %w", err)
-		}
+	isSelfDelete := post.UserID == userID
+	auditService := NewAuditService(tx)
+	metadata := map[string]interface{}{
+		"post_id":            post.ID.String(),
+		"section_id":         post.SectionID.String(),
+		"content_excerpt":    truncateAuditExcerpt(post.Content),
+		"deleted_by_user_id": userID.String(),
+		"is_self_delete":     isSelfDelete,
+	}
+	if !isSelfDelete && isAdmin {
+		metadata["deleted_by_admin"] = true
+	}
+	if err := auditService.LogModerationAudit(
+		ctx,
+		"delete_post",
+		userID,
+		post.UserID,
+		post.ID,
+		uuid.Nil,
+		metadata,
+	); err != nil {
+		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
