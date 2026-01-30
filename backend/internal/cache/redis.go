@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/redis/go-redis/extra/redisotel/v9"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -27,6 +28,10 @@ func Init(ctx context.Context) (*redis.Client, error) {
 		Password: redisPassword,
 		DB:       0,
 	})
+
+	if err := redisotel.InstrumentTracing(client, redisotel.WithDBStatement(true)); err != nil {
+		return nil, fmt.Errorf("failed to instrument Redis tracing: %w", err)
+	}
 
 	// Test connection
 	if err := client.Ping(ctx).Err(); err != nil {
