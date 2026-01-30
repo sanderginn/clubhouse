@@ -81,7 +81,7 @@ func TestDeleteAllSessionsForUser(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if err := service.DeleteAllSessionsForUser(ctx, userID); err != nil {
+	if _, err := service.DeleteAllSessionsForUser(ctx, userID); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 

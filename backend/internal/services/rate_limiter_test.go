@@ -12,7 +12,7 @@ func TestRateLimiterAllowsWithinLimit(t *testing.T) {
 	client := testutil.GetTestRedis(t)
 	defer testutil.CleanupRedis(t)
 	redisServer := testutil.GetMiniredisServer(t)
-	limiter := NewRateLimiter(client, "rate:test:", RateLimitConfig{Limit: 2, Window: time.Second})
+	limiter := NewRateLimiter(client, "rate:test:", RateLimitConfig{Limit: 2, Window: time.Second}, "test")
 
 	ctx := context.Background()
 	for i := 0; i < 2; i++ {

@@ -23,6 +23,14 @@ type metrics struct {
 	websocketSubscriptionsAdd metric.Int64Counter
 	websocketSubscriptionsRem metric.Int64Counter
 	websocketErrors           metric.Int64Counter
+	authAttempts              metric.Int64Counter
+	authFailures              metric.Int64Counter
+	authSessionsCreated       metric.Int64Counter
+	authSessionsExpired       metric.Int64Counter
+	authTotpVerifications     metric.Int64Counter
+	authPasswordResets        metric.Int64Counter
+	ratelimitViolations       metric.Int64Counter
+	ratelimitLockouts         metric.Int64Counter
 	postsCreated              metric.Int64Counter
 	commentsCreated           metric.Int64Counter
 	reactionsAdded            metric.Int64Counter
@@ -147,6 +155,78 @@ func initMetrics() error {
 		websocketErrors, err := meter.Int64Counter(
 			"clubhouse.websocket.errors",
 			metric.WithDescription("Count of websocket message handling errors"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		authAttempts, err := meter.Int64Counter(
+			"clubhouse.auth.attempts",
+			metric.WithDescription("Authentication attempts (login/register)"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		authFailures, err := meter.Int64Counter(
+			"clubhouse.auth.failures",
+			metric.WithDescription("Authentication failures by reason"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		authSessionsCreated, err := meter.Int64Counter(
+			"clubhouse.auth.sessions.created",
+			metric.WithDescription("Sessions created"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		authSessionsExpired, err := meter.Int64Counter(
+			"clubhouse.auth.sessions.expired",
+			metric.WithDescription("Sessions expired or invalidated"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		authTotpVerifications, err := meter.Int64Counter(
+			"clubhouse.auth.totp.verifications",
+			metric.WithDescription("TOTP verification attempts"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		authPasswordResets, err := meter.Int64Counter(
+			"clubhouse.auth.password_resets",
+			metric.WithDescription("Password reset operations"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		ratelimitViolations, err := meter.Int64Counter(
+			"clubhouse.ratelimit.violations",
+			metric.WithDescription("Rate limit violations"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		ratelimitLockouts, err := meter.Int64Counter(
+			"clubhouse.ratelimit.lockouts",
+			metric.WithDescription("Rate limit lockouts"),
 		)
 		if err != nil {
 			metricsInitErr = err
@@ -349,6 +429,14 @@ func initMetrics() error {
 			websocketSubscriptionsAdd: websocketSubscriptionsAdd,
 			websocketSubscriptionsRem: websocketSubscriptionsRem,
 			websocketErrors:           websocketErrors,
+			authAttempts:              authAttempts,
+			authFailures:              authFailures,
+			authSessionsCreated:       authSessionsCreated,
+			authSessionsExpired:       authSessionsExpired,
+			authTotpVerifications:     authTotpVerifications,
+			authPasswordResets:        authPasswordResets,
+			ratelimitViolations:       ratelimitViolations,
+			ratelimitLockouts:         ratelimitLockouts,
 			postsCreated:              postsCreated,
 			commentsCreated:           commentsCreated,
 			reactionsAdded:            reactionsAdded,
@@ -469,6 +557,108 @@ func RecordWebsocketError(ctx context.Context, errorType, messageType string) {
 		attribute.String("message_type", messageType),
 	}
 	m.websocketErrors.Add(ctx, 1, metric.WithAttributes(attrs...))
+}
+
+// RecordAuthAttempt increments the auth attempt counter.
+func RecordAuthAttempt(ctx context.Context, attemptType string, result string) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	attrs := []attribute.KeyValue{
+		attribute.String("type", attemptType),
+		attribute.String("result", result),
+	}
+	m.authAttempts.Add(ctx, 1, metric.WithAttributes(attrs...))
+}
+
+// RecordAuthFailure increments the auth failure counter.
+func RecordAuthFailure(ctx context.Context, reason string) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	if strings.TrimSpace(reason) == "" {
+		return
+	}
+	m.authFailures.Add(ctx, 1, metric.WithAttributes(attribute.String("reason", reason)))
+}
+
+// RecordAuthSessionCreated increments the session created counter.
+func RecordAuthSessionCreated(ctx context.Context) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.authSessionsCreated.Add(ctx, 1)
+}
+
+// RecordAuthSessionExpired increments the session expired counter.
+func RecordAuthSessionExpired(ctx context.Context, reason string, count int64) {
+	if count <= 0 {
+		return
+	}
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	attrs := []attribute.KeyValue{}
+	if strings.TrimSpace(reason) != "" {
+		attrs = append(attrs, attribute.String("reason", reason))
+	}
+	if len(attrs) == 0 {
+		m.authSessionsExpired.Add(ctx, count)
+		return
+	}
+	m.authSessionsExpired.Add(ctx, count, metric.WithAttributes(attrs...))
+}
+
+// RecordAuthTOTPVerification increments the TOTP verification counter.
+func RecordAuthTOTPVerification(ctx context.Context, result string) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	if strings.TrimSpace(result) == "" {
+		return
+	}
+	m.authTotpVerifications.Add(ctx, 1, metric.WithAttributes(attribute.String("result", result)))
+}
+
+// RecordAuthPasswordReset increments the password reset counter.
+func RecordAuthPasswordReset(ctx context.Context, stage string) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	if strings.TrimSpace(stage) == "" {
+		return
+	}
+	m.authPasswordResets.Add(ctx, 1, metric.WithAttributes(attribute.String("stage", stage)))
+}
+
+// RecordRateLimitViolation increments the rate limit violation counter.
+func RecordRateLimitViolation(ctx context.Context, limitType string) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	if strings.TrimSpace(limitType) == "" {
+		return
+	}
+	m.ratelimitViolations.Add(ctx, 1, metric.WithAttributes(attribute.String("limit_type", limitType)))
+}
+
+// RecordRateLimitLockout increments the rate limit lockout counter.
+func RecordRateLimitLockout(ctx context.Context, reason string) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	if strings.TrimSpace(reason) == "" {
+		return
+	}
+	m.ratelimitLockouts.Add(ctx, 1, metric.WithAttributes(attribute.String("reason", reason)))
 }
 
 // RecordPostCreated increments the post created counter.

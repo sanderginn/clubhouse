@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+	"github.com/sanderginn/clubhouse/internal/observability"
 )
 
 const (
@@ -75,6 +76,8 @@ func (s *SessionService) CreateSession(ctx context.Context, userID uuid.UUID, us
 		return nil, fmt.Errorf("failed to store session in Redis: %w", err)
 	}
 
+	observability.RecordAuthSessionCreated(ctx)
+
 	return session, nil
 }
 
@@ -84,6 +87,8 @@ func (s *SessionService) GetSession(ctx context.Context, sessionID string) (*Ses
 	sessionJSON, err := s.redis.Get(ctx, key).Result()
 	if err != nil {
 		if err == redis.Nil {
+			observability.RecordAuthSessionExpired(ctx, "timeout", 1)
+			observability.RecordAuthFailure(ctx, "expired_session")
 			return nil, ErrSessionNotFound
 		}
 		return nil, fmt.Errorf("failed to get session from Redis: %w", err)
@@ -120,11 +125,11 @@ func (s *SessionService) DeleteSession(ctx context.Context, sessionID string) er
 }
 
 // DeleteAllSessionsForUser removes all sessions for a user from Redis.
-func (s *SessionService) DeleteAllSessionsForUser(ctx context.Context, userID uuid.UUID) error {
+func (s *SessionService) DeleteAllSessionsForUser(ctx context.Context, userID uuid.UUID) (int, error) {
 	userKey := UserSessionSetPrefix + userID.String()
 	sessionIDs, err := s.redis.SMembers(ctx, userKey).Result()
 	if err != nil {
-		return fmt.Errorf("failed to list user sessions: %w", err)
+		return 0, fmt.Errorf("failed to list user sessions: %w", err)
 	}
 
 	pipe := s.redis.TxPipeline()
@@ -133,10 +138,10 @@ func (s *SessionService) DeleteAllSessionsForUser(ctx context.Context, userID uu
 	}
 	pipe.Del(ctx, userKey)
 	if _, err := pipe.Exec(ctx); err != nil {
-		return fmt.Errorf("failed to delete user sessions: %w", err)
+		return 0, fmt.Errorf("failed to delete user sessions: %w", err)
 	}
 
-	return nil
+	return len(sessionIDs), nil
 }
 
 // UpdateUserAdminStatus updates cached session admin status for all of a user's sessions.

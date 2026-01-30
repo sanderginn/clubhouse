@@ -74,6 +74,15 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	clientIP := getClientIP(r)
+	ctx := r.Context()
+	attemptRecorded := false
+	recordAttempt := func(result string) {
+		if attemptRecorded {
+			return
+		}
+		observability.RecordAuthAttempt(ctx, "register", result)
+		attemptRecorded = true
+	}
 
 	var req models.RegisterRequest
 	if err := decodeJSONBody(w, r, &req); err != nil {
@@ -85,12 +94,14 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.checkRateLimit(r.Context(), w, clientIP, filterIdentifiers(req.Username, req.Email)) {
+	if !h.checkRateLimit(ctx, w, clientIP, filterIdentifiers(req.Username, req.Email)) {
+		recordAttempt("failure")
 		return
 	}
 
-	user, err := h.userService.RegisterUser(r.Context(), &req)
+	user, err := h.userService.RegisterUser(ctx, &req)
 	if err != nil {
+		recordAttempt("failure")
 		// Determine appropriate error code and status
 		switch err.Error() {
 		case "username is required":
@@ -112,6 +123,8 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	recordAttempt("success")
 
 	response := models.RegisterResponse{
 		ID:       user.ID,
@@ -140,6 +153,15 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	clientIP := getClientIP(r)
+	ctx := r.Context()
+	attemptRecorded := false
+	recordAttempt := func(result string) {
+		if attemptRecorded {
+			return
+		}
+		observability.RecordAuthAttempt(ctx, "login", result)
+		attemptRecorded = true
+	}
 
 	var req models.LoginRequest
 	if err := decodeJSONBody(w, r, &req); err != nil {
@@ -153,16 +175,20 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	identifiers := filterIdentifiers(req.Username)
 
-	if !h.checkRateLimit(r.Context(), w, clientIP, identifiers) {
+	if !h.checkRateLimit(ctx, w, clientIP, identifiers) {
+		recordAttempt("failure")
 		return
 	}
 
-	if !h.checkLockout(r.Context(), w, clientIP, identifiers) {
+	if !h.checkLockout(ctx, w, clientIP, identifiers) {
+		recordAttempt("failure")
+		observability.RecordAuthFailure(ctx, "locked")
 		return
 	}
 
-	user, err := h.userService.LoginUser(r.Context(), &req)
+	user, err := h.userService.LoginUser(ctx, &req)
 	if err != nil {
+		recordAttempt("failure")
 		// Determine appropriate error code and status
 		switch {
 		case errors.Is(err, services.ErrUsernameRequired):
@@ -170,7 +196,8 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, services.ErrPasswordRequired):
 			writeError(r.Context(), w, http.StatusBadRequest, "PASSWORD_REQUIRED", err.Error())
 		case errors.Is(err, services.ErrUserNotApproved):
-			h.logAuthEvent(r.Context(), &models.AuthEventCreate{
+			observability.RecordAuthFailure(ctx, "not_approved")
+			h.logAuthEvent(ctx, &models.AuthEventCreate{
 				Identifier: req.Username,
 				EventType:  "login_pending_approval",
 				IPAddress:  clientIP,
@@ -178,15 +205,15 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 			})
 			writeError(r.Context(), w, http.StatusForbidden, "USER_NOT_APPROVED", "Your account is awaiting admin approval.")
 		case errors.Is(err, services.ErrInvalidCredentials):
-			h.logAuthEvent(r.Context(), &models.AuthEventCreate{
+			h.logAuthEvent(ctx, &models.AuthEventCreate{
 				Identifier: req.Username,
 				EventType:  "login_failure",
 				IPAddress:  clientIP,
 				UserAgent:  r.UserAgent(),
 			})
-			locked, retryAfter, lockErr := h.registerLoginFailure(r.Context(), clientIP, identifiers)
+			locked, retryAfter, lockErr := h.registerLoginFailure(ctx, clientIP, identifiers)
 			if lockErr != nil {
-				observability.LogError(r.Context(), observability.ErrorLog{
+				observability.LogError(ctx, observability.ErrorLog{
 					Message:    "failed to register login failure",
 					Code:       "LOGIN_FAILURE_TRACK_FAILED",
 					StatusCode: http.StatusUnauthorized,
@@ -194,24 +221,29 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 				})
 			}
 			if locked {
-				writeLockoutResponse(r.Context(), w, retryAfter)
+				observability.RecordAuthFailure(ctx, "locked")
+				observability.RecordRateLimitLockout(ctx, "auth_failures")
+				writeLockoutResponse(ctx, w, retryAfter)
 				return
 			}
-			writeError(r.Context(), w, http.StatusUnauthorized, "INVALID_CREDENTIALS", "Invalid username or password")
+			observability.RecordAuthFailure(ctx, "invalid_credentials")
+			writeError(ctx, w, http.StatusUnauthorized, "INVALID_CREDENTIALS", "Invalid username or password")
 		default:
-			writeError(r.Context(), w, http.StatusInternalServerError, "LOGIN_FAILED", "Failed to login")
+			writeError(ctx, w, http.StatusInternalServerError, "LOGIN_FAILED", "Failed to login")
 		}
 		return
 	}
 
 	if user.TotpEnabled {
 		if h.totpService == nil {
-			writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_UNAVAILABLE", "TOTP service unavailable")
+			writeError(ctx, w, http.StatusInternalServerError, "TOTP_UNAVAILABLE", "TOTP service unavailable")
 			return
 		}
 
-		if err := h.totpService.VerifyLogin(r.Context(), user.ID, req.TOTPCode); err != nil {
-			h.logAuthEvent(r.Context(), &models.AuthEventCreate{
+		if err := h.totpService.VerifyLogin(ctx, user.ID, req.TOTPCode); err != nil {
+			recordAttempt("failure")
+			observability.RecordAuthTOTPVerification(ctx, "failure")
+			h.logAuthEvent(ctx, &models.AuthEventCreate{
 				UserID:     &user.ID,
 				Identifier: user.Username,
 				EventType:  "totp_failure",
@@ -220,22 +252,23 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 			})
 			switch {
 			case errors.Is(err, services.ErrTOTPRequired):
-				writeError(r.Context(), w, http.StatusUnauthorized, "TOTP_REQUIRED", "TOTP code required")
+				writeError(ctx, w, http.StatusUnauthorized, "TOTP_REQUIRED", "TOTP code required")
 			case errors.Is(err, services.ErrTOTPInvalid):
-				writeError(r.Context(), w, http.StatusUnauthorized, "INVALID_TOTP", "Invalid TOTP code")
+				writeError(ctx, w, http.StatusUnauthorized, "INVALID_TOTP", "Invalid TOTP code")
 			case errors.Is(err, services.ErrTOTPNotEnrolled):
-				writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_CONFIG_INVALID", "TOTP is enabled but not enrolled")
+				writeError(ctx, w, http.StatusInternalServerError, "TOTP_CONFIG_INVALID", "TOTP is enabled but not enrolled")
 			case errors.Is(err, services.ErrTOTPKeyMissing), errors.Is(err, services.ErrTOTPKeyInvalid):
-				writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_CONFIG_MISSING", "TOTP configuration missing")
+				writeError(ctx, w, http.StatusInternalServerError, "TOTP_CONFIG_MISSING", "TOTP configuration missing")
 			default:
-				writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_VERIFY_FAILED", "Failed to verify TOTP")
+				writeError(ctx, w, http.StatusInternalServerError, "TOTP_VERIFY_FAILED", "Failed to verify TOTP")
 			}
 			return
 		}
+		observability.RecordAuthTOTPVerification(ctx, "success")
 	}
 
-	if err := h.clearLoginFailures(r.Context(), clientIP, identifiers); err != nil {
-		observability.LogError(r.Context(), observability.ErrorLog{
+	if err := h.clearLoginFailures(ctx, clientIP, identifiers); err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
 			Message:    "failed to reset login failures",
 			Code:       "LOGIN_FAILURE_RESET_FAILED",
 			StatusCode: http.StatusOK,
@@ -244,13 +277,15 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create session
-	session, err := h.sessionService.CreateSession(r.Context(), user.ID, user.Username, user.IsAdmin)
+	session, err := h.sessionService.CreateSession(ctx, user.ID, user.Username, user.IsAdmin)
 	if err != nil {
 		writeError(r.Context(), w, http.StatusInternalServerError, "SESSION_CREATE_FAILED", "Failed to create session")
 		return
 	}
 
 	secureCookie := isSecureRequest(r)
+
+	recordAttempt("success")
 
 	// Set httpOnly secure cookie
 	cookie := &http.Cookie{
@@ -274,7 +309,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := user.ID
-	h.logAuthEvent(r.Context(), &models.AuthEventCreate{
+	h.logAuthEvent(ctx, &models.AuthEventCreate{
 		UserID:     &userID,
 		Identifier: user.Username,
 		EventType:  "login_success",
@@ -355,6 +390,8 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ctx := r.Context()
+
 	// Get session_id from cookie
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
@@ -374,10 +411,12 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		sessionUsername = session.Username
 	}
 
-	if err := h.sessionService.DeleteSession(r.Context(), cookie.Value); err != nil {
-		writeError(r.Context(), w, http.StatusInternalServerError, "LOGOUT_FAILED", "Failed to logout")
+	if err := h.sessionService.DeleteSession(ctx, cookie.Value); err != nil {
+		writeError(ctx, w, http.StatusInternalServerError, "LOGOUT_FAILED", "Failed to logout")
 		return
 	}
+
+	observability.RecordAuthSessionExpired(ctx, "logout", 1)
 
 	secureCookie := isSecureRequest(r)
 
@@ -432,10 +471,13 @@ func (h *AuthHandler) LogoutAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.sessionService.DeleteAllSessionsForUser(r.Context(), session.UserID); err != nil {
+	deletedCount, err := h.sessionService.DeleteAllSessionsForUser(r.Context(), session.UserID)
+	if err != nil {
 		writeError(r.Context(), w, http.StatusInternalServerError, "LOGOUT_ALL_FAILED", "Failed to logout all sessions")
 		return
 	}
+
+	observability.RecordAuthSessionExpired(r.Context(), "logout_all", int64(deletedCount))
 
 	secureCookie := isSecureRequest(r)
 
@@ -685,13 +727,16 @@ func (h *AuthHandler) RedeemPasswordResetToken(w http.ResponseWriter, r *http.Re
 	}
 
 	// Invalidate all existing sessions for the user
-	if err := h.sessionService.DeleteAllSessionsForUser(r.Context(), resetToken.UserID); err != nil {
+	deletedCount, err := h.sessionService.DeleteAllSessionsForUser(r.Context(), resetToken.UserID)
+	if err != nil {
 		observability.LogError(r.Context(), observability.ErrorLog{
 			Message:    "failed to invalidate sessions after password reset",
 			Code:       "SESSION_INVALIDATION_FAILED",
 			StatusCode: http.StatusOK,
 			Err:        err,
 		})
+	} else {
+		observability.RecordAuthSessionExpired(r.Context(), "logout_all", int64(deletedCount))
 	}
 
 	// Delete the token
@@ -703,6 +748,8 @@ func (h *AuthHandler) RedeemPasswordResetToken(w http.ResponseWriter, r *http.Re
 			Err:        err,
 		})
 	}
+
+	observability.RecordAuthPasswordReset(r.Context(), "token_redeemed")
 
 	response := models.RedeemPasswordResetTokenResponse{
 		Message: "Password reset successful",
