@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { activeSection, sections, sectionStore, threadRouteStore, posts } from '../stores';
+  import { activeSection, sections, sectionStore, threadRouteStore, posts, uiStore } from '../stores';
   import { loadThreadTargetPost } from '../stores/threadRouteStore';
   import { buildFeedHref, getHistoryState, pushPath } from '../services/routeNavigation';
   import PostCard from './PostCard.svelte';
@@ -30,6 +30,8 @@
   function handleSectionClick() {
     if (!sectionContext) return;
     sectionStore.setActiveSection(sectionContext);
+    uiStore.setActiveView('feed');
+    threadRouteStore.clearTarget();
     pushPath(buildFeedHref(sectionContext.slug));
   }
 
