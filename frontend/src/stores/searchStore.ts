@@ -1,5 +1,6 @@
 import { writable, derived, get } from 'svelte/store';
 import { api } from '../services/api';
+import { updateHistoryState } from '../services/routeNavigation';
 import { activeSection } from './sectionStore';
 import { normalizeLinkMetadata } from './postMapper';
 import type { Post, Link } from './postStore';
@@ -209,6 +210,7 @@ function createSearchStore() {
         lastSearched: '',
         lastSearchedScope: null,
       });
+      updateHistoryState({ search: undefined });
     },
     updateUserProfilePicture: (userId: string, profilePictureUrl?: string) => {
       update((state) => ({
@@ -278,6 +280,7 @@ function createSearchStore() {
           lastSearched: '',
           lastSearchedScope: null,
         }));
+        updateHistoryState({ search: undefined });
         return;
       }
 
@@ -339,6 +342,7 @@ function createSearchStore() {
           lastSearched: query,
           lastSearchedScope: scope,
         }));
+        updateHistoryState({ search: { query, scope } });
       } catch (err) {
         if (currentToken !== requestToken) {
           return;

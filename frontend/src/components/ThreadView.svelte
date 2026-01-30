@@ -1,7 +1,8 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { activeSection, sections, sectionStore, threadRouteStore, posts } from '../stores';
   import { loadThreadTargetPost } from '../stores/threadRouteStore';
-  import { buildFeedHref, pushPath } from '../services/routeNavigation';
+  import { buildFeedHref, getHistoryState, pushPath } from '../services/routeNavigation';
   import PostCard from './PostCard.svelte';
 
   export let highlightCommentId: string | null = null;
@@ -21,26 +22,51 @@
     sectionStore.setActiveSection(sectionContext);
   }
 
+  let fromSearch = false;
+  onMount(() => {
+    fromSearch = getHistoryState()?.fromSearch === true;
+  });
+
   function handleSectionClick() {
     if (!sectionContext) return;
     sectionStore.setActiveSection(sectionContext);
     pushPath(buildFeedHref(sectionContext.slug));
   }
+
+  function handleSearchBack() {
+    if (typeof window === 'undefined') return;
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+    handleSectionClick();
+  }
 </script>
 
 <div class="space-y-4">
-  {#if sectionContext}
-    <button
-      class="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900"
-      on:click={handleSectionClick}
-    >
-      <span class="text-lg" aria-hidden="true">{sectionContext.icon}</span>
-      <span class="truncate">{sectionContext.name}</span>
-      <span class="text-gray-400">/ Thread</span>
-    </button>
-  {:else}
-    <div class="text-xs font-semibold uppercase tracking-wide text-gray-400">Thread</div>
-  {/if}
+  <div class="flex flex-wrap items-center gap-3">
+    {#if fromSearch}
+      <button
+        class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 hover:border-gray-300"
+        on:click={handleSearchBack}
+      >
+        <span aria-hidden="true">←</span>
+        <span>Back to search results</span>
+      </button>
+    {/if}
+
+    {#if sectionContext}
+      <button
+        class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 hover:border-gray-300"
+        on:click={handleSectionClick}
+      >
+        <span class="text-base" aria-hidden="true">{sectionContext.icon}</span>
+        <span>Back to {sectionContext.name}</span>
+      </button>
+    {:else}
+      <div class="text-xs font-semibold uppercase tracking-wide text-gray-400">Thread</div>
+    {/if}
+  </div>
 
   {#if $threadRouteStore.status === 'loading' && !threadPost}
     <div class="flex items-center gap-2 text-gray-500 text-sm">
