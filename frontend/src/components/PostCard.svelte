@@ -197,7 +197,6 @@
   $: imageUrl = getImageLinkUrl(link);
   $: canEdit = $currentUser?.id === post.userId;
   $: imageLinks = (post.links ?? []).filter((item) => Boolean(getImageLinkUrl(item)));
-  $: nonImageLinks = (post.links ?? []).filter((item) => !getImageLinkUrl(item));
   $: originalImageUrl =
     imageLinks.length > 0 ? getImageLinkUrl(imageLinks[0] as Link) : undefined;
   $: editImagePreviewUrl =
@@ -290,13 +289,23 @@
       return undefined;
     }
 
-    const preservedLinks = nonImageLinks.map((item) => ({ url: item.url }));
-    if (editImageAction === 'remove') {
-      return preservedLinks;
+    const originalLinks = post.links ?? [];
+    const firstImageIndex = originalLinks.findIndex((item) => Boolean(getImageLinkUrl(item)));
+    if (firstImageIndex === -1) {
+      return undefined;
     }
 
-    if (editImageAction === 'replace' && editImageUploadUrl) {
-      return [{ url: editImageUploadUrl }, ...preservedLinks];
+    if (editImageAction === 'remove') {
+      return originalLinks
+        .filter((_, index) => index !== firstImageIndex)
+        .map((item) => ({ url: item.url }));
+    }
+
+    const uploadUrl = editImageUploadUrl;
+    if (editImageAction === 'replace' && uploadUrl) {
+      return originalLinks.map((item, index) => ({
+        url: index === firstImageIndex ? uploadUrl : item.url,
+      }));
     }
 
     return undefined;

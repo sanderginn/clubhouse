@@ -1,14 +1,24 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/svelte';
+import { render, screen, cleanup, fireEvent } from '@testing-library/svelte';
 import type { Post } from '../../stores/postStore';
 import { authStore } from '../../stores';
+import { tick } from 'svelte';
 
 const loadThreadComments = vi.hoisted(() => vi.fn());
 const loadMoreThreadComments = vi.hoisted(() => vi.fn());
+const apiUpdatePost = vi.hoisted(() => vi.fn());
+const apiUploadImage = vi.hoisted(() => vi.fn());
 
 vi.mock('../../stores/commentFeedStore', () => ({
   loadThreadComments,
   loadMoreThreadComments,
+}));
+
+vi.mock('../../services/api', () => ({
+  api: {
+    updatePost: apiUpdatePost,
+    uploadImage: apiUploadImage,
+  },
 }));
 
 const { default: PostCard } = await import('../PostCard.svelte');
@@ -33,6 +43,8 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  apiUpdatePost.mockReset();
+  apiUploadImage.mockReset();
 });
 
 describe('PostCard', () => {
@@ -125,5 +137,93 @@ describe('PostCard', () => {
 
     render(PostCard, { post: basePost });
     expect(screen.queryByRole('button', { name: 'Open post actions' })).not.toBeInTheDocument();
+  });
+
+  it('removes only the first image link when editing', async () => {
+    authStore.setUser({
+      id: 'user-1',
+      username: 'Sander',
+      email: 'sander@example.com',
+      isAdmin: false,
+      totpEnabled: false,
+    });
+
+    const postWithImages: Post = {
+      ...basePost,
+      links: [
+        { url: 'https://cdn.example.com/uploads/first.png' },
+        { url: 'https://example.com/article' },
+        { url: 'https://cdn.example.com/uploads/second.png' },
+        { url: 'https://example.com/extra' },
+      ],
+    };
+
+    apiUpdatePost.mockResolvedValue({
+      post: { ...postWithImages, content: postWithImages.content },
+    });
+
+    render(PostCard, { post: postWithImages });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Open post actions' }));
+    await fireEvent.click(screen.getByRole('menuitem', { name: 'Edit' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Remove image' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(apiUpdatePost).toHaveBeenCalledWith('post-1', {
+      content: 'Hello world',
+      links: [
+        { url: 'https://example.com/article' },
+        { url: 'https://cdn.example.com/uploads/second.png' },
+        { url: 'https://example.com/extra' },
+      ],
+    });
+  });
+
+  it('replaces only the first image link when editing', async () => {
+    authStore.setUser({
+      id: 'user-1',
+      username: 'Sander',
+      email: 'sander@example.com',
+      isAdmin: false,
+      totpEnabled: false,
+    });
+
+    const postWithImages: Post = {
+      ...basePost,
+      links: [
+        { url: 'https://cdn.example.com/uploads/first.png' },
+        { url: 'https://example.com/article' },
+        { url: 'https://cdn.example.com/uploads/second.png' },
+      ],
+    };
+
+    apiUploadImage.mockResolvedValue({ url: 'https://cdn.example.com/uploads/new.png' });
+    apiUpdatePost.mockResolvedValue({
+      post: { ...postWithImages, content: postWithImages.content },
+    });
+
+    const { container } = render(PostCard, { post: postWithImages });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Open post actions' }));
+    await fireEvent.click(screen.getByRole('menuitem', { name: 'Edit' }));
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Replace image' }));
+
+    const hiddenInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['image-bytes'], 'new.png', { type: 'image/png' });
+    await fireEvent.change(hiddenInput, { target: { files: [file] } });
+    await tick();
+    await Promise.resolve();
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(apiUpdatePost).toHaveBeenCalledWith('post-1', {
+      content: 'Hello world',
+      links: [
+        { url: 'https://cdn.example.com/uploads/new.png' },
+        { url: 'https://example.com/article' },
+        { url: 'https://cdn.example.com/uploads/second.png' },
+      ],
+    });
   });
 });
