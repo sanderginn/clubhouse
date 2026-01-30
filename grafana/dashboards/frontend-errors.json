@@ -1,0 +1,1142 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-sentry-datasource",
+        "uid": "sentry"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-sentry-datasource",
+            "uid": "sentry"
+          },
+          "eventsStatsGroups": [],
+          "eventsStatsLimit": 0,
+          "eventsStatsQuery": "event.type:error",
+          "eventsStatsYAxis": ["count()"],
+          "projectIds": ["$project"],
+          "environments": ["$environment"],
+          "queryType": "eventsStats",
+          "refId": "A"
+        }
+      ],
+      "title": "Frontend Errors Over Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-sentry-datasource",
+        "uid": "sentry"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-sentry-datasource",
+            "uid": "sentry"
+          },
+          "eventsStatsGroups": [],
+          "eventsStatsLimit": 0,
+          "eventsStatsQuery": "event.type:error",
+          "eventsStatsYAxis": ["count_unique(user)"],
+          "projectIds": ["$project"],
+          "environments": ["$environment"],
+          "queryType": "eventsStats",
+          "refId": "A"
+        }
+      ],
+      "title": "Affected Users (Unique)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-sentry-datasource",
+        "uid": "sentry"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "displayLabels": ["name", "value"],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-sentry-datasource",
+            "uid": "sentry"
+          },
+          "eventsStatsGroups": ["issue.type"],
+          "eventsStatsLimit": 10,
+          "eventsStatsQuery": "event.type:error",
+          "eventsStatsYAxis": ["count()"],
+          "projectIds": ["$project"],
+          "environments": ["$environment"],
+          "queryType": "eventsStats",
+          "refId": "A"
+        }
+      ],
+      "title": "Errors by Type",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "grafana-sentry-datasource",
+        "uid": "sentry"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-sentry-datasource",
+            "uid": "sentry"
+          },
+          "eventsStatsGroups": ["transaction"],
+          "eventsStatsLimit": 10,
+          "eventsStatsQuery": "event.type:error",
+          "eventsStatsYAxis": ["count()"],
+          "projectIds": ["$project"],
+          "environments": ["$environment"],
+          "queryType": "eventsStats",
+          "refId": "A"
+        }
+      ],
+      "title": "Errors by Route/Transaction",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-sentry-datasource",
+        "uid": "sentry"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 8
+      },
+      "id": 5,
+      "options": {
+        "displayLabels": ["name", "value"],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-sentry-datasource",
+            "uid": "sentry"
+          },
+          "eventsStatsGroups": ["browser.name"],
+          "eventsStatsLimit": 10,
+          "eventsStatsQuery": "event.type:error",
+          "eventsStatsYAxis": ["count()"],
+          "projectIds": ["$project"],
+          "environments": ["$environment"],
+          "queryType": "eventsStats",
+          "refId": "A"
+        }
+      ],
+      "title": "Browser Breakdown",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "grafana-sentry-datasource",
+        "uid": "sentry"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 8
+      },
+      "id": 6,
+      "options": {
+        "displayLabels": ["name", "value"],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-sentry-datasource",
+            "uid": "sentry"
+          },
+          "eventsStatsGroups": ["device.family"],
+          "eventsStatsLimit": 10,
+          "eventsStatsQuery": "event.type:error",
+          "eventsStatsYAxis": ["count()"],
+          "projectIds": ["$project"],
+          "environments": ["$environment"],
+          "queryType": "eventsStats",
+          "refId": "A"
+        }
+      ],
+      "title": "Device Breakdown",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "grafana-sentry-datasource",
+        "uid": "sentry"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "id": 7,
+      "options": {
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-sentry-datasource",
+            "uid": "sentry"
+          },
+          "eventsFields": [
+            "title",
+            "count()",
+            "user",
+            "project",
+            "last_seen()",
+            "level"
+          ],
+          "eventsLimit": 20,
+          "eventsQuery": "event.type:error",
+          "eventsSort": "count()",
+          "eventsSortDirection": "desc",
+          "projectIds": ["$project"],
+          "environments": ["$environment"],
+          "queryType": "events",
+          "refId": "A"
+        }
+      ],
+      "title": "Top Error Messages",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-sentry-datasource",
+        "uid": "sentry"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "id": 8,
+      "options": {
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-sentry-datasource",
+            "uid": "sentry"
+          },
+          "eventsFields": [
+            "title",
+            "culprit",
+            "stack.filename",
+            "stack.lineno",
+            "stack.colno",
+            "last_seen()"
+          ],
+          "eventsLimit": 20,
+          "eventsQuery": "event.type:error",
+          "eventsSort": "last_seen()",
+          "eventsSortDirection": "desc",
+          "projectIds": ["$project"],
+          "environments": ["$environment"],
+          "queryType": "events",
+          "refId": "A"
+        }
+      ],
+      "title": "Stack Trace Samples",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-sentry-datasource",
+        "uid": "sentry"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 24
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-sentry-datasource",
+            "uid": "sentry"
+          },
+          "eventsStatsGroups": ["user"],
+          "eventsStatsLimit": 10,
+          "eventsStatsQuery": "event.type:error",
+          "eventsStatsYAxis": ["count()"],
+          "projectIds": ["$project"],
+          "environments": ["$environment"],
+          "queryType": "eventsStats",
+          "refId": "A"
+        }
+      ],
+      "title": "Error Frequency by User",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-sentry-datasource",
+        "uid": "sentry"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 24
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-sentry-datasource",
+            "uid": "sentry"
+          },
+          "eventsStatsGroups": ["error.type"],
+          "eventsStatsLimit": 10,
+          "eventsStatsQuery": "event.type:error error.type:NetworkError",
+          "eventsStatsYAxis": ["count()"],
+          "projectIds": ["$project"],
+          "environments": ["$environment"],
+          "queryType": "eventsStats",
+          "refId": "A"
+        }
+      ],
+      "title": "Network Errors Over Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 2500
+              },
+              {
+                "color": "red",
+                "value": 4000
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 32
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(clubhouse_frontend_web_vitals_bucket{name=\"LCP\"}[5m])))",
+          "legendFormat": "LCP p95",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Frontend LCP p95",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 200
+              },
+              {
+                "color": "red",
+                "value": 500
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 32
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(clubhouse_frontend_api_request_duration_ms_bucket[5m])))",
+          "legendFormat": "API p95",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Frontend API Latency p95",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-sentry-datasource",
+        "uid": "sentry"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 40
+      },
+      "id": 13,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-sentry-datasource",
+            "uid": "sentry"
+          },
+          "metricsField": "session.crash_rate",
+          "metricsQuery": "",
+          "metricsGroupBy": "environment",
+          "metricsLimit": 10,
+          "metricsOrder": "desc",
+          "metricsSort": "session.crash_rate",
+          "projectIds": ["$project"],
+          "environments": ["$environment"],
+          "queryType": "metrics",
+          "refId": "A"
+        }
+      ],
+      "title": "Session Error Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-sentry-datasource",
+        "uid": "sentry"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 40
+      },
+      "id": 14,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-sentry-datasource",
+            "uid": "sentry"
+          },
+          "metricsField": "session.crash_free_rate",
+          "metricsQuery": "",
+          "metricsGroupBy": "environment",
+          "metricsLimit": 10,
+          "metricsOrder": "desc",
+          "metricsSort": "session.crash_free_rate",
+          "projectIds": ["$project"],
+          "environments": ["$environment"],
+          "queryType": "metrics",
+          "refId": "A"
+        }
+      ],
+      "title": "Error-free Session Percentage",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["clubhouse", "frontend", "errors", "sentry", "observability"],
+  "templating": {
+    "list": [
+      {
+        "datasource": {
+          "type": "grafana-sentry-datasource",
+          "uid": "sentry"
+        },
+        "definition": "{\"type\":\"projects\"}",
+        "hide": 0,
+        "multi": true,
+        "name": "project",
+        "query": "{\"type\":\"projects\"}",
+        "refresh": 2,
+        "type": "query"
+      },
+      {
+        "datasource": {
+          "type": "grafana-sentry-datasource",
+          "uid": "sentry"
+        },
+        "definition": "{\"type\":\"environments\",\"projectIds\":[\"$project\"]}",
+        "hide": 0,
+        "multi": true,
+        "name": "environment",
+        "query": "{\"type\":\"environments\",\"projectIds\":[\"$project\"]}",
+        "refresh": 2,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Clubhouse - Frontend Errors",
+  "uid": "clubhouse-frontend-errors",
+  "version": 1,
+  "weekStart": ""
+}
