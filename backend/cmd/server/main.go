@@ -10,6 +10,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/sanderginn/clubhouse/internal/cache"
 	"github.com/sanderginn/clubhouse/internal/db"
