@@ -394,7 +394,7 @@
     {
       "issue_number": 395,
       "title": "Frontend: Create standalone thread view route",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "feature",
       "priority": 4,
@@ -402,7 +402,11 @@
         "enhancement",
         "frontend",
         "ui"
-      ]
+      ],
+      "assigned_to": "agent-1769771551-71995",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769771551-71995",
+      "branch": "feat/issue-395-frontend-create-standalone-thread-view-r",
+      "claimed_at": "2026-01-30T11:12:31Z"
     },
     {
       "issue_number": 396,
