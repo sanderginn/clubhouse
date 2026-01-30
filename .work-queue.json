@@ -8,7 +8,8 @@
     415,
     417,
     418,
-    439
+    439,
+    489
   ],
   "issues": [
     {
@@ -95,7 +96,7 @@
     {
       "issue_number": 489,
       "title": "Fix Loki config: compactor.delete-request-store not configured for retention",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 0,
@@ -107,7 +108,9 @@
       "assigned_to": "agent-1769800590-47642",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769800590-47642",
       "branch": "fix/issue-489-fix-loki-config-compactordeleterequestst",
-      "claimed_at": "2026-01-30T19:16:30Z"
+      "claimed_at": "2026-01-30T19:16:30Z",
+      "pr_number": 499,
+      "completed_at": "2026-01-30T19:20:57Z"
     },
     {
       "issue_number": 490,
