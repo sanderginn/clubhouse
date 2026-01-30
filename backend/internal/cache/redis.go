@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	// go-redis v9 ships OpenTelemetry hooks under redisotel.
 	"github.com/redis/go-redis/extra/redisotel/v9"
 	"github.com/redis/go-redis/v9"
 )
