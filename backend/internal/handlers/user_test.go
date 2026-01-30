@@ -3,13 +3,16 @@ package handlers
 import (
 	"context"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/pquerna/otp/totp"
 	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/services"
@@ -1169,5 +1172,184 @@ func TestUpdateMySectionSubscriptionMissingOptedOut(t *testing.T) {
 
 	if response.Code != "INVALID_REQUEST" {
 		t.Errorf("expected code INVALID_REQUEST, got %s", response.Code)
+	}
+}
+
+func TestUserMFAEnrollVerifyDisable(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	keyBytes := make([]byte, 32)
+	for i := range keyBytes {
+		keyBytes[i] = byte(i + 1)
+	}
+	t.Setenv("CLUBHOUSE_TOTP_ENCRYPTION_KEY", base64.StdEncoding.EncodeToString(keyBytes))
+
+	userID := uuid.New()
+	_, err := db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'totpuser', 'totpuser@example.com', '$2a$12$test', false, now(), now())
+	`, userID)
+	if err != nil {
+		t.Fatalf("failed to create test user: %v", err)
+	}
+
+	handler := NewUserHandler(db)
+
+	enrollReq := httptest.NewRequest(http.MethodPost, "/api/v1/users/me/mfa/enable", nil)
+	enrollReq = enrollReq.WithContext(createTestUserContext(enrollReq.Context(), userID, "totpuser", false))
+	enrollRes := httptest.NewRecorder()
+
+	handler.EnrollMFA(enrollRes, enrollReq)
+
+	if enrollRes.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusOK, enrollRes.Code, enrollRes.Body.String())
+	}
+
+	var enrollBody models.TOTPEnrollResponse
+	if err := json.NewDecoder(enrollRes.Body).Decode(&enrollBody); err != nil {
+		t.Fatalf("failed to decode enroll response: %v", err)
+	}
+
+	if enrollBody.Secret == "" || enrollBody.OtpAuthURL == "" {
+		t.Fatalf("expected secret and otpauth url to be set")
+	}
+
+	var enrollMetadataBytes []byte
+	if err := db.QueryRow(`
+		SELECT metadata
+		FROM audit_logs
+		WHERE admin_user_id = $1 AND action = 'enroll_mfa'
+		ORDER BY created_at DESC
+		LIMIT 1
+	`, userID).Scan(&enrollMetadataBytes); err != nil {
+		t.Fatalf("failed to query enroll audit log: %v", err)
+	}
+
+	var enrollMetadata map[string]interface{}
+	if err := json.Unmarshal(enrollMetadataBytes, &enrollMetadata); err != nil {
+		t.Fatalf("failed to unmarshal enroll metadata: %v", err)
+	}
+	if enrollMetadata["method"] != "totp" {
+		t.Errorf("expected enroll method 'totp', got %v", enrollMetadata["method"])
+	}
+
+	code, err := totp.GenerateCode(enrollBody.Secret, time.Now().UTC())
+	if err != nil {
+		t.Fatalf("failed to generate totp code: %v", err)
+	}
+
+	verifyPayload, err := json.Marshal(models.TOTPVerifyRequest{Code: code})
+	if err != nil {
+		t.Fatalf("failed to marshal verify payload: %v", err)
+	}
+
+	verifyReq := httptest.NewRequest(http.MethodPost, "/api/v1/users/me/mfa/verify", strings.NewReader(string(verifyPayload)))
+	verifyReq = verifyReq.WithContext(createTestUserContext(verifyReq.Context(), userID, "totpuser", false))
+	verifyRes := httptest.NewRecorder()
+
+	handler.VerifyMFA(verifyRes, verifyReq)
+
+	if verifyRes.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusOK, verifyRes.Code, verifyRes.Body.String())
+	}
+
+	var verifyBody models.TOTPVerifyResponse
+	if err := json.NewDecoder(verifyRes.Body).Decode(&verifyBody); err != nil {
+		t.Fatalf("failed to decode verify response: %v", err)
+	}
+	if verifyBody.Message == "" {
+		t.Fatalf("expected verify message to be set")
+	}
+	if len(verifyBody.BackupCodes) == 0 {
+		t.Fatalf("expected backup codes to be returned")
+	}
+
+	var backupCount int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM mfa_backup_codes WHERE user_id = $1`, userID).Scan(&backupCount); err != nil {
+		t.Fatalf("failed to query backup codes: %v", err)
+	}
+	if backupCount != len(verifyBody.BackupCodes) {
+		t.Fatalf("expected %d backup codes, got %d", len(verifyBody.BackupCodes), backupCount)
+	}
+
+	var enabled bool
+	var secret []byte
+	if err := db.QueryRow("SELECT totp_enabled, totp_secret_encrypted FROM users WHERE id = $1", userID).Scan(&enabled, &secret); err != nil {
+		t.Fatalf("failed to query totp settings: %v", err)
+	}
+	if !enabled {
+		t.Fatalf("expected totp_enabled to be true")
+	}
+	if len(secret) == 0 {
+		t.Fatalf("expected totp secret to be stored")
+	}
+
+	var enableMetadataBytes []byte
+	if err := db.QueryRow(`
+		SELECT metadata
+		FROM audit_logs
+		WHERE admin_user_id = $1 AND action = 'enable_mfa'
+		ORDER BY created_at DESC
+		LIMIT 1
+	`, userID).Scan(&enableMetadataBytes); err != nil {
+		t.Fatalf("failed to query enable audit log: %v", err)
+	}
+
+	var enableMetadata map[string]interface{}
+	if err := json.Unmarshal(enableMetadataBytes, &enableMetadata); err != nil {
+		t.Fatalf("failed to unmarshal enable metadata: %v", err)
+	}
+	if enableMetadata["method"] != "totp" {
+		t.Errorf("expected enable method 'totp', got %v", enableMetadata["method"])
+	}
+
+	disableCode, err := totp.GenerateCode(enrollBody.Secret, time.Now().UTC())
+	if err != nil {
+		t.Fatalf("failed to generate totp code: %v", err)
+	}
+
+	disablePayload, err := json.Marshal(models.TOTPVerifyRequest{Code: disableCode})
+	if err != nil {
+		t.Fatalf("failed to marshal disable payload: %v", err)
+	}
+
+	disableReq := httptest.NewRequest(http.MethodPost, "/api/v1/users/me/mfa/disable", strings.NewReader(string(disablePayload)))
+	disableReq = disableReq.WithContext(createTestUserContext(disableReq.Context(), userID, "totpuser", false))
+	disableRes := httptest.NewRecorder()
+
+	handler.DisableMFA(disableRes, disableReq)
+
+	if disableRes.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusOK, disableRes.Code, disableRes.Body.String())
+	}
+
+	if err := db.QueryRow("SELECT totp_enabled, totp_secret_encrypted FROM users WHERE id = $1", userID).Scan(&enabled, &secret); err != nil {
+		t.Fatalf("failed to query totp settings: %v", err)
+	}
+	if enabled {
+		t.Fatalf("expected totp_enabled to be false")
+	}
+	if len(secret) != 0 {
+		t.Fatalf("expected totp secret to be cleared")
+	}
+
+	var disableMetadataBytes []byte
+	if err := db.QueryRow(`
+		SELECT metadata
+		FROM audit_logs
+		WHERE admin_user_id = $1 AND action = 'disable_mfa'
+		ORDER BY created_at DESC
+		LIMIT 1
+	`, userID).Scan(&disableMetadataBytes); err != nil {
+		t.Fatalf("failed to query disable audit log: %v", err)
+	}
+
+	var disableMetadata map[string]interface{}
+	if err := json.Unmarshal(disableMetadataBytes, &disableMetadata); err != nil {
+		t.Fatalf("failed to unmarshal disable metadata: %v", err)
+	}
+	if disableMetadata["method"] != "totp" {
+		t.Errorf("expected disable method 'totp', got %v", disableMetadata["method"])
 	}
 }

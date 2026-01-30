@@ -118,6 +118,7 @@ describe('CommentThread', () => {
       username: 'Sander',
       email: 'sander@example.com',
       isAdmin: false,
+      totpEnabled: false,
     });
 
     commentStore.setThread('post-1', [

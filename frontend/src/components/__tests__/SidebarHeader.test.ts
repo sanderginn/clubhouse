@@ -47,6 +47,7 @@ describe('Header', () => {
       username: 'Sander',
       email: 'sander@example.com',
       isAdmin: false,
+      totpEnabled: false,
     });
     const logoutSpy = vi.spyOn(authStore, 'logout').mockResolvedValue();
 

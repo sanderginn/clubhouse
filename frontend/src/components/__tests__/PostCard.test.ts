@@ -107,6 +107,7 @@ describe('PostCard', () => {
       username: 'Sander',
       email: 'sander@example.com',
       isAdmin: false,
+      totpEnabled: false,
     });
 
     render(PostCard, { post: basePost });
@@ -119,6 +120,7 @@ describe('PostCard', () => {
       username: 'Other',
       email: 'other@example.com',
       isAdmin: false,
+      totpEnabled: false,
     });
 
     render(PostCard, { post: basePost });
