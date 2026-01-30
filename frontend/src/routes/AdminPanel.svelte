@@ -70,16 +70,21 @@
     </div>
   </section>
 
-  <section class="grid gap-4 md:grid-cols-[1fr,2fr]">
+  <section class="space-y-4">
     <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 class="text-lg font-serif font-semibold text-slate-900">Admin Toolkit</h2>
-      <p class="mt-2 text-sm text-slate-600">
-        Choose a workflow. Approvals keep your roster curated; audit logs keep everything transparent.
-      </p>
-      <div class="mt-4 space-y-3">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 class="text-lg font-serif font-semibold text-slate-900">Admin Toolkit</h2>
+          <p class="mt-2 text-sm text-slate-600">
+            Choose a workflow. Approvals keep your roster curated; audit logs keep everything transparent.
+          </p>
+        </div>
+        <p class="text-xs uppercase tracking-[0.3em] text-slate-400 font-mono">Tabs</p>
+      </div>
+      <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" role="tablist">
         {#each tabs as tab}
           <button
-            class={`w-full rounded-xl border px-4 py-3 text-left transition shadow-sm ${
+            class={`rounded-xl border px-4 py-3 text-left transition shadow-sm ${
               activeTab === tab.id
                 ? 'border-amber-400 bg-amber-50 text-amber-900'
                 : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
@@ -98,7 +103,7 @@
       </div>
     </div>
 
-    <div class="min-h-[420px]">
+    <div class="min-h-[420px] w-full">
       {#if activeTab === 'pending'}
         <PendingUsers />
       {:else if activeTab === 'users'}
