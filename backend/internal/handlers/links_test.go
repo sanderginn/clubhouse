@@ -83,12 +83,12 @@ func TestPreviewLinkSuccess(t *testing.T) {
 func TestPreviewLinkDisabled(t *testing.T) {
 	configService := services.GetConfigService()
 	disabled := false
-	if _, err := configService.UpdateConfig(context.Background(), &disabled, nil); err != nil {
+	if _, err := configService.UpdateConfig(context.Background(), &disabled, nil, nil); err != nil {
 		t.Fatalf("failed to disable link metadata: %v", err)
 	}
 	defer func() {
 		enabled := true
-		if _, err := configService.UpdateConfig(context.Background(), &enabled, nil); err != nil {
+		if _, err := configService.UpdateConfig(context.Background(), &enabled, nil, nil); err != nil {
 			t.Fatalf("failed to re-enable link metadata: %v", err)
 		}
 	}()
@@ -137,7 +137,7 @@ func TestPreviewLinkInvalidBody(t *testing.T) {
 
 func TestPreviewLinkRequestTooLarge(t *testing.T) {
 	enabled := true
-	if _, err := services.GetConfigService().UpdateConfig(context.Background(), &enabled, nil); err != nil {
+	if _, err := services.GetConfigService().UpdateConfig(context.Background(), &enabled, nil, nil); err != nil {
 		t.Fatalf("failed to enable link metadata: %v", err)
 	}
 
