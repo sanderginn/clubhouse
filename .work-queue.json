@@ -605,14 +605,18 @@
     {
       "issue_number": 530,
       "title": "Fix admin deep-linking: /admin redirects to feed before auth completes",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 1,
       "labels": [
         "bug",
         "frontend"
-      ]
+      ],
+      "assigned_to": "agent-1769813439-76668",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769813439-76668",
+      "branch": "fix/issue-530-fix-admin-deeplinking-admin-redirects-to",
+      "claimed_at": "2026-01-30T22:50:39Z"
     }
   ]
 }
