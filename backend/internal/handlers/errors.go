@@ -37,3 +37,32 @@ func writeError(ctx context.Context, w http.ResponseWriter, statusCode int, code
 		})
 	}
 }
+
+func writeErrorWithMFARequired(ctx context.Context, w http.ResponseWriter, statusCode int, code string, message string) {
+	userID := ""
+	if id, err := middleware.GetUserIDFromContext(ctx); err == nil {
+		userID = id.String()
+	}
+	observability.LogError(ctx, observability.ErrorLog{
+		Message:    message,
+		Code:       code,
+		StatusCode: statusCode,
+		UserID:     userID,
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	if err := json.NewEncoder(w).Encode(models.ErrorResponse{
+		Error:       message,
+		Code:        code,
+		MFARequired: true,
+	}); err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to encode error response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: statusCode,
+			UserID:     userID,
+			Err:        err,
+		})
+	}
+}

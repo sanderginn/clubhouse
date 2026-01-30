@@ -204,6 +204,20 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	config := services.GetConfigService().GetConfig()
+	if config.MFARequired && !user.TotpEnabled {
+		if err := h.clearLoginFailures(r.Context(), clientIP, identifiers); err != nil {
+			observability.LogError(r.Context(), observability.ErrorLog{
+				Message:    "failed to reset login failures",
+				Code:       "LOGIN_FAILURE_RESET_FAILED",
+				StatusCode: http.StatusForbidden,
+				Err:        err,
+			})
+		}
+		writeErrorWithMFARequired(r.Context(), w, http.StatusForbidden, "MFA_SETUP_REQUIRED", "MFA setup is required before logging in")
+		return
+	}
+
 	if user.TotpEnabled {
 		if h.totpService == nil {
 			writeError(r.Context(), w, http.StatusInternalServerError, "TOTP_UNAVAILABLE", "TOTP service unavailable")

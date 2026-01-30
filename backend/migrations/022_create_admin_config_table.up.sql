@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS admin_config (
+    id SMALLINT PRIMARY KEY,
+    link_metadata_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    mfa_required BOOLEAN NOT NULL DEFAULT FALSE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+INSERT INTO admin_config (id)
+VALUES (1)
+ON CONFLICT (id) DO NOTHING;

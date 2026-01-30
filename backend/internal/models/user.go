@@ -67,8 +67,9 @@ type CSRFTokenResponse struct {
 
 // ErrorResponse represents a standard error response
 type ErrorResponse struct {
-	Error string `json:"error"`
-	Code  string `json:"code"`
+	Error       string `json:"error"`
+	Code        string `json:"code"`
+	MFARequired bool   `json:"mfa_required,omitempty"`
 }
 
 // PendingUser represents a user pending admin approval

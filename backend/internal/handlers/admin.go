@@ -596,6 +596,8 @@ func (h *AdminHandler) AdminRestoreComment(w http.ResponseWriter, r *http.Reques
 // UpdateConfigRequest represents the request body for updating config
 type UpdateConfigRequest struct {
 	LinkMetadataEnabled *bool `json:"linkMetadataEnabled"`
+	MFARequired         *bool `json:"mfa_required"`
+	MFARequiredAlt      *bool `json:"mfaRequired"`
 }
 
 // ConfigResponse wraps the config in a response object per API spec
@@ -644,12 +646,29 @@ func (h *AdminHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 
 	configService := services.GetConfigService()
 	previousConfig := configService.GetConfig()
-	config := configService.UpdateConfig(req.LinkMetadataEnabled)
+	mfaRequired := req.MFARequired
+	if mfaRequired == nil {
+		mfaRequired = req.MFARequiredAlt
+	}
+
+	config, err := configService.UpdateConfig(r.Context(), req.LinkMetadataEnabled, mfaRequired)
+	if err != nil {
+		writeError(r.Context(), w, http.StatusInternalServerError, "CONFIG_UPDATE_FAILED", "Failed to update config")
+		return
+	}
+
 	if req.LinkMetadataEnabled != nil && previousConfig.LinkMetadataEnabled != config.LinkMetadataEnabled {
 		h.logAdminAudit(r.Context(), "toggle_link_metadata", uuid.Nil, map[string]interface{}{
 			"setting":   "link_metadata_enabled",
 			"old_value": previousConfig.LinkMetadataEnabled,
 			"new_value": config.LinkMetadataEnabled,
+		})
+	}
+	if mfaRequired != nil && previousConfig.MFARequired != config.MFARequired {
+		h.logAdminAudit(r.Context(), "toggle_mfa_requirement", uuid.Nil, map[string]interface{}{
+			"setting":   "mfa_required",
+			"old_value": previousConfig.MFARequired,
+			"new_value": config.MFARequired,
 		})
 	}
 
