@@ -23,7 +23,6 @@
   $: sectionSlug = getSectionSlugById($sections, post.sectionId) ?? post.sectionId;
   let copiedLink = false;
   let copyTimeout: ReturnType<typeof setTimeout> | null = null;
-  let menuOpen = false;
   let isEditing = false;
   let editContent = '';
   let editError: string | null = null;
@@ -96,14 +95,6 @@
     }
   });
 
-  function toggleMenu() {
-    menuOpen = !menuOpen;
-  }
-
-  function closeMenu() {
-    menuOpen = false;
-  }
-
   function startEdit() {
     editContent = post.content;
     editError = null;
@@ -113,7 +104,6 @@
     editImageUploading = false;
     editImageUploadProgress = 0;
     isEditing = true;
-    closeMenu();
   }
 
   function cancelEdit() {
@@ -320,8 +310,6 @@
   });
 </script>
 
-<svelte:window on:click={closeMenu} />
-
 <article class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
   <div class="flex items-start gap-3">
     {#if post.user?.id}
@@ -362,7 +350,7 @@
     {/if}
 
     <div class="flex-1 min-w-0">
-      <div class="flex items-center gap-2 mb-1">
+      <div class="flex flex-wrap items-center gap-2 mb-1">
         {#if post.user?.id}
           <a
             href={buildProfileHref(post.user.id)}
@@ -379,37 +367,46 @@
         <span class="text-gray-400 text-sm">·</span>
         <RelativeTime dateString={post.createdAt} className="text-gray-500 text-sm" />
         <EditedBadge createdAt={post.createdAt} updatedAt={post.updatedAt} />
-        {#if canEdit}
-          <div class="ml-auto relative">
+        <div class="ml-auto flex items-center gap-2 relative">
+          {#if canEdit}
             <button
               type="button"
-              class="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-              aria-haspopup="true"
-              aria-expanded={menuOpen}
-              aria-label="Open post actions"
-              on:click|stopPropagation={toggleMenu}
+              class="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+              on:click={startEdit}
             >
-              <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zm-10 0a2 2 0 114 0 2 2 0 01-4 0z" />
+              <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path
+                  d="M4 13.5V16h2.5l7.35-7.35-2.5-2.5L4 13.5zM16.85 5.65a.5.5 0 000-.7l-1.8-1.8a.5.5 0 00-.7 0l-1.6 1.6 2.5 2.5 1.6-1.6z"
+                />
               </svg>
+              <span>Edit</span>
             </button>
-            {#if menuOpen}
-              <div
-                class="absolute right-0 mt-2 w-28 rounded-lg border border-gray-200 bg-white shadow-lg py-1 z-20"
-                role="menu"
-              >
-                <button
-                  type="button"
-                  class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  on:click={startEdit}
-                  role="menuitem"
-                >
-                  Edit
-                </button>
-              </div>
-            {/if}
-          </div>
-        {/if}
+          {/if}
+          <button
+            type="button"
+            class="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+            on:click={copyThreadLink}
+          >
+            <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path
+                d="M7 5a3 3 0 013-3h4a3 3 0 013 3v4a3 3 0 01-3 3h-1a1 1 0 110-2h1a1 1 0 001-1V5a1 1 0 00-1-1h-4a1 1 0 00-1 1v1a1 1 0 11-2 0V5z"
+              />
+              <path
+                d="M3 8a3 3 0 013-3h4a3 3 0 013 3v4a3 3 0 01-3 3H6a3 3 0 01-3-3V8zm3-1a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H6z"
+              />
+            </svg>
+            <span>Share</span>
+          </button>
+          {#if copiedLink}
+            <span
+              class="absolute -top-6 right-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] text-emerald-700 shadow"
+              role="status"
+              aria-live="polite"
+            >
+              Link copied
+            </span>
+          {/if}
+        </div>
       </div>
 
       {#if isEditing}
@@ -614,13 +611,6 @@
           <span>💬</span>
           <span>{post.commentCount || 0}</span>
         </div>
-        <button
-          type="button"
-          class="text-xs text-blue-600 hover:text-blue-800"
-          on:click={copyThreadLink}
-        >
-          {copiedLink ? 'Copied!' : 'Copy link'}
-        </button>
       </div>
 
       <div class="mt-3">
