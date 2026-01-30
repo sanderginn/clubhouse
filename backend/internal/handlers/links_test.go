@@ -83,10 +83,14 @@ func TestPreviewLinkSuccess(t *testing.T) {
 func TestPreviewLinkDisabled(t *testing.T) {
 	configService := services.GetConfigService()
 	disabled := false
-	configService.UpdateConfig(&disabled)
+	if _, err := configService.UpdateConfig(context.Background(), &disabled, nil); err != nil {
+		t.Fatalf("failed to disable link metadata: %v", err)
+	}
 	defer func() {
 		enabled := true
-		configService.UpdateConfig(&enabled)
+		if _, err := configService.UpdateConfig(context.Background(), &enabled, nil); err != nil {
+			t.Fatalf("failed to re-enable link metadata: %v", err)
+		}
 	}()
 
 	handler := NewLinkHandler()
@@ -133,7 +137,9 @@ func TestPreviewLinkInvalidBody(t *testing.T) {
 
 func TestPreviewLinkRequestTooLarge(t *testing.T) {
 	enabled := true
-	services.GetConfigService().UpdateConfig(&enabled)
+	if _, err := services.GetConfigService().UpdateConfig(context.Background(), &enabled, nil); err != nil {
+		t.Fatalf("failed to enable link metadata: %v", err)
+	}
 
 	handler := NewLinkHandler()
 	largeURL := "https://example.com/" + strings.Repeat("a", int(maxJSONBodyBytes)+1024)

@@ -127,6 +127,40 @@ func TestLoginUnapprovedUser(t *testing.T) {
 	}
 }
 
+func TestLoginMFASetupRequired(t *testing.T) {
+	services.ResetConfigServiceForTests()
+	t.Cleanup(services.ResetConfigServiceForTests)
+
+	required := true
+	if _, err := services.GetConfigService().UpdateConfig(context.Background(), nil, &required); err != nil {
+		t.Fatalf("failed to enable mfa_required: %v", err)
+	}
+
+	handler := &AuthHandler{
+		userService: &stubAuthUserService{},
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(`{"username":"TestUser","password":"Password123"}`))
+	w := httptest.NewRecorder()
+
+	handler.Login(w, req)
+
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected status 403, got %d", w.Code)
+	}
+
+	var resp models.ErrorResponse
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if resp.Code != "MFA_SETUP_REQUIRED" {
+		t.Fatalf("expected MFA_SETUP_REQUIRED code, got %s", resp.Code)
+	}
+	if !resp.MFARequired {
+		t.Fatalf("expected mfa_required to be true")
+	}
+}
+
 func TestRegisterRateLimited(t *testing.T) {
 	limiter := &stubAuthRateLimiter{allowed: false}
 	handler := &AuthHandler{rateLimiter: limiter}

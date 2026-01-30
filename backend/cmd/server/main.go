@@ -68,6 +68,16 @@ func main() {
 	}
 	defer dbConn.Close()
 
+	if err := services.InitConfigService(ctx, dbConn); err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to initialize config service",
+			Code:       "CONFIG_INIT_FAILED",
+			StatusCode: http.StatusInternalServerError,
+			Err:        err,
+		})
+		os.Exit(1)
+	}
+
 	userService := services.NewUserService(dbConn)
 	adminExists, err := userService.AdminExists(ctx)
 	if err != nil {

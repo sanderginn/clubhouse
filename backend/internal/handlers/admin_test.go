@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
@@ -897,7 +898,7 @@ func TestUpdateConfig(t *testing.T) {
 	handler := NewAdminHandler(nil, nil) // No DB needed for config
 
 	// Test disabling link metadata
-	body := `{"linkMetadataEnabled": false}`
+	body := `{"linkMetadataEnabled": false, "mfa_required": true}`
 	req := httptest.NewRequest("PATCH", "/api/v1/admin/config", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -911,6 +912,7 @@ func TestUpdateConfig(t *testing.T) {
 	var response struct {
 		Config struct {
 			LinkMetadataEnabled bool `json:"linkMetadataEnabled"`
+			MFARequired         bool `json:"mfaRequired"`
 		} `json:"config"`
 	}
 	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
@@ -919,6 +921,9 @@ func TestUpdateConfig(t *testing.T) {
 
 	if response.Config.LinkMetadataEnabled {
 		t.Errorf("expected linkMetadataEnabled to be false after update")
+	}
+	if !response.Config.MFARequired {
+		t.Errorf("expected mfaRequired to be true after update")
 	}
 
 	// Verify the change persists by getting config again
@@ -935,7 +940,7 @@ func TestUpdateConfig(t *testing.T) {
 	}
 
 	// Test re-enabling link metadata
-	body = `{"linkMetadataEnabled": true}`
+	body = `{"linkMetadataEnabled": true, "mfa_required": false}`
 	req = httptest.NewRequest("PATCH", "/api/v1/admin/config", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	w = httptest.NewRecorder()
@@ -953,11 +958,18 @@ func TestUpdateConfig(t *testing.T) {
 	if !response.Config.LinkMetadataEnabled {
 		t.Errorf("expected linkMetadataEnabled to be true after re-enabling")
 	}
+	if response.Config.MFARequired {
+		t.Errorf("expected mfaRequired to be false after update")
+	}
 }
 
 func TestUpdateConfigAuditLog(t *testing.T) {
 	db := testutil.RequireTestDB(t)
-	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+	t.Cleanup(func() {
+		testutil.CleanupTables(t, db)
+		services.ResetConfigServiceForTests()
+	})
+	services.ResetConfigServiceForTests()
 
 	adminID := uuid.MustParse(testutil.CreateTestUser(t, db, "configadmin", "configadmin@example.com", true, true))
 	handler := NewAdminHandler(db, nil)
@@ -966,7 +978,9 @@ func TestUpdateConfigAuditLog(t *testing.T) {
 	current := configService.GetConfig().LinkMetadataEnabled
 	t.Cleanup(func() {
 		restore := current
-		configService.UpdateConfig(&restore)
+		if _, err := configService.UpdateConfig(context.Background(), &restore, nil); err != nil {
+			t.Fatalf("failed to restore link metadata config: %v", err)
+		}
 	})
 
 	next := !current
@@ -1007,6 +1021,109 @@ func TestUpdateConfigAuditLog(t *testing.T) {
 	}
 	if metadata["new_value"] != next {
 		t.Errorf("expected new_value %v, got %v", next, metadata["new_value"])
+	}
+}
+
+func TestUpdateConfigAuditLogMFARequired(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() {
+		testutil.CleanupTables(t, db)
+		services.ResetConfigServiceForTests()
+	})
+	services.ResetConfigServiceForTests()
+
+	adminID := uuid.MustParse(testutil.CreateTestUser(t, db, "mfaconfigadmin", "mfaconfigadmin@example.com", true, true))
+	handler := NewAdminHandler(db, nil)
+
+	configService := services.GetConfigService()
+	current := configService.GetConfig().MFARequired
+	t.Cleanup(func() {
+		restore := current
+		if _, err := configService.UpdateConfig(context.Background(), nil, &restore); err != nil {
+			t.Fatalf("failed to restore mfa_required config: %v", err)
+		}
+	})
+
+	next := !current
+	body := fmt.Sprintf(`{"mfa_required": %t}`, next)
+	req := httptest.NewRequest("PATCH", "/api/v1/admin/config", strings.NewReader(body))
+	req = req.WithContext(createTestUserContext(req.Context(), adminID, "mfaconfigadmin", true))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.UpdateConfig(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var metadataBytes []byte
+	err := db.QueryRow(`
+		SELECT metadata
+		FROM audit_logs
+		WHERE admin_user_id = $1 AND action = 'toggle_mfa_requirement'
+		ORDER BY created_at DESC
+		LIMIT 1
+	`, adminID).Scan(&metadataBytes)
+	if err != nil {
+		t.Fatalf("failed to query audit log: %v", err)
+	}
+
+	var metadata map[string]interface{}
+	if err := json.Unmarshal(metadataBytes, &metadata); err != nil {
+		t.Fatalf("failed to unmarshal metadata: %v", err)
+	}
+
+	if metadata["setting"] != "mfa_required" {
+		t.Errorf("expected setting 'mfa_required', got %v", metadata["setting"])
+	}
+	if metadata["old_value"] != current {
+		t.Errorf("expected old_value %v, got %v", current, metadata["old_value"])
+	}
+	if metadata["new_value"] != next {
+		t.Errorf("expected new_value %v, got %v", next, metadata["new_value"])
+	}
+}
+
+func TestUpdateConfigPersistsToDB(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() {
+		testutil.CleanupTables(t, db)
+		services.ResetConfigServiceForTests()
+	})
+	services.ResetConfigServiceForTests()
+
+	if err := services.InitConfigService(context.Background(), db); err != nil {
+		t.Fatalf("failed to init config service: %v", err)
+	}
+
+	handler := NewAdminHandler(db, nil)
+	body := `{"linkMetadataEnabled": false, "mfa_required": true}`
+	req := httptest.NewRequest("PATCH", "/api/v1/admin/config", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.UpdateConfig(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var linkMetadataEnabled bool
+	var mfaRequired bool
+	err := db.QueryRow(`
+		SELECT link_metadata_enabled, mfa_required
+		FROM admin_config
+		WHERE id = 1
+	`).Scan(&linkMetadataEnabled, &mfaRequired)
+	if err != nil {
+		t.Fatalf("failed to query admin_config: %v", err)
+	}
+	if linkMetadataEnabled {
+		t.Errorf("expected link_metadata_enabled false, got true")
+	}
+	if !mfaRequired {
+		t.Errorf("expected mfa_required true, got false")
 	}
 }
 
