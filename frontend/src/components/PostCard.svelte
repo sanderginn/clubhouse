@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
-  import type { Post } from '../stores/postStore';
+  import type { Link, Post } from '../stores/postStore';
   import { postStore, currentUser } from '../stores';
   import { api } from '../services/api';
   import CommentThread from './comments/CommentThread.svelte';
@@ -28,6 +28,30 @@
   let editContent = '';
   let editError: string | null = null;
   let isSaving = false;
+  let editImageAction: 'keep' | 'remove' | 'replace' = 'keep';
+  let editImageUploadUrl: string | null = null;
+  let editImageUploadError: string | null = null;
+  let editImageUploading = false;
+  let editImageUploadProgress = 0;
+  let editImageInput: HTMLInputElement | null = null;
+
+  const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+  const MAX_UPLOAD_LABEL = '10 MB';
+
+  const ALLOWED_IMAGE_MIME_TYPES = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'image/bmp',
+    'image/avif',
+    'image/tiff',
+  ];
+  const ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'avif', 'tif', 'tiff'];
+  const ACCEPTED_IMAGE_TYPES = [
+    ...ALLOWED_IMAGE_MIME_TYPES,
+    ...ALLOWED_IMAGE_EXTENSIONS.map((ext) => `.${ext}`),
+  ].join(',');
 
   async function copyThreadLink() {
     if (typeof window === 'undefined') return;
@@ -83,6 +107,11 @@
   function startEdit() {
     editContent = post.content;
     editError = null;
+    editImageAction = 'keep';
+    editImageUploadUrl = null;
+    editImageUploadError = null;
+    editImageUploading = false;
+    editImageUploadProgress = 0;
     isEditing = true;
     closeMenu();
   }
@@ -91,6 +120,11 @@
     isEditing = false;
     editContent = post.content;
     editError = null;
+    editImageAction = 'keep';
+    editImageUploadUrl = null;
+    editImageUploadError = null;
+    editImageUploading = false;
+    editImageUploadProgress = 0;
   }
 
   async function saveEdit() {
@@ -104,7 +138,11 @@
     editError = null;
 
     try {
-      const response = await api.updatePost(post.id, { content: trimmed });
+      const linksPayload = buildEditLinksPayload();
+      const response = await api.updatePost(post.id, {
+        content: trimmed,
+        links: linksPayload,
+      });
       postStore.upsertPost(response.post);
       post = { ...post, ...response.post };
       isEditing = false;
@@ -158,12 +196,110 @@
   $: metadata = link?.metadata;
   $: imageUrl = getImageLinkUrl(link);
   $: canEdit = $currentUser?.id === post.userId;
+  $: imageLinks = (post.links ?? []).filter((item) => Boolean(getImageLinkUrl(item)));
+  $: nonImageLinks = (post.links ?? []).filter((item) => !getImageLinkUrl(item));
+  $: originalImageUrl =
+    imageLinks.length > 0 ? getImageLinkUrl(imageLinks[0] as Link) : undefined;
+  $: editImagePreviewUrl =
+    editImageAction === 'replace' && editImageUploadUrl
+      ? editImageUploadUrl
+      : editImageAction === 'keep'
+        ? originalImageUrl
+        : undefined;
 
   let imageLoadFailed = false;
   let lastImageUrl: string | undefined;
   $: if (imageUrl !== lastImageUrl) {
     imageLoadFailed = false;
     lastImageUrl = imageUrl;
+  }
+
+  let editImageLoadFailed = false;
+  let lastEditImageUrl: string | undefined;
+  $: if (editImagePreviewUrl !== lastEditImageUrl) {
+    editImageLoadFailed = false;
+    lastEditImageUrl = editImagePreviewUrl;
+  }
+
+  function validateImageFile(file: File): string | null {
+    if (file.type && !ALLOWED_IMAGE_MIME_TYPES.includes(file.type)) {
+      return 'Only image files are supported.';
+    }
+    if (
+      !file.type &&
+      !new RegExp(`\\.(${ALLOWED_IMAGE_EXTENSIONS.join('|')})$`, 'i').test(file.name)
+    ) {
+      return 'Only image files are supported.';
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      return `Images must be ${MAX_UPLOAD_LABEL} or smaller.`;
+    }
+    return null;
+  }
+
+  async function handleEditImageSelect(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      editImageUploadError = validationError;
+      input.value = '';
+      return;
+    }
+
+    editImageUploading = true;
+    editImageUploadProgress = 0;
+    editImageUploadError = null;
+
+    try {
+      const response = await api.uploadImage(file, (progress) => {
+        editImageUploadProgress = progress;
+      });
+      editImageUploadUrl = response.url;
+      editImageAction = 'replace';
+    } catch (err) {
+      editImageUploadError = err instanceof Error ? err.message : 'Upload failed';
+    } finally {
+      editImageUploading = false;
+      input.value = '';
+    }
+  }
+
+  function removeEditImage() {
+    editImageAction = 'remove';
+    editImageUploadUrl = null;
+    editImageUploadError = null;
+    editImageUploading = false;
+    editImageUploadProgress = 0;
+  }
+
+  function undoEditImageRemoval() {
+    editImageAction = 'keep';
+    editImageUploadUrl = null;
+    editImageUploadError = null;
+    editImageUploading = false;
+    editImageUploadProgress = 0;
+  }
+
+  function buildEditLinksPayload(): { url: string }[] | null | undefined {
+    if (editImageAction === 'keep') {
+      return undefined;
+    }
+
+    const preservedLinks = nonImageLinks.map((item) => ({ url: item.url }));
+    if (editImageAction === 'remove') {
+      return preservedLinks;
+    }
+
+    if (editImageAction === 'replace' && editImageUploadUrl) {
+      return [{ url: editImageUploadUrl }, ...preservedLinks];
+    }
+
+    return undefined;
   }
 
   const renderStart = typeof performance !== 'undefined' ? performance.now() : null;
@@ -274,6 +410,86 @@
             rows="4"
             bind:value={editContent}
           />
+          {#if originalImageUrl || editImageAction !== 'keep'}
+            <div class="space-y-2">
+              {#if editImagePreviewUrl}
+                <div class="rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+                  {#if editImageLoadFailed}
+                    <div class="flex items-center justify-center px-4 py-6 text-sm text-gray-500">
+                      Image unavailable. Try uploading again.
+                    </div>
+                  {:else}
+                    <img
+                      src={editImagePreviewUrl}
+                      alt="Post preview"
+                      class="w-full max-h-[24rem] object-contain bg-white"
+                      loading="lazy"
+                      on:error={() => {
+                        editImageLoadFailed = true;
+                      }}
+                    />
+                  {/if}
+                </div>
+              {/if}
+              <input
+                type="file"
+                bind:this={editImageInput}
+                on:change={handleEditImageSelect}
+                accept={ACCEPTED_IMAGE_TYPES}
+                class="hidden"
+              />
+              <div class="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  class="px-2.5 py-1.5 rounded-md border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                  on:click={() => editImageInput?.click()}
+                  disabled={isSaving || editImageUploading}
+                >
+                  Replace image
+                </button>
+                {#if editImageAction !== 'remove'}
+                  <button
+                    type="button"
+                    class="px-2.5 py-1.5 rounded-md border border-red-200 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
+                    on:click={removeEditImage}
+                    disabled={isSaving || editImageUploading}
+                  >
+                    Remove image
+                  </button>
+                {:else}
+                  <button
+                    type="button"
+                    class="px-2.5 py-1.5 rounded-md border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                    on:click={undoEditImageRemoval}
+                    disabled={isSaving || editImageUploading}
+                  >
+                    Keep image
+                  </button>
+                {/if}
+              </div>
+              {#if editImageUploading}
+                <div class="text-xs text-gray-500">Uploading image... {editImageUploadProgress}%</div>
+                <div class="h-1 w-full bg-gray-200 rounded">
+                  <div
+                    class="h-1 bg-blue-600 rounded"
+                    style={`width: ${editImageUploadProgress}%`}
+                  ></div>
+                </div>
+              {/if}
+              {#if editImageUploadError}
+                <div class="text-sm text-red-600">{editImageUploadError}</div>
+              {/if}
+              {#if editImageAction === 'remove'}
+                <div class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                  Image will be removed when you save.
+                </div>
+              {:else if editImageAction === 'replace'}
+                <div class="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-1">
+                  New image will replace the existing one when you save.
+                </div>
+              {/if}
+            </div>
+          {/if}
           {#if editError}
             <div class="text-sm text-red-600">{editError}</div>
           {/if}
@@ -282,7 +498,7 @@
               type="button"
               class="px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-60"
               on:click={saveEdit}
-              disabled={isSaving}
+              disabled={isSaving || editImageUploading}
             >
               {isSaving ? 'Saving...' : 'Save'}
             </button>
@@ -290,7 +506,7 @@
               type="button"
               class="px-3 py-1.5 rounded-md border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
               on:click={cancelEdit}
-              disabled={isSaving}
+              disabled={isSaving || editImageUploading}
             >
               Cancel
             </button>
