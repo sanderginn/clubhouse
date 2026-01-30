@@ -46,6 +46,7 @@
   let popstateHandler: (() => void) | null = null;
   let pendingSectionIdentifier: string | null = null;
   let pendingThreadPostId: string | null = null;
+  let pendingAdminPath = false;
   let sectionNotFound: string | null = null;
   let highlightCommentId: string | null = null;
 
@@ -87,6 +88,7 @@
       resetToken = token;
       pendingSectionIdentifier = null;
       pendingThreadPostId = null;
+      pendingAdminPath = false;
       highlightCommentId = null;
       return;
     }
@@ -96,6 +98,7 @@
       threadRouteStore.clearTarget();
       pendingSectionIdentifier = null;
       pendingThreadPostId = null;
+      pendingAdminPath = false;
       highlightCommentId = null;
     } else {
       const standaloneThreadPostId = parseStandaloneThreadPostId(path);
@@ -104,6 +107,7 @@
         threadRouteStore.setTarget(standaloneThreadPostId, null);
         pendingSectionIdentifier = null;
         pendingThreadPostId = null;
+        pendingAdminPath = false;
         return;
       }
       const threadPostId = parseThreadPostId(path);
@@ -149,10 +153,12 @@
         } else {
           pendingSectionIdentifier = sectionIdentifier;
         }
+        pendingAdminPath = false;
         uiStore.setActiveView(threadPostId ? 'thread' : 'feed');
       } else if (isSettingsPath(path)) {
         pendingSectionIdentifier = null;
         pendingThreadPostId = null;
+        pendingAdminPath = false;
         threadRouteStore.clearTarget();
         uiStore.setActiveView('settings');
         highlightCommentId = null;
@@ -160,9 +166,14 @@
         pendingSectionIdentifier = null;
         pendingThreadPostId = null;
         highlightCommentId = null;
+        if (get(authStore).isLoading) {
+          pendingAdminPath = true;
+          return;
+        }
+        pendingAdminPath = false;
         if (get(isAdmin)) {
           uiStore.setActiveView('admin');
-        } else {
+        } else if (get(isAuthenticated)) {
           uiStore.setActiveView('feed');
           const fallbackSectionId =
             get(activeSection)?.id ?? get(sections)[0]?.id ?? null;
@@ -170,10 +181,13 @@
             (section) => section.id === fallbackSectionId
           );
           replacePath(buildFeedHref(fallbackSection ? getSectionSlug(fallbackSection) : null));
+        } else {
+          uiStore.setActiveView('feed');
         }
       } else {
         pendingSectionIdentifier = null;
         pendingThreadPostId = null;
+        pendingAdminPath = false;
         uiStore.setActiveView('feed');
         highlightCommentId = null;
       }
@@ -223,6 +237,26 @@
       }
     }
     pendingSectionIdentifier = null;
+  }
+
+  $: if (pendingAdminPath && !$authStore.isLoading && typeof window !== 'undefined') {
+    if (!isAdminPath(window.location.pathname)) {
+      pendingAdminPath = false;
+    } else if ($isAdmin) {
+      uiStore.setActiveView('admin');
+      pendingAdminPath = false;
+    } else if ($isAuthenticated) {
+      uiStore.setActiveView('feed');
+      const fallbackSectionId =
+        get(activeSection)?.id ?? get(sections)[0]?.id ?? null;
+      const fallbackSection = get(sections).find(
+        (section) => section.id === fallbackSectionId
+      );
+      replacePath(buildFeedHref(fallbackSection ? getSectionSlug(fallbackSection) : null));
+      pendingAdminPath = false;
+    } else {
+      pendingAdminPath = false;
+    }
   }
 
   $: if (sectionNotFound && $activeSection && typeof window !== 'undefined') {
