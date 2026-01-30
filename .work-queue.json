@@ -636,6 +636,19 @@
       ]
     },
     {
+      "issue_number": 537,
+      "title": "Add notification window in navbar",
+      "status": "available",
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 2,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ]
+    },
+    {
       "issue_number": 530,
       "title": "Fix admin deep-linking: /admin redirects to feed before auth completes",
       "status": "completed",
