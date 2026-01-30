@@ -41,6 +41,7 @@
     const atIndex = segment.lastIndexOf('@');
 
     if (atIndex === -1) return null;
+    if (atIndex > 0 && segment[atIndex - 1] === '\\') return null;
     if (atIndex > 0 && isUsernameChar(segment[atIndex - 1])) return null;
 
     const query = segment.slice(atIndex + 1);

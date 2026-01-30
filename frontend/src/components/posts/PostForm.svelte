@@ -337,6 +337,7 @@
       ariaLabel="Post content"
       className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:bg-gray-100"
     />
+    <p class="mt-2 text-xs text-gray-500">Tip: Use \@ to write a literal @.</p>
   </div>
 
   {#if linkMetadata}
