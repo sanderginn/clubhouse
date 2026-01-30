@@ -64,6 +64,7 @@
     disabled={isSubmitting}
     className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:bg-gray-100"
   />
+  <p class="text-xs text-gray-500">Tip: Use \@ to write a literal @.</p>
 
   {#if error}
     <div class="p-2 bg-red-50 border border-red-200 rounded-lg">

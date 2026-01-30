@@ -102,6 +102,10 @@ func extractMentionedUsernames(content string) []string {
 			continue
 		}
 
+		if i > 0 && runes[i-1] == '\\' {
+			continue
+		}
+
 		if i > 0 && isUsernameRune(runes[i-1]) {
 			continue
 		}

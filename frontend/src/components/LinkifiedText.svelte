@@ -1,4 +1,11 @@
+<script lang="ts" context="module">
+  const mentionValidationCache = new Map<string, boolean>();
+  const mentionValidationInflight = new Map<string, Promise<void>>();
+</script>
+
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import { api } from '../services/api';
   import { buildProfileHref, handleProfileNavigation } from '../services/profileNavigation';
 
   export let text = '';
@@ -7,6 +14,8 @@
   export let mentionClassName =
     'text-indigo-600 hover:text-indigo-800 font-medium bg-indigo-50 rounded px-1';
   export let highlightQuery = '';
+  export let validMentions: string[] | null = null;
+  export let validateMentions = true;
 
   type TextPart = { type: 'text'; value: string };
   type LinkPart = { type: 'link'; value: string };
@@ -15,40 +24,166 @@
   type HighlightPart = { text: string; isMatch: boolean };
 
   const URL_REGEX = /https?:\/\/[^\s<>"{}|\\^`[\]]+/gi;
-  const MENTION_REGEX = /(^|[^A-Za-z0-9_])@([A-Za-z0-9_]{3,50})/g;
 
-  function splitMentions(input: string): Part[] {
+  function isUsernameChar(char: string): boolean {
+    return /[A-Za-z0-9_]/.test(char);
+  }
+
+  function collectMentionUsernames(input: string): string[] {
     if (!input) return [];
-    MENTION_REGEX.lastIndex = 0;
-    const parts: Part[] = [];
+
+    const usernames = new Set<string>();
+    const regex = new RegExp(URL_REGEX);
     let lastIndex = 0;
     let match: RegExpExecArray | null;
 
-    while ((match = MENTION_REGEX.exec(input)) !== null) {
-      const prefix = match[1] ?? '';
-      const username = match[2];
-      const matchStart = match.index;
-      const matchLength = match[0].length;
-      if (matchStart > lastIndex) {
-        parts.push({ type: 'text', value: input.slice(lastIndex, matchStart) });
-      }
+    const collectFromSegment = (segment: string) => {
+      for (let i = 0; i < segment.length; i += 1) {
+        const char = segment[i];
 
-      if (prefix) {
-        parts.push({ type: 'text', value: prefix });
-      }
+        if (char === '\\' && segment[i + 1] === '@') {
+          i += 1;
+          continue;
+        }
 
-      parts.push({ type: 'mention', value: `@${username}`, username });
-      lastIndex = matchStart + matchLength;
+        if (char !== '@') {
+          continue;
+        }
+
+        if (i > 0 && isUsernameChar(segment[i - 1])) {
+          continue;
+        }
+
+        let end = i + 1;
+        while (end < segment.length && isUsernameChar(segment[end])) {
+          end += 1;
+        }
+
+        const username = segment.slice(i + 1, end);
+        if (username.length < 3 || username.length > 50) {
+          i = end - 1;
+          continue;
+        }
+
+        usernames.add(username);
+        i = end - 1;
+      }
+    };
+
+    while ((match = regex.exec(input)) !== null) {
+      const start = match.index;
+      if (start > lastIndex) {
+        collectFromSegment(input.slice(lastIndex, start));
+      }
+      lastIndex = start + match[0].length;
     }
 
     if (lastIndex < input.length) {
-      parts.push({ type: 'text', value: input.slice(lastIndex) });
+      collectFromSegment(input.slice(lastIndex));
     }
 
+    return [...usernames];
+  }
+
+  async function ensureMentionValidation(usernames: string[]): Promise<void> {
+    const tasks = usernames
+      .filter((username) => !mentionValidationCache.has(username))
+      .map((username) => {
+        const existing = mentionValidationInflight.get(username);
+        if (existing) {
+          return existing;
+        }
+        const task = api
+          .lookupUserByUsername(username)
+          .then(() => {
+            mentionValidationCache.set(username, true);
+          })
+          .catch(() => {
+            mentionValidationCache.set(username, false);
+          })
+          .finally(() => {
+            mentionValidationInflight.delete(username);
+          });
+        mentionValidationInflight.set(username, task);
+        return task;
+      });
+
+    if (tasks.length === 0) {
+      return;
+    }
+
+    await Promise.all(tasks);
+    validationTick += 1;
+  }
+
+  function shouldLinkMention(username: string, allowList: Set<string> | null): boolean {
+    if (allowList) {
+      return allowList.has(username);
+    }
+    if (!validateMentions) {
+      return true;
+    }
+    return mentionValidationCache.get(username) === true;
+  }
+
+  function splitMentions(input: string, allowList: Set<string> | null): Part[] {
+    if (!input) return [];
+
+    const parts: Part[] = [];
+    let buffer = '';
+
+    const flushBuffer = () => {
+      if (buffer.length > 0) {
+        parts.push({ type: 'text', value: buffer });
+        buffer = '';
+      }
+    };
+
+    for (let i = 0; i < input.length; i += 1) {
+      const char = input[i];
+
+      if (char === '\\' && input[i + 1] === '@') {
+        buffer += '@';
+        i += 1;
+        continue;
+      }
+
+      if (char !== '@') {
+        buffer += char;
+        continue;
+      }
+
+      if (i > 0 && isUsernameChar(input[i - 1])) {
+        buffer += char;
+        continue;
+      }
+
+      let end = i + 1;
+      while (end < input.length && isUsernameChar(input[end])) {
+        end += 1;
+      }
+
+      const username = input.slice(i + 1, end);
+      if (username.length < 3 || username.length > 50) {
+        buffer += char;
+        continue;
+      }
+
+      if (shouldLinkMention(username, allowList)) {
+        flushBuffer();
+        parts.push({ type: 'mention', value: `@${username}`, username });
+      } else {
+        buffer += `@${username}`;
+      }
+
+      i = end - 1;
+    }
+
+    flushBuffer();
     return parts;
   }
 
-  function splitText(input: string): Part[] {
+  function splitText(input: string, allowList: Set<string> | null, _tick = 0): Part[] {
     if (!input) return [];
 
     const parts: Part[] = [];
@@ -61,7 +196,7 @@
       const start = match.index;
 
       if (start > lastIndex) {
-        parts.push(...splitMentions(input.slice(lastIndex, start)));
+        parts.push(...splitMentions(input.slice(lastIndex, start), allowList));
       }
 
       parts.push({ type: 'link', value: url });
@@ -69,7 +204,7 @@
     }
 
     if (lastIndex < input.length) {
-      parts.push(...splitMentions(input.slice(lastIndex)));
+      parts.push(...splitMentions(input.slice(lastIndex), allowList));
     }
 
     return parts;
@@ -99,7 +234,30 @@
       }));
   }
 
-  $: parts = splitText(text);
+  let isMounted = false;
+  let validationTick = 0;
+  let mentionAllowList: Set<string> | null = null;
+
+  $: mentionAllowList = validMentions ? new Set(validMentions) : null;
+
+  $: if (isMounted && validateMentions && !mentionAllowList) {
+    const candidates = collectMentionUsernames(text);
+    if (candidates.length > 0) {
+      void ensureMentionValidation(candidates);
+    }
+  }
+
+  $: parts = splitText(text, mentionAllowList, validationTick);
+
+  onMount(() => {
+    isMounted = true;
+    if (validateMentions && !mentionAllowList) {
+      const candidates = collectMentionUsernames(text);
+      if (candidates.length > 0) {
+        void ensureMentionValidation(candidates);
+      }
+    }
+  });
 </script>
 
 <p class={className}>

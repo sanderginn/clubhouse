@@ -38,6 +38,11 @@ func TestExtractMentionedUsernames(t *testing.T) {
 			expected: nil,
 		},
 		{
+			name:     "ignore escaped mentions",
+			input:    "literal \\@alice and mention @bob",
+			expected: []string{"bob"},
+		},
+		{
 			name:     "min length",
 			input:    "short @ab ok @abc",
 			expected: []string{"abc"},
