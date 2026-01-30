@@ -130,6 +130,96 @@
         "bug",
         "backend"
       ]
+    },
+    {
+      "issue_number": 492,
+      "title": "Cannot delete image when editing a post",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 2,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ]
+    },
+    {
+      "issue_number": 493,
+      "title": "Hide image URL text on posts with images",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 2,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ]
+    },
+    {
+      "issue_number": 494,
+      "title": "Make post images clickable to view full size",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 2,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ]
+    },
+    {
+      "issue_number": 495,
+      "title": "Navigation from standalone post back to section does not load feed",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 1,
+      "labels": [
+        "bug",
+        "frontend"
+      ]
+    },
+    {
+      "issue_number": 496,
+      "title": "User tagging with @ does not work",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 2,
+      "labels": [
+        "bug",
+        "frontend",
+        "backend"
+      ]
+    },
+    {
+      "issue_number": 497,
+      "title": "Redesign post actions: replace triple-dot menu with Edit and Share buttons",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 2,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ]
+    },
+    {
+      "issue_number": 498,
+      "title": "Search bar renders incorrectly",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 2,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ]
     }
   ]
 }
