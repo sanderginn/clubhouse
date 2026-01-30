@@ -782,9 +782,9 @@
     {
       "issue_number": 432,
       "title": "Grafana: Create cache performance dashboard",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769767295-67649",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769767295-67649",
       "dependencies": [
         422
       ],
@@ -794,7 +794,9 @@
         "observability",
         "grafana",
         "dashboard"
-      ]
+      ],
+      "branch": "feat/issue-432-grafana-create-cache-performance-dashboa",
+      "claimed_at": "2026-01-30T10:01:35Z"
     },
     {
       "issue_number": 433,
