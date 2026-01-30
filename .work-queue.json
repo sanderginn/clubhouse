@@ -593,6 +593,18 @@
         "enhancement",
         "frontend"
       ]
+    },
+    {
+      "issue_number": 530,
+      "title": "Fix admin deep-linking: /admin redirects to feed before auth completes",
+      "status": "available",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 1,
+      "labels": [
+        "bug",
+        "frontend"
+      ]
     }
   ]
 }
