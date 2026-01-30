@@ -39,7 +39,8 @@
     436,
     437,
     438,
-    441
+    441,
+    442
   ],
   "issues": [
     {
@@ -1002,7 +1003,7 @@
     {
       "issue_number": 442,
       "title": "Grafana: Create admin operations dashboard",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769769076-17081",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769769076-17081",
       "dependencies": [
@@ -1017,7 +1018,9 @@
         "admin"
       ],
       "branch": "feat/issue-442-grafana-create-admin-operations-dashboar",
-      "claimed_at": "2026-01-30T10:31:16Z"
+      "claimed_at": "2026-01-30T10:31:16Z",
+      "pr_number": 475,
+      "completed_at": "2026-01-30T10:49:57Z"
     }
   ]
 }
