@@ -61,7 +61,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -955,7 +955,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -984,19 +984,19 @@
             "type": "grafana-sentry-datasource",
             "uid": "sentry"
           },
-          "metricsField": "session.errored",
+          "metricsField": "session.crash_rate",
           "metricsQuery": "",
           "metricsGroupBy": "environment",
           "metricsLimit": 10,
           "metricsOrder": "desc",
-          "metricsSort": "session.errored",
+          "metricsSort": "session.crash_rate",
           "projectIds": ["$project"],
           "environments": ["$environment"],
           "queryType": "metrics",
           "refId": "A"
         }
       ],
-      "title": "Errored Sessions",
+      "title": "Session Error Rate",
       "type": "timeseries"
     },
     {
