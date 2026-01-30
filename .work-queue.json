@@ -15,6 +15,7 @@
     387,
     388,
     389,
+    390,
     426,
     427,
     428,
@@ -258,7 +259,7 @@
     {
       "issue_number": 390,
       "title": "Backend + Frontend: MFA enrollment for regular users",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769703795-87269",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769703795-87269",
       "dependencies": [
@@ -274,7 +275,9 @@
         "auth"
       ],
       "branch": "feat/issue-390-backend-frontend-mfa-enrollment-for-regu",
-      "claimed_at": "2026-01-29T16:23:15Z"
+      "claimed_at": "2026-01-29T16:23:15Z",
+      "pr_number": 456,
+      "completed_at": "2026-01-30T08:21:38Z"
     },
     {
       "issue_number": 391,
