@@ -31,7 +31,7 @@
     {
       "issue_number": 418,
       "title": "[High] Add distributed tracing spans to service layer",
-      "status": "blocked",
+      "status": "available",
       "dependencies": [
         415
       ],
