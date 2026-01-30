@@ -36,6 +36,13 @@ cd <WORKTREE_PATH>
 
 **Mandatory:** Do all work from the designated worktree. Never edit or run commands from the main repo root once the worktree is created.
 
+**CRITICAL: Worktree Isolation Rules:**
+- **NEVER** create, edit, or delete files outside your worktree
+- **NEVER** run `git add`, `git commit`, or `git push` from the main repository root
+- **ALWAYS** verify your current working directory before any file operation: `pwd`
+- **ALWAYS** use absolute paths within your worktree (e.g., `<WORKTREE_PATH>/backend/...`)
+- If you accidentally create or modify files outside your worktree, you MUST immediately fix this (see "Worktree Contamination Check" below)
+
 **Autonomy:** After entering the worktree, start the task immediately. Do not wait for any further input until the PR is opened.
 
 ## Step 3: Fetch Issue Context
@@ -259,7 +266,7 @@ After rebasing, wait for the next review cycle.
 ## Important Notes
 
 1. **Always use the start script** (`.codex/skills/subagent/scripts/start-agent.sh`) — it handles claiming atomically
-2. **Work in the designated worktree only** — never use the main repo for edits/commands once a worktree exists
+2. **CRITICAL: Work in the designated worktree ONLY** — NEVER use the main repo for edits/commands once a worktree exists. This is the most important rule. Violations break the orchestrator.
 3. **Use the file location table above** — don't explore; go directly to the right files
 4. **Copy existing patterns** — check one similar handler/service, not multiple
 5. **Add tests when it makes sense** — include frontend tests; explain in PR if you didn't add tests
@@ -271,9 +278,74 @@ After rebasing, wait for the next review cycle.
 11. **Minimize exploration** — see "What NOT to Explore" section
 12. **Start immediately** — once in the worktree, begin work without waiting for more user input; keep going until the PR is opened
 13. **No confirmation prompts** — never ask whether to run extra tests or whether to commit/create a PR; decide and proceed without asking
-14. **Worktree integrity checks** — after every change, verify you did not modify files outside your worktree. If you did, immediately move those changes into your worktree and undo the changes outside it.
+14. **Worktree contamination checks** — run the contamination check (see below) after EVERY file operation, commit, and before pushing. If contamination is detected, fix it immediately.
 15. **Stay alive after PR** — do not exit after creating the PR. Wait for review feedback and address it until the PR is merged.
 16. **Do not spawn sub-agents** — you are already the subagent; proceed with this workflow directly.
+
+## Worktree Contamination Check
+
+**Run this check after EVERY commit and before EVERY push.** Also run it if you're unsure whether you accidentally modified files outside your worktree.
+
+### Step 1: Detect Contamination
+
+From your worktree, check for changes in the main repository root:
+
+```bash
+# Get the main repo root (parent of .worktrees)
+MAIN_REPO=$(dirname $(dirname <WORKTREE_PATH>))
+
+# Check for any uncommitted changes in main repo
+git -C "$MAIN_REPO" status --porcelain
+```
+
+**Expected output:** Empty, or ONLY `.work-queue.json` (orchestrator manages this file).
+
+**If you see other files listed**, you have contaminated the main repo. Proceed to Step 2.
+
+### Step 2: Identify Your Changes
+
+Determine which contaminated files belong to your issue:
+
+```bash
+# List the contaminated files (excluding .work-queue.json)
+git -C "$MAIN_REPO" status --porcelain | grep -v '.work-queue.json'
+```
+
+### Step 3: Move Changes to Your Worktree
+
+For each contaminated file that belongs to your issue:
+
+```bash
+# Example: if you accidentally created backend/internal/handlers/foo.go in main repo
+# Move it to your worktree
+mv "$MAIN_REPO/backend/internal/handlers/foo.go" "<WORKTREE_PATH>/backend/internal/handlers/foo.go"
+```
+
+### Step 4: Discard Remaining Contamination
+
+After moving your files, discard any remaining contamination (files that don't belong to your issue):
+
+```bash
+# Discard all uncommitted changes in main repo (except .work-queue.json)
+cd "$MAIN_REPO"
+git checkout -- . 2>/dev/null || true
+git clean -fd --exclude=.work-queue.json
+```
+
+### Step 5: Verify Cleanup
+
+```bash
+# Should show empty or only .work-queue.json
+git -C "$MAIN_REPO" status --porcelain
+```
+
+### When the Orchestrator Asks About Contamination
+
+If the orchestrator asks whether you accidentally made changes outside your worktree:
+1. Run the contamination check above
+2. If you find changes that are yours, move them to your worktree and confirm to the orchestrator that you've cleaned up
+3. If the changes are not yours, tell the orchestrator they are not from you
+4. The orchestrator will discard the changes after all workers confirm
 
 ## Troubleshooting
 
