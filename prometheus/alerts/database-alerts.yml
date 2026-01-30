@@ -9,3 +9,35 @@ groups:
         annotations:
           summary: "Clubhouse database unavailable"
           description: "Backend has been unreachable for 5 minutes. Verify database connectivity."
+      - alert: DatabaseConnectionPoolNearExhaustion
+        expr: db_sql_connection_open{status="inuse"} / ignoring(status) db_sql_connection_max_open > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database connection pool > 80% utilized"
+          description: "Database connection pool usage has been above 80% for 5 minutes."
+      - alert: DatabaseConnectionPoolExhausted
+        expr: db_sql_connection_open{status="inuse"} >= ignoring(status) db_sql_connection_max_open
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection pool exhausted"
+          description: "Active database connections are at or above the configured maximum."
+      - alert: HighDatabaseQueryLatency
+        expr: histogram_quantile(0.95, sum(rate(db_client_operation_duration_bucket[5m])) by (le)) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "95th percentile DB query latency > 500ms"
+          description: "The 95th percentile DB query latency has exceeded 500ms for 5 minutes. Requires OTEL_SEMCONV_STABILITY_OPT_IN=database to emit db_client_operation_duration_bucket."
+      - alert: DatabaseConnectionErrors
+        expr: increase(db_sql_connection_wait_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database connection wait errors > 10 in 5m"
+          description: "Database connection wait time errors increased above 10 in the last 5 minutes."
