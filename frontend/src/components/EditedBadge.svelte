@@ -10,7 +10,7 @@
   let tooltipId = '';
 
   $: isEdited = isEditedAt(createdAt, updatedAt);
-  $: tooltipLabel = updatedAt ? `Edited ${formatEditedAt(updatedAt)}` : '';
+  $: tooltipLabel = updatedAt ? `Edited ${formatEditedAt(updatedAt, $displayTimezone)}` : '';
 
   onMount(() => {
     tooltipId = `edited-tooltip-${Math.random().toString(36).slice(2, 10)}`;
@@ -24,7 +24,7 @@
     return updatedTime > createdTime;
   }
 
-  function formatEditedAt(dateString: string): string {
+  function formatEditedAt(dateString: string, timezone: string | null | undefined): string {
     const date = new Date(dateString);
     if (Number.isNaN(date.getTime())) return '';
     const datePart = formatInTimezone(
@@ -34,7 +34,7 @@
         day: 'numeric',
         year: 'numeric',
       },
-      $displayTimezone
+      timezone
     );
     const timePart = formatInTimezone(
       date,
@@ -44,7 +44,7 @@
         second: '2-digit',
         hour12: false,
       },
-      $displayTimezone
+      timezone
     );
     return `${datePart} ${timePart}`;
   }
