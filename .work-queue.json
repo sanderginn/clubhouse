@@ -18,7 +18,8 @@
     495,
     496,
     497,
-    498
+    498,
+    530
   ],
   "issues": [
     {
@@ -609,7 +610,7 @@
     {
       "issue_number": 530,
       "title": "Fix admin deep-linking: /admin redirects to feed before auth completes",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 1,
@@ -620,7 +621,9 @@
       "assigned_to": "agent-1769813439-76668",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769813439-76668",
       "branch": "fix/issue-530-fix-admin-deeplinking-admin-redirects-to",
-      "claimed_at": "2026-01-30T22:50:39Z"
+      "claimed_at": "2026-01-30T22:50:39Z",
+      "pr_number": 531,
+      "completed_at": "2026-01-30T22:57:10Z"
     }
   ]
 }
