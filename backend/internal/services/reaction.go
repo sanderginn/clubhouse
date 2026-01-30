@@ -38,12 +38,36 @@ func (s *ReactionService) AddReactionToPost(ctx context.Context, postID uuid.UUI
 
 	if existingReaction != nil {
 		if existingReaction.DeletedAt != nil {
-			return s.restoreReaction(ctx, existingReaction.ID)
+			reaction, err := s.restoreReaction(ctx, existingReaction.ID)
+			if err != nil {
+				return nil, err
+			}
+			if err := s.logReactionAudit(ctx, "add_reaction", userID, map[string]interface{}{
+				"target":    "post",
+				"target_id": postID.String(),
+				"post_id":   postID.String(),
+				"emoji":     emoji,
+			}); err != nil {
+				return nil, err
+			}
+			return reaction, nil
 		}
 		return existingReaction, nil
 	}
 
-	return s.createPostReaction(ctx, postID, userID, emoji)
+	reaction, err := s.createPostReaction(ctx, postID, userID, emoji)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.logReactionAudit(ctx, "add_reaction", userID, map[string]interface{}{
+		"target":    "post",
+		"target_id": postID.String(),
+		"post_id":   postID.String(),
+		"emoji":     emoji,
+	}); err != nil {
+		return nil, err
+	}
+	return reaction, nil
 }
 
 // GetPostReactions retrieves reactions for a post grouped by emoji.
@@ -76,6 +100,15 @@ func (s *ReactionService) RemoveReactionFromPost(ctx context.Context, postID uui
 		return errors.New("reaction not found")
 	}
 
+	if err := s.logReactionAudit(ctx, "remove_reaction", userID, map[string]interface{}{
+		"target":    "post",
+		"target_id": postID.String(),
+		"post_id":   postID.String(),
+		"emoji":     emoji,
+	}); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -85,7 +118,8 @@ func (s *ReactionService) AddReactionToComment(ctx context.Context, commentID uu
 		return nil, err
 	}
 
-	if err := s.verifyCommentExists(ctx, commentID); err != nil {
+	postID, err := s.getCommentPostID(ctx, commentID)
+	if err != nil {
 		return nil, err
 	}
 
@@ -96,12 +130,38 @@ func (s *ReactionService) AddReactionToComment(ctx context.Context, commentID uu
 
 	if existingReaction != nil {
 		if existingReaction.DeletedAt != nil {
-			return s.restoreReaction(ctx, existingReaction.ID)
+			reaction, err := s.restoreReaction(ctx, existingReaction.ID)
+			if err != nil {
+				return nil, err
+			}
+			if err := s.logReactionAudit(ctx, "add_reaction", userID, map[string]interface{}{
+				"target":     "comment",
+				"target_id":  commentID.String(),
+				"comment_id": commentID.String(),
+				"post_id":    postID.String(),
+				"emoji":      emoji,
+			}); err != nil {
+				return nil, err
+			}
+			return reaction, nil
 		}
 		return existingReaction, nil
 	}
 
-	return s.createCommentReaction(ctx, commentID, userID, emoji)
+	reaction, err := s.createCommentReaction(ctx, commentID, userID, emoji)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.logReactionAudit(ctx, "add_reaction", userID, map[string]interface{}{
+		"target":     "comment",
+		"target_id":  commentID.String(),
+		"comment_id": commentID.String(),
+		"post_id":    postID.String(),
+		"emoji":      emoji,
+	}); err != nil {
+		return nil, err
+	}
+	return reaction, nil
 }
 
 // GetCommentReactions retrieves reactions for a comment grouped by emoji.
@@ -115,6 +175,11 @@ func (s *ReactionService) GetCommentReactions(ctx context.Context, commentID uui
 // RemoveReactionFromComment removes a reaction from a comment
 // Users can only remove their own reactions
 func (s *ReactionService) RemoveReactionFromComment(ctx context.Context, commentID uuid.UUID, emoji string, userID uuid.UUID) error {
+	postID, err := s.getCommentPostID(ctx, commentID)
+	if err != nil {
+		return err
+	}
+
 	query := `
 		DELETE FROM reactions
 		WHERE comment_id = $1 AND emoji = $2 AND user_id = $3 AND deleted_at IS NULL
@@ -132,6 +197,16 @@ func (s *ReactionService) RemoveReactionFromComment(ctx context.Context, comment
 
 	if rowsAffected == 0 {
 		return errors.New("reaction not found")
+	}
+
+	if err := s.logReactionAudit(ctx, "remove_reaction", userID, map[string]interface{}{
+		"target":     "comment",
+		"target_id":  commentID.String(),
+		"comment_id": commentID.String(),
+		"post_id":    postID.String(),
+		"emoji":      emoji,
+	}); err != nil {
+		return err
 	}
 
 	return nil
@@ -241,6 +316,24 @@ func (s *ReactionService) verifyCommentExists(ctx context.Context, commentID uui
 	return nil
 }
 
+func (s *ReactionService) getCommentPostID(ctx context.Context, commentID uuid.UUID) (uuid.UUID, error) {
+	query := `
+		SELECT post_id
+		FROM comments
+		WHERE id = $1 AND deleted_at IS NULL
+	`
+
+	var postID uuid.UUID
+	if err := s.db.QueryRowContext(ctx, query, commentID).Scan(&postID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return uuid.UUID{}, errors.New("comment not found")
+		}
+		return uuid.UUID{}, fmt.Errorf("failed to fetch comment post: %w", err)
+	}
+
+	return postID, nil
+}
+
 func (s *ReactionService) getExistingCommentReaction(ctx context.Context, commentID uuid.UUID, userID uuid.UUID, emoji string) (*models.Reaction, error) {
 	query := `
 		SELECT id, user_id, post_id, comment_id, emoji, created_at, deleted_at
@@ -326,4 +419,12 @@ func (s *ReactionService) getReactions(ctx context.Context, column string, id uu
 	}
 
 	return groups, nil
+}
+
+func (s *ReactionService) logReactionAudit(ctx context.Context, action string, userID uuid.UUID, metadata map[string]interface{}) error {
+	auditService := NewAuditService(s.db)
+	if err := auditService.LogAuditWithMetadata(ctx, action, uuid.Nil, userID, metadata); err != nil {
+		return fmt.Errorf("failed to create reaction audit log: %w", err)
+	}
+	return nil
 }
