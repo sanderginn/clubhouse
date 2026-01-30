@@ -15,6 +15,7 @@
   import { getSectionSlugById } from '../services/sectionSlug';
   import { logError } from '../lib/observability/logger';
   import { recordComponentRender } from '../lib/observability/performance';
+  import { lockBodyScroll, unlockBodyScroll } from '../lib/ui/bodyScroll';
 
   export let post: Post;
   export let highlightCommentId: string | null = null;
@@ -33,6 +34,9 @@
   let editImageUploading = false;
   let editImageUploadProgress = 0;
   let editImageInput: HTMLInputElement | null = null;
+  let isImageLightboxOpen = false;
+  let lightboxImageUrl: string | null = null;
+  let lightboxAltText = 'Full size image';
 
   const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
   const MAX_UPLOAD_LABEL = '10 MB';
@@ -93,7 +97,40 @@
     if (copyTimeout) {
       clearTimeout(copyTimeout);
     }
+    if (isImageLightboxOpen) {
+      unlockBodyScroll();
+    }
   });
+
+  function openImageLightbox(url: string, altText: string) {
+    if (!url) {
+      return;
+    }
+    if (!isImageLightboxOpen) {
+      lockBodyScroll();
+    }
+    lightboxImageUrl = url;
+    lightboxAltText = altText || 'Full size image';
+    isImageLightboxOpen = true;
+  }
+
+  function closeImageLightbox() {
+    if (!isImageLightboxOpen) {
+      return;
+    }
+    isImageLightboxOpen = false;
+    lightboxImageUrl = null;
+    unlockBodyScroll();
+  }
+
+  function handleLightboxKeydown(event: KeyboardEvent) {
+    if (!isImageLightboxOpen) {
+      return;
+    }
+    if (event.key === 'Escape') {
+      closeImageLightbox();
+    }
+  }
 
   function startEdit() {
     editContent = post.content;
@@ -315,6 +352,8 @@
   });
 </script>
 
+<svelte:window on:keydown={handleLightboxKeydown} />
+
 <article class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
   <div class="flex items-start gap-3">
     {#if post.user?.id}
@@ -341,8 +380,8 @@
     {:else}
       {#if post.user?.profilePictureUrl}
         <img
-          src={post.user.profilePictureUrl}
-          alt={post.user.username}
+          src={post.user?.profilePictureUrl}
+          alt={post.user?.username}
           class="w-10 h-10 rounded-full object-cover flex-shrink-0"
         />
       {:else}
@@ -537,15 +576,24 @@
               Image unavailable. Try opening the link directly.
             </div>
           {:else}
-            <img
-              src={imageUrl}
-              alt={metadata?.title || 'Uploaded image'}
-              class="w-full max-h-[28rem] object-contain bg-white"
-              loading="lazy"
-              on:error={() => {
-                imageLoadFailed = true;
-              }}
-            />
+            <button
+              type="button"
+              class="w-full text-left"
+              aria-label="Open full-size image"
+              aria-haspopup="dialog"
+              on:click={() =>
+                openImageLightbox(imageUrl, metadata?.title || 'Uploaded image')}
+            >
+              <img
+                src={imageUrl}
+                alt={metadata?.title || 'Uploaded image'}
+                class="w-full max-h-[28rem] object-contain bg-white"
+                loading="lazy"
+                on:error={() => {
+                  imageLoadFailed = true;
+                }}
+              />
+            </button>
           {/if}
         </div>
         {#if !isInternalUploadLink || imageLoadFailed}
@@ -639,3 +687,35 @@
     </div>
   </div>
 </article>
+
+{#if isImageLightboxOpen && lightboxImageUrl}
+  <div class="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
+    <button
+      type="button"
+      class="absolute inset-0 bg-black/70"
+      aria-label="Close image"
+      on:click={closeImageLightbox}
+    ></button>
+    <div
+      class="relative z-10 max-h-full max-w-full"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Full size image"
+    >
+      <button
+        type="button"
+        class="absolute -top-3 -right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-700 shadow-md hover:bg-gray-100"
+        aria-label="Close image"
+        on:click={closeImageLightbox}
+      >
+        ✕
+      </button>
+      <img
+        src={lightboxImageUrl}
+        alt={lightboxAltText}
+        class="max-h-[85vh] w-auto max-w-[95vw] rounded-lg object-contain bg-white shadow-lg"
+        style="touch-action: pinch-zoom;"
+      />
+    </div>
+  </div>
+{/if}
