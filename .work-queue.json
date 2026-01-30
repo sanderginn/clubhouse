@@ -421,9 +421,9 @@
     {
       "issue_number": 396,
       "title": "Frontend: Add back navigation from standalone thread view",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769792806-78886",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769792806-78886",
       "dependencies": [
         395
       ],
@@ -433,7 +433,9 @@
         "enhancement",
         "frontend",
         "ui"
-      ]
+      ],
+      "branch": "feat/issue-396-frontend-add-back-navigation-from-standa",
+      "claimed_at": "2026-01-30T17:06:46Z"
     },
     {
       "issue_number": 397,
