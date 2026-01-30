@@ -37,6 +37,7 @@ type metrics struct {
 	linkMetadataFetchAttempts metric.Int64Counter
 	linkMetadataFetchSuccess  metric.Int64Counter
 	linkMetadataFetchFailures metric.Int64Counter
+	linkMetadataFetchDuration metric.Float64Histogram
 	frontendWebVitals         metric.Float64Histogram
 	frontendApiDuration       metric.Float64Histogram
 	frontendWebsocketDuration metric.Float64Histogram
@@ -278,6 +279,16 @@ func initMetrics() error {
 			return
 		}
 
+		linkMetadataFetchDuration, err := meter.Float64Histogram(
+			"clubhouse.links.metadata.fetch.duration_ms",
+			metric.WithDescription("Duration of link metadata fetches in milliseconds"),
+			metric.WithUnit("ms"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
 		frontendWebVitals, err := meter.Float64Histogram(
 			"clubhouse.frontend.web_vitals",
 			metric.WithDescription("Frontend Web Vitals values"),
@@ -352,6 +363,7 @@ func initMetrics() error {
 			linkMetadataFetchAttempts: linkMetadataFetchAttempts,
 			linkMetadataFetchSuccess:  linkMetadataFetchSuccess,
 			linkMetadataFetchFailures: linkMetadataFetchFailures,
+			linkMetadataFetchDuration: linkMetadataFetchDuration,
 			frontendWebVitals:         frontendWebVitals,
 			frontendApiDuration:       frontendApiDuration,
 			frontendWebsocketDuration: frontendWebsocketDuration,
@@ -598,7 +610,7 @@ func RecordLinkMetadataFetchSuccess(ctx context.Context, count int64) {
 }
 
 // RecordLinkMetadataFetchFailure increments the link metadata fetch failure counter.
-func RecordLinkMetadataFetchFailure(ctx context.Context, count int64) {
+func RecordLinkMetadataFetchFailure(ctx context.Context, count int64, domain string, errorType string) {
 	if count <= 0 {
 		return
 	}
@@ -606,7 +618,30 @@ func RecordLinkMetadataFetchFailure(ctx context.Context, count int64) {
 	if m == nil {
 		return
 	}
-	m.linkMetadataFetchFailures.Add(ctx, count)
+	attrs := []attribute.KeyValue{}
+	if strings.TrimSpace(domain) != "" {
+		attrs = append(attrs, attribute.String("domain", domain))
+	}
+	if strings.TrimSpace(errorType) != "" {
+		attrs = append(attrs, attribute.String("error_type", errorType))
+	}
+	if len(attrs) == 0 {
+		m.linkMetadataFetchFailures.Add(ctx, count)
+		return
+	}
+	m.linkMetadataFetchFailures.Add(ctx, count, metric.WithAttributes(attrs...))
+}
+
+// RecordLinkMetadataFetchDuration records how long link metadata fetches take.
+func RecordLinkMetadataFetchDuration(ctx context.Context, duration time.Duration) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	if duration < 0 {
+		return
+	}
+	m.linkMetadataFetchDuration.Record(ctx, float64(duration.Milliseconds()))
 }
 
 // RecordFrontendWebVital records a Web Vital metric from the frontend.
