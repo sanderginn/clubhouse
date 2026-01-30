@@ -183,6 +183,14 @@ func main() {
 
 	// User routes (protected - requires auth)
 	userRouteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/users/autocomplete" {
+			requireAuth(http.HandlerFunc(userHandler.AutocompleteUsers)).ServeHTTP(w, r)
+			return
+		}
+		if r.URL.Path == "/api/v1/users/lookup" {
+			requireAuth(http.HandlerFunc(userHandler.LookupUserByUsername)).ServeHTTP(w, r)
+			return
+		}
 		if strings.HasPrefix(r.URL.Path, "/api/v1/users/me/mfa/") {
 			switch r.URL.Path {
 			case "/api/v1/users/me/mfa/enable":

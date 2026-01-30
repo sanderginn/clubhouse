@@ -4,6 +4,7 @@
   import { activeSection, postStore, currentUser } from '../../stores';
   import type { Link, LinkMetadata } from '../../stores/postStore';
   import LinkPreview from './LinkPreview.svelte';
+  import MentionTextarea from '../mentions/MentionTextarea.svelte';
 
   const dispatch = createEventDispatcher<{
     submit: void;
@@ -323,18 +324,19 @@
 <form on:submit|preventDefault={handleSubmit} class="space-y-4">
   <div>
     <label for="post-content" class="sr-only">Post content</label>
-    <textarea
+    <MentionTextarea
       id="post-content"
       bind:value={content}
       on:input={handleContentChange}
-      on:keydown={handleKeyDown}
+      on:keydown={(event) => handleKeyDown(event.detail)}
       placeholder={$activeSection
         ? `Share something in ${$activeSection.name}...`
         : 'Share something...'}
-      rows="3"
+      rows={3}
       disabled={isSubmitting}
-      class="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:bg-gray-100"
-    ></textarea>
+      ariaLabel="Post content"
+      className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:bg-gray-100"
+    />
   </div>
 
   {#if linkMetadata}

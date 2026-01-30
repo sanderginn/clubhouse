@@ -1,15 +1,52 @@
 <script lang="ts">
+  import { buildProfileHref, handleProfileNavigation } from '../services/profileNavigation';
+
   export let text = '';
   export let className = '';
   export let linkClassName = 'text-blue-600 hover:text-blue-800 underline';
+  export let mentionClassName =
+    'text-indigo-600 hover:text-indigo-800 font-medium bg-indigo-50 rounded px-1';
   export let highlightQuery = '';
 
   type TextPart = { type: 'text'; value: string };
   type LinkPart = { type: 'link'; value: string };
-  type Part = TextPart | LinkPart;
+  type MentionPart = { type: 'mention'; value: string; username: string };
+  type Part = TextPart | LinkPart | MentionPart;
   type HighlightPart = { text: string; isMatch: boolean };
 
   const URL_REGEX = /https?:\/\/[^\s<>"{}|\\^`[\]]+/gi;
+  const MENTION_REGEX = /(^|[^A-Za-z0-9_])@([A-Za-z0-9_]{3,50})/g;
+
+  function splitMentions(input: string): Part[] {
+    if (!input) return [];
+    MENTION_REGEX.lastIndex = 0;
+    const parts: Part[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = MENTION_REGEX.exec(input)) !== null) {
+      const prefix = match[1] ?? '';
+      const username = match[2];
+      const matchStart = match.index;
+      const matchLength = match[0].length;
+      if (matchStart > lastIndex) {
+        parts.push({ type: 'text', value: input.slice(lastIndex, matchStart) });
+      }
+
+      if (prefix) {
+        parts.push({ type: 'text', value: prefix });
+      }
+
+      parts.push({ type: 'mention', value: `@${username}`, username });
+      lastIndex = matchStart + matchLength;
+    }
+
+    if (lastIndex < input.length) {
+      parts.push({ type: 'text', value: input.slice(lastIndex) });
+    }
+
+    return parts;
+  }
 
   function splitText(input: string): Part[] {
     if (!input) return [];
@@ -24,7 +61,7 @@
       const start = match.index;
 
       if (start > lastIndex) {
-        parts.push({ type: 'text', value: input.slice(lastIndex, start) });
+        parts.push(...splitMentions(input.slice(lastIndex, start)));
       }
 
       parts.push({ type: 'link', value: url });
@@ -32,7 +69,7 @@
     }
 
     if (lastIndex < input.length) {
-      parts.push({ type: 'text', value: input.slice(lastIndex) });
+      parts.push(...splitMentions(input.slice(lastIndex)));
     }
 
     return parts;
@@ -69,6 +106,14 @@
   {#each parts as part, index (index)}
     {#if part.type === 'link'}
       <a href={part.value} target="_blank" rel="noopener noreferrer" class={linkClassName}>
+        {part.value}
+      </a>
+    {:else if part.type === 'mention'}
+      <a
+        href={buildProfileHref(part.username)}
+        class={mentionClassName}
+        on:click={(event) => handleProfileNavigation(event, part.username)}
+      >
         {part.value}
       </a>
     {:else}

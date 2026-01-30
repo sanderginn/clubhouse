@@ -521,6 +521,102 @@ func (s *UserService) GetApprovedUsers(ctx context.Context) ([]*models.ApprovedU
 	return approvedUsers, nil
 }
 
+// SearchUsersByUsernamePrefix returns approved, active users matching a username prefix.
+func (s *UserService) SearchUsersByUsernamePrefix(ctx context.Context, query string, limit int) ([]models.UserSummary, error) {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.SearchUsersByUsernamePrefix")
+	trimmed := strings.TrimSpace(query)
+	span.SetAttributes(
+		attribute.String("query", trimmed),
+		attribute.Int("limit", limit),
+	)
+	defer span.End()
+
+	if limit <= 0 {
+		limit = 8
+	}
+	if limit > 20 {
+		limit = 20
+	}
+
+	pattern := "%"
+	if trimmed != "" {
+		pattern = trimmed + "%"
+	}
+
+	queryStmt := `
+		SELECT id, username, profile_picture_url
+		FROM users
+		WHERE approved_at IS NOT NULL
+		  AND suspended_at IS NULL
+		  AND deleted_at IS NULL
+		  AND username ILIKE $1
+		ORDER BY username ASC
+		LIMIT $2
+	`
+
+	rows, err := s.db.QueryContext(ctx, queryStmt, pattern, limit)
+	if err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("failed to search users: %w", err)
+	}
+	defer rows.Close()
+
+	var users []models.UserSummary
+	for rows.Next() {
+		var user models.UserSummary
+		if err := rows.Scan(&user.ID, &user.Username, &user.ProfilePictureURL); err != nil {
+			recordSpanError(span, err)
+			return nil, fmt.Errorf("failed to scan user summary: %w", err)
+		}
+		users = append(users, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("error iterating user summaries: %w", err)
+	}
+
+	return users, nil
+}
+
+// LookupUserByUsername returns an approved, active user summary by username (case-insensitive).
+func (s *UserService) LookupUserByUsername(ctx context.Context, username string) (*models.UserSummary, error) {
+	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.LookupUserByUsername")
+	trimmed := strings.TrimSpace(username)
+	span.SetAttributes(attribute.String("username", trimmed))
+	defer span.End()
+
+	if trimmed == "" {
+		notFoundErr := fmt.Errorf("user not found")
+		recordSpanError(span, notFoundErr)
+		return nil, notFoundErr
+	}
+
+	query := `
+		SELECT id, username, profile_picture_url
+		FROM users
+		WHERE approved_at IS NOT NULL
+		  AND suspended_at IS NULL
+		  AND deleted_at IS NULL
+		  AND lower(username) = lower($1)
+	`
+
+	var user models.UserSummary
+	err := s.db.QueryRowContext(ctx, query, trimmed).
+		Scan(&user.ID, &user.Username, &user.ProfilePictureURL)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			notFoundErr := fmt.Errorf("user not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
+		}
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("failed to lookup user: %w", err)
+	}
+
+	return &user, nil
+}
+
 // ApproveUser marks a user as approved by setting approved_at timestamp
 func (s *UserService) ApproveUser(ctx context.Context, userID uuid.UUID, adminUserID uuid.UUID) (*models.ApproveUserResponse, error) {
 	ctx, span := otel.Tracer("clubhouse.users").Start(ctx, "UserService.ApproveUser")

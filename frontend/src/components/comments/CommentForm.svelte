@@ -5,6 +5,7 @@
   import { postStore } from '../../stores/postStore';
   import { mapApiComment } from '../../stores/commentMapper';
   import type { Comment } from '../../stores/commentStore';
+  import MentionTextarea from '../mentions/MentionTextarea.svelte';
 
   export let postId: string;
 
@@ -50,16 +51,16 @@
 </script>
 
 <form on:submit|preventDefault={handleSubmit} class="space-y-2">
-  <textarea
+  <MentionTextarea
     id="comment-content"
     bind:value={content}
-    on:keydown={handleKeyDown}
-    aria-label="Add a comment"
+    on:keydown={(event) => handleKeyDown(event.detail)}
+    ariaLabel="Add a comment"
     placeholder="Add a comment..."
-    rows="2"
+    rows={2}
     disabled={isSubmitting}
-    class="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:bg-gray-100"
-  ></textarea>
+    className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:bg-gray-100"
+  />
 
   {#if error}
     <div class="p-2 bg-red-50 border border-red-200 rounded-lg">

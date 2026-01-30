@@ -5,12 +5,14 @@ import { tick } from 'svelte';
 const apiGet = vi.hoisted(() => vi.fn());
 const apiAddCommentReaction = vi.hoisted(() => vi.fn());
 const apiRemoveCommentReaction = vi.hoisted(() => vi.fn());
+const apiLookupUserByUsername = vi.hoisted(() => vi.fn());
 
 vi.mock('../../services/api', () => ({
   api: {
     get: apiGet,
     addCommentReaction: apiAddCommentReaction,
     removeCommentReaction: apiRemoveCommentReaction,
+    lookupUserByUsername: apiLookupUserByUsername,
   },
 }));
 
@@ -27,6 +29,7 @@ afterEach(() => {
   apiGet.mockReset();
   apiAddCommentReaction.mockReset();
   apiRemoveCommentReaction.mockReset();
+  apiLookupUserByUsername.mockReset();
 });
 
 describe('UserProfile', () => {
@@ -50,6 +53,9 @@ describe('UserProfile', () => {
         return Promise.resolve({ comments: [], meta: { cursor: null, hasMore: false } });
       }
       return Promise.resolve({});
+    });
+    apiLookupUserByUsername.mockResolvedValue({
+      user: { id: 'user-1', username: 'user-1', profile_picture_url: null },
     });
 
     render(UserProfile, { userId: 'user-1' });
@@ -142,6 +148,9 @@ describe('UserProfile', () => {
         });
       }
       return Promise.resolve({});
+    });
+    apiLookupUserByUsername.mockResolvedValue({
+      user: { id: 'user-2', username: 'user-2', profile_picture_url: null },
     });
 
     render(UserProfile, { userId: 'user-2' });

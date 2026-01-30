@@ -91,6 +91,23 @@ type ApprovedUser struct {
 	CreatedAt  time.Time `json:"created_at"`
 }
 
+// UserSummary represents a minimal user payload for mentions/autocomplete.
+type UserSummary struct {
+	ID                uuid.UUID `json:"id"`
+	Username          string    `json:"username"`
+	ProfilePictureURL *string   `json:"profile_picture_url,omitempty"`
+}
+
+// UserAutocompleteResponse represents the response from /users/autocomplete.
+type UserAutocompleteResponse struct {
+	Users []UserSummary `json:"users"`
+}
+
+// UserLookupResponse represents the response from /users/lookup.
+type UserLookupResponse struct {
+	User UserSummary `json:"user"`
+}
+
 // ApproveUserResponse represents the response from approving a user
 type ApproveUserResponse struct {
 	ID       uuid.UUID `json:"id"`

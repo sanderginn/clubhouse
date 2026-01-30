@@ -28,4 +28,12 @@ describe('LinkifiedText', () => {
     expect(screen.getByRole('link', { name: 'https://one.com' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'https://two.com' })).toBeInTheDocument();
   });
+
+  it('linkifies @mentions to profiles', () => {
+    render(LinkifiedText, { text: 'Hello @sander and @alex_2' });
+
+    const mentionLink = screen.getByRole('link', { name: '@sander' });
+    expect(mentionLink).toHaveAttribute('href', '/users/sander');
+    expect(screen.getByRole('link', { name: '@alex_2' })).toHaveAttribute('href', '/users/alex_2');
+  });
 });
