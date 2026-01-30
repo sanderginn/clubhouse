@@ -1,11 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if ! command -v git >/dev/null 2>&1; then
-  apt-get update -y
-  apt-get install -y git
-fi
-
 cd frontend
 
 npm ci
