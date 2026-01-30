@@ -31,6 +31,7 @@ type metrics struct {
 	authPasswordResets        metric.Int64Counter
 	ratelimitViolations       metric.Int64Counter
 	ratelimitLockouts         metric.Int64Counter
+	ratelimitCacheKeys        metric.Int64Counter
 	postsCreated              metric.Int64Counter
 	commentsCreated           metric.Int64Counter
 	reactionsAdded            metric.Int64Counter
@@ -239,6 +240,15 @@ func initMetrics() error {
 		ratelimitLockouts, err := meter.Int64Counter(
 			"clubhouse.ratelimit.lockouts",
 			metric.WithDescription("Rate limit lockouts"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		ratelimitCacheKeys, err := meter.Int64Counter(
+			"clubhouse.ratelimit.cache_keys",
+			metric.WithDescription("Rate limit cache key creations"),
 		)
 		if err != nil {
 			metricsInitErr = err
@@ -559,6 +569,7 @@ func initMetrics() error {
 			authPasswordResets:        authPasswordResets,
 			ratelimitViolations:       ratelimitViolations,
 			ratelimitLockouts:         ratelimitLockouts,
+			ratelimitCacheKeys:        ratelimitCacheKeys,
 			postsCreated:              postsCreated,
 			commentsCreated:           commentsCreated,
 			reactionsAdded:            reactionsAdded,
@@ -781,6 +792,18 @@ func RecordRateLimitViolation(ctx context.Context, limitType string) {
 		return
 	}
 	m.ratelimitViolations.Add(ctx, 1, metric.WithAttributes(attribute.String("limit_type", limitType)))
+}
+
+// RecordRateLimitCacheKey increments the rate limit cache key counter.
+func RecordRateLimitCacheKey(ctx context.Context, limitType string) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	if strings.TrimSpace(limitType) == "" {
+		return
+	}
+	m.ratelimitCacheKeys.Add(ctx, 1, metric.WithAttributes(attribute.String("limit_type", limitType)))
 }
 
 // RecordRateLimitLockout increments the rate limit lockout counter.

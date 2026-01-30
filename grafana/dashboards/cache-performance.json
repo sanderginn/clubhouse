@@ -927,13 +927,13 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum by (limit_type) (rate(clubhouse_ratelimit_violations[5m]))",
+          "expr": "sum by (limit_type) (rate(clubhouse_ratelimit_cache_keys_total[5m]))",
           "legendFormat": "{{limit_type}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Rate Limit Key Distribution (by limit type)",
+      "title": "Rate Limit Cache Key Distribution (by limit type)",
       "type": "timeseries"
     },
     {
