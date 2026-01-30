@@ -20,6 +20,7 @@
     497,
     498,
     509,
+    510,
     512,
     513,
     526,
@@ -343,7 +344,7 @@
     {
       "issue_number": 510,
       "title": "Send notifications when a user is mentioned with @",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 0,
@@ -354,7 +355,9 @@
       "assigned_to": "agent-1769814931-8643",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769814931-8643",
       "branch": "feat/issue-510-send-notifications-when-a-user-is-mentio",
-      "claimed_at": "2026-01-30T23:15:31Z"
+      "claimed_at": "2026-01-30T23:15:31Z",
+      "pr_number": 538,
+      "completed_at": "2026-01-30T23:29:02Z"
     },
     {
       "issue_number": 511,
