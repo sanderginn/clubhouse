@@ -445,9 +445,9 @@
     {
       "issue_number": 398,
       "title": "Backend: Add admin timezone configuration endpoint",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769771559-72362",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769771559-72362",
       "dependencies": [],
       "phase": "feature",
       "priority": 5,
@@ -455,7 +455,9 @@
         "enhancement",
         "backend",
         "admin"
-      ]
+      ],
+      "branch": "feat/issue-398-backend-add-admin-timezone-configuration",
+      "claimed_at": "2026-01-30T11:12:39Z"
     },
     {
       "issue_number": 399,
