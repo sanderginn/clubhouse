@@ -203,7 +203,7 @@
     {
       "issue_number": 494,
       "title": "Make post images clickable to view full size",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         489,
         490
@@ -214,7 +214,11 @@
         "enhancement",
         "frontend",
         "ux"
-      ]
+      ],
+      "assigned_to": "agent-1769802145-5035",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769802145-5035",
+      "branch": "feat/issue-494-make-post-images-clickable-to-view-full-",
+      "claimed_at": "2026-01-30T19:42:25Z"
     },
     {
       "issue_number": 495,
