@@ -11,7 +11,9 @@
     isAuthenticated,
     activeSection,
     sections,
-    searchQuery,
+    lastSearchQuery,
+    searchError,
+    isSearching,
     searchStore,
     websocketStore,
     sectionStore,
@@ -304,7 +306,7 @@
             <PostForm />
           </div>
 
-          {#if $searchQuery.trim().length > 0}
+          {#if $isSearching || $searchError || $lastSearchQuery.trim().length > 0}
             <SearchResults />
           {:else}
             <SectionFeed />
