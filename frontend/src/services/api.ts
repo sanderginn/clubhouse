@@ -19,6 +19,8 @@ const CSRF_ERROR_CODES = new Set(['CSRF_TOKEN_REQUIRED', 'INVALID_CSRF_TOKEN']);
 interface ApiError {
   error: string;
   code: string;
+  mfa_required?: boolean;
+  mfaRequired?: boolean;
 }
 
 interface ApiResponse<T> {
@@ -194,8 +196,11 @@ class ApiClient {
 
         const error = new Error(errorData?.error ?? 'An unexpected error occurred') as Error & {
           code?: string;
+          mfaRequired?: boolean;
         };
         error.code = errorData?.code ?? 'UNKNOWN_ERROR';
+        error.mfaRequired =
+          errorData?.mfa_required ?? errorData?.mfaRequired ?? false;
         const logContext = {
           endpoint,
           method,

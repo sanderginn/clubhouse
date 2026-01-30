@@ -8,6 +8,7 @@
     username: string;
     email: string;
     is_admin: boolean;
+    totp_enabled?: boolean;
     approved_at: string;
     created_at: string;
   }
@@ -255,6 +256,19 @@
                 {#if user.is_admin}
                   <span class="rounded-full bg-indigo-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-600">
                     Admin
+                  </span>
+                {/if}
+                {#if user.totp_enabled === true}
+                  <span class="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                    MFA Enabled
+                  </span>
+                {:else if user.totp_enabled === false}
+                  <span class="rounded-full bg-rose-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-rose-700">
+                    MFA Missing
+                  </span>
+                {:else}
+                  <span class="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                    MFA Unknown
                   </span>
                 {/if}
               </div>
