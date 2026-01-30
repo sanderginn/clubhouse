@@ -2,7 +2,7 @@
   import { get } from 'svelte/store';
   import { onMount, onDestroy } from 'svelte';
   import './styles/globals.css';
-  import { Layout, PostForm, SectionFeed, SearchBar, SearchResults, InstallPrompt } from './components';
+  import { Layout, PostForm, SectionFeed, SearchResults, InstallPrompt } from './components';
   import UserProfile from './components/UserProfile.svelte';
   import { Login, Register, AdminPanel, PasswordReset, Settings } from './routes';
   import {
@@ -261,8 +261,6 @@
             <span class="text-3xl">{$activeSection.icon}</span>
             <h1 class="text-2xl font-bold text-gray-900">{$activeSection.name}</h1>
           </div>
-
-          <SearchBar />
 
           <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <PostForm />

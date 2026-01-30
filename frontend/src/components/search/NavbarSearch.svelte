@@ -86,6 +86,10 @@
     }
     focusSearch();
   }
+
+  $: expandedClasses = isExpanded
+    ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto'
+    : 'opacity-0 -translate-y-2 scale-95 pointer-events-none';
 </script>
 
 <div class="relative" bind:this={containerEl}>
@@ -93,6 +97,7 @@
     class="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100"
     type="button"
     aria-label="Open search"
+    aria-expanded={isExpanded}
     on:click={toggleExpanded}
   >
     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -107,9 +112,7 @@
 
   <form
     on:submit|preventDefault={handleSubmit}
-    class={`absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-md bg-white border border-gray-200 shadow-lg rounded-xl p-3 space-y-3 ${
-      isExpanded ? 'block' : 'hidden'
-    } lg:static lg:block lg:mt-0 lg:w-96 lg:shadow-none lg:border-gray-200 lg:rounded-lg`}
+    class={`absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-md bg-white border border-gray-200 shadow-lg rounded-xl p-3 space-y-3 transform transition-all duration-200 ease-out origin-top-right ${expandedClasses} lg:static lg:mt-0 lg:w-96 lg:shadow-none lg:border-gray-200 lg:rounded-lg lg:opacity-100 lg:translate-y-0 lg:scale-100 lg:pointer-events-auto`}
   >
     <div class="relative">
       <label for="navbar-search-input" class="sr-only">Search</label>
