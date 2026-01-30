@@ -71,9 +71,9 @@
     {
       "issue_number": 439,
       "title": "Tempo: Configure service map and trace exploration",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769797253-22758",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769797253-22758",
       "dependencies": [
         417,
         418
@@ -85,7 +85,9 @@
         "grafana",
         "tempo",
         "tracing"
-      ]
+      ],
+      "branch": "feat/issue-439-tempo-configure-service-map-and-trace-ex",
+      "claimed_at": "2026-01-30T18:20:53Z"
     }
   ]
 }
