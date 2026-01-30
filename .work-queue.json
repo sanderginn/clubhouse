@@ -28,6 +28,7 @@
     426,
     427,
     428,
+    429,
     430,
     431,
     433,
@@ -726,7 +727,7 @@
     {
       "issue_number": 429,
       "title": "Grafana: Create authentication and security metrics dashboard",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769766811-51982",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769766811-51982",
       "dependencies": [
@@ -740,7 +741,9 @@
         "dashboard"
       ],
       "branch": "feat/issue-429-grafana-create-authentication-and-securi",
-      "claimed_at": "2026-01-30T09:53:31Z"
+      "claimed_at": "2026-01-30T09:53:31Z",
+      "pr_number": 470,
+      "completed_at": "2026-01-30T10:07:45Z"
     },
     {
       "issue_number": 430,
