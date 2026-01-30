@@ -138,8 +138,6 @@
 
     deleteCommentErrors = { ...deleteCommentErrors, [commentId]: null };
     deletingCommentIds = new Set(deletingCommentIds).add(commentId);
-    closeMenus();
-
     try {
       await api.deleteComment(commentId);
       const removedCount = commentStore.removeComment(postId, commentId);

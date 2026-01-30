@@ -166,8 +166,7 @@ describe('CommentThread', () => {
     ], null, false);
 
     render(CommentThread, { postId: 'post-1', commentCount: 1 });
-    await fireEvent.click(screen.getByRole('button', { name: 'Open comment actions' }));
-    expect(screen.getByRole('menuitem', { name: 'Delete' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
   });
 
   it('shows delete action for admins on others comments', async () => {
@@ -192,7 +191,7 @@ describe('CommentThread', () => {
     ], null, false);
 
     render(CommentThread, { postId: 'post-1', commentCount: 1 });
-    await fireEvent.click(screen.getByRole('button', { name: 'Open comment actions' }));
-    expect(screen.getByRole('menuitem', { name: 'Delete' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
   });
 });
