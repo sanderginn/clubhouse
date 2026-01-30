@@ -9,3 +9,4 @@ export * from './websocketStore';
 export * from './searchStore';
 export * from './pwaStore';
 export * from './threadRouteStore';
+export * from './configStore';

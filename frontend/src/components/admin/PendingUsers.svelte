@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import { api } from '../../services/api';
+  import { displayTimezone } from '../../stores';
+  import { formatInTimezone } from '../../lib/time';
 
   interface PendingUser {
     id: string;
@@ -16,7 +18,15 @@
   let pendingUsersAbortController: AbortController | null = null;
   let pendingUsersTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
-  const formatDate = (value: string) => new Date(value).toLocaleString();
+  const formatDate = (value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Unknown date';
+    return formatInTimezone(
+      date,
+      { dateStyle: 'medium', timeStyle: 'short' },
+      $displayTimezone
+    );
+  };
 
   const clearPendingUsersTimeout = () => {
     if (pendingUsersTimeoutId) {

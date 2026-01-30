@@ -19,6 +19,7 @@
     activeProfileUserId,
     uiStore,
     threadRouteStore,
+    configStore,
   } from './stores';
   import { parseProfileUserId } from './services/profileNavigation';
   import {
@@ -46,6 +47,7 @@
     authStore.checkSession();
     websocketStore.init();
     pwaStore.init();
+    configStore.load();
     syncRouteFromLocation();
 
     if (typeof window !== 'undefined') {

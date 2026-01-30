@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { displayTimezone } from '../stores';
+  import { formatInTimezone, getYearInTimezone } from '../lib/time';
 
   export let dateString: string | null | undefined;
   export let className = '';
@@ -8,14 +10,14 @@
   let tooltipId = '';
   let lastPointerType: string | null = null;
 
-  $: relativeLabel = formatRelative(dateString);
-  $: exactLabel = formatExact(dateString);
+  $: relativeLabel = formatRelative(dateString, $displayTimezone);
+  $: exactLabel = formatExact(dateString, $displayTimezone);
 
   onMount(() => {
     tooltipId = `timestamp-tooltip-${Math.random().toString(36).slice(2, 10)}`;
   });
 
-  function formatRelative(value?: string | null): string {
+  function formatRelative(value: string | null | undefined, timezone?: string | null): string {
     if (!value) return 'Unknown date';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return 'Unknown date';
@@ -31,29 +33,39 @@
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
 
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
-    });
+    const nowYear = getYearInTimezone(now, timezone);
+    const dateYear = getYearInTimezone(date, timezone);
+    const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+    if (dateYear !== nowYear) {
+      options.year = 'numeric';
+    }
+    return formatInTimezone(date, options, timezone);
   }
 
-  function formatExact(value?: string | null): string {
+  function formatExact(value: string | null | undefined, timezone?: string | null): string {
     if (!value) return '';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '';
 
-    const datePart = date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-    const timePart = date.toLocaleTimeString('en-US', {
+    const datePart = formatInTimezone(
+      date,
+      {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      },
+      timezone
+    );
+    const timePart = formatInTimezone(
+      date,
+      {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
       hour12: false,
-    });
+      },
+      timezone
+    );
 
     return `${datePart} ${timePart}`;
   }

@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { displayTimezone } from '../stores';
+  import { formatInTimezone } from '../lib/time';
 
   export let createdAt: string | null | undefined;
   export let updatedAt: string | null | undefined;
@@ -8,7 +10,7 @@
   let tooltipId = '';
 
   $: isEdited = isEditedAt(createdAt, updatedAt);
-  $: tooltipLabel = updatedAt ? `Edited ${formatEditedAt(updatedAt)}` : '';
+  $: tooltipLabel = updatedAt ? `Edited ${formatEditedAt(updatedAt, $displayTimezone)}` : '';
 
   onMount(() => {
     tooltipId = `edited-tooltip-${Math.random().toString(36).slice(2, 10)}`;
@@ -22,20 +24,28 @@
     return updatedTime > createdTime;
   }
 
-  function formatEditedAt(dateString: string): string {
+  function formatEditedAt(dateString: string, timezone: string | null | undefined): string {
     const date = new Date(dateString);
     if (Number.isNaN(date.getTime())) return '';
-    const datePart = date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-    const timePart = date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-    });
+    const datePart = formatInTimezone(
+      date,
+      {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      },
+      timezone
+    );
+    const timePart = formatInTimezone(
+      date,
+      {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      },
+      timezone
+    );
     return `${datePart} ${timePart}`;
   }
 

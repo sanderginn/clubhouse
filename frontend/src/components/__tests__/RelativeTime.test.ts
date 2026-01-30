@@ -1,28 +1,41 @@
 import { render, screen, fireEvent, cleanup } from '@testing-library/svelte';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { configStore } from '../../stores';
+import { formatInTimezone } from '../../lib/time';
 
 const { default: RelativeTime } = await import('../RelativeTime.svelte');
 
 const baseDate = new Date('2026-01-29T08:47:31Z');
-const expectedTooltip = `${baseDate.toLocaleDateString('en-US', {
-  month: 'short',
-  day: 'numeric',
-  year: 'numeric',
-})} ${baseDate.toLocaleTimeString('en-US', {
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit',
-  hour12: false,
-})}`;
+const testTimezone = 'UTC';
+const expectedTooltip = `${formatInTimezone(
+  baseDate,
+  {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  },
+  testTimezone
+)} ${formatInTimezone(
+  baseDate,
+  {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  },
+  testTimezone
+)}`;
 
 describe('RelativeTime', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-01-29T09:00:00Z'));
+    configStore.setDisplayTimezone(testTimezone);
   });
 
   afterEach(() => {
     cleanup();
+    configStore.setDisplayTimezone(null);
     vi.useRealTimers();
   });
 

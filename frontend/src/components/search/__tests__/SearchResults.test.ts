@@ -15,6 +15,7 @@ const storeRefs: {
   searchScope: ReturnType<typeof writable>;
   activeSection: ReturnType<typeof writable>;
   sections: ReturnType<typeof writable>;
+  displayTimezone: ReturnType<typeof writable>;
   sectionStore: { setActiveSection: ReturnType<typeof vi.fn> };
   searchStore: { setQuery: ReturnType<typeof vi.fn> };
   postStore: { upsertPost: ReturnType<typeof vi.fn> };
@@ -32,6 +33,7 @@ vi.mock('../../../stores', () => {
   storeRefs.searchScope = writable<'section' | 'global'>('section');
   storeRefs.activeSection = writable<{ id: string; name: string } | null>(null);
   storeRefs.sections = writable([]);
+  storeRefs.displayTimezone = writable<string | null>(null);
   storeRefs.sectionStore = { setActiveSection: vi.fn() };
   storeRefs.searchStore = { setQuery: vi.fn() };
   storeRefs.postStore = { upsertPost: vi.fn() };
@@ -57,6 +59,7 @@ beforeEach(() => {
   storeRefs.searchScope.set('section');
   storeRefs.activeSection.set(null);
   storeRefs.sections.set([]);
+  storeRefs.displayTimezone.set(null);
 });
 
 afterEach(() => {
