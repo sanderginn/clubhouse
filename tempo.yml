@@ -40,7 +40,5 @@ metrics_generator:
       source: tempo
       cluster: clubhouse
   processor:
-    service_graphs:
-      enabled: true
-    span_metrics:
-      enabled: true
+    service_graphs: {}
+    span_metrics: {}
