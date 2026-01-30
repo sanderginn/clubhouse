@@ -351,6 +351,7 @@ func (h *AdminHandler) VerifyTOTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.totpService.VerifyAdmin(r.Context(), session.UserID, req.Code); err != nil {
+		observability.RecordAuthTOTPVerification(r.Context(), "failure")
 		switch {
 		case errors.Is(err, services.ErrTOTPRequired):
 			writeError(r.Context(), w, http.StatusBadRequest, "TOTP_REQUIRED", "TOTP code required")
@@ -369,6 +370,8 @@ func (h *AdminHandler) VerifyTOTP(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	observability.RecordAuthTOTPVerification(r.Context(), "success")
 
 	response := models.TOTPVerifyResponse{
 		Message: "TOTP enabled",
@@ -1187,6 +1190,8 @@ func (h *AdminHandler) GeneratePasswordResetToken(w http.ResponseWriter, r *http
 		writeError(r.Context(), w, http.StatusInternalServerError, "TOKEN_GENERATION_FAILED", "Failed to generate password reset token")
 		return
 	}
+
+	observability.RecordAuthPasswordReset(r.Context(), "token_generated")
 
 	response := models.GeneratePasswordResetTokenResponse{
 		Token:     token.Token,

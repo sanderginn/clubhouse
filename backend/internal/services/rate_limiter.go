@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/sanderginn/clubhouse/internal/observability"
 )
 
 const (
@@ -51,20 +52,22 @@ type ContentRateLimitConfig struct {
 
 // RateLimiter uses Redis to enforce a fixed-window rate limit.
 type RateLimiter struct {
-	redis  *redis.Client
-	prefix string
-	limit  int
-	window time.Duration
-	script *redis.Script
+	redis     *redis.Client
+	prefix    string
+	limit     int
+	window    time.Duration
+	limitType string
+	script    *redis.Script
 }
 
 // NewRateLimiter creates a Redis-backed rate limiter.
-func NewRateLimiter(redisClient *redis.Client, prefix string, config RateLimitConfig) *RateLimiter {
+func NewRateLimiter(redisClient *redis.Client, prefix string, config RateLimitConfig, limitType string) *RateLimiter {
 	return &RateLimiter{
-		redis:  redisClient,
-		prefix: prefix,
-		limit:  config.Limit,
-		window: config.Window,
+		redis:     redisClient,
+		prefix:    prefix,
+		limit:     config.Limit,
+		window:    config.Window,
+		limitType: limitType,
 		script: redis.NewScript(`
 local current = redis.call("INCR", KEYS[1])
 if current == 1 then
@@ -91,6 +94,10 @@ func (l *RateLimiter) Allow(ctx context.Context, key string) (bool, error) {
 		return false, err
 	}
 
+	if current > l.limit {
+		observability.RecordRateLimitViolation(ctx, l.limitType)
+	}
+
 	return current <= l.limit, nil
 }
 
@@ -104,8 +111,8 @@ type AuthRateLimiter struct {
 func NewAuthRateLimiter(redis *redis.Client) *AuthRateLimiter {
 	config := loadAuthRateLimitConfig()
 	return &AuthRateLimiter{
-		ipLimiter:         NewRateLimiter(redis, "rate:auth:ip:", config.IP),
-		identifierLimiter: NewRateLimiter(redis, "rate:auth:identifier:", config.Identifier),
+		ipLimiter:         NewRateLimiter(redis, "rate:auth:ip:", config.IP, "auth_ip"),
+		identifierLimiter: NewRateLimiter(redis, "rate:auth:identifier:", config.Identifier, "auth_id"),
 	}
 }
 
@@ -115,7 +122,7 @@ func NewPostRateLimiter(redis *redis.Client) *RateLimiter {
 		return nil
 	}
 	config := loadContentRateLimitConfig()
-	return NewRateLimiter(redis, "rate:content:post:", config.Post)
+	return NewRateLimiter(redis, "rate:content:post:", config.Post, "content_post")
 }
 
 // NewCommentRateLimiter creates a rate limiter for comment creation.
@@ -124,7 +131,7 @@ func NewCommentRateLimiter(redis *redis.Client) *RateLimiter {
 		return nil
 	}
 	config := loadContentRateLimitConfig()
-	return NewRateLimiter(redis, "rate:content:comment:", config.Comment)
+	return NewRateLimiter(redis, "rate:content:comment:", config.Comment, "content_comment")
 }
 
 // Allow checks the IP and identifier rate limits.
