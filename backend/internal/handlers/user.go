@@ -246,6 +246,10 @@ func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	observability.LogInfo(r.Context(), "user profile updated",
+		"user_id", userID.String(),
+	)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -299,6 +303,11 @@ func (h *UserHandler) EnrollMFA(w http.ResponseWriter, r *http.Request) {
 	h.logUserAudit(r.Context(), "enroll_mfa", session.UserID, map[string]interface{}{
 		"method": "totp",
 	})
+
+	observability.LogInfo(r.Context(), "mfa enrollment created",
+		"user_id", session.UserID.String(),
+		"method", "totp",
+	)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -374,6 +383,11 @@ func (h *UserHandler) VerifyMFA(w http.ResponseWriter, r *http.Request) {
 		"method": "totp",
 	})
 
+	observability.LogInfo(r.Context(), "mfa enabled",
+		"user_id", session.UserID.String(),
+		"method", "totp",
+	)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -440,6 +454,11 @@ func (h *UserHandler) DisableMFA(w http.ResponseWriter, r *http.Request) {
 	h.logUserAudit(r.Context(), "disable_mfa", session.UserID, map[string]interface{}{
 		"method": "totp",
 	})
+
+	observability.LogInfo(r.Context(), "mfa disabled",
+		"user_id", session.UserID.String(),
+		"method", "totp",
+	)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -559,6 +578,12 @@ func (h *UserHandler) UpdateMySectionSubscription(w http.ResponseWriter, r *http
 		}
 		return
 	}
+
+	observability.LogInfo(r.Context(), "section subscription updated",
+		"user_id", userID.String(),
+		"section_id", sectionID.String(),
+		"opted_out", strconv.FormatBool(*req.OptedOut),
+	)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

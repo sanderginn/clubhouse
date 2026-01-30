@@ -105,6 +105,12 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	_ = publishMentions(publishCtx, h.redis, mentionedUserIDs, userID, &post.ID, nil)
 	cancel()
 
+	observability.LogInfo(r.Context(), "post created",
+		"post_id", post.ID.String(),
+		"user_id", userID.String(),
+		"section_id", post.SectionID.String(),
+	)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -183,6 +189,12 @@ func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 	_ = h.notify.CreateMentionNotifications(publishCtx, mentionedUserIDs, userID, post.SectionID, post.ID, nil)
 	_ = publishMentions(publishCtx, h.redis, mentionedUserIDs, userID, &post.ID, nil)
 	cancel()
+
+	observability.LogInfo(r.Context(), "post updated",
+		"post_id", post.ID.String(),
+		"user_id", userID.String(),
+		"section_id", post.SectionID.String(),
+	)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -363,6 +375,13 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		Message: "Post deleted successfully",
 	}
 
+	observability.LogInfo(r.Context(), "post deleted",
+		"post_id", post.ID.String(),
+		"user_id", userID.String(),
+		"section_id", post.SectionID.String(),
+		"is_admin", strconv.FormatBool(isAdmin),
+	)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -435,6 +454,13 @@ func (h *PostHandler) RestorePost(w http.ResponseWriter, r *http.Request) {
 	response := models.RestorePostResponse{
 		Post: *post,
 	}
+
+	observability.LogInfo(r.Context(), "post restored",
+		"post_id", post.ID.String(),
+		"user_id", userID.String(),
+		"section_id", post.SectionID.String(),
+		"is_admin", strconv.FormatBool(session.IsAdmin),
+	)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -138,6 +139,11 @@ func (h *AdminHandler) ApproveUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	observability.LogInfo(r.Context(), "user approved",
+		"user_id", userID.String(),
+		"admin_user_id", adminUserID.String(),
+	)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(approveResponse); err != nil {
@@ -205,6 +211,11 @@ func (h *AdminHandler) PromoteUser(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	observability.LogInfo(r.Context(), "user promoted",
+		"user_id", userID.String(),
+		"admin_user_id", adminUserID.String(),
+	)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(promoteResponse); err != nil {
@@ -253,6 +264,11 @@ func (h *AdminHandler) RejectUser(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	observability.LogInfo(r.Context(), "user rejected",
+		"user_id", userID.String(),
+		"admin_user_id", adminUserID.String(),
+	)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -430,6 +446,11 @@ func (h *AdminHandler) HardDeletePost(w http.ResponseWriter, r *http.Request) {
 		Message: "Post permanently deleted",
 	}
 
+	observability.LogInfo(r.Context(), "post hard deleted",
+		"post_id", postID.String(),
+		"admin_user_id", adminUserID.String(),
+	)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -479,6 +500,11 @@ func (h *AdminHandler) HardDeleteComment(w http.ResponseWriter, r *http.Request)
 		ID:      commentID,
 		Message: "Comment permanently deleted",
 	}
+
+	observability.LogInfo(r.Context(), "comment hard deleted",
+		"comment_id", commentID.String(),
+		"admin_user_id", adminUserID.String(),
+	)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -532,6 +558,11 @@ func (h *AdminHandler) AdminRestorePost(w http.ResponseWriter, r *http.Request) 
 		Post: *post,
 	}
 
+	observability.LogInfo(r.Context(), "post restored",
+		"post_id", postID.String(),
+		"admin_user_id", adminUserID.String(),
+	)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -583,6 +614,11 @@ func (h *AdminHandler) AdminRestoreComment(w http.ResponseWriter, r *http.Reques
 	response := models.RestoreCommentResponse{
 		Comment: *comment,
 	}
+
+	observability.LogInfo(r.Context(), "comment restored",
+		"comment_id", commentID.String(),
+		"admin_user_id", adminUserID.String(),
+	)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -674,6 +710,16 @@ func (h *AdminHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 			"new_value": config.MFARequired,
 		})
 	}
+
+	adminUserID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		adminUserID = uuid.Nil
+	}
+	observability.LogInfo(r.Context(), "config updated",
+		"admin_user_id", adminUserID.String(),
+		"link_metadata_enabled", strconv.FormatBool(config.LinkMetadataEnabled),
+		"mfa_required", strconv.FormatBool(config.MFARequired),
+	)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
