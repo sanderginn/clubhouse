@@ -314,6 +314,285 @@
       "claimed_at": "2026-01-30T19:34:26Z",
       "pr_number": 504,
       "completed_at": "2026-01-30T19:41:45Z"
+    },
+    {
+      "issue_number": 509,
+      "title": "Add delete button for posts and comments",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 0,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ]
+    },
+    {
+      "issue_number": 510,
+      "title": "Send notifications when a user is mentioned with @",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 0,
+      "labels": [
+        "enhancement",
+        "backend"
+      ]
+    },
+    {
+      "issue_number": 511,
+      "title": "Add escape mechanism for @ symbol to prevent unwanted mentions",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 1,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "backend"
+      ]
+    },
+    {
+      "issue_number": 512,
+      "title": "Fix search box: don't clear container until search is executed",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 1,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ]
+    },
+    {
+      "issue_number": 513,
+      "title": "Fix quirky edit button styling on thread replies",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 2,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ]
+    },
+    {
+      "issue_number": 514,
+      "title": "Improve search box alignment with main container",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 2,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ]
+    },
+    {
+      "issue_number": 515,
+      "title": "Backend: Support multiple images per post",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 3,
+      "labels": [
+        "enhancement",
+        "backend"
+      ]
+    },
+    {
+      "issue_number": 516,
+      "title": "Frontend: Upload multiple images in post creation",
+      "status": "pending",
+      "dependencies": [
+        515
+      ],
+      "phase": "feature",
+      "priority": 3,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ]
+    },
+    {
+      "issue_number": 517,
+      "title": "Frontend: Display multiple post images as carousel",
+      "status": "pending",
+      "dependencies": [
+        515,
+        516
+      ],
+      "phase": "feature",
+      "priority": 3,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ]
+    },
+    {
+      "issue_number": 518,
+      "title": "Frontend: Add lightbox navigation between multiple images",
+      "status": "pending",
+      "dependencies": [
+        515,
+        517
+      ],
+      "phase": "feature",
+      "priority": 3,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ]
+    },
+    {
+      "issue_number": 519,
+      "title": "Add reply-to-specific-image functionality",
+      "status": "pending",
+      "dependencies": [
+        515,
+        517
+      ],
+      "phase": "feature",
+      "priority": 3,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "backend",
+        "ux"
+      ]
+    },
+    {
+      "issue_number": 520,
+      "title": "Improve moderation console layout",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 4,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ]
+    },
+    {
+      "issue_number": 521,
+      "title": "Standardize \"Back to feed\" navigation text across all pages",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 4,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ]
+    },
+    {
+      "issue_number": 522,
+      "title": "Unify thread UI in user profile comments section",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 4,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ]
+    },
+    {
+      "issue_number": 523,
+      "title": "Improve post editing image buttons layout",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 4,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ]
+    },
+    {
+      "issue_number": 524,
+      "title": "Improve replies emoji and counter layout",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 4,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ]
+    },
+    {
+      "issue_number": 525,
+      "title": "Reduce padding on highlighted words (@mentions and search matches)",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 4,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ]
+    },
+    {
+      "issue_number": 526,
+      "title": "Fix Grafana xychart plugin registration error on startup",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 5,
+      "labels": [
+        "bug",
+        "observability"
+      ]
+    },
+    {
+      "issue_number": 527,
+      "title": "Fix Grafana plugins-bundled directory warning on startup",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 5,
+      "labels": [
+        "bug",
+        "observability"
+      ]
+    },
+    {
+      "issue_number": 528,
+      "title": "Make Alertmanager log level configurable",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 5,
+      "labels": [
+        "enhancement",
+        "observability"
+      ]
+    },
+    {
+      "issue_number": 529,
+      "title": "Make frontend Vite proxy log level configurable",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 5,
+      "labels": [
+        "enhancement",
+        "frontend"
+      ]
     }
   ]
 }
