@@ -25,6 +25,12 @@ func (s *AuthEventService) LogEvent(ctx context.Context, event *models.AuthEvent
 	ctx, span := otel.Tracer("clubhouse.auth_events").Start(ctx, "AuthEventService.LogEvent")
 	defer span.End()
 
+	if s == nil || s.db == nil {
+		err := fmt.Errorf("auth event service is not configured")
+		recordSpanError(span, err)
+		return err
+	}
+
 	if event == nil {
 		err := fmt.Errorf("auth event is required")
 		recordSpanError(span, err)
@@ -37,9 +43,12 @@ func (s *AuthEventService) LogEvent(ctx context.Context, event *models.AuthEvent
 	}
 
 	span.SetAttributes(
-		attribute.String("user_id", event.UserID.String()),
+		attribute.Bool("has_user_id", event.UserID != nil),
 		attribute.String("event_type", event.EventType),
 	)
+	if event.UserID != nil {
+		span.SetAttributes(attribute.String("user_id", event.UserID.String()))
+	}
 
 	query := `
 		INSERT INTO auth_events (user_id, identifier, event_type, ip_address, user_agent, created_at)
