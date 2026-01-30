@@ -91,6 +91,45 @@
       "claimed_at": "2026-01-30T18:20:53Z",
       "pr_number": 488,
       "completed_at": "2026-01-30T18:38:58Z"
+    },
+    {
+      "issue_number": 489,
+      "title": "Fix Loki config: compactor.delete-request-store not configured for retention",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 0,
+      "labels": [
+        "bug",
+        "observability",
+        "loki"
+      ]
+    },
+    {
+      "issue_number": 490,
+      "title": "Fix Tempo config: deprecated `enabled` fields in metrics_generator",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 0,
+      "labels": [
+        "bug",
+        "observability",
+        "tempo",
+        "tracing"
+      ]
+    },
+    {
+      "issue_number": 491,
+      "title": "Link metadata fetcher should skip internal upload URLs",
+      "status": "pending",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 1,
+      "labels": [
+        "bug",
+        "backend"
+      ]
     }
   ]
 }
