@@ -635,9 +635,9 @@
     {
       "issue_number": 425,
       "title": "[Low] Add success logging (LogInfo) for CRUD operations",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769766156-25654",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769766156-25654",
       "dependencies": [
         415,
         416
@@ -647,7 +647,9 @@
       "labels": [
         "observability",
         "backend"
-      ]
+      ],
+      "branch": "feat/issue-425-low-add-success-logging-loginfo-for-crud",
+      "claimed_at": "2026-01-30T09:42:36Z"
     },
     {
       "issue_number": 426,
