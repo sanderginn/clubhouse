@@ -99,12 +99,36 @@ describe('SearchResults', () => {
     expect(screen.getByText('No results for "hello".')).toBeInTheDocument();
   });
 
-  it('hides results when query changes', () => {
+  it('keeps last empty results when query changes', () => {
     storeRefs.searchQuery.set('new');
     storeRefs.lastSearchQuery.set('old');
     storeRefs.lastSearchScope.set('section');
     render(SearchResults);
-    expect(screen.getByText('Press Search to see results.')).toBeInTheDocument();
+    expect(screen.getByText('No results for "old".')).toBeInTheDocument();
+    expect(screen.getByText('Press Search to refresh results.')).toBeInTheDocument();
+  });
+
+  it('keeps last results when query changes', () => {
+    storeRefs.searchQuery.set('updated');
+    storeRefs.lastSearchQuery.set('original');
+    storeRefs.lastSearchScope.set('section');
+    storeRefs.searchResults.set([
+      {
+        type: 'post',
+        score: 1,
+        post: {
+          id: 'post-1',
+          sectionId: 'section-1',
+          content: 'Original post',
+          createdAt: '2025-01-01T00:00:00Z',
+          user: { id: 'user-1', username: 'Sander' },
+        },
+      },
+    ]);
+
+    render(SearchResults);
+    expect(screen.getByText('post-1')).toBeInTheDocument();
+    expect(screen.getByText('Press Search to refresh results for "updated".')).toBeInTheDocument();
   });
 
   it('renders comment results', () => {

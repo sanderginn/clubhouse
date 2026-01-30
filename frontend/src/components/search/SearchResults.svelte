@@ -221,15 +221,17 @@
 
   $: normalizedQuery = $searchQuery.trim();
   $: hasQuery = normalizedQuery.length > 0;
-  $: showResults = $lastSearchQuery && $lastSearchQuery === normalizedQuery;
-  $: displayScope = showResults && $lastSearchScope ? $lastSearchScope : $searchScope;
+  $: hasSearched = $lastSearchQuery.length > 0;
+  $: queryMatchesLastSearch = hasSearched && $lastSearchQuery === normalizedQuery;
+  $: showResults = hasSearched;
+  $: displayScope = hasSearched && $lastSearchScope ? $lastSearchScope : $searchScope;
   $: isGlobalScope = displayScope === 'global';
   $: showParentSectionPill = displayScope === 'global';
   $: sectionGroups = isGlobalScope ? buildSectionGroups($searchResults, $sections) : [];
 </script>
 
 <section class="space-y-4">
-  {#if !hasQuery}
+  {#if !hasSearched && !hasQuery}
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
       <p class="text-gray-500">Start typing to search posts and comments.</p>
     </div>
@@ -254,6 +256,9 @@
   {:else if showResults && $searchResults.length === 0}
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
       <p class="text-gray-500">No results for "{$lastSearchQuery}".</p>
+      {#if hasQuery && !queryMatchesLastSearch}
+        <p class="text-sm text-gray-400 mt-2">Press Search to refresh results.</p>
+      {/if}
     </div>
   {:else if !showResults}
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
@@ -280,6 +285,12 @@
         {/if}
       </span>
     </div>
+
+    {#if hasQuery && !queryMatchesLastSearch}
+      <div class="rounded-lg border border-blue-100 bg-blue-50 px-4 py-2 text-sm text-blue-700">
+        Press Search to refresh results for "{normalizedQuery}".
+      </div>
+    {/if}
 
     {#if $lastSearchScope && $lastSearchScope !== $searchScope}
       <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-700">
