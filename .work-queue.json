@@ -30,6 +30,7 @@
     430,
     431,
     433,
+    434,
     441
   ],
   "issues": [
@@ -816,7 +817,7 @@
     {
       "issue_number": 434,
       "title": "Prometheus: Add authentication security alerting rules",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769766813-52068",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769766813-52068",
       "dependencies": [
@@ -831,7 +832,9 @@
         "alerting"
       ],
       "branch": "feat/issue-434-prometheus-add-authentication-security-a",
-      "claimed_at": "2026-01-30T09:53:33Z"
+      "claimed_at": "2026-01-30T09:53:33Z",
+      "pr_number": 468,
+      "completed_at": "2026-01-30T09:58:51Z"
     },
     {
       "issue_number": 435,
