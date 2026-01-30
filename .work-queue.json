@@ -6,7 +6,8 @@
   },
   "completed_issues": [
     415,
-    417
+    417,
+    418
   ],
   "issues": [
     {
@@ -50,7 +51,7 @@
     {
       "issue_number": 418,
       "title": "[High] Add distributed tracing spans to service layer",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         415
       ],
@@ -63,7 +64,9 @@
       "assigned_to": "agent-1769794114-89743",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769794114-89743",
       "branch": "feat/issue-418-high-add-distributed-tracing-spans-to-se",
-      "claimed_at": "2026-01-30T17:28:34Z"
+      "claimed_at": "2026-01-30T17:28:34Z",
+      "pr_number": 487,
+      "completed_at": "2026-01-30T18:20:30Z"
     },
     {
       "issue_number": 439,
