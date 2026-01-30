@@ -38,12 +38,14 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 
 	// Validate input
 	if err := validateCreateCommentInput(req); err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 
 	// Parse and validate post ID
 	postID, err := uuid.Parse(req.PostID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("invalid post id")
 	}
 	span.SetAttributes(attribute.String("post_id", postID.String()))
@@ -53,6 +55,10 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 	err = s.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM posts WHERE id = $1 AND deleted_at IS NULL)", postID).
 		Scan(&postExists)
 	if err != nil || !postExists {
+		if err == nil {
+			err = fmt.Errorf("post not found")
+		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("post not found")
 	}
 
@@ -61,6 +67,7 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 	if req.ParentCommentID != nil {
 		parsedParentID, err := uuid.Parse(*req.ParentCommentID)
 		if err != nil {
+			recordSpanError(span, err)
 			return nil, fmt.Errorf("invalid parent comment id")
 		}
 
@@ -73,6 +80,10 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 			postID,
 		).Scan(&parentExists)
 		if err != nil || !parentExists {
+			if err == nil {
+				err = fmt.Errorf("parent comment not found")
+			}
+			recordSpanError(span, err)
 			return nil, fmt.Errorf("parent comment not found")
 		}
 
@@ -87,6 +98,7 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 	// Begin transaction
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
@@ -105,6 +117,7 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 		Scan(&comment.ID, &comment.UserID, &comment.PostID, &comment.ParentCommentID, &comment.Content, &comment.CreatedAt)
 
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create comment: %w", err)
 	}
 
@@ -132,6 +145,7 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 				Scan(&link.ID, &link.URL, &link.CreatedAt)
 
 			if err != nil {
+				recordSpanError(span, err)
 				return nil, fmt.Errorf("failed to create link: %w", err)
 			}
 
@@ -151,12 +165,14 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 		&user.ID, &user.Username, &user.Email, &user.ProfilePictureURL, &user.Bio, &user.IsAdmin, &user.CreatedAt,
 	)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to fetch comment user: %w", err)
 	}
 	comment.User = &user
 
 	// Commit transaction
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -177,6 +193,7 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 	defer span.End()
 
 	if err := validateUpdateCommentInput(req); err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 
@@ -196,18 +213,24 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 	`, commentID).Scan(&ownerID, &previousContent, &postID, &sectionID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("comment not found")
+			notFoundErr := errors.New("comment not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to fetch comment owner: %w", err)
 	}
 
 	if ownerID != userID {
-		return nil, errors.New("unauthorized to edit this comment")
+		unauthorizedErr := errors.New("unauthorized to edit this comment")
+		recordSpanError(span, unauthorizedErr)
+		return nil, unauthorizedErr
 	}
 
 	if req.Links != nil {
 		existingURLs, err := getCommentLinkURLs(ctx, s.db, commentID)
 		if err != nil {
+			recordSpanError(span, err)
 			return nil, fmt.Errorf("failed to fetch comment links: %w", err)
 		}
 
@@ -219,6 +242,7 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
@@ -231,11 +255,13 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 		WHERE id = $2
 	`, trimmedContent, commentID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to update comment: %w", err)
 	}
 
 	if req.Links != nil && linksChanged {
 		if _, err := tx.ExecContext(ctx, "DELETE FROM links WHERE comment_id = $1", commentID); err != nil {
+			recordSpanError(span, err)
 			return nil, fmt.Errorf("failed to delete comment links: %w", err)
 		}
 
@@ -253,6 +279,7 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 					VALUES ($1, $2, $3, $4, now())
 				`, linkID, commentID, linkReq.URL, metadataValue)
 				if err != nil {
+					recordSpanError(span, err)
 					return nil, fmt.Errorf("failed to create link: %w", err)
 				}
 			}
@@ -274,10 +301,12 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 
 	auditService := NewAuditService(tx)
 	if err := auditService.LogAuditWithMetadata(ctx, "update_comment", userID, ownerID, metadata); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 

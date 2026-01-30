@@ -7,6 +7,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/models"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type SectionService struct {
@@ -18,6 +20,9 @@ func NewSectionService(db *sql.DB) *SectionService {
 }
 
 func (s *SectionService) ListSections(ctx context.Context) ([]models.Section, error) {
+	ctx, span := otel.Tracer("clubhouse.sections").Start(ctx, "SectionService.ListSections")
+	defer span.End()
+
 	query := `
 		SELECT id, name, type
 		FROM sections
@@ -35,6 +40,7 @@ func (s *SectionService) ListSections(ctx context.Context) ([]models.Section, er
 
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -43,12 +49,14 @@ func (s *SectionService) ListSections(ctx context.Context) ([]models.Section, er
 	for rows.Next() {
 		var section models.Section
 		if err := rows.Scan(&section.ID, &section.Name, &section.Type); err != nil {
+			recordSpanError(span, err)
 			return nil, err
 		}
 		sections = append(sections, section)
 	}
 
 	if err := rows.Err(); err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 
@@ -60,14 +68,21 @@ func (s *SectionService) ListSections(ctx context.Context) ([]models.Section, er
 }
 
 func (s *SectionService) GetSectionByID(ctx context.Context, id uuid.UUID) (*models.Section, error) {
+	ctx, span := otel.Tracer("clubhouse.sections").Start(ctx, "SectionService.GetSectionByID")
+	span.SetAttributes(attribute.String("section_id", id.String()))
+	defer span.End()
+
 	query := `SELECT id, name, type FROM sections WHERE id = $1`
 
 	var section models.Section
 	err := s.db.QueryRowContext(ctx, query, id).Scan(&section.ID, &section.Name, &section.Type)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("section not found")
+			notFoundErr := errors.New("section not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, err
 	}
 

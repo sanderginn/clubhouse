@@ -54,12 +54,14 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 
 	// Validate input
 	if err := validateCreatePostInput(req); err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 
 	// Parse and validate section ID
 	sectionID, err := uuid.Parse(req.SectionID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("invalid section id")
 	}
 	span.SetAttributes(attribute.String("section_id", sectionID.String()))
@@ -69,6 +71,10 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 	err = s.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM sections WHERE id = $1)", sectionID).
 		Scan(&sectionExists)
 	if err != nil || !sectionExists {
+		if err == nil {
+			err = fmt.Errorf("section not found")
+		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("section not found")
 	}
 
@@ -81,6 +87,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 	// Begin transaction
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
@@ -99,6 +106,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 		Scan(&post.ID, &post.UserID, &post.SectionID, &post.Content, &post.CreatedAt)
 
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create post: %w", err)
 	}
 
@@ -126,6 +134,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 				Scan(&link.ID, &link.URL, &link.CreatedAt)
 
 			if err != nil {
+				recordSpanError(span, err)
 				return nil, fmt.Errorf("failed to create link: %w", err)
 			}
 
@@ -139,6 +148,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 
 	// Commit transaction
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -159,6 +169,7 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 	defer span.End()
 
 	if err := validateUpdatePostInput(req); err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 
@@ -176,18 +187,24 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 	`, postID).Scan(&ownerID, &previousContent, &sectionID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("post not found")
+			notFoundErr := errors.New("post not found")
+			recordSpanError(span, notFoundErr)
+			return nil, notFoundErr
 		}
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to fetch post owner: %w", err)
 	}
 
 	if ownerID != userID {
-		return nil, errors.New("unauthorized to edit this post")
+		unauthorizedErr := errors.New("unauthorized to edit this post")
+		recordSpanError(span, unauthorizedErr)
+		return nil, unauthorizedErr
 	}
 
 	if req.Links != nil {
 		existingURLs, err := getPostLinkURLs(ctx, s.db, postID)
 		if err != nil {
+			recordSpanError(span, err)
 			return nil, fmt.Errorf("failed to fetch post links: %w", err)
 		}
 
@@ -199,6 +216,7 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
@@ -211,11 +229,13 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 		WHERE id = $2
 	`, trimmedContent, postID)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to update post: %w", err)
 	}
 
 	if req.Links != nil && linksChanged {
 		if _, err := tx.ExecContext(ctx, "DELETE FROM links WHERE post_id = $1", postID); err != nil {
+			recordSpanError(span, err)
 			return nil, fmt.Errorf("failed to delete post links: %w", err)
 		}
 
@@ -233,6 +253,7 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 					VALUES ($1, $2, $3, $4, now())
 				`, linkID, postID, linkReq.URL, metadataValue)
 				if err != nil {
+					recordSpanError(span, err)
 					return nil, fmt.Errorf("failed to create link: %w", err)
 				}
 			}
@@ -253,10 +274,12 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 
 	auditService := NewAuditService(tx)
 	if err := auditService.LogAuditWithMetadata(ctx, "update_post", userID, ownerID, metadata); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
