@@ -95,7 +95,7 @@
     {
       "issue_number": 489,
       "title": "Fix Loki config: compactor.delete-request-store not configured for retention",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 0,
@@ -108,7 +108,7 @@
     {
       "issue_number": 490,
       "title": "Fix Tempo config: deprecated `enabled` fields in metrics_generator",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 0,
@@ -122,8 +122,11 @@
     {
       "issue_number": 491,
       "title": "Link metadata fetcher should skip internal upload URLs",
-      "status": "pending",
-      "dependencies": [],
+      "status": "available",
+      "dependencies": [
+        489,
+        490
+      ],
       "phase": "bugfix",
       "priority": 1,
       "labels": [
@@ -134,8 +137,11 @@
     {
       "issue_number": 492,
       "title": "Cannot delete image when editing a post",
-      "status": "pending",
-      "dependencies": [],
+      "status": "available",
+      "dependencies": [
+        489,
+        490
+      ],
       "phase": "bugfix",
       "priority": 2,
       "labels": [
@@ -147,8 +153,11 @@
     {
       "issue_number": 493,
       "title": "Hide image URL text on posts with images",
-      "status": "pending",
-      "dependencies": [],
+      "status": "available",
+      "dependencies": [
+        489,
+        490
+      ],
       "phase": "enhancement",
       "priority": 2,
       "labels": [
@@ -160,8 +169,11 @@
     {
       "issue_number": 494,
       "title": "Make post images clickable to view full size",
-      "status": "pending",
-      "dependencies": [],
+      "status": "available",
+      "dependencies": [
+        489,
+        490
+      ],
       "phase": "enhancement",
       "priority": 2,
       "labels": [
@@ -173,8 +185,11 @@
     {
       "issue_number": 495,
       "title": "Navigation from standalone post back to section does not load feed",
-      "status": "pending",
-      "dependencies": [],
+      "status": "available",
+      "dependencies": [
+        489,
+        490
+      ],
       "phase": "bugfix",
       "priority": 1,
       "labels": [
@@ -185,8 +200,11 @@
     {
       "issue_number": 496,
       "title": "User tagging with @ does not work",
-      "status": "pending",
-      "dependencies": [],
+      "status": "available",
+      "dependencies": [
+        489,
+        490
+      ],
       "phase": "bugfix",
       "priority": 2,
       "labels": [
@@ -198,8 +216,11 @@
     {
       "issue_number": 497,
       "title": "Redesign post actions: replace triple-dot menu with Edit and Share buttons",
-      "status": "pending",
-      "dependencies": [],
+      "status": "available",
+      "dependencies": [
+        489,
+        490
+      ],
       "phase": "enhancement",
       "priority": 2,
       "labels": [
@@ -211,8 +232,11 @@
     {
       "issue_number": 498,
       "title": "Search bar renders incorrectly",
-      "status": "pending",
-      "dependencies": [],
+      "status": "available",
+      "dependencies": [
+        489,
+        490
+      ],
       "phase": "bugfix",
       "priority": 2,
       "labels": [
