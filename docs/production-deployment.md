@@ -189,6 +189,7 @@ The backup/restore scripts source `.env.production` automatically when present.
 - Retention: 7 days of traces (`tempo.yml`), 14 days of logs (`loki.yml`), and 30 days of metrics (`--storage.tsdb.retention.time=30d`)
 
 Grafana dashboards are provisioned from `grafana/dashboards`.
+The Grafana entrypoint ensures `/usr/share/grafana/plugins-bundled` exists to avoid startup warnings.
 
 Pinned observability image versions (see `docker-compose.yml` and `docker-compose.prod.yml`):
 
