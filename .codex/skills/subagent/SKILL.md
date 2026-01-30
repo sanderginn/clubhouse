@@ -41,7 +41,7 @@ cd <WORKTREE_PATH>
 ## Step 3: Fetch Issue Context
 
 ```bash
-gh issue view <ISSUE_NUMBER>
+# Use GitHub MCP server's github_get_issue tool
 ```
 
 Read the issue description and acceptance criteria. This is your specification.
@@ -205,13 +205,13 @@ If your changes affect behavior, setup, or architecture, update relevant markdow
 ## Step 8: Create Pull Request
 
 ```bash
-gh pr create --title "Issue Title" --body "$(cat <<'EOF'
+# Use GitHub MCP server's github_create_pull_request tool
+# Title: "Issue Title"
+# Body:
 ## Summary
 - ...
 
 Closes #<ISSUE_NUMBER>
-EOF
-)"
 ```
 
 ## Step 9: Wait for Review and Address Feedback
@@ -227,7 +227,7 @@ When you receive review feedback on your PR:
 
 1. **Read all comments** on the PR:
    ```bash
-   gh pr view <PR_NUMBER> --comments
+   # Use GitHub MCP server's github_list_pull_request_comments tool
    ```
 
 2. **Implement the requested fixes** in the worktree. Address every comment — do not skip or defer items unless explicitly told to.

@@ -32,8 +32,8 @@ The startup flow includes recovery detection to resume any dangling work from in
 
 1. **Query current state:**
    ```bash
-   # Get all open PRs
-   gh pr list --state open --json number,title,headRefName
+   # Get all open PRs using GitHub MCP server
+   # Use the github_list_pull_requests tool with state="open"
 
    # Get all active worktrees (excluding main repo)
    git worktree list
@@ -67,8 +67,9 @@ The startup flow includes recovery detection to resume any dangling work from in
 
    **b) Orphaned PRs** (PR exists but no worktree):
    ```bash
-   # Recreate worktree from PR branch
-   BRANCH_NAME=$(gh pr view <PR_NUMBER> --json headRefName --jq .headRefName)
+   # Recreate worktree from PR branch using GitHub MCP server
+   # Use github_get_pull_request tool to get the PR details including headRefName
+   BRANCH_NAME=<branch_name_from_mcp_response>
    git fetch origin "$BRANCH_NAME"
    git worktree add <WORKTREE_PATH> "$BRANCH_NAME"
 
@@ -84,8 +85,8 @@ The startup flow includes recovery detection to resume any dangling work from in
 
    **c) Merged/closed PRs still marked in_progress:**
    ```bash
-   # Check PR state
-   gh pr view <PR_NUMBER> --json state,merged --jq '.state, .merged'
+   # Check PR state using GitHub MCP server
+   # Use github_get_pull_request tool to get state and merged status
    ```
    - If MERGED: run `./scripts/complete-issue.sh <ISSUE_NUMBER> <PR_NUMBER>`
    - If CLOSED but not merged: reset status to "available" and clean up worktree (same as orphaned worktree)
@@ -97,11 +98,8 @@ The startup flow includes recovery detection to resume any dangling work from in
 
 4. **For each valid dangling issue, check PR state:**
    ```bash
-   # Get PR review decision and comment count
-   gh pr view <PR_NUMBER> --json reviewDecision,comments --jq '.reviewDecision, (.comments | length)'
-
-   # Check mergeability
-   gh pr view <PR_NUMBER> --json mergeable --jq '.mergeable'
+   # Get PR details using GitHub MCP server
+   # Use github_get_pull_request tool to get reviewDecision, comments, and mergeable status
    ```
 
 5. **Determine resume context:**
@@ -164,7 +162,7 @@ The worker will autonomously:
 Use this when resuming a dangling issue from recovery:
 
 ```
-spawn_agent(prompt: ".codex/skills/subagent\n\nYou are already the subagent; do not spawn further sub-agents. You are RESUMING work on issue #<ISSUE_NUMBER>.\n\n**Your context:**\n- Issue: #<ISSUE_NUMBER>\n- Worktree: <WORKTREE_PATH>\n- Branch: <BRANCH_NAME>\n- PR: #<PR_NUMBER>\n- Status: <RESUME_CONTEXT>\n\n**Instructions:**\n1. Change to your worktree: cd <WORKTREE_PATH>\n2. Check the PR for review feedback: gh pr view <PR_NUMBER> --comments\n3. Address any feedback or conflicts as needed\n4. Push your changes if you made any\n5. Report completion when done\n\nDo NOT claim a new issue. Continue with the existing PR.", agent_type: "worker")
+spawn_agent(prompt: ".codex/skills/subagent\n\nYou are already the subagent; do not spawn further sub-agents. You are RESUMING work on issue #<ISSUE_NUMBER>.\n\n**Your context:**\n- Issue: #<ISSUE_NUMBER>\n- Worktree: <WORKTREE_PATH>\n- Branch: <BRANCH_NAME>\n- PR: #<PR_NUMBER>\n- Status: <RESUME_CONTEXT>\n\n**Instructions:**\n1. Change to your worktree: cd <WORKTREE_PATH>\n2. Check the PR for review feedback using the GitHub MCP server (github_list_pull_request_comments tool)\n3. Address any feedback or conflicts as needed\n4. Push your changes if you made any\n5. Report completion when done\n\nDo NOT claim a new issue. Continue with the existing PR.", agent_type: "worker")
 ```
 
 Where `<RESUME_CONTEXT>` is one of:
@@ -186,7 +184,7 @@ Use `wait` to block until a worker reports completion. When a worker is done, it
 - It pushed fixes after review feedback
 - It resolved merge conflicts after a rebase request
 
-Parse the worker's output to extract the PR number. If this is the worker's first completion, extract the PR number from the `gh pr create` output.
+Parse the worker's output to extract the PR number. If this is the worker's first completion, extract the PR number from the GitHub MCP server's create pull request response.
 
 ## Handling a Completed Worker
 
@@ -215,7 +213,7 @@ The reviewer's final output contains a verdict line:
 Use `send_input` to instruct the original worker agent to address the feedback:
 
 ```
-send_input(agent_id: <WORKER_ID>, message: "Review feedback has been posted on your PR #<PR_NUMBER>. Read the comments with `gh pr view <PR_NUMBER> --comments`, implement the fixes, and push.")
+send_input(agent_id: <WORKER_ID>, message: "Review feedback has been posted on your PR #<PR_NUMBER>. Read the comments using the GitHub MCP server (github_list_pull_request_comments tool), implement the fixes, and push.")
 ```
 
 Close the reviewer agent with `close_agent` immediately after reading its verdict — do not reuse it.
@@ -231,7 +229,7 @@ Then proceed through the merge sequence:
 #### Check for Merge Conflicts
 
 ```bash
-gh pr view <PR_NUMBER> --json mergeable --jq '.mergeable'
+# Use GitHub MCP server's github_get_pull_request tool to check mergeable status
 ```
 
 If the PR is not mergeable (conflicts exist), instruct the worker to rebase:
@@ -247,7 +245,7 @@ Then `wait` for the worker to report completion. Once it does, re-check mergeabi
 Poll until all status checks pass:
 
 ```bash
-gh pr checks <PR_NUMBER>
+# Use GitHub MCP server's github_get_pull_request tool to check status checks
 ```
 
 If checks have not all passed, wait 15 seconds and check again. Repeat until all checks pass.
@@ -263,7 +261,8 @@ git worktree remove <WORKTREE_PATH> --force
 #### Merge the PR
 
 ```bash
-gh pr merge <PR_NUMBER> --merge --delete-branch
+# Use GitHub MCP server's github_merge_pull_request tool
+# Specify merge method as "merge" and delete_branch as true
 ```
 
 #### Update the Work Queue

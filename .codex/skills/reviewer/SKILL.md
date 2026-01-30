@@ -15,33 +15,33 @@ Refer to this PR number as `<PR>` throughout the steps below.
 
 ## Step 1: Gather PR Context
 
-Run these commands to understand the PR:
+Use the GitHub MCP server to understand the PR:
 
 ```bash
 # PR metadata (title, body, author, base branch, status)
-gh pr view <PR>
+# Use github_get_pull_request tool
 
 # Full diff
-gh pr diff <PR>
+# Use github_get_pull_request_diff tool
 
 # Existing review comments and conversation
-gh api repos/{owner}/{repo}/pulls/<PR>/comments --paginate
-gh api repos/{owner}/{repo}/issues/<PR>/comments --paginate
+# Use github_list_pull_request_comments tool
 
 # Check CI status
-gh pr checks <PR>
+# Use github_get_pull_request tool (includes status checks)
 ```
 
 Read the PR body carefully. It should reference an issue (`Closes #N`). If it does, read that issue too:
 
 ```bash
-gh issue view <ISSUE_NUMBER>
+# Use github_get_issue tool
 ```
 
 ## Step 2: Check Out the Code
 
 ```bash
-gh pr checkout <PR>
+# Use GitHub MCP server's github_get_pull_request tool to get the branch name
+# Then checkout the branch: git fetch origin <branch> && git checkout <branch>
 ```
 
 Once checked out, read every changed file in full — not just the diff hunks. Understanding surrounding context is essential for a thorough review.
@@ -112,10 +112,10 @@ If prior review comments raised valid issues that are still unresolved, include 
 
 Post a single comment on the PR summarizing all issues. Group findings by severity.
 
-**Use `gh pr comment` with a heredoc** to ensure real newlines (never use literal `\n`):
+**Use the GitHub MCP server's github_create_pull_request_comment tool** to post the review comment:
 
-```bash
-gh pr comment <PR> --body "$(cat <<'EOF'
+```
+Comment format:
 ## Code Review Findings
 
 ### Must Fix
@@ -129,8 +129,6 @@ gh pr comment <PR> --body "$(cat <<'EOF'
 
 ---
 *Automated review by Codex reviewer*
-EOF
-)"
 ```
 
 After posting, print the following on the last line of your output:
@@ -166,7 +164,7 @@ REVIEW_VERDICT: REQUEST_CHANGES
 3. **Verify audit logging** — confirm state-changing operations include audit events (see checklist above).
 4. **Verify observability** — confirm new endpoints/operations include traces, metrics, and proper logging (see checklist above).
 5. **Never merge** — only review. Signal your verdict via the `REVIEW_VERDICT` line.
-6. **Real newlines only** — never use literal `\n` in `gh` comment bodies. Always use heredocs.
+6. **Real newlines only** — never use literal `\n` in comment bodies. Use proper formatting in the MCP tool call.
 7. **Be specific** — reference file paths and line numbers in findings.
 8. **One comment** — consolidate all findings into a single PR comment, not multiple.
 9. **Existing comments matter** — factor in prior review feedback and author responses.
