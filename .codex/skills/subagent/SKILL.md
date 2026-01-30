@@ -294,11 +294,11 @@ From your worktree, check for changes in the main repository root:
 # Get the main repo root (parent of .worktrees)
 MAIN_REPO=$(dirname $(dirname <WORKTREE_PATH>))
 
-# Check for any uncommitted changes in main repo
-git -C "$MAIN_REPO" status --porcelain
+# Check for any uncommitted changes in main repo (excluding orchestrator-managed files)
+git -C "$MAIN_REPO" status --porcelain | grep -v '.work-queue.json' | grep -v '.work-queue.lock'
 ```
 
-**Expected output:** Empty, or ONLY `.work-queue.json` (orchestrator manages this file).
+**Expected output:** Empty. (`.work-queue.json` and `.work-queue.lock` are managed by the orchestrator and can be ignored.)
 
 **If you see other files listed**, you have contaminated the main repo. Proceed to Step 2.
 
@@ -307,8 +307,8 @@ git -C "$MAIN_REPO" status --porcelain
 Determine which contaminated files belong to your issue:
 
 ```bash
-# List the contaminated files (excluding .work-queue.json)
-git -C "$MAIN_REPO" status --porcelain | grep -v '.work-queue.json'
+# List the contaminated files (excluding orchestrator-managed files)
+git -C "$MAIN_REPO" status --porcelain | grep -v '.work-queue.json' | grep -v '.work-queue.lock'
 ```
 
 ### Step 3: Move Changes to Your Worktree
@@ -326,17 +326,17 @@ mv "$MAIN_REPO/backend/internal/handlers/foo.go" "<WORKTREE_PATH>/backend/intern
 After moving your files, discard any remaining contamination (files that don't belong to your issue):
 
 ```bash
-# Discard all uncommitted changes in main repo (except .work-queue.json)
+# Discard all uncommitted changes in main repo (except orchestrator-managed files)
 cd "$MAIN_REPO"
 git checkout -- . 2>/dev/null || true
-git clean -fd --exclude=.work-queue.json
+git clean -fd --exclude=.work-queue.json --exclude=.work-queue.lock
 ```
 
 ### Step 5: Verify Cleanup
 
 ```bash
-# Should show empty or only .work-queue.json
-git -C "$MAIN_REPO" status --porcelain
+# Should show empty (or only .work-queue.json/.work-queue.lock which are filtered out)
+git -C "$MAIN_REPO" status --porcelain | grep -v '.work-queue.json' | grep -v '.work-queue.lock'
 ```
 
 ### When the Orchestrator Asks About Contamination

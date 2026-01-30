@@ -35,8 +35,8 @@ Before committing changes to `.work-queue.json` or at any point in the main loop
 ### Step 1: Detect Contamination
 
 ```bash
-# Check for uncommitted changes (excluding .work-queue.json which you manage)
-git status --porcelain | grep -v '.work-queue.json'
+# Check for uncommitted changes (excluding .work-queue.json and .work-queue.lock which you manage)
+git status --porcelain | grep -v '.work-queue.json' | grep -v '.work-queue.lock'
 ```
 
 **Expected output:** Empty.
@@ -62,12 +62,12 @@ Wait for all active workers to respond. Track their responses:
 After all workers have responded, if contamination still exists (run the check again):
 
 ```bash
-# Discard all uncommitted changes except .work-queue.json
+# Discard all uncommitted changes except .work-queue.json and .work-queue.lock
 git checkout -- . 2>/dev/null || true
-git clean -fd --exclude=.work-queue.json
+git clean -fd --exclude=.work-queue.json --exclude=.work-queue.lock
 
 # Verify cleanup
-git status --porcelain | grep -v '.work-queue.json'
+git status --porcelain | grep -v '.work-queue.json' | grep -v '.work-queue.lock'
 ```
 
 ### Step 5: Resume the Foreground Loop
