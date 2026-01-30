@@ -370,9 +370,9 @@
     {
       "issue_number": 394,
       "title": "Frontend: Remove old search location and add polish",
-      "status": "available",
-      "assigned_to": null,
-      "worktree": null,
+      "status": "in_progress",
+      "assigned_to": "agent-1769770735-57952",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769770735-57952",
       "dependencies": [
         393
       ],
@@ -383,7 +383,9 @@
         "frontend",
         "search",
         "ui"
-      ]
+      ],
+      "branch": "feat/issue-394-frontend-remove-old-search-location-and-",
+      "claimed_at": "2026-01-30T10:58:55Z"
     },
     {
       "issue_number": 395,
