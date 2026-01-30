@@ -15,7 +15,7 @@
   import { getSectionSlugById } from '../services/sectionSlug';
   import { logError } from '../lib/observability/logger';
   import { recordComponentRender } from '../lib/observability/performance';
-  import { lockBodyScroll, unlockBodyScroll } from '../lib/ui/bodyScroll';
+  import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
 
   export let post: Post;
   export let highlightCommentId: string | null = null;
