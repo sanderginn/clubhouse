@@ -87,14 +87,14 @@ func (s *SessionService) GetSession(ctx context.Context, sessionID string) (*Ses
 	sessionJSON, err := s.redis.Get(ctx, key).Result()
 	if err != nil {
 		if err == redis.Nil {
-			observability.RecordCacheMiss(ctx, "session", "get")
+			observability.RecordCacheMiss(ctx, "session")
 			observability.RecordAuthSessionExpired(ctx, "timeout", 1)
 			observability.RecordAuthFailure(ctx, "expired_session")
 			return nil, ErrSessionNotFound
 		}
 		return nil, fmt.Errorf("failed to get session from Redis: %w", err)
 	}
-	observability.RecordCacheHit(ctx, "session", "get")
+	observability.RecordCacheHit(ctx, "session")
 
 	var session Session
 	if err := json.Unmarshal([]byte(sessionJSON), &session); err != nil {

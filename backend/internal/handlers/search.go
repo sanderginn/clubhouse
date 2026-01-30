@@ -89,7 +89,6 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 	searchStart := time.Now()
 	meaningful, err := h.searchService.IsQueryMeaningful(r.Context(), q)
 	if err != nil {
-		observability.RecordSearchFailure(r.Context(), scope, "query_check_failed")
 		writeError(r.Context(), w, http.StatusInternalServerError, "SEARCH_FAILED", "Failed to search")
 		return
 	}
@@ -103,11 +102,10 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 
 	results, err := h.searchService.Search(r.Context(), q, scope, sectionID, limit, userID)
 	if err != nil {
-		observability.RecordSearchFailure(r.Context(), scope, "search_failed")
 		writeError(r.Context(), w, http.StatusInternalServerError, "SEARCH_FAILED", "Failed to search")
 		return
 	}
-	observability.RecordSearchRequest(r.Context(), scope, len(results) > 0, time.Since(searchStart))
+	observability.RecordSearchQuery(r.Context(), scope, len(results), time.Since(searchStart))
 
 	response := models.SearchResponse{Results: results}
 	w.Header().Set("Content-Type", "application/json")

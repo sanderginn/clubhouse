@@ -46,14 +46,18 @@ type metrics struct {
 	linkMetadataFetchSuccess  metric.Int64Counter
 	linkMetadataFetchFailures metric.Int64Counter
 	linkMetadataFetchDuration metric.Float64Histogram
-	searchRequests            metric.Int64Counter
+	searchQueries             metric.Int64Counter
+	searchResults             metric.Int64Histogram
 	searchDuration            metric.Float64Histogram
 	cacheHits                 metric.Int64Counter
 	cacheMisses               metric.Int64Counter
-	uploadSuccess             metric.Int64Counter
-	uploadFailure             metric.Int64Counter
+	uploadAttempts            metric.Int64Counter
 	uploadSize                metric.Float64Histogram
 	adminActions              metric.Int64Counter
+	adminAuditLogViews        metric.Int64Counter
+	sectionsViews             metric.Int64Counter
+	postsUpdated              metric.Int64Counter
+	commentsUpdated           metric.Int64Counter
 	frontendWebVitals         metric.Float64Histogram
 	frontendApiDuration       metric.Float64Histogram
 	frontendWebsocketDuration metric.Float64Histogram
@@ -377,9 +381,18 @@ func initMetrics() error {
 			return
 		}
 
-		searchRequests, err := meter.Int64Counter(
-			"clubhouse.search.requests",
-			metric.WithDescription("Number of search requests"),
+		searchQueries, err := meter.Int64Counter(
+			"clubhouse.search.queries",
+			metric.WithDescription("Number of search queries executed"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		searchResults, err := meter.Int64Histogram(
+			"clubhouse.search.results",
+			metric.WithDescription("Search result counts"),
 		)
 		if err != nil {
 			metricsInitErr = err
@@ -414,18 +427,9 @@ func initMetrics() error {
 			return
 		}
 
-		uploadSuccess, err := meter.Int64Counter(
-			"clubhouse.uploads.images.success",
-			metric.WithDescription("Number of successful image uploads"),
-		)
-		if err != nil {
-			metricsInitErr = err
-			return
-		}
-
-		uploadFailure, err := meter.Int64Counter(
-			"clubhouse.uploads.images.failure",
-			metric.WithDescription("Number of failed image uploads"),
+		uploadAttempts, err := meter.Int64Counter(
+			"clubhouse.uploads.attempts",
+			metric.WithDescription("Number of upload attempts"),
 		)
 		if err != nil {
 			metricsInitErr = err
@@ -433,7 +437,7 @@ func initMetrics() error {
 		}
 
 		uploadSize, err := meter.Float64Histogram(
-			"clubhouse.uploads.images.size_bytes",
+			"clubhouse.uploads.size_bytes",
 			metric.WithDescription("Uploaded image sizes in bytes"),
 			metric.WithUnit("By"),
 		)
@@ -445,6 +449,42 @@ func initMetrics() error {
 		adminActions, err := meter.Int64Counter(
 			"clubhouse.admin.actions",
 			metric.WithDescription("Number of admin actions performed"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		adminAuditLogViews, err := meter.Int64Counter(
+			"clubhouse.admin.audit_log_views",
+			metric.WithDescription("Number of audit log views"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		sectionsViews, err := meter.Int64Counter(
+			"clubhouse.sections.views",
+			metric.WithDescription("Section/feed views"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		postsUpdated, err := meter.Int64Counter(
+			"clubhouse.posts.updated",
+			metric.WithDescription("Number of posts updated"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		commentsUpdated, err := meter.Int64Counter(
+			"clubhouse.comments.updated",
+			metric.WithDescription("Number of comments updated"),
 		)
 		if err != nil {
 			metricsInitErr = err
@@ -534,14 +574,18 @@ func initMetrics() error {
 			linkMetadataFetchSuccess:  linkMetadataFetchSuccess,
 			linkMetadataFetchFailures: linkMetadataFetchFailures,
 			linkMetadataFetchDuration: linkMetadataFetchDuration,
-			searchRequests:            searchRequests,
+			searchQueries:             searchQueries,
+			searchResults:             searchResults,
 			searchDuration:            searchDuration,
 			cacheHits:                 cacheHits,
 			cacheMisses:               cacheMisses,
-			uploadSuccess:             uploadSuccess,
-			uploadFailure:             uploadFailure,
+			uploadAttempts:            uploadAttempts,
 			uploadSize:                uploadSize,
 			adminActions:              adminActions,
+			adminAuditLogViews:        adminAuditLogViews,
+			sectionsViews:             sectionsViews,
+			postsUpdated:              postsUpdated,
+			commentsUpdated:           commentsUpdated,
 			frontendWebVitals:         frontendWebVitals,
 			frontendApiDuration:       frontendApiDuration,
 			frontendWebsocketDuration: frontendWebsocketDuration,
@@ -924,8 +968,8 @@ func RecordLinkMetadataFetchDuration(ctx context.Context, duration time.Duration
 	m.linkMetadataFetchDuration.Record(ctx, float64(duration.Milliseconds()))
 }
 
-// RecordSearchRequest records a completed search request.
-func RecordSearchRequest(ctx context.Context, scope string, hasResults bool, duration time.Duration) {
+// RecordSearchQuery records a completed search query.
+func RecordSearchQuery(ctx context.Context, scope string, resultCount int, duration time.Duration) {
 	m := getMetrics()
 	if m == nil {
 		return
@@ -937,41 +981,22 @@ func RecordSearchRequest(ctx context.Context, scope string, hasResults bool, dur
 	if strings.TrimSpace(scope) != "" {
 		attrs = append(attrs, attribute.String("scope", scope))
 	}
-	attrs = append(attrs, attribute.Bool("has_results", hasResults))
-	m.searchRequests.Add(ctx, 1, metric.WithAttributes(attrs...))
+	m.searchQueries.Add(ctx, 1, metric.WithAttributes(attrs...))
+	if resultCount >= 0 {
+		m.searchResults.Record(ctx, int64(resultCount), metric.WithAttributes(attrs...))
+	}
 	m.searchDuration.Record(ctx, float64(duration.Milliseconds()), metric.WithAttributes(attrs...))
 }
 
-// RecordSearchFailure records a failed search attempt.
-func RecordSearchFailure(ctx context.Context, scope string, reason string) {
-	m := getMetrics()
-	if m == nil {
-		return
-	}
-	attrs := []attribute.KeyValue{
-		attribute.String("status", "error"),
-	}
-	if strings.TrimSpace(scope) != "" {
-		attrs = append(attrs, attribute.String("scope", scope))
-	}
-	if strings.TrimSpace(reason) != "" {
-		attrs = append(attrs, attribute.String("reason", reason))
-	}
-	m.searchRequests.Add(ctx, 1, metric.WithAttributes(attrs...))
-}
-
 // RecordCacheHit records a cache hit.
-func RecordCacheHit(ctx context.Context, cacheName string, operation string) {
+func RecordCacheHit(ctx context.Context, cacheType string) {
 	m := getMetrics()
 	if m == nil {
 		return
 	}
 	attrs := []attribute.KeyValue{}
-	if strings.TrimSpace(cacheName) != "" {
-		attrs = append(attrs, attribute.String("cache", cacheName))
-	}
-	if strings.TrimSpace(operation) != "" {
-		attrs = append(attrs, attribute.String("operation", operation))
+	if strings.TrimSpace(cacheType) != "" {
+		attrs = append(attrs, attribute.String("cache_type", cacheType))
 	}
 	if len(attrs) == 0 {
 		m.cacheHits.Add(ctx, 1)
@@ -981,17 +1006,14 @@ func RecordCacheHit(ctx context.Context, cacheName string, operation string) {
 }
 
 // RecordCacheMiss records a cache miss.
-func RecordCacheMiss(ctx context.Context, cacheName string, operation string) {
+func RecordCacheMiss(ctx context.Context, cacheType string) {
 	m := getMetrics()
 	if m == nil {
 		return
 	}
 	attrs := []attribute.KeyValue{}
-	if strings.TrimSpace(cacheName) != "" {
-		attrs = append(attrs, attribute.String("cache", cacheName))
-	}
-	if strings.TrimSpace(operation) != "" {
-		attrs = append(attrs, attribute.String("operation", operation))
+	if strings.TrimSpace(cacheType) != "" {
+		attrs = append(attrs, attribute.String("cache_type", cacheType))
 	}
 	if len(attrs) == 0 {
 		m.cacheMisses.Add(ctx, 1)
@@ -1000,37 +1022,23 @@ func RecordCacheMiss(ctx context.Context, cacheName string, operation string) {
 	m.cacheMisses.Add(ctx, 1, metric.WithAttributes(attrs...))
 }
 
-// RecordUploadSuccess records a successful upload.
-func RecordUploadSuccess(ctx context.Context, sizeBytes int64, mediaType string) {
+// RecordUploadAttempt records an upload attempt.
+func RecordUploadAttempt(ctx context.Context, result string, fileType string, sizeBytes int64) {
 	m := getMetrics()
 	if m == nil {
 		return
 	}
 	attrs := []attribute.KeyValue{}
-	if strings.TrimSpace(mediaType) != "" {
-		attrs = append(attrs, attribute.String("media_type", mediaType))
+	if strings.TrimSpace(result) != "" {
+		attrs = append(attrs, attribute.String("result", result))
 	}
-	m.uploadSuccess.Add(ctx, 1, metric.WithAttributes(attrs...))
+	if strings.TrimSpace(fileType) != "" {
+		attrs = append(attrs, attribute.String("filetype", fileType))
+	}
+	m.uploadAttempts.Add(ctx, 1, metric.WithAttributes(attrs...))
 	if sizeBytes > 0 {
 		m.uploadSize.Record(ctx, float64(sizeBytes), metric.WithAttributes(attrs...))
 	}
-}
-
-// RecordUploadFailure records a failed upload attempt.
-func RecordUploadFailure(ctx context.Context, reason string) {
-	m := getMetrics()
-	if m == nil {
-		return
-	}
-	attrs := []attribute.KeyValue{}
-	if strings.TrimSpace(reason) != "" {
-		attrs = append(attrs, attribute.String("reason", reason))
-	}
-	if len(attrs) == 0 {
-		m.uploadFailure.Add(ctx, 1)
-		return
-	}
-	m.uploadFailure.Add(ctx, 1, metric.WithAttributes(attrs...))
 }
 
 // RecordAdminAction records a completed admin action.
@@ -1043,6 +1051,45 @@ func RecordAdminAction(ctx context.Context, action string) {
 		return
 	}
 	m.adminActions.Add(ctx, 1, metric.WithAttributes(attribute.String("action", action)))
+}
+
+// RecordAdminAuditLogView records an audit log view.
+func RecordAdminAuditLogView(ctx context.Context) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.adminAuditLogViews.Add(ctx, 1)
+}
+
+// RecordSectionView records a section view.
+func RecordSectionView(ctx context.Context, sectionID string) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	if strings.TrimSpace(sectionID) == "" {
+		return
+	}
+	m.sectionsViews.Add(ctx, 1, metric.WithAttributes(attribute.String("section_id", sectionID)))
+}
+
+// RecordPostUpdated records a post update.
+func RecordPostUpdated(ctx context.Context) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.postsUpdated.Add(ctx, 1)
+}
+
+// RecordCommentUpdated records a comment update.
+func RecordCommentUpdated(ctx context.Context) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.commentsUpdated.Add(ctx, 1)
 }
 
 // RecordFrontendWebVital records a Web Vital metric from the frontend.

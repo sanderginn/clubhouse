@@ -178,6 +178,7 @@ func (h *CommentHandler) UpdateComment(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	observability.RecordCommentUpdated(r.Context())
 
 	response := models.UpdateCommentResponse{
 		Comment: *comment,

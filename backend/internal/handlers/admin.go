@@ -926,6 +926,7 @@ func (h *AdminHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 		HasMore:    hasMore,
 		NextCursor: nextCursor,
 	}
+	observability.RecordAdminAuditLogView(r.Context())
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
