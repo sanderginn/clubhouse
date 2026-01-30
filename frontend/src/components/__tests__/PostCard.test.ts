@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/svelte';
+import { render, screen, cleanup, fireEvent } from '@testing-library/svelte';
 import type { Post } from '../../stores/postStore';
 import { authStore } from '../../stores';
 
@@ -106,6 +106,27 @@ describe('PostCard', () => {
     expect(screen.getByRole('img', { name: 'Uploaded image' })).toBeInTheDocument();
     expect(screen.getByText('Look')).toBeInTheDocument();
     expect(screen.queryByText('/api/v1/uploads/user-1/photo.png')).not.toBeInTheDocument();
+  });
+
+  it('shows internal upload link when image fails to load', async () => {
+    const postWithInternalImage: Post = {
+      ...basePost,
+      links: [
+        {
+          url: '/api/v1/uploads/user-1/photo.png',
+        },
+      ],
+    };
+
+    render(PostCard, { post: postWithInternalImage });
+
+    const image = screen.getByRole('img', { name: 'Uploaded image' });
+    await fireEvent.error(image);
+
+    const link = screen.getByRole('link', {
+      name: /\/api\/v1\/uploads\/user-1\/photo\.png/,
+    });
+    expect(link).toHaveAttribute('href', '/api/v1/uploads/user-1/photo.png');
   });
 
   it('shows avatar fallback when no profile image', () => {

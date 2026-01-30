@@ -326,7 +326,7 @@
             />
           {/if}
         </div>
-        {#if !isInternalUploadLink}
+        {#if !isInternalUploadLink || imageLoadFailed}
           <a
             href={link.url}
             target="_blank"
