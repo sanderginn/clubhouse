@@ -1,4 +1,5 @@
 const SECTION_PATH_PREFIX = '/sections/';
+const THREAD_ROOT_PATH = '/posts/';
 const THREAD_PATH_SEGMENT = '/posts/';
 const ADMIN_PATH = '/admin';
 const SETTINGS_PATH = '/settings';
@@ -9,6 +10,10 @@ export function buildSectionHref(sectionSlug: string): string {
 
 export function buildThreadHref(sectionSlug: string, postId: string): string {
   return `${buildSectionHref(sectionSlug)}${THREAD_PATH_SEGMENT}${postId}`;
+}
+
+export function buildStandaloneThreadHref(postId: string): string {
+  return `${THREAD_ROOT_PATH}${postId}`;
 }
 
 export function parseSectionSlug(pathname: string): string | null {
@@ -37,6 +42,22 @@ export function parseThreadPostId(pathname: string): string | null {
   }
   const trimmed = postId?.trim();
   return trimmed ? trimmed : null;
+}
+
+export function parseStandaloneThreadPostId(pathname: string): string | null {
+  if (!pathname.startsWith(THREAD_ROOT_PATH)) {
+    return null;
+  }
+  const remainder = pathname.slice(THREAD_ROOT_PATH.length);
+  const [postId] = remainder.split('/');
+  const trimmed = postId?.trim();
+  return trimmed ? trimmed : null;
+}
+
+export function parseThreadCommentId(search: string): string | null {
+  if (!search) return null;
+  const params = new URLSearchParams(search);
+  return params.get('comment') ?? params.get('commentId') ?? null;
 }
 
 export function buildAdminHref(): string {

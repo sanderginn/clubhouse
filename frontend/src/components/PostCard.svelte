@@ -17,6 +17,7 @@
   import { recordComponentRender } from '../lib/observability/performance';
 
   export let post: Post;
+  export let highlightCommentId: string | null = null;
 
   $: userReactions = new Set(post.viewerReactions ?? []);
   $: sectionSlug = getSectionSlugById($sections, post.sectionId) ?? post.sectionId;
@@ -407,7 +408,11 @@
       </div>
 
       <div class="mt-4 border-t border-gray-200 pt-4">
-        <CommentThread postId={post.id} commentCount={post.commentCount ?? 0} />
+        <CommentThread
+          postId={post.id}
+          commentCount={post.commentCount ?? 0}
+          {highlightCommentId}
+        />
       </div>
     </div>
   </div>
