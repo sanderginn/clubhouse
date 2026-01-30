@@ -8,6 +8,7 @@ const loadThreadComments = vi.hoisted(() => vi.fn());
 const loadMoreThreadComments = vi.hoisted(() => vi.fn());
 const apiUpdatePost = vi.hoisted(() => vi.fn());
 const apiUploadImage = vi.hoisted(() => vi.fn());
+const apiDeletePost = vi.hoisted(() => vi.fn());
 
 vi.mock('../../stores/commentFeedStore', () => ({
   loadThreadComments,
@@ -18,6 +19,7 @@ vi.mock('../../services/api', () => ({
   api: {
     updatePost: apiUpdatePost,
     uploadImage: apiUploadImage,
+    deletePost: apiDeletePost,
   },
 }));
 
@@ -45,6 +47,7 @@ afterEach(() => {
   cleanup();
   apiUpdatePost.mockReset();
   apiUploadImage.mockReset();
+  apiDeletePost.mockReset();
 });
 
 describe('PostCard', () => {
@@ -163,6 +166,7 @@ describe('PostCard', () => {
 
     render(PostCard, { post: basePost });
     expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Share' })).toBeInTheDocument();
   });
 
@@ -177,7 +181,22 @@ describe('PostCard', () => {
 
     render(PostCard, { post: basePost });
     expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Share' })).toBeInTheDocument();
+  });
+
+  it('shows delete action for admins on others posts', () => {
+    authStore.setUser({
+      id: 'admin-1',
+      username: 'Admin',
+      email: 'admin@example.com',
+      isAdmin: true,
+      totpEnabled: false,
+    });
+
+    render(PostCard, { post: basePost });
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
   });
 
   it('removes only the first image link when editing', async () => {

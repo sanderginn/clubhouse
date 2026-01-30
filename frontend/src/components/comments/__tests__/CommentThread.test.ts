@@ -6,10 +6,17 @@ import { afterEach } from 'vitest';
 
 const loadThreadComments = vi.hoisted(() => vi.fn());
 const loadMoreThreadComments = vi.hoisted(() => vi.fn());
+const apiDeleteComment = vi.hoisted(() => vi.fn());
 
 vi.mock('../../../stores/commentFeedStore', () => ({
   loadThreadComments,
   loadMoreThreadComments,
+}));
+
+vi.mock('../../../services/api', () => ({
+  api: {
+    deleteComment: apiDeleteComment,
+  },
 }));
 
 const { default: CommentThread } = await import('../CommentThread.svelte');
@@ -135,5 +142,57 @@ describe('CommentThread', () => {
 
     render(CommentThread, { postId: 'post-1', commentCount: 1 });
     expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+  });
+
+  it('shows delete action for own comment', async () => {
+    authStore.setUser({
+      id: 'user-1',
+      username: 'Sander',
+      email: 'sander@example.com',
+      isAdmin: false,
+      totpEnabled: false,
+    });
+
+    commentStore.setThread('post-1', [
+      {
+        id: 'comment-1',
+        postId: 'post-1',
+        userId: 'user-1',
+        content: 'Hello',
+        createdAt: 'now',
+        user: { id: 'user-1', username: 'Sander' },
+        replies: [],
+      },
+    ], null, false);
+
+    render(CommentThread, { postId: 'post-1', commentCount: 1 });
+    await fireEvent.click(screen.getByRole('button', { name: 'Open comment actions' }));
+    expect(screen.getByRole('menuitem', { name: 'Delete' })).toBeInTheDocument();
+  });
+
+  it('shows delete action for admins on others comments', async () => {
+    authStore.setUser({
+      id: 'admin-1',
+      username: 'Admin',
+      email: 'admin@example.com',
+      isAdmin: true,
+      totpEnabled: false,
+    });
+
+    commentStore.setThread('post-1', [
+      {
+        id: 'comment-1',
+        postId: 'post-1',
+        userId: 'user-2',
+        content: 'Hello',
+        createdAt: 'now',
+        user: { id: 'user-2', username: 'Other' },
+        replies: [],
+      },
+    ], null, false);
+
+    render(CommentThread, { postId: 'post-1', commentCount: 1 });
+    await fireEvent.click(screen.getByRole('button', { name: 'Open comment actions' }));
+    expect(screen.getByRole('menuitem', { name: 'Delete' })).toBeInTheDocument();
   });
 });
