@@ -101,7 +101,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), COUNT(*) AS \"Actions\"\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND a.admin_user_id IS NOT NULL\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\nGROUP BY 1\nORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), COUNT(*) AS \"Actions\"\nFROM audit_logs a\nJOIN users admin ON admin.id = a.admin_user_id AND admin.is_admin = true\nWHERE $__timeFilter(a.created_at)\n  AND a.admin_user_id IS NOT NULL\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\nGROUP BY 1\nORDER BY 1",
           "refId": "A"
         }
       ],
@@ -144,7 +144,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  CASE\n    WHEN a.action IN ('approve_user', 'reject_user', 'promote_to_admin', 'suspend_user', 'unsuspend_user', 'generate_password_reset_token') THEN 'user_management'\n    WHEN a.action IN ('delete_post', 'hard_delete_post', 'restore_post', 'delete_comment', 'hard_delete_comment', 'restore_comment', 'update_post', 'update_comment') THEN 'content_moderation'\n    WHEN a.action IN ('toggle_link_metadata', 'toggle_mfa_requirement', 'update_section', 'delete_section') THEN 'settings'\n    WHEN a.action IN ('enroll_mfa', 'enable_mfa', 'disable_mfa') THEN 'security'\n    ELSE 'other'\n  END AS \"Category\",\n  COUNT(*) AS \"Actions\"\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND a.admin_user_id IS NOT NULL\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\nGROUP BY 1\nORDER BY \"Actions\" DESC",
+          "rawSql": "SELECT\n  CASE\n    WHEN a.action IN ('approve_user', 'reject_user', 'promote_to_admin', 'suspend_user', 'unsuspend_user', 'generate_password_reset_token') THEN 'user_management'\n    WHEN a.action IN ('delete_post', 'hard_delete_post', 'restore_post', 'delete_comment', 'hard_delete_comment', 'restore_comment', 'update_post', 'update_comment') THEN 'content_moderation'\n    WHEN a.action IN ('toggle_link_metadata', 'toggle_mfa_requirement', 'update_section', 'delete_section') THEN 'settings'\n    WHEN a.action IN ('enroll_mfa', 'enable_mfa', 'disable_mfa') THEN 'security'\n    ELSE 'other'\n  END AS \"Category\",\n  COUNT(*) AS \"Actions\"\nFROM audit_logs a\nJOIN users admin ON admin.id = a.admin_user_id AND admin.is_admin = true\nWHERE $__timeFilter(a.created_at)\n  AND a.admin_user_id IS NOT NULL\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\nGROUP BY 1\nORDER BY \"Actions\" DESC",
           "refId": "A"
         }
       ],
@@ -232,7 +232,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT admin_label AS metric, event_count AS \"Actions\"\nFROM (\n  SELECT COALESCE(admin.username, a.admin_user_id::text, 'system') AS admin_label, COUNT(*) AS event_count\n  FROM audit_logs a\n  LEFT JOIN users admin ON admin.id = a.admin_user_id\n  WHERE $__timeFilter(a.created_at)\n    AND a.admin_user_id IS NOT NULL\n    AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\n  GROUP BY admin_label\n  ORDER BY event_count DESC\n  LIMIT 10\n) ranked\nORDER BY event_count DESC",
+          "rawSql": "SELECT admin_label AS metric, event_count AS \"Actions\"\nFROM (\n  SELECT COALESCE(admin.username, a.admin_user_id::text, 'system') AS admin_label, COUNT(*) AS event_count\n  FROM audit_logs a\n  JOIN users admin ON admin.id = a.admin_user_id AND admin.is_admin = true\n  WHERE $__timeFilter(a.created_at)\n    AND a.admin_user_id IS NOT NULL\n    AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\n  GROUP BY admin_label\n  ORDER BY event_count DESC\n  LIMIT 10\n) ranked\nORDER BY event_count DESC",
           "refId": "A"
         }
       ],
@@ -264,7 +264,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  a.created_at AS \"Time\",\n  a.action AS \"Action\",\n  COALESCE(admin.username, a.admin_user_id::text, 'system') AS \"Admin\",\n  COALESCE(target.username, a.target_user_id::text, related.username, a.related_user_id::text) AS \"Target User\",\n  a.related_post_id AS \"Post ID\",\n  a.related_comment_id AS \"Comment ID\",\n  a.metadata AS \"Metadata\"\nFROM audit_logs a\nLEFT JOIN users admin ON admin.id = a.admin_user_id\nLEFT JOIN users target ON target.id = a.target_user_id\nLEFT JOIN users related ON related.id = a.related_user_id\nWHERE $__timeFilter(a.created_at)\n  AND a.admin_user_id IS NOT NULL\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\nORDER BY a.created_at DESC\nLIMIT 200",
+          "rawSql": "SELECT\n  a.created_at AS \"Time\",\n  a.action AS \"Action\",\n  COALESCE(admin.username, a.admin_user_id::text, 'system') AS \"Admin\",\n  COALESCE(target.username, a.target_user_id::text, related.username, a.related_user_id::text) AS \"Target User\",\n  a.related_post_id AS \"Post ID\",\n  a.related_comment_id AS \"Comment ID\",\n  a.metadata AS \"Metadata\"\nFROM audit_logs a\nJOIN users admin ON admin.id = a.admin_user_id AND admin.is_admin = true\nLEFT JOIN users target ON target.id = a.target_user_id\nLEFT JOIN users related ON related.id = a.related_user_id\nWHERE $__timeFilter(a.created_at)\n  AND a.admin_user_id IS NOT NULL\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\nORDER BY a.created_at DESC\nLIMIT 200",
           "refId": "A"
         }
       ],
@@ -356,7 +356,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), a.action AS metric, COUNT(*) AS value\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND a.action IN ('delete_post', 'hard_delete_post', 'restore_post')\n  AND a.admin_user_id IS NOT NULL\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\nGROUP BY 1, 2\nORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), a.action AS metric, COUNT(*) AS value\nFROM audit_logs a\nJOIN users admin ON admin.id = a.admin_user_id AND admin.is_admin = true\nWHERE $__timeFilter(a.created_at)\n  AND a.action IN ('delete_post', 'hard_delete_post', 'restore_post')\n  AND a.admin_user_id IS NOT NULL\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\nGROUP BY 1, 2\nORDER BY 1",
           "refId": "A"
         }
       ],
@@ -448,7 +448,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), a.action AS metric, COUNT(*) AS value\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND a.action IN ('delete_comment', 'hard_delete_comment', 'restore_comment')\n  AND a.admin_user_id IS NOT NULL\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\nGROUP BY 1, 2\nORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), a.action AS metric, COUNT(*) AS value\nFROM audit_logs a\nJOIN users admin ON admin.id = a.admin_user_id AND admin.is_admin = true\nWHERE $__timeFilter(a.created_at)\n  AND a.action IN ('delete_comment', 'hard_delete_comment', 'restore_comment')\n  AND a.admin_user_id IS NOT NULL\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\nGROUP BY 1, 2\nORDER BY 1",
           "refId": "A"
         }
       ],
@@ -510,7 +510,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COUNT(*) AS \"Hard Deletes\"\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND a.action IN ('hard_delete_post', 'hard_delete_comment')\n  AND a.admin_user_id IS NOT NULL\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')",
+          "rawSql": "SELECT COUNT(*) AS \"Hard Deletes\"\nFROM audit_logs a\nJOIN users admin ON admin.id = a.admin_user_id AND admin.is_admin = true\nWHERE $__timeFilter(a.created_at)\n  AND a.action IN ('hard_delete_post', 'hard_delete_comment')\n  AND a.admin_user_id IS NOT NULL\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')",
           "refId": "A"
         }
       ],
@@ -598,7 +598,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT admin_label AS metric, event_count AS \"Moderation Actions\"\nFROM (\n  SELECT COALESCE(admin.username, a.admin_user_id::text, 'system') AS admin_label, COUNT(*) AS event_count\n  FROM audit_logs a\n  LEFT JOIN users admin ON admin.id = a.admin_user_id\n  WHERE $__timeFilter(a.created_at)\n    AND a.action IN ('delete_post', 'hard_delete_post', 'restore_post', 'delete_comment', 'hard_delete_comment', 'restore_comment')\n    AND a.admin_user_id IS NOT NULL\n    AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\n  GROUP BY admin_label\n  ORDER BY event_count DESC\n  LIMIT 10\n) ranked\nORDER BY event_count DESC",
+          "rawSql": "SELECT admin_label AS metric, event_count AS \"Moderation Actions\"\nFROM (\n  SELECT COALESCE(admin.username, a.admin_user_id::text, 'system') AS admin_label, COUNT(*) AS event_count\n  FROM audit_logs a\n  JOIN users admin ON admin.id = a.admin_user_id AND admin.is_admin = true\n  WHERE $__timeFilter(a.created_at)\n    AND a.action IN ('delete_post', 'hard_delete_post', 'restore_post', 'delete_comment', 'hard_delete_comment', 'restore_comment')\n    AND a.admin_user_id IS NOT NULL\n    AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\n  GROUP BY admin_label\n  ORDER BY event_count DESC\n  LIMIT 10\n) ranked\nORDER BY event_count DESC",
           "refId": "A"
         }
       ],
@@ -690,7 +690,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), COUNT(*) AS \"Approvals\"\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND a.action = 'approve_user'\n  AND a.admin_user_id IS NOT NULL\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\nGROUP BY 1\nORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), COUNT(*) AS \"Approvals\"\nFROM audit_logs a\nJOIN users admin ON admin.id = a.admin_user_id AND admin.is_admin = true\nWHERE $__timeFilter(a.created_at)\n  AND a.action = 'approve_user'\n  AND a.admin_user_id IS NOT NULL\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\nGROUP BY 1\nORDER BY 1",
           "refId": "A"
         }
       ],
@@ -782,7 +782,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), COUNT(*) AS \"Rejections\"\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND a.action = 'reject_user'\n  AND a.admin_user_id IS NOT NULL\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\nGROUP BY 1\nORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), COUNT(*) AS \"Rejections\"\nFROM audit_logs a\nJOIN users admin ON admin.id = a.admin_user_id AND admin.is_admin = true\nWHERE $__timeFilter(a.created_at)\n  AND a.action = 'reject_user'\n  AND a.admin_user_id IS NOT NULL\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\nGROUP BY 1\nORDER BY 1",
           "refId": "A"
         }
       ],
@@ -936,7 +936,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), a.action AS metric, COUNT(*) AS value\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND a.action IN ('suspend_user', 'unsuspend_user')\n  AND a.admin_user_id IS NOT NULL\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\nGROUP BY 1, 2\nORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), a.action AS metric, COUNT(*) AS value\nFROM audit_logs a\nJOIN users admin ON admin.id = a.admin_user_id AND admin.is_admin = true\nWHERE $__timeFilter(a.created_at)\n  AND a.action IN ('suspend_user', 'unsuspend_user')\n  AND a.admin_user_id IS NOT NULL\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\nGROUP BY 1, 2\nORDER BY 1",
           "refId": "A"
         }
       ],
@@ -1028,7 +1028,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), a.action AS metric, COUNT(*) AS value\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND a.action IN ('toggle_mfa_requirement', 'update_section', 'delete_section')\n  AND a.admin_user_id IS NOT NULL\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\nGROUP BY 1, 2\nORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), a.action AS metric, COUNT(*) AS value\nFROM audit_logs a\nJOIN users admin ON admin.id = a.admin_user_id AND admin.is_admin = true\nWHERE $__timeFilter(a.created_at)\n  AND a.action IN ('toggle_mfa_requirement', 'update_section', 'delete_section')\n  AND a.admin_user_id IS NOT NULL\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\nGROUP BY 1, 2\nORDER BY 1",
           "refId": "A"
         }
       ],
@@ -1120,7 +1120,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), COUNT(*) AS \"Toggles\"\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND a.action = 'toggle_link_metadata'\n  AND a.admin_user_id IS NOT NULL\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\nGROUP BY 1\nORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), COUNT(*) AS \"Toggles\"\nFROM audit_logs a\nJOIN users admin ON admin.id = a.admin_user_id AND admin.is_admin = true\nWHERE $__timeFilter(a.created_at)\n  AND a.action = 'toggle_link_metadata'\n  AND a.admin_user_id IS NOT NULL\n  AND ('$admin_user' = '' OR a.admin_user_id::text = '$admin_user')\nGROUP BY 1\nORDER BY 1",
           "refId": "A"
         }
       ],
@@ -1558,14 +1558,14 @@
           "type": "postgres",
           "uid": "postgres"
         },
-        "definition": "SELECT DISTINCT admin_user_id::text AS __value, COALESCE(admin.username, admin_user_id::text) AS __text FROM audit_logs LEFT JOIN users admin ON admin.id = audit_logs.admin_user_id WHERE admin_user_id IS NOT NULL ORDER BY __text",
+        "definition": "SELECT DISTINCT admin_user_id::text AS __value, COALESCE(admin.username, admin_user_id::text) AS __text FROM audit_logs JOIN users admin ON admin.id = audit_logs.admin_user_id AND admin.is_admin = true WHERE admin_user_id IS NOT NULL ORDER BY __text",
         "hide": 0,
         "includeAll": true,
         "label": "Admin User",
         "multi": false,
         "name": "admin_user",
         "options": [],
-        "query": "SELECT DISTINCT admin_user_id::text AS __value, COALESCE(admin.username, admin_user_id::text) AS __text FROM audit_logs LEFT JOIN users admin ON admin.id = audit_logs.admin_user_id WHERE admin_user_id IS NOT NULL ORDER BY __text",
+        "query": "SELECT DISTINCT admin_user_id::text AS __value, COALESCE(admin.username, admin_user_id::text) AS __text FROM audit_logs JOIN users admin ON admin.id = audit_logs.admin_user_id AND admin.is_admin = true WHERE admin_user_id IS NOT NULL ORDER BY __text",
         "refresh": 2,
         "sort": 1,
         "type": "query"
