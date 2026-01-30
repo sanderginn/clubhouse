@@ -139,6 +139,47 @@ describe('SearchResults', () => {
     expect(sectionLabels.length).toBeGreaterThan(0);
   });
 
+  it('strips internal upload URLs from parent post content in search results', () => {
+    storeRefs.searchQuery.set('photo');
+    storeRefs.lastSearchQuery.set('photo');
+    storeRefs.lastSearchScope.set('section');
+    storeRefs.sections.set([
+      { id: 'section-1', name: 'Music', type: 'music', icon: '🎵', slug: 'music' },
+    ]);
+    storeRefs.activeSection.set({ id: 'section-1', name: 'Music', slug: 'music' });
+    storeRefs.searchResults.set([
+      {
+        type: 'comment',
+        score: 1,
+        comment: {
+          id: 'comment-1',
+          postId: 'post-1',
+          sectionId: 'section-1',
+          content: 'Nice photo',
+          createdAt: '2025-01-01T00:00:00Z',
+          user: { id: 'user-1', username: 'Sander' },
+        },
+        post: {
+          id: 'post-1',
+          sectionId: 'section-1',
+          content: 'Look /api/v1/uploads/user-1/photo.png today',
+          createdAt: '2025-01-01T00:00:00Z',
+          userId: 'user-1',
+          links: [{ url: '/api/v1/uploads/user-1/photo.png' }],
+        },
+      },
+    ]);
+
+    render(SearchResults);
+
+    expect(screen.getByText(/Look/)).toBeInTheDocument();
+    expect(screen.getByText(/today/)).toBeInTheDocument();
+    expect(screen.queryByText('/api/v1/uploads/user-1/photo.png')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: '/api/v1/uploads/user-1/photo.png' })
+    ).not.toBeInTheDocument();
+  });
+
   it('renders section label for post results', () => {
     storeRefs.searchQuery.set('hello');
     storeRefs.lastSearchQuery.set('hello');
