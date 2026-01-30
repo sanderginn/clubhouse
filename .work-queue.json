@@ -377,7 +377,7 @@
     {
       "issue_number": 513,
       "title": "Fix quirky edit button styling on thread replies",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 2,
@@ -385,7 +385,11 @@
         "bug",
         "frontend",
         "ux"
-      ]
+      ],
+      "assigned_to": "agent-1769813441-76774",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769813441-76774",
+      "branch": "fix/issue-513-fix-quirky-edit-button-styling-on-thread",
+      "claimed_at": "2026-01-30T22:50:41Z"
     },
     {
       "issue_number": 514,
