@@ -45,3 +45,21 @@ datasources:
     access: proxy
     jsonData:
       implementation: prometheus
+
+  - name: Postgres
+    type: postgres
+    uid: postgres
+    url: postgres:5432
+    user: clubhouse
+    isDefault: false
+    editable: true
+    access: proxy
+    secureJsonData:
+      password: changeme
+    jsonData:
+      database: clubhouse
+      sslmode: disable
+      maxOpenConns: 10
+      maxIdleConns: 5
+      maxIdleConnsAuto: true
+      connMaxLifetime: 14400
