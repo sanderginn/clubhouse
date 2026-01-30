@@ -16,6 +16,7 @@
     388,
     389,
     390,
+    416,
     426,
     427,
     428,
@@ -454,7 +455,7 @@
     {
       "issue_number": 416,
       "title": "[High] Replace fmt.Println with observability logging in main.go",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769760899-15195",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769760899-15195",
       "dependencies": [
@@ -467,7 +468,9 @@
         "backend"
       ],
       "branch": "feat/issue-416-high-replace-fmtprintln-with-observabili",
-      "claimed_at": "2026-01-30T08:14:59Z"
+      "claimed_at": "2026-01-30T08:14:59Z",
+      "pr_number": 458,
+      "completed_at": "2026-01-30T08:31:36Z"
     },
     {
       "issue_number": 417,
