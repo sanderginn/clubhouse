@@ -14,6 +14,7 @@
     491,
     492,
     493,
+    494,
     495,
     496,
     497,
@@ -208,7 +209,7 @@
     {
       "issue_number": 494,
       "title": "Make post images clickable to view full size",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         489,
         490
@@ -223,7 +224,9 @@
       "assigned_to": "agent-1769802145-5035",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769802145-5035",
       "branch": "feat/issue-494-make-post-images-clickable-to-view-full-",
-      "claimed_at": "2026-01-30T19:42:25Z"
+      "claimed_at": "2026-01-30T19:42:25Z",
+      "pr_number": 508,
+      "completed_at": "2026-01-30T20:58:55Z"
     },
     {
       "issue_number": 495,
