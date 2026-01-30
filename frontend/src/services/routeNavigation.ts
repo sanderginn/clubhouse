@@ -4,6 +4,16 @@ const THREAD_PATH_SEGMENT = '/posts/';
 const ADMIN_PATH = '/admin';
 const SETTINGS_PATH = '/settings';
 
+export type SearchHistoryState = {
+  query: string;
+  scope: 'section' | 'global';
+};
+
+export type AppHistoryState = {
+  search?: SearchHistoryState;
+  fromSearch?: boolean;
+};
+
 export function buildSectionHref(sectionSlug: string): string {
   return `${SECTION_PATH_PREFIX}${encodeURIComponent(sectionSlug)}`;
 }
@@ -80,12 +90,34 @@ export function buildFeedHref(sectionSlug?: string | null): string {
   return sectionSlug ? buildSectionHref(sectionSlug) : '/';
 }
 
-export function pushPath(path: string): void {
+export function pushPath(path: string, state?: AppHistoryState | null): void {
   if (typeof window === 'undefined') return;
-  window.history.pushState(null, '', path);
+  window.history.pushState(state ?? null, '', path);
 }
 
-export function replacePath(path: string): void {
+export function replacePath(path: string, state?: AppHistoryState | null): void {
   if (typeof window === 'undefined') return;
-  window.history.replaceState(null, '', path);
+  window.history.replaceState(state ?? null, '', path);
+}
+
+export function getHistoryState(): AppHistoryState | null {
+  if (typeof window === 'undefined') return null;
+  return (window.history.state as AppHistoryState | null) ?? null;
+}
+
+export function updateHistoryState(nextState: Partial<AppHistoryState>): void {
+  if (typeof window === 'undefined') return;
+  const current = (window.history.state ?? {}) as AppHistoryState;
+  const merged: AppHistoryState = { ...current, ...nextState };
+  if ('search' in nextState && nextState.search === undefined) {
+    delete merged.search;
+  }
+  if ('fromSearch' in nextState && nextState.fromSearch === undefined) {
+    delete merged.fromSearch;
+  }
+  window.history.replaceState(
+    merged,
+    '',
+    window.location.pathname + window.location.search
+  );
 }

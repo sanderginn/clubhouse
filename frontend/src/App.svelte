@@ -12,6 +12,7 @@
     activeSection,
     sections,
     searchQuery,
+    searchStore,
     websocketStore,
     sectionStore,
     activeView,
@@ -26,6 +27,7 @@
   import {
     buildFeedHref,
     buildThreadHref,
+    getHistoryState,
     isAdminPath,
     isSettingsPath,
     parseStandaloneThreadPostId,
@@ -69,6 +71,14 @@
   function syncRouteFromLocation() {
     if (typeof window === 'undefined') return;
     const path = window.location.pathname;
+    const historyState = getHistoryState();
+    const searchState = historyState?.search;
+    if (searchState?.query) {
+      searchStore.setScope(searchState.scope);
+      searchStore.setQuery(searchState.query);
+    } else {
+      searchStore.setQuery('');
+    }
     highlightCommentId = parseThreadCommentId(window.location.search);
     sectionNotFound = null;
     const { isReset, token } = parseResetRoute(window.location);

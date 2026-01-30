@@ -90,7 +90,7 @@
     const switchingSection = targetSection && $activeSection?.id !== targetSection.id;
     uiStore.setActiveView('thread');
     threadRouteStore.setTarget(post.id, targetSectionId);
-    pushPath(buildThreadHref(targetSectionSlug, post.id));
+    pushPath(buildThreadHref(targetSectionSlug, post.id), { fromSearch: true });
     if (switchingSection) {
       sectionStore.setActiveSection(targetSection);
     }
