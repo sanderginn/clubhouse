@@ -40,6 +40,7 @@
     436,
     437,
     438,
+    440,
     441,
     442
   ],
@@ -970,7 +971,7 @@
     {
       "issue_number": 440,
       "title": "Grafana: Create frontend errors dashboard",
-      "status": "in_progress",
+      "status": "completed",
       "assigned_to": "agent-1769769069-15908",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769769069-15908",
       "dependencies": [
@@ -985,7 +986,9 @@
         "dashboard"
       ],
       "branch": "feat/issue-440-grafana-create-frontend-errors-dashboard",
-      "claimed_at": "2026-01-30T10:31:09Z"
+      "claimed_at": "2026-01-30T10:31:09Z",
+      "pr_number": 477,
+      "completed_at": "2026-01-30T11:00:16Z"
     },
     {
       "issue_number": 441,
