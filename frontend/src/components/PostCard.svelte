@@ -498,16 +498,14 @@
       {/if}
 
       {#if isEditing}
-        <div class="mb-3 space-y-2">
-          <textarea
-            class="w-full rounded-lg border border-gray-300 p-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            rows="4"
-            bind:value={editContent}
-          />
+        <div class="mb-3 space-y-4">
           {#if originalImageUrl || editImageAction !== 'keep'}
-            <div class="space-y-2">
+            <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-3">
+              <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Image
+              </div>
               {#if editImagePreviewUrl}
-                <div class="rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+                <div class="rounded-lg border border-gray-200 overflow-hidden bg-white">
                   {#if editImageLoadFailed}
                     <div class="flex items-center justify-center px-4 py-6 text-sm text-gray-500">
                       Image unavailable. Try uploading again.
@@ -535,7 +533,7 @@
               <div class="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  class="px-2.5 py-1.5 rounded-md border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                  class="w-full sm:w-auto px-2.5 py-1.5 rounded-md border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
                   on:click={() => editImageInput?.click()}
                   disabled={isSaving || editImageUploading}
                 >
@@ -544,7 +542,7 @@
                 {#if editImageAction !== 'remove'}
                   <button
                     type="button"
-                    class="px-2.5 py-1.5 rounded-md border border-red-200 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
+                    class="w-full sm:w-auto px-2.5 py-1.5 rounded-md border border-red-200 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
                     on:click={removeEditImage}
                     disabled={isSaving || editImageUploading}
                   >
@@ -553,7 +551,7 @@
                 {:else}
                   <button
                     type="button"
-                    class="px-2.5 py-1.5 rounded-md border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                    class="w-full sm:w-auto px-2.5 py-1.5 rounded-md border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
                     on:click={undoEditImageRemoval}
                     disabled={isSaving || editImageUploading}
                   >
@@ -584,6 +582,11 @@
               {/if}
             </div>
           {/if}
+          <textarea
+            class="w-full rounded-lg border border-gray-300 p-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            rows="4"
+            bind:value={editContent}
+          />
           {#if editError}
             <div class="text-sm text-red-600">{editError}</div>
           {/if}
