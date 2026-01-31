@@ -12,7 +12,7 @@
   export let className = '';
   export let linkClassName = 'text-blue-600 hover:text-blue-800 underline';
   export let mentionClassName =
-    'text-indigo-600 hover:text-indigo-800 font-medium bg-indigo-50 rounded px-1';
+    'text-indigo-600 hover:text-indigo-800 font-medium bg-indigo-50 rounded px-[1px]';
   export let highlightQuery = '';
   export let validMentions: string[] | null = null;
   export let validateMentions = true;
@@ -277,7 +277,7 @@
     {:else}
       {#each buildHighlightParts(part.value, highlightQuery) as highlight, highlightIndex (highlightIndex)}
         {#if highlight.isMatch}
-          <mark class="rounded bg-amber-100 px-0.5 text-gray-900 ring-1 ring-amber-200">
+          <mark class="rounded bg-amber-100 px-[1px] text-gray-900 ring-1 ring-amber-200">
             {highlight.text}
           </mark>
         {:else}
