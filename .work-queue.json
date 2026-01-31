@@ -42,7 +42,8 @@
     529,
     530,
     537,
-    556
+    556,
+    558
   ],
   "issues": [
     {
@@ -841,7 +842,7 @@
     {
       "issue_number": 558,
       "title": "Edit keyboard shortcut does not save posts or comments",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 3,
@@ -853,7 +854,9 @@
       "branch": "fix/issue-558-edit-keyboard-shortcut-does-not-save-pos",
       "assigned_to": "agent-1769857124-66243",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769857124-66243",
-      "claimed_at": "2026-01-31T10:58:44Z"
+      "claimed_at": "2026-01-31T10:58:44Z",
+      "pr_number": 576,
+      "completed_at": "2026-01-31T11:10:09Z"
     },
     {
       "issue_number": 559,
