@@ -296,6 +296,17 @@
     }
   }
 
+  function handleEditKeyDown(event: KeyboardEvent) {
+    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+      const trimmed = editContent.trim();
+      if (!trimmed || isSaving || editImageUploading) {
+        return;
+      }
+      event.preventDefault();
+      saveEdit();
+    }
+  }
+
   async function toggleReaction(emoji: string) {
     const hasReacted = userReactions.has(emoji);
     // Optimistic update
@@ -874,6 +885,7 @@
             class="w-full rounded-lg border border-gray-300 p-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             rows="4"
             bind:value={editContent}
+            on:keydown={handleEditKeyDown}
           />
           {#if editError}
             <div class="text-sm text-red-600">{editError}</div>
