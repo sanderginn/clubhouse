@@ -5,6 +5,10 @@ cd frontend
 
 npm ci
 npm run lint -- --resolve-plugins-relative-to .
-git diff --exit-code
+if command -v git >/dev/null 2>&1; then
+  git diff --exit-code
+else
+  echo "git not available; skipping diff check."
+fi
 npm run check
 npm run test
