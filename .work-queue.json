@@ -42,6 +42,7 @@
     529,
     530,
     537,
+    555,
     556,
     557,
     558
@@ -786,7 +787,7 @@
     {
       "issue_number": 555,
       "title": "Notifications do not update in real time (WebSocket)",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         537
       ],
@@ -801,7 +802,9 @@
       "branch": "fix/issue-555-notifications-do-not-update-in-real-time",
       "assigned_to": "agent-1769857117-66085",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769857117-66085",
-      "claimed_at": "2026-01-31T10:58:37Z"
+      "claimed_at": "2026-01-31T10:58:37Z",
+      "pr_number": 578,
+      "completed_at": "2026-01-31T11:16:23Z"
     },
     {
       "issue_number": 556,
