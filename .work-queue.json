@@ -963,7 +963,7 @@
     {
       "issue_number": 564,
       "title": "Search results should render a unified thread when matches appear in post + comments",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 9,
@@ -971,11 +971,7 @@
         "bug",
         "frontend",
         "ux"
-      ],
-      "branch": "fix/issue-564-search-results-should-render-a-unified-t",
-      "assigned_to": "agent-1769858217-5414",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769858217-5414",
-      "claimed_at": "2026-01-31T11:16:57Z"
+      ]
     },
     {
       "issue_number": 565,
@@ -996,7 +992,7 @@
     {
       "issue_number": 566,
       "title": "Section-scoped search pill missing container styling",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 11,
@@ -1004,11 +1000,7 @@
         "bug",
         "frontend",
         "ux"
-      ],
-      "branch": "fix/issue-566-sectionscoped-search-pill-missing-contai",
-      "assigned_to": "agent-1769858470-15718",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769858470-15718",
-      "claimed_at": "2026-01-31T11:21:10Z"
+      ]
     },
     {
       "issue_number": 567,
