@@ -207,7 +207,7 @@ Pinned observability image versions (see `docker-compose.yml` and `docker-compos
 - Keep frontend and backend on the same origin to avoid permissive CORS. If you add cross-origin access, implement a strict allowlist.
 - Keep the deployment host firewall locked down (only 80/443 open).
 - Ensure `.env.production` is stored securely and never committed.
-- Review environment values for production: `ENVIRONMENT=production`, `LOG_LEVEL=info`.
+- Review environment values for production: `ENVIRONMENT=production`, `LOG_LEVEL=info` (also sets Alertmanager log level; supported: debug, info, warn, error).
 - Use a least-privilege database user for the app (separate admin/maintenance credentials).
 
 ## 14) Health checks and uptime monitoring
