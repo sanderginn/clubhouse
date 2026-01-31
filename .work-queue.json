@@ -45,7 +45,8 @@
     555,
     556,
     557,
-    558
+    558,
+    560
   ],
   "issues": [
     {
@@ -888,7 +889,7 @@
     {
       "issue_number": 560,
       "title": "Carousel renders only first image until lightbox/reply",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         517
       ],
@@ -902,7 +903,9 @@
       "branch": "fix/issue-560-carousel-renders-only-first-image-until-",
       "assigned_to": "agent-1769857959-98115",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769857959-98115",
-      "claimed_at": "2026-01-31T11:12:39Z"
+      "claimed_at": "2026-01-31T11:12:39Z",
+      "pr_number": 579,
+      "completed_at": "2026-01-31T11:20:33Z"
     },
     {
       "issue_number": 561,
