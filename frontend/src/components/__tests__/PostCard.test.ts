@@ -284,4 +284,58 @@ describe('PostCard', () => {
       ],
     });
   });
+
+  it('saves edits with cmd+enter', async () => {
+    authStore.setUser({
+      id: 'user-1',
+      username: 'Sander',
+      email: 'sander@example.com',
+      isAdmin: false,
+      totpEnabled: false,
+    });
+
+    apiUpdatePost.mockResolvedValue({ post: { ...basePost } });
+
+    render(PostCard, { post: basePost });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+
+    const textareas = screen.getAllByRole('textbox');
+    const textarea = textareas.find((area) => area.getAttribute('rows') === '4');
+    if (!textarea) {
+      throw new Error('Edit textarea not found');
+    }
+    await fireEvent.keyDown(textarea, { key: 'Enter', metaKey: true });
+
+    expect(apiUpdatePost).toHaveBeenCalledWith('post-1', {
+      content: 'Hello world',
+      links: undefined,
+    });
+  });
+
+  it('ignores cmd+enter when edit content is empty', async () => {
+    authStore.setUser({
+      id: 'user-1',
+      username: 'Sander',
+      email: 'sander@example.com',
+      isAdmin: false,
+      totpEnabled: false,
+    });
+
+    apiUpdatePost.mockResolvedValue({ post: { ...basePost } });
+
+    render(PostCard, { post: basePost });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+
+    const textareas = screen.getAllByRole('textbox');
+    const textarea = textareas.find((area) => area.getAttribute('rows') === '4');
+    if (!textarea) {
+      throw new Error('Edit textarea not found');
+    }
+    await fireEvent.input(textarea, { target: { value: '   ' } });
+    await fireEvent.keyDown(textarea, { key: 'Enter', metaKey: true });
+
+    expect(apiUpdatePost).not.toHaveBeenCalled();
+  });
 });

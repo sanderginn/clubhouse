@@ -170,6 +170,17 @@
     }
   }
 
+  function handleEditKeyDown(event: KeyboardEvent, commentId: string) {
+    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+      const trimmed = editCommentContent.trim();
+      if (!trimmed || isSavingComment) {
+        return;
+      }
+      event.preventDefault();
+      saveEdit(commentId);
+    }
+  }
+
   async function deleteComment(commentId: string) {
     if (typeof window !== 'undefined') {
       const confirmed = window.confirm('Delete this comment?');
@@ -447,6 +458,7 @@
                     class="w-full rounded-lg border border-gray-300 p-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     rows="3"
                     bind:value={editCommentContent}
+                    on:keydown={(event) => handleEditKeyDown(event, comment.id)}
                   />
                   {#if editCommentError}
                     <div class="text-sm text-red-600">{editCommentError}</div>
@@ -667,6 +679,7 @@
                               class="w-full rounded-lg border border-gray-300 p-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                               rows="3"
                               bind:value={editCommentContent}
+                              on:keydown={(event) => handleEditKeyDown(event, reply.id)}
                             />
                             {#if editCommentError}
                               <div class="text-sm text-red-600">{editCommentError}</div>

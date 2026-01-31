@@ -7,6 +7,7 @@ import { afterEach } from 'vitest';
 const loadThreadComments = vi.hoisted(() => vi.fn());
 const loadMoreThreadComments = vi.hoisted(() => vi.fn());
 const apiDeleteComment = vi.hoisted(() => vi.fn());
+const apiUpdateComment = vi.hoisted(() => vi.fn());
 
 vi.mock('../../../stores/commentFeedStore', () => ({
   loadThreadComments,
@@ -16,6 +17,7 @@ vi.mock('../../../stores/commentFeedStore', () => ({
 vi.mock('../../../services/api', () => ({
   api: {
     deleteComment: apiDeleteComment,
+    updateComment: apiUpdateComment,
   },
 }));
 
@@ -24,6 +26,7 @@ const { default: CommentThread } = await import('../CommentThread.svelte');
 beforeEach(() => {
   loadThreadComments.mockReset();
   loadMoreThreadComments.mockReset();
+  apiUpdateComment.mockReset();
   authStore.setUser(null);
   const state = commentStore as unknown as { resetThread: (postId: string) => void };
   if (state.resetThread) {
@@ -193,5 +196,100 @@ describe('CommentThread', () => {
     render(CommentThread, { postId: 'post-1', commentCount: 1 });
     expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
+  });
+
+  it('saves edits with ctrl+enter', async () => {
+    authStore.setUser({
+      id: 'user-1',
+      username: 'Sander',
+      email: 'sander@example.com',
+      isAdmin: false,
+      totpEnabled: false,
+    });
+
+    commentStore.setThread('post-1', [
+      {
+        id: 'comment-1',
+        postId: 'post-1',
+        userId: 'user-1',
+        content: 'Hello',
+        createdAt: 'now',
+        user: { id: 'user-1', username: 'Sander' },
+        replies: [],
+      },
+    ], null, false);
+
+    apiUpdateComment.mockResolvedValue({
+      comment: {
+        id: 'comment-1',
+        postId: 'post-1',
+        userId: 'user-1',
+        content: 'Hello',
+        createdAt: 'now',
+        user: { id: 'user-1', username: 'Sander' },
+        replies: [],
+      },
+    });
+
+    render(CommentThread, { postId: 'post-1', commentCount: 1 });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+
+    const textareas = screen.getAllByRole('textbox');
+    const textarea = textareas.find((area) => area.getAttribute('rows') === '3');
+    if (!textarea) {
+      throw new Error('Edit textarea not found');
+    }
+    await fireEvent.keyDown(textarea, { key: 'Enter', ctrlKey: true });
+
+    expect(apiUpdateComment).toHaveBeenCalledWith('comment-1', { content: 'Hello' });
+  });
+
+  it('ignores ctrl+enter when edit content is empty', async () => {
+    authStore.setUser({
+      id: 'user-1',
+      username: 'Sander',
+      email: 'sander@example.com',
+      isAdmin: false,
+      totpEnabled: false,
+    });
+
+    commentStore.setThread('post-1', [
+      {
+        id: 'comment-1',
+        postId: 'post-1',
+        userId: 'user-1',
+        content: 'Hello',
+        createdAt: 'now',
+        user: { id: 'user-1', username: 'Sander' },
+        replies: [],
+      },
+    ], null, false);
+
+    apiUpdateComment.mockResolvedValue({
+      comment: {
+        id: 'comment-1',
+        postId: 'post-1',
+        userId: 'user-1',
+        content: 'Hello',
+        createdAt: 'now',
+        user: { id: 'user-1', username: 'Sander' },
+        replies: [],
+      },
+    });
+
+    render(CommentThread, { postId: 'post-1', commentCount: 1 });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+
+    const textareas = screen.getAllByRole('textbox');
+    const textarea = textareas.find((area) => area.getAttribute('rows') === '3');
+    if (!textarea) {
+      throw new Error('Edit textarea not found');
+    }
+    await fireEvent.input(textarea, { target: { value: '   ' } });
+    await fireEvent.keyDown(textarea, { key: 'Enter', ctrlKey: true });
+
+    expect(apiUpdateComment).not.toHaveBeenCalled();
   });
 });
