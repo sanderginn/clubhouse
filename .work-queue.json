@@ -30,7 +30,8 @@
     520,
     526,
     527,
-    530
+    530,
+    537
   ],
   "issues": [
     {
@@ -687,7 +688,7 @@
     {
       "issue_number": 537,
       "title": "Add notification window in navbar",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "feature",
       "priority": 2,
@@ -699,7 +700,9 @@
       "assigned_to": "agent-1769815948-38748",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769815948-38748",
       "branch": "feat/issue-537-add-notification-window-in-navbar",
-      "claimed_at": "2026-01-30T23:32:28Z"
+      "claimed_at": "2026-01-30T23:32:28Z",
+      "pr_number": 542,
+      "completed_at": "2026-01-31T00:25:40Z"
     },
     {
       "issue_number": 530,
