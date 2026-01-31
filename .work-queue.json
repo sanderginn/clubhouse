@@ -41,7 +41,8 @@
     528,
     529,
     530,
-    537
+    537,
+    556
   ],
   "issues": [
     {
@@ -803,7 +804,7 @@
     {
       "issue_number": 556,
       "title": "Notification click updates URL but does not navigate",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         537
       ],
@@ -817,7 +818,9 @@
       "branch": "fix/issue-556-notification-click-updates-url-but-does-",
       "assigned_to": "agent-1769857120-66234",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769857120-66234",
-      "claimed_at": "2026-01-31T10:58:40Z"
+      "claimed_at": "2026-01-31T10:58:40Z",
+      "pr_number": 575,
+      "completed_at": "2026-01-31T11:08:25Z"
     },
     {
       "issue_number": 557,
