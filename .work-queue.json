@@ -783,7 +783,7 @@
     {
       "issue_number": 555,
       "title": "Notifications do not update in real time (WebSocket)",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         537
       ],
@@ -795,7 +795,10 @@
         "backend",
         "ux"
       ],
-      "branch": "fix/issue-555-notifications-do-not-update-in-real-time-websocket"
+      "branch": "fix/issue-555-notifications-do-not-update-in-real-time",
+      "assigned_to": "agent-1769857117-66085",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769857117-66085",
+      "claimed_at": "2026-01-31T10:58:37Z"
     },
     {
       "issue_number": 556,
