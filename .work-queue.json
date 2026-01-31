@@ -954,7 +954,7 @@
     {
       "issue_number": 564,
       "title": "Search results should render a unified thread when matches appear in post + comments",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 9,
@@ -963,7 +963,10 @@
         "frontend",
         "ux"
       ],
-      "branch": "fix/issue-564-search-results-unified-thread"
+      "branch": "fix/issue-564-search-results-should-render-a-unified-t",
+      "assigned_to": "agent-1769858217-5414",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769858217-5414",
+      "claimed_at": "2026-01-31T11:16:57Z"
     },
     {
       "issue_number": 565,
