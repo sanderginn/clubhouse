@@ -2,6 +2,56 @@ import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import path from 'path';
 
+type ProxyLogLevel = 'none' | 'silent' | 'error' | 'warn' | 'info' | 'debug';
+
+const DEFAULT_PROXY_LOG_LEVEL: ProxyLogLevel = 'warn';
+const proxyLogLevelRaw = process.env.VITE_PROXY_LOG_LEVEL?.toLowerCase() ?? DEFAULT_PROXY_LOG_LEVEL;
+const proxyLogLevel: ProxyLogLevel =
+  proxyLogLevelRaw === 'none' ||
+  proxyLogLevelRaw === 'silent' ||
+  proxyLogLevelRaw === 'error' ||
+  proxyLogLevelRaw === 'warn' ||
+  proxyLogLevelRaw === 'info' ||
+  proxyLogLevelRaw === 'debug'
+    ? proxyLogLevelRaw
+    : DEFAULT_PROXY_LOG_LEVEL;
+
+const proxyLogOrder: Record<ProxyLogLevel, number> = {
+  none: -1,
+  silent: -1,
+  error: 0,
+  warn: 1,
+  info: 2,
+  debug: 3,
+};
+
+const shouldProxyLog = (level: ProxyLogLevel) =>
+  proxyLogOrder[proxyLogLevel] >= 0 && proxyLogOrder[level] <= proxyLogOrder[proxyLogLevel];
+
+const logProxy = (level: ProxyLogLevel, ...args: unknown[]) => {
+  if (!shouldProxyLog(level)) {
+    return;
+  }
+
+  switch (level) {
+    case 'error':
+      console.error(...args);
+      break;
+    case 'warn':
+      console.warn(...args);
+      break;
+    case 'info':
+      console.info(...args);
+      break;
+    case 'debug':
+      console.debug(...args);
+      break;
+    default:
+      console.log(...args);
+      break;
+  }
+};
+
 export default defineConfig({
   plugins: [svelte()],
   test: {
@@ -25,30 +75,30 @@ export default defineConfig({
         configure: (proxy, options) => {
           // HTTP request/response logging
           proxy.on('error', (err, req, res) => {
-            console.log('[Vite Proxy] Error:', err.message);
+            logProxy('error', '[Vite Proxy] Error:', err.message);
           });
           proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.log('[Vite Proxy] Request:', req.method, req.url);
+            logProxy('info', '[Vite Proxy] Request:', req.method, req.url);
           });
           proxy.on('proxyRes', (proxyRes, req, res) => {
-            console.log('[Vite Proxy] Response:', proxyRes.statusCode, req.url);
+            logProxy('info', '[Vite Proxy] Response:', proxyRes.statusCode, req.url);
           });
 
           // WebSocket-specific logging
           proxy.on('upgrade', (req, socket, head) => {
-            console.log('[Vite Proxy] WebSocket upgrade request:', req.url);
+            logProxy('info', '[Vite Proxy] WebSocket upgrade request:', req.url);
           });
           proxy.on('proxyReqWs', (proxyReq, req, socket, options, head) => {
-            console.log('[Vite Proxy] WebSocket proxying to backend:', req.url);
+            logProxy('debug', '[Vite Proxy] WebSocket proxying to backend:', req.url);
           });
           proxy.on('open', (proxySocket) => {
-            console.log('[Vite Proxy] WebSocket connection opened to backend');
+            logProxy('info', '[Vite Proxy] WebSocket connection opened to backend');
             proxySocket.on('data', (chunk) => {
-              console.log('[Vite Proxy] WebSocket data from backend');
+              logProxy('debug', '[Vite Proxy] WebSocket data from backend');
             });
           });
           proxy.on('close', (res, socket, head) => {
-            console.log('[Vite Proxy] WebSocket connection closed');
+            logProxy('info', '[Vite Proxy] WebSocket connection closed');
           });
         },
       },
