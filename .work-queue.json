@@ -26,6 +26,7 @@
     513,
     514,
     515,
+    516,
     520,
     526,
     527,
@@ -460,7 +461,7 @@
     {
       "issue_number": 516,
       "title": "Frontend: Upload multiple images in post creation",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         515
       ],
@@ -474,7 +475,9 @@
       "assigned_to": "agent-1769817977-95209",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769817977-95209",
       "branch": "feat/issue-516-frontend-upload-multiple-images-in-post-",
-      "claimed_at": "2026-01-31T00:06:17Z"
+      "claimed_at": "2026-01-31T00:06:17Z",
+      "pr_number": 545,
+      "completed_at": "2026-01-31T00:20:44Z"
     },
     {
       "issue_number": 517,
