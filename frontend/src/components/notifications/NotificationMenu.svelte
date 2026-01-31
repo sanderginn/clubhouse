@@ -88,6 +88,9 @@
     const href = buildNotificationHref(notification);
     if (href) {
       pushPath(href);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new PopStateEvent('popstate', { state: window.history.state }));
+      }
     }
     closeMenu();
   }
