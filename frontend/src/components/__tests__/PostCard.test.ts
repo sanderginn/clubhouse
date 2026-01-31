@@ -199,7 +199,7 @@ describe('PostCard', () => {
     expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
   });
 
-  it('removes only the first image link when editing', async () => {
+  it('removes only the selected image link when editing', async () => {
     authStore.setUser({
       id: 'user-1',
       username: 'Sander',
@@ -225,20 +225,20 @@ describe('PostCard', () => {
     render(PostCard, { post: postWithImages });
 
     await fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
-    await fireEvent.click(screen.getByRole('button', { name: 'Remove image' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Remove image 2' }));
     await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(apiUpdatePost).toHaveBeenCalledWith('post-1', {
       content: 'Hello world',
       links: [
+        { url: 'https://cdn.example.com/uploads/first.png' },
         { url: 'https://example.com/article' },
-        { url: 'https://cdn.example.com/uploads/second.png' },
         { url: 'https://example.com/extra' },
       ],
     });
   });
 
-  it('replaces only the first image link when editing', async () => {
+  it('replaces only the selected image link when editing', async () => {
     authStore.setUser({
       id: 'user-1',
       username: 'Sander',
@@ -261,13 +261,11 @@ describe('PostCard', () => {
       post: { ...postWithImages, content: postWithImages.content },
     });
 
-    const { container } = render(PostCard, { post: postWithImages });
+    render(PostCard, { post: postWithImages });
 
     await fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
 
-    await fireEvent.click(screen.getByRole('button', { name: 'Replace image' }));
-
-    const hiddenInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const hiddenInput = screen.getByLabelText('Upload replacement for image 2') as HTMLInputElement;
     const file = new File(['image-bytes'], 'new.png', { type: 'image/png' });
     await fireEvent.change(hiddenInput, { target: { files: [file] } });
     await tick();
@@ -278,9 +276,9 @@ describe('PostCard', () => {
     expect(apiUpdatePost).toHaveBeenCalledWith('post-1', {
       content: 'Hello world',
       links: [
-        { url: 'https://cdn.example.com/uploads/new.png' },
+        { url: 'https://cdn.example.com/uploads/first.png' },
         { url: 'https://example.com/article' },
-        { url: 'https://cdn.example.com/uploads/second.png' },
+        { url: 'https://cdn.example.com/uploads/new.png' },
       ],
     });
   });

@@ -38,12 +38,15 @@
   let editContent = '';
   let editError: string | null = null;
   let isSaving = false;
-  let editImageAction: 'keep' | 'remove' | 'replace' = 'keep';
-  let editImageUploadUrl: string | null = null;
-  let editImageUploadError: string | null = null;
-  let editImageUploading = false;
-  let editImageUploadProgress = 0;
-  let editImageInput: HTMLInputElement | null = null;
+  type EditImageState = {
+    action: 'keep' | 'remove' | 'replace';
+    uploadUrl: string | null;
+    uploadError: string | null;
+    uploading: boolean;
+    progress: number;
+  };
+  let editImages: EditImageState[] = [];
+  let editImageInputs: Array<HTMLInputElement | null> = [];
   let isImageLightboxOpen = false;
   let lightboxImageIndex = 0;
   let lightboxImageId: string | null = null;
@@ -248,14 +251,27 @@
     }
   }
 
+  function buildEditImagesState(): EditImageState[] {
+    return imageLinks.map(() => ({
+      action: 'keep',
+      uploadUrl: null,
+      uploadError: null,
+      uploading: false,
+      progress: 0,
+    }));
+  }
+
+  function resetEditImages() {
+    editImages = buildEditImagesState();
+    editImageInputs = new Array(editImages.length).fill(null);
+    editImageLoadFailures = new Set();
+    lastEditPreviewUrls = [];
+  }
+
   function startEdit() {
     editContent = post.content;
     editError = null;
-    editImageAction = 'keep';
-    editImageUploadUrl = null;
-    editImageUploadError = null;
-    editImageUploading = false;
-    editImageUploadProgress = 0;
+    resetEditImages();
     isEditing = true;
   }
 
@@ -263,17 +279,16 @@
     isEditing = false;
     editContent = post.content;
     editError = null;
-    editImageAction = 'keep';
-    editImageUploadUrl = null;
-    editImageUploadError = null;
-    editImageUploading = false;
-    editImageUploadProgress = 0;
+    resetEditImages();
   }
 
   async function saveEdit() {
     const trimmed = editContent.trim();
     if (!trimmed) {
       editError = 'Content is required.';
+      return;
+    }
+    if (isEditImageUploading) {
       return;
     }
 
@@ -299,7 +314,7 @@
   function handleEditKeyDown(event: KeyboardEvent) {
     if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
       const trimmed = editContent.trim();
-      if (!trimmed || isSaving || editImageUploading) {
+      if (!trimmed || isSaving || isEditImageUploading) {
         return;
       }
       event.preventDefault();
@@ -378,14 +393,18 @@
       : post.content;
   $: canEdit = $currentUser?.id === post.userId;
   $: canDelete = $currentUser?.id === post.userId || $isAdmin;
-  $: originalImageUrl =
-    imageLinks.length > 0 ? getImageLinkUrl(imageLinks[0] as Link) : undefined;
-  $: editImagePreviewUrl =
-    editImageAction === 'replace' && editImageUploadUrl
-      ? editImageUploadUrl
-      : editImageAction === 'keep'
-        ? originalImageUrl
-        : undefined;
+  $: originalImageUrls = imageLinks.map((link) => getImageLinkUrl(link));
+  $: editImagePreviewUrls = editImages.map((state, index) => {
+    const originalUrl = originalImageUrls[index];
+    if (state?.action === 'replace' && state.uploadUrl) {
+      return state.uploadUrl;
+    }
+    if (state?.action === 'keep') {
+      return originalUrl;
+    }
+    return undefined;
+  });
+  $: isEditImageUploading = editImages.some((item) => item.uploading);
   $: activeImageItem = imageItems[activeImageIndex];
   $: activeImageUrl = activeImageItem?.url;
   $: activeImageLink = activeImageItem?.link;
@@ -547,11 +566,20 @@
     preloadLightboxImage((index - 1 + imageItems.length) % imageItems.length);
   }
 
-  let editImageLoadFailed = false;
-  let lastEditImageUrl: string | undefined;
-  $: if (editImagePreviewUrl !== lastEditImageUrl) {
-    editImageLoadFailed = false;
-    lastEditImageUrl = editImagePreviewUrl;
+  let editImageLoadFailures = new Set<number>();
+  let lastEditPreviewUrls: Array<string | undefined> = [];
+  $: {
+    const nextFailures = new Set<number>();
+    editImageLoadFailures.forEach((index) => {
+      if (index >= editImagePreviewUrls.length) {
+        return;
+      }
+      if (editImagePreviewUrls[index] === lastEditPreviewUrls[index]) {
+        nextFailures.add(index);
+      }
+    });
+    editImageLoadFailures = nextFailures;
+    lastEditPreviewUrls = [...editImagePreviewUrls];
   }
 
   function validateImageFile(file: File): string | null {
@@ -570,7 +598,11 @@
     return null;
   }
 
-  async function handleEditImageSelect(event: Event) {
+  function updateEditImage(index: number, patch: Partial<EditImageState>) {
+    editImages = editImages.map((item, i) => (i === index ? { ...item, ...patch } : item));
+  }
+
+  async function handleEditImageSelect(index: number, event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) {
@@ -579,70 +611,101 @@
 
     const validationError = validateImageFile(file);
     if (validationError) {
-      editImageUploadError = validationError;
+      updateEditImage(index, { uploadError: validationError });
       input.value = '';
       return;
     }
 
-    editImageUploading = true;
-    editImageUploadProgress = 0;
-    editImageUploadError = null;
+    updateEditImage(index, { uploading: true, progress: 0, uploadError: null });
 
     try {
       const response = await api.uploadImage(file, (progress) => {
-        editImageUploadProgress = progress;
+        updateEditImage(index, { progress });
       });
-      editImageUploadUrl = response.url;
-      editImageAction = 'replace';
+      updateEditImage(index, { uploadUrl: response.url, action: 'replace' });
     } catch (err) {
-      editImageUploadError = err instanceof Error ? err.message : 'Upload failed';
+      updateEditImage(index, {
+        uploadError: err instanceof Error ? err.message : 'Upload failed',
+      });
     } finally {
-      editImageUploading = false;
+      updateEditImage(index, { uploading: false });
       input.value = '';
     }
   }
 
-  function removeEditImage() {
-    editImageAction = 'remove';
-    editImageUploadUrl = null;
-    editImageUploadError = null;
-    editImageUploading = false;
-    editImageUploadProgress = 0;
+  function removeEditImage(index: number) {
+    updateEditImage(index, {
+      action: 'remove',
+      uploadUrl: null,
+      uploadError: null,
+      uploading: false,
+      progress: 0,
+    });
   }
 
-  function undoEditImageRemoval() {
-    editImageAction = 'keep';
-    editImageUploadUrl = null;
-    editImageUploadError = null;
-    editImageUploading = false;
-    editImageUploadProgress = 0;
+  function undoEditImageRemoval(index: number) {
+    updateEditImage(index, {
+      action: 'keep',
+      uploadUrl: null,
+      uploadError: null,
+      uploading: false,
+      progress: 0,
+    });
   }
 
   function buildEditLinksPayload(): { url: string }[] | null | undefined {
-    if (editImageAction === 'keep') {
+    if (editImages.length === 0) {
       return undefined;
     }
 
     const originalLinks = post.links ?? [];
-    const firstImageIndex = originalLinks.findIndex((item) => Boolean(getImageLinkUrl(item)));
-    if (firstImageIndex === -1) {
+    if (originalLinks.length === 0) {
       return undefined;
     }
 
-    if (editImageAction === 'remove') {
-      return originalLinks
-        .filter((_, index) => index !== firstImageIndex)
-        .map((item) => ({ url: item.url }));
+    const imageLinkIndices = originalLinks.reduce<number[]>((indices, item, index) => {
+      if (getImageLinkUrl(item)) {
+        indices.push(index);
+      }
+      return indices;
+    }, []);
+    if (imageLinkIndices.length === 0) {
+      return undefined;
     }
 
-    const uploadUrl = editImageUploadUrl;
-    if (editImageAction === 'replace' && uploadUrl) {
-      return originalLinks.map((item, index) => ({
-        url: index === firstImageIndex ? uploadUrl : item.url,
-      }));
+    const hasChanges = editImages.some((item) => item.action !== 'keep');
+    if (!hasChanges) {
+      return undefined;
     }
 
-    return undefined;
+    const imageIndexByLinkIndex = new Map<number, number>();
+    imageLinkIndices.forEach((linkIndex, imageIndex) => {
+      imageIndexByLinkIndex.set(linkIndex, imageIndex);
+    });
+
+    const nextLinks: { url: string }[] = [];
+    originalLinks.forEach((item, linkIndex) => {
+      const imageIndex = imageIndexByLinkIndex.get(linkIndex);
+      if (imageIndex === undefined) {
+        nextLinks.push({ url: item.url });
+        return;
+      }
+      const editState = editImages[imageIndex];
+      if (!editState || editState.action === 'keep') {
+        nextLinks.push({ url: item.url });
+        return;
+      }
+      if (editState.action === 'remove') {
+        return;
+      }
+      if (editState.action === 'replace' && editState.uploadUrl) {
+        nextLinks.push({ url: editState.uploadUrl });
+        return;
+      }
+      nextLinks.push({ url: item.url });
+    });
+
+    return nextLinks;
   }
 
   async function deletePost() {
@@ -798,87 +861,103 @@
 
       {#if isEditing}
         <div class="mb-3 space-y-4">
-          {#if originalImageUrl || editImageAction !== 'keep'}
-            <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-3">
+          {#if editImages.length > 0}
+            <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-4">
               <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Image
+                Images
               </div>
-              {#if editImagePreviewUrl}
-                <div class="rounded-lg border border-gray-200 overflow-hidden bg-white">
-                  {#if editImageLoadFailed}
-                    <div class="flex items-center justify-center px-4 py-6 text-sm text-gray-500">
-                      Image unavailable. Try uploading again.
+              {#each editImages as editImage, index}
+                <div class="rounded-lg border border-gray-200 bg-white p-3 space-y-3">
+                  <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Image {index + 1}
+                  </div>
+                  {#if editImagePreviewUrls[index]}
+                    <div class="rounded-lg border border-gray-200 overflow-hidden bg-white">
+                      {#if editImageLoadFailures.has(index)}
+                        <div class="flex items-center justify-center px-4 py-6 text-sm text-gray-500">
+                          Image unavailable. Try uploading again.
+                        </div>
+                      {:else}
+                        <img
+                          src={editImagePreviewUrls[index]}
+                          alt={`Post preview ${index + 1}`}
+                          class="w-full max-h-[24rem] object-contain bg-white"
+                          loading="lazy"
+                          on:error={() => {
+                            const next = new Set(editImageLoadFailures);
+                            next.add(index);
+                            editImageLoadFailures = next;
+                          }}
+                        />
+                      {/if}
                     </div>
-                  {:else}
-                    <img
-                      src={editImagePreviewUrl}
-                      alt="Post preview"
-                      class="w-full max-h-[24rem] object-contain bg-white"
-                      loading="lazy"
-                      on:error={() => {
-                        editImageLoadFailed = true;
-                      }}
-                    />
+                  {/if}
+                  <input
+                    type="file"
+                    bind:this={editImageInputs[index]}
+                    on:change={(event) => handleEditImageSelect(index, event)}
+                    accept={ACCEPTED_IMAGE_TYPES}
+                    aria-label={`Upload replacement for image ${index + 1}`}
+                    data-testid={`edit-image-input-${index}`}
+                    class="hidden"
+                  />
+                  <div class="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      class="w-full sm:w-auto px-2.5 py-1.5 rounded-md border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                      on:click={() => editImageInputs[index]?.click()}
+                      disabled={isSaving || editImage.uploading}
+                      aria-label={`Replace image ${index + 1}`}
+                    >
+                      Replace image
+                    </button>
+                    {#if editImage.action !== 'remove'}
+                      <button
+                        type="button"
+                        class="w-full sm:w-auto px-2.5 py-1.5 rounded-md border border-red-200 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
+                        on:click={() => removeEditImage(index)}
+                        disabled={isSaving || editImage.uploading}
+                        aria-label={`Remove image ${index + 1}`}
+                      >
+                        Remove image
+                      </button>
+                    {:else}
+                      <button
+                        type="button"
+                        class="w-full sm:w-auto px-2.5 py-1.5 rounded-md border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                        on:click={() => undoEditImageRemoval(index)}
+                        disabled={isSaving || editImage.uploading}
+                        aria-label={`Keep image ${index + 1}`}
+                      >
+                        Keep image
+                      </button>
+                    {/if}
+                  </div>
+                  {#if editImage.uploading}
+                    <div class="text-xs text-gray-500">
+                      Uploading image... {editImage.progress}%
+                    </div>
+                    <div class="h-1 w-full bg-gray-200 rounded">
+                      <div
+                        class="h-1 bg-blue-600 rounded"
+                        style={`width: ${editImage.progress}%`}
+                      ></div>
+                    </div>
+                  {/if}
+                  {#if editImage.uploadError}
+                    <div class="text-sm text-red-600">{editImage.uploadError}</div>
+                  {/if}
+                  {#if editImage.action === 'remove'}
+                    <div class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                      Image will be removed when you save.
+                    </div>
+                  {:else if editImage.action === 'replace'}
+                    <div class="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-1">
+                      New image will replace the existing one when you save.
+                    </div>
                   {/if}
                 </div>
-              {/if}
-              <input
-                type="file"
-                bind:this={editImageInput}
-                on:change={handleEditImageSelect}
-                accept={ACCEPTED_IMAGE_TYPES}
-                class="hidden"
-              />
-              <div class="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  class="w-full sm:w-auto px-2.5 py-1.5 rounded-md border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
-                  on:click={() => editImageInput?.click()}
-                  disabled={isSaving || editImageUploading}
-                >
-                  Replace image
-                </button>
-                {#if editImageAction !== 'remove'}
-                  <button
-                    type="button"
-                    class="w-full sm:w-auto px-2.5 py-1.5 rounded-md border border-red-200 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
-                    on:click={removeEditImage}
-                    disabled={isSaving || editImageUploading}
-                  >
-                    Remove image
-                  </button>
-                {:else}
-                  <button
-                    type="button"
-                    class="w-full sm:w-auto px-2.5 py-1.5 rounded-md border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
-                    on:click={undoEditImageRemoval}
-                    disabled={isSaving || editImageUploading}
-                  >
-                    Keep image
-                  </button>
-                {/if}
-              </div>
-              {#if editImageUploading}
-                <div class="text-xs text-gray-500">Uploading image... {editImageUploadProgress}%</div>
-                <div class="h-1 w-full bg-gray-200 rounded">
-                  <div
-                    class="h-1 bg-blue-600 rounded"
-                    style={`width: ${editImageUploadProgress}%`}
-                  ></div>
-                </div>
-              {/if}
-              {#if editImageUploadError}
-                <div class="text-sm text-red-600">{editImageUploadError}</div>
-              {/if}
-              {#if editImageAction === 'remove'}
-                <div class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-                  Image will be removed when you save.
-                </div>
-              {:else if editImageAction === 'replace'}
-                <div class="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-1">
-                  New image will replace the existing one when you save.
-                </div>
-              {/if}
+              {/each}
             </div>
           {/if}
           <textarea
@@ -895,7 +974,7 @@
               type="button"
               class="px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-60"
               on:click={saveEdit}
-              disabled={isSaving || editImageUploading}
+              disabled={isSaving || isEditImageUploading}
             >
               {isSaving ? 'Saving...' : 'Save'}
             </button>
@@ -903,7 +982,7 @@
               type="button"
               class="px-3 py-1.5 rounded-md border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
               on:click={cancelEdit}
-              disabled={isSaving || editImageUploading}
+              disabled={isSaving || isEditImageUploading}
             >
               Cancel
             </button>
