@@ -221,17 +221,25 @@
     }
   }
 
-  $: link = post.links?.[0];
-  $: metadata = link?.metadata;
-  $: imageUrl = getImageLinkUrl(link);
-  $: isInternalUploadLink = link ? isInternalUploadUrl(link.url) : false;
+  $: imageLinks = (post.links ?? []).filter((item) => Boolean(getImageLinkUrl(item)));
+  $: imageItems = imageLinks
+    .map((item) => ({
+      link: item,
+      url: getImageLinkUrl(item),
+      title: item.metadata?.title || 'Uploaded image',
+    }))
+    .filter((item): item is { link: Link; url: string; title: string } => Boolean(item.url));
+  $: primaryLink = post.links?.[0];
+  $: metadata = primaryLink?.metadata;
+  $: primaryImageUrl = imageItems.length > 0 ? imageItems[0].url : undefined;
+  $: isInternalUploadLink =
+    imageItems.length > 0 ? isInternalUploadUrl(imageItems[0].link.url) : false;
   $: displayContent =
-    !isEditing && imageUrl && isInternalUploadLink
+    !isEditing && primaryImageUrl && isInternalUploadLink
       ? stripInternalUploadUrls(post.content)
       : post.content;
   $: canEdit = $currentUser?.id === post.userId;
   $: canDelete = $currentUser?.id === post.userId || $isAdmin;
-  $: imageLinks = (post.links ?? []).filter((item) => Boolean(getImageLinkUrl(item)));
   $: originalImageUrl =
     imageLinks.length > 0 ? getImageLinkUrl(imageLinks[0] as Link) : undefined;
   $: editImagePreviewUrl =
@@ -240,12 +248,125 @@
       : editImageAction === 'keep'
         ? originalImageUrl
         : undefined;
+  $: activeImageItem = imageItems[activeImageIndex];
+  $: activeImageUrl = activeImageItem?.url;
+  $: activeImageLink = activeImageItem?.link;
+  $: activeImageTitle = activeImageItem?.title ?? 'Uploaded image';
+  $: activeImageFailed = imageLoadFailures.has(activeImageIndex);
+  $: isActiveImageInternal = activeImageLink
+    ? isInternalUploadUrl(activeImageLink.url)
+    : false;
 
-  let imageLoadFailed = false;
-  let lastImageUrl: string | undefined;
-  $: if (imageUrl !== lastImageUrl) {
-    imageLoadFailed = false;
-    lastImageUrl = imageUrl;
+  let activeImageIndex = 0;
+  let loadedImageIndices = new Set<number>();
+  let imageLoadFailures = new Set<number>();
+  let lastImageSignature = '';
+
+  $: {
+    const signature = imageItems.map((item) => item.url).join('|');
+    if (signature !== lastImageSignature) {
+      activeImageIndex = 0;
+      loadedImageIndices = new Set();
+      imageLoadFailures = new Set();
+      if (imageItems.length > 0) {
+        loadedImageIndices.add(0);
+      }
+      lastImageSignature = signature;
+    }
+  }
+
+  function markImageLoaded(index: number) {
+    if (!loadedImageIndices.has(index)) {
+      const next = new Set(loadedImageIndices);
+      next.add(index);
+      loadedImageIndices = next;
+    }
+  }
+
+  function markImageFailed(index: number) {
+    if (!imageLoadFailures.has(index)) {
+      const next = new Set(imageLoadFailures);
+      next.add(index);
+      imageLoadFailures = next;
+    }
+  }
+
+  function shouldLoadImage(index: number): boolean {
+    return loadedImageIndices.has(index) || index === activeImageIndex;
+  }
+
+  function goToImage(index: number) {
+    if (imageItems.length === 0) {
+      return;
+    }
+    const clamped = (index + imageItems.length) % imageItems.length;
+    markImageLoaded(clamped);
+    if (imageItems.length > 1) {
+      markImageLoaded((clamped + 1) % imageItems.length);
+      markImageLoaded((clamped - 1 + imageItems.length) % imageItems.length);
+    }
+    activeImageIndex = clamped;
+  }
+
+  function nextImage() {
+    goToImage(activeImageIndex + 1);
+  }
+
+  function previousImage() {
+    goToImage(activeImageIndex - 1);
+  }
+
+  function handleCarouselKeydown(event: KeyboardEvent) {
+    if (imageItems.length <= 1) {
+      return;
+    }
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      previousImage();
+    }
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      nextImage();
+    }
+  }
+
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchActive = false;
+
+  function handleTouchStart(event: TouchEvent) {
+    if (imageItems.length <= 1) {
+      return;
+    }
+    const touch = event.touches[0];
+    if (!touch) {
+      return;
+    }
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    touchActive = true;
+  }
+
+  function handleTouchEnd(event: TouchEvent) {
+    if (!touchActive || imageItems.length <= 1) {
+      touchActive = false;
+      return;
+    }
+    const touch = event.changedTouches[0];
+    if (!touch) {
+      touchActive = false;
+      return;
+    }
+    const deltaX = touch.clientX - touchStartX;
+    const deltaY = touch.clientY - touchStartY;
+    touchActive = false;
+    if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+      if (deltaX < 0) {
+        nextImage();
+      } else {
+        previousImage();
+      }
+    }
   }
 
   let editImageLoadFailed = false;
@@ -616,47 +737,140 @@
         />
       {/if}
 
-      {#if !isEditing && link && imageUrl}
-        <div class="mb-3 rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
-          {#if imageLoadFailed}
-            <div class="flex items-center justify-center px-4 py-6 text-sm text-gray-500">
-              Image unavailable. Try opening the link directly.
-            </div>
-          {:else}
-            <button
-              type="button"
-              class="w-full text-left"
-              aria-label="Open full-size image"
-              aria-haspopup="dialog"
-              on:click={() =>
-                openImageLightbox(imageUrl, metadata?.title || 'Uploaded image')}
-            >
-              <img
-                src={imageUrl}
-                alt={metadata?.title || 'Uploaded image'}
-                class="w-full max-h-[28rem] object-contain bg-white"
-                loading="lazy"
-                on:error={() => {
-                  imageLoadFailed = true;
+      {#if !isEditing && imageItems.length > 0}
+        {#if imageItems.length === 1}
+          <div class="mb-3 rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+            {#if activeImageFailed}
+              <div class="flex items-center justify-center px-4 py-6 text-sm text-gray-500">
+                Image unavailable. Try opening the link directly.
+              </div>
+            {:else if activeImageUrl}
+              <button
+                type="button"
+                class="w-full text-left"
+                aria-label="Open full-size image"
+                aria-haspopup="dialog"
+                on:click={() => openImageLightbox(activeImageUrl, activeImageTitle)}
+              >
+                <img
+                  src={activeImageUrl}
+                  alt={activeImageTitle}
+                  class="w-full max-h-[28rem] object-contain bg-white"
+                  loading="lazy"
+                  on:error={() => {
+                    markImageFailed(0);
+                  }}
+                />
+              </button>
+            {/if}
+          </div>
+        {:else}
+          <div class="mb-3">
+            <div class="relative rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+              <div
+                class="relative"
+                tabindex="0"
+                role="button"
+                aria-roledescription="carousel"
+                aria-label="Post images"
+                on:keydown={handleCarouselKeydown}
+                on:touchstart={handleTouchStart}
+                on:touchend={handleTouchEnd}
+                on:touchcancel={() => {
+                  touchActive = false;
                 }}
-              />
-            </button>
-          {/if}
-        </div>
-        {#if !isInternalUploadLink || imageLoadFailed}
+                style="touch-action: pan-y;"
+              >
+                <div
+                  class="flex transition-transform duration-300 ease-out"
+                  style={`transform: translateX(-${activeImageIndex * 100}%);`}
+                >
+                  {#each imageItems as item, index}
+                    <div class="w-full flex-shrink-0">
+                      {#if imageLoadFailures.has(index)}
+                        <div class="flex items-center justify-center px-4 py-6 text-sm text-gray-500">
+                          Image unavailable. Try opening the link directly.
+                        </div>
+                      {:else}
+                        <button
+                          type="button"
+                          class="w-full text-left"
+                          aria-label={`Open image ${index + 1} in full size`}
+                          aria-haspopup="dialog"
+                          on:click={() => openImageLightbox(item.url, item.title)}
+                        >
+                          <img
+                            src={shouldLoadImage(index) ? item.url : undefined}
+                            alt={item.title}
+                            class="w-full max-h-[28rem] object-contain bg-white"
+                            loading={index === activeImageIndex ? 'eager' : 'lazy'}
+                            on:error={() => {
+                              markImageFailed(index);
+                            }}
+                          />
+                        </button>
+                      {/if}
+                    </div>
+                  {/each}
+                </div>
+
+                <div class="absolute inset-y-0 left-2 hidden sm:flex items-center">
+                  <button
+                    type="button"
+                    class="flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-gray-700 shadow hover:bg-white"
+                    aria-label="Previous image"
+                    on:click={previousImage}
+                  >
+                    ‹
+                  </button>
+                </div>
+                <div class="absolute inset-y-0 right-2 hidden sm:flex items-center">
+                  <button
+                    type="button"
+                    class="flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-gray-700 shadow hover:bg-white"
+                    aria-label="Next image"
+                    on:click={nextImage}
+                  >
+                    ›
+                  </button>
+                </div>
+
+                <div class="absolute bottom-2 left-0 right-0 flex items-center justify-center">
+                  <span class="rounded-full bg-black/60 px-2 py-1 text-xs text-white">
+                    {activeImageIndex + 1}/{imageItems.length}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="mt-2 flex items-center justify-center gap-1">
+              {#each imageItems as _, index}
+                <button
+                  type="button"
+                  class={`h-2.5 w-2.5 rounded-full transition-colors ${
+                    index === activeImageIndex ? 'bg-gray-900' : 'bg-gray-300'
+                  }`}
+                  aria-label={`Go to image ${index + 1} of ${imageItems.length}`}
+                  aria-current={index === activeImageIndex ? 'true' : 'false'}
+                  on:click={() => goToImage(index)}
+                ></button>
+              {/each}
+            </div>
+          </div>
+        {/if}
+        {#if activeImageLink && (!isActiveImageInternal || activeImageFailed)}
           <a
-            href={link.url}
+            href={activeImageLink.url}
             target="_blank"
             rel="noopener noreferrer"
             class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm break-all"
           >
             <span>🔗</span>
-            <span class="underline">{link.url}</span>
+            <span class="underline">{activeImageLink.url}</span>
           </a>
         {/if}
-      {:else if !isEditing && link && metadata}
+      {:else if !isEditing && primaryLink && metadata}
         <a
-          href={link.url}
+          href={primaryLink.url}
           target="_blank"
           rel="noopener noreferrer"
           class="block rounded-lg border border-gray-200 overflow-hidden hover:border-gray-300 transition-colors"
@@ -696,15 +910,15 @@
             </div>
           </div>
         </a>
-      {:else if !isEditing && link}
+      {:else if !isEditing && primaryLink}
         <a
-          href={link.url}
+          href={primaryLink.url}
           target="_blank"
           rel="noopener noreferrer"
           class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm break-all"
         >
           <span>🔗</span>
-          <span class="underline">{link.url}</span>
+          <span class="underline">{primaryLink.url}</span>
         </a>
       {/if}
 
