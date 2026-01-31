@@ -51,17 +51,18 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 	}
 	span.SetAttributes(attribute.String("post_id", postID.String()))
 
-	// Verify post exists and is not deleted
-	var postExists bool
-	err = s.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM posts WHERE id = $1 AND deleted_at IS NULL)", postID).
-		Scan(&postExists)
-	if err != nil || !postExists {
-		if err == nil {
+	// Verify post exists and is not deleted, and load section ID for audit metadata.
+	var sectionID uuid.UUID
+	err = s.db.QueryRowContext(ctx, "SELECT section_id FROM posts WHERE id = $1 AND deleted_at IS NULL", postID).
+		Scan(&sectionID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
 			err = fmt.Errorf("post not found")
 		}
 		recordSpanError(span, err)
 		return nil, fmt.Errorf("post not found")
 	}
+	span.SetAttributes(attribute.String("section_id", sectionID.String()))
 
 	// Validate parent comment if provided
 	var parentCommentID *uuid.UUID
@@ -187,6 +188,29 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 
 			comment.Links = append(comment.Links, link)
 		}
+	}
+
+	metadata := map[string]interface{}{
+		"comment_id":      commentID.String(),
+		"post_id":         postID.String(),
+		"section_id":      sectionID.String(),
+		"content_excerpt": truncateAuditExcerpt(strings.TrimSpace(req.Content)),
+		"has_links":       len(req.Links) > 0,
+	}
+	if parentCommentID != nil {
+		metadata["parent_comment_id"] = parentCommentID.String()
+	}
+	if imageID != nil {
+		metadata["image_id"] = imageID.String()
+	}
+	if len(req.Links) > 0 {
+		metadata["link_count"] = len(req.Links)
+	}
+
+	auditService := NewAuditService(tx)
+	if err := auditService.LogAuditWithMetadata(ctx, "create_comment", userID, userID, metadata); err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
 	var user models.User

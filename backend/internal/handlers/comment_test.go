@@ -238,6 +238,7 @@ func TestCreateCommentHandlerInvalidImageID(t *testing.T) {
 
 	userID := uuid.New()
 	postID := uuid.New()
+	sectionID := uuid.New()
 
 	body, err := json.Marshal(models.CreateCommentRequest{
 		PostID:  postID.String(),
@@ -248,9 +249,9 @@ func TestCreateCommentHandlerInvalidImageID(t *testing.T) {
 		t.Fatalf("failed to marshal body: %v", err)
 	}
 
-	mock.ExpectQuery("SELECT EXISTS\\(SELECT 1 FROM posts").
+	mock.ExpectQuery("SELECT section_id FROM posts").
 		WithArgs(postID).
-		WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(true))
+		WillReturnRows(sqlmock.NewRows([]string{"section_id"}).AddRow(sectionID))
 
 	req, err := http.NewRequest(http.MethodPost, "/api/v1/comments", bytes.NewReader(body))
 	if err != nil {
@@ -291,6 +292,7 @@ func TestCreateCommentHandlerImageNotFound(t *testing.T) {
 
 	userID := uuid.New()
 	postID := uuid.New()
+	sectionID := uuid.New()
 	imageID := uuid.New()
 
 	body, err := json.Marshal(models.CreateCommentRequest{
@@ -302,9 +304,9 @@ func TestCreateCommentHandlerImageNotFound(t *testing.T) {
 		t.Fatalf("failed to marshal body: %v", err)
 	}
 
-	mock.ExpectQuery("SELECT EXISTS\\(SELECT 1 FROM posts").
+	mock.ExpectQuery("SELECT section_id FROM posts").
 		WithArgs(postID).
-		WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(true))
+		WillReturnRows(sqlmock.NewRows([]string{"section_id"}).AddRow(sectionID))
 	mock.ExpectQuery("SELECT EXISTS\\(SELECT 1 FROM post_images").
 		WithArgs(imageID, postID).
 		WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(false))
