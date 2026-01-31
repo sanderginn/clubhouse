@@ -46,7 +46,8 @@
     556,
     557,
     558,
-    560
+    560,
+    562
   ],
   "issues": [
     {
@@ -926,7 +927,7 @@
     {
       "issue_number": 562,
       "title": "Unescaped @ mentions should render as literal text when user does not exist",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 7,
@@ -938,7 +939,9 @@
       "branch": "fix/issue-562-unescaped-mentions-should-render-as-lite",
       "assigned_to": "agent-1769857962-99328",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769857962-99328",
-      "claimed_at": "2026-01-31T11:12:42Z"
+      "claimed_at": "2026-01-31T11:12:42Z",
+      "pr_number": 580,
+      "completed_at": "2026-01-31T11:24:55Z"
     },
     {
       "issue_number": 563,
