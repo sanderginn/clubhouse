@@ -380,7 +380,11 @@ func (h *AuthHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	// Get user from database
 	user, err := h.userService.GetUserByID(r.Context(), session.UserID)
 	if err != nil {
-		writeError(r.Context(), w, http.StatusInternalServerError, "USER_NOT_FOUND", "Failed to retrieve user")
+		if err.Error() == "user not found" {
+			writeError(r.Context(), w, http.StatusNotFound, "USER_NOT_FOUND", "User not found")
+			return
+		}
+		writeError(r.Context(), w, http.StatusInternalServerError, "USER_LOOKUP_FAILED", "Failed to retrieve user")
 		return
 	}
 

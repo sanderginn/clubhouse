@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/services"
+	"github.com/sanderginn/clubhouse/internal/testutil"
 )
 
 type stubAuthRateLimiter struct {
@@ -32,6 +33,8 @@ func (s *stubAuthRateLimiter) Allow(_ context.Context, ip string, identifiers []
 type stubAuthUserService struct {
 	registerErr error
 	loginErr    error
+	userByID    *models.User
+	getUserErr  error
 }
 
 func (s *stubAuthUserService) RegisterUser(_ context.Context, _ *models.RegisterRequest) (*models.User, error) {
@@ -49,6 +52,12 @@ func (s *stubAuthUserService) LoginUser(_ context.Context, _ *models.LoginReques
 }
 
 func (s *stubAuthUserService) GetUserByID(_ context.Context, _ uuid.UUID) (*models.User, error) {
+	if s.getUserErr != nil {
+		return nil, s.getUserErr
+	}
+	if s.userByID != nil {
+		return s.userByID, nil
+	}
 	return nil, errors.New("not implemented")
 }
 
@@ -184,6 +193,76 @@ func TestLoginMFASetupRequired(t *testing.T) {
 	}
 	if !resp.MFARequired {
 		t.Fatalf("expected mfa_required to be true")
+	}
+}
+
+func TestGetMeReturnsNotFoundForMissingUser(t *testing.T) {
+	redisClient := testutil.GetTestRedis(t)
+	t.Cleanup(func() { testutil.CleanupRedis(t) })
+
+	sessionService := services.NewSessionService(redisClient)
+	userID := uuid.New()
+	session, err := sessionService.CreateSession(context.Background(), userID, "testuser", false)
+	if err != nil {
+		t.Fatalf("failed to create session: %v", err)
+	}
+
+	handler := NewAuthHandler(nil, redisClient)
+	handler.userService = &stubAuthUserService{
+		getUserErr: errors.New("user not found"),
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/me", nil)
+	req.AddCookie(&http.Cookie{Name: "session_id", Value: session.ID})
+	w := httptest.NewRecorder()
+
+	handler.GetMe(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d", w.Code)
+	}
+
+	var resp models.ErrorResponse
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if resp.Code != "USER_NOT_FOUND" {
+		t.Fatalf("expected USER_NOT_FOUND code, got %s", resp.Code)
+	}
+}
+
+func TestGetMeReturnsServerErrorForLookupFailure(t *testing.T) {
+	redisClient := testutil.GetTestRedis(t)
+	t.Cleanup(func() { testutil.CleanupRedis(t) })
+
+	sessionService := services.NewSessionService(redisClient)
+	userID := uuid.New()
+	session, err := sessionService.CreateSession(context.Background(), userID, "testuser", false)
+	if err != nil {
+		t.Fatalf("failed to create session: %v", err)
+	}
+
+	handler := NewAuthHandler(nil, redisClient)
+	handler.userService = &stubAuthUserService{
+		getUserErr: errors.New("db failed"),
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/me", nil)
+	req.AddCookie(&http.Cookie{Name: "session_id", Value: session.ID})
+	w := httptest.NewRecorder()
+
+	handler.GetMe(w, req)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("expected status 500, got %d", w.Code)
+	}
+
+	var resp models.ErrorResponse
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if resp.Code != "USER_LOOKUP_FAILED" {
+		t.Fatalf("expected USER_LOOKUP_FAILED code, got %s", resp.Code)
 	}
 }
 
