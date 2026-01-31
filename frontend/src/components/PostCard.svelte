@@ -22,6 +22,14 @@
   export let highlightCommentId: string | null = null;
   export let highlightCommentIds: string[] = [];
 
+  type ImageItem = {
+    id?: string;
+    url: string;
+    title: string;
+    altText?: string;
+    link?: Link;
+  };
+
   $: userReactions = new Set(post.viewerReactions ?? []);
   $: sectionSlug = getSectionSlugById($sections, post.sectionId) ?? post.sectionId;
   let copiedLink = false;
@@ -38,8 +46,17 @@
   let editImageInput: HTMLInputElement | null = null;
   let isImageLightboxOpen = false;
   let lightboxImageIndex = 0;
+  let lightboxImageId: string | null = null;
   let isDeleting = false;
   let deleteError: string | null = null;
+  let imageReplyTarget:
+    | {
+        id: string;
+        url: string;
+        index: number;
+        altText?: string;
+      }
+    | null = null;
 
   const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
   const MAX_UPLOAD_LABEL = '10 MB';
@@ -198,6 +215,39 @@
     }
   }
 
+  function clearImageReplyTarget() {
+    imageReplyTarget = null;
+  }
+
+  function scrollToCommentForm() {
+    if (typeof document === 'undefined') return;
+    const form = document.getElementById(`comment-form-${post.id}`);
+    form?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function startImageReply(index: number) {
+    const item = imageItems[index];
+    if (!item?.id) {
+      return;
+    }
+    imageReplyTarget = {
+      id: item.id,
+      url: item.url,
+      index,
+      altText: item.altText ?? item.title,
+    };
+    scrollToCommentForm();
+  }
+
+  function handleImageReferenceNavigate(index: number) {
+    if (imageItems.length === 0) return;
+    goToImage(index);
+    if (typeof document !== 'undefined') {
+      const container = document.getElementById(`post-images-${post.id}`);
+      container?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
   function startEdit() {
     editContent = post.content;
     editError = null;
@@ -285,20 +335,32 @@
     }
   }
 
+  $: postImages = (post.images ?? []).slice().sort((a, b) => a.position - b.position);
+  $: hasPostImages = postImages.length > 0;
   $: imageLinks = (post.links ?? []).filter((item) => Boolean(getImageLinkUrl(item)));
-  $: imageItems = imageLinks
-    .map((item) => ({
-      link: item,
-      url: getImageLinkUrl(item),
-      title: item.metadata?.title || 'Uploaded image',
-    }))
-    .filter((item): item is { link: Link; url: string; title: string } => Boolean(item.url));
+  $: imageItems = hasPostImages
+    ? postImages.map((item, index): ImageItem => ({
+        id: item.id,
+        url: item.url,
+        title: item.caption || item.altText || `Image ${index + 1}`,
+        altText: item.altText || item.caption || `Image ${index + 1}`,
+      }))
+    : imageLinks
+        .map((item): ImageItem => ({
+          link: item,
+          url: getImageLinkUrl(item) ?? '',
+          title: item.metadata?.title || 'Uploaded image',
+          altText: item.metadata?.title || 'Uploaded image',
+        }))
+        .filter((item) => Boolean(item.url));
   $: primaryLink = post.links?.[0];
   $: primaryLinkIsImage = primaryLink ? Boolean(getImageLinkUrl(primaryLink)) : false;
   $: metadata = primaryLink?.metadata;
   $: primaryImageUrl = imageItems.length > 0 ? imageItems[0].url : undefined;
   $: isInternalUploadLink =
-    imageItems.length > 0 ? isInternalUploadUrl(imageItems[0].link.url) : false;
+    !hasPostImages && imageItems.length > 0 && imageItems[0].link
+      ? isInternalUploadUrl(imageItems[0].link?.url ?? '')
+      : false;
   $: displayContent =
     !isEditing && primaryImageUrl && isInternalUploadLink
       ? stripInternalUploadUrls(post.content)
@@ -317,13 +379,19 @@
   $: activeImageUrl = activeImageItem?.url;
   $: activeImageLink = activeImageItem?.link;
   $: activeImageTitle = activeImageItem?.title ?? 'Uploaded image';
+  $: activeImageAlt = activeImageItem?.altText ?? activeImageTitle;
   $: activeImageFailed = imageLoadFailures.has(activeImageIndex);
   $: isActiveImageInternal = activeImageLink
     ? isInternalUploadUrl(activeImageLink.url)
     : false;
   $: lightboxImageItem = imageItems[lightboxImageIndex];
   $: lightboxImageUrl = lightboxImageItem?.url;
-  $: lightboxAltText = lightboxImageItem?.title ?? 'Full size image';
+  $: lightboxAltText =
+    lightboxImageItem?.altText ?? lightboxImageItem?.title ?? 'Full size image';
+  $: lightboxImageId = lightboxImageItem?.id ?? null;
+  $: if (imageReplyTarget && !imageItems.find((item) => item.id === imageReplyTarget?.id)) {
+    imageReplyTarget = null;
+  }
 
   let activeImageIndex = 0;
   let loadedImageIndices = new Set<number>();
@@ -838,7 +906,10 @@
 
       {#if !isEditing && imageItems.length > 0}
         {#if imageItems.length === 1}
-          <div class="mb-3 rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+          <div
+            id={`post-images-${post.id}`}
+            class="mb-3 rounded-lg border border-gray-200 overflow-hidden bg-gray-50"
+          >
             {#if activeImageFailed}
               <div class="flex items-center justify-center px-4 py-6 text-sm text-gray-500">
                 Image unavailable. Try opening the link directly.
@@ -853,7 +924,7 @@
               >
                 <img
                   src={activeImageUrl}
-                  alt={activeImageTitle}
+                  alt={activeImageAlt}
                   class="w-full max-h-[28rem] object-contain bg-white"
                   loading="lazy"
                   on:error={() => {
@@ -863,8 +934,19 @@
               </button>
             {/if}
           </div>
+          {#if activeImageItem?.id}
+            <div class="mb-3 flex justify-end">
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs text-blue-700 hover:bg-blue-100"
+                on:click={() => startImageReply(0)}
+              >
+                Reply to this image
+              </button>
+            </div>
+          {/if}
         {:else}
-          <div class="mb-3">
+          <div id={`post-images-${post.id}`} class="mb-3">
             <div class="relative rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
               <!-- svelte-ignore a11y-no-noninteractive-tabindex a11y-no-noninteractive-element-interactions -->
               <div
@@ -901,7 +983,7 @@
                         >
                           <img
                             src={shouldLoadImage(index) ? item.url : undefined}
-                            alt={item.title}
+                            alt={item.altText ?? item.title}
                             class="w-full max-h-[28rem] object-contain bg-white"
                             loading={index === activeImageIndex ? 'eager' : 'lazy'}
                             on:error={() => {
@@ -955,6 +1037,17 @@
                 ></button>
               {/each}
             </div>
+            {#if activeImageItem?.id}
+              <div class="mt-2 flex justify-end">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs text-blue-700 hover:bg-blue-100"
+                  on:click={() => startImageReply(activeImageIndex)}
+                >
+                  Reply to this image
+                </button>
+              </div>
+            {/if}
           </div>
         {/if}
         {#if activeImageLink && (!isActiveImageInternal || activeImageFailed)}
@@ -1084,6 +1177,10 @@
           commentCount={post.commentCount ?? 0}
           {highlightCommentId}
           {highlightCommentIds}
+          {imageItems}
+          imageReplyTarget={imageReplyTarget}
+          onClearImageReply={clearImageReplyTarget}
+          onImageReferenceClick={handleImageReferenceNavigate}
         />
       </div>
     </div>
@@ -1148,6 +1245,20 @@
           transition:fade={{ duration: 180 }}
         />
       {/key}
+      {#if lightboxImageId}
+        <div class="mt-3 flex justify-center">
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-xs font-medium text-white hover:bg-blue-700"
+            on:click={() => {
+              closeImageLightbox();
+              startImageReply(lightboxImageIndex);
+            }}
+          >
+            Reply to this image
+          </button>
+        </div>
+      {/if}
       {#if imageItems.length > 1}
         <div class="absolute bottom-3 left-0 right-0 flex items-center justify-center">
           <span class="rounded-full bg-black/60 px-2.5 py-1 text-xs text-white">

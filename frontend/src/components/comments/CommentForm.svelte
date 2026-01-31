@@ -8,6 +8,15 @@
   import MentionTextarea from '../mentions/MentionTextarea.svelte';
 
   export let postId: string;
+  export let imageContext:
+    | {
+        id: string;
+        url: string;
+        index: number;
+        altText?: string;
+      }
+    | null = null;
+  export let onClearImageContext: (() => void) | null = null;
 
   const dispatch = createEventDispatcher<{ submit: Comment }>();
 
@@ -26,6 +35,7 @@
     try {
       const response = await api.createComment({
         postId,
+        imageId: imageContext?.id,
         content: content.trim(),
       });
       const comment = mapApiComment(response.comment);
@@ -35,6 +45,7 @@
         postStore.incrementCommentCount(postId, 1);
       }
       content = '';
+      onClearImageContext?.();
       dispatch('submit', comment);
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to add comment';
@@ -51,6 +62,28 @@
 </script>
 
 <form on:submit|preventDefault={handleSubmit} class="space-y-2">
+  {#if imageContext}
+    <div class="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
+      <img
+        src={imageContext.url}
+        alt={imageContext.altText ?? `Image ${imageContext.index + 1}`}
+        class="h-10 w-10 rounded-md object-cover border border-blue-200 bg-white"
+      />
+      <div class="flex-1">
+        <p class="text-xs font-medium text-blue-700">Replying to image {imageContext.index + 1}</p>
+        {#if imageContext.altText}
+          <p class="text-xs text-blue-600 truncate">{imageContext.altText}</p>
+        {/if}
+      </div>
+      <button
+        type="button"
+        class="text-xs text-blue-700 hover:text-blue-900"
+        on:click={() => onClearImageContext?.()}
+      >
+        Clear
+      </button>
+    </div>
+  {/if}
   <MentionTextarea
     id="comment-content"
     bind:value={content}

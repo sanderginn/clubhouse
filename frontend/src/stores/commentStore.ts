@@ -6,6 +6,7 @@ export interface Comment {
   userId: string;
   postId: string;
   parentCommentId?: string;
+  imageId?: string;
   content: string;
   links?: Link[];
   user?: {
@@ -23,6 +24,7 @@ export interface Comment {
 export interface CreateCommentRequest {
   postId: string;
   parentCommentId?: string;
+  imageId?: string;
   content: string;
   links?: { url: string }[];
 }

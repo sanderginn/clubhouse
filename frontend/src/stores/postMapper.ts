@@ -1,4 +1,4 @@
-import type { Post, Link, LinkMetadata } from './postStore';
+import type { Post, Link, LinkMetadata, PostImage } from './postStore';
 
 export interface ApiUser {
   id: string;
@@ -12,12 +12,22 @@ export interface ApiLink {
   metadata?: Record<string, unknown> | string | null;
 }
 
+export interface ApiPostImage {
+  id: string;
+  url: string;
+  position: number;
+  caption?: string | null;
+  alt_text?: string | null;
+  created_at?: string;
+}
+
 export interface ApiPost {
   id: string;
   user_id: string;
   section_id: string;
   content: string;
   links?: ApiLink[];
+  images?: ApiPostImage[];
   user?: ApiUser;
   comment_count?: number;
   reaction_counts?: Record<string, number>;
@@ -123,6 +133,15 @@ export function normalizeLinkMetadata(
 }
 
 export function mapApiPost(apiPost: ApiPost): Post {
+  const images: PostImage[] | undefined = apiPost.images?.map((image) => ({
+    id: image.id,
+    url: image.url,
+    position: image.position,
+    caption: image.caption ?? undefined,
+    altText: image.alt_text ?? undefined,
+    createdAt: image.created_at,
+  }));
+
   return {
     id: apiPost.id,
     userId: apiPost.user_id,
@@ -133,6 +152,7 @@ export function mapApiPost(apiPost: ApiPost): Post {
       url: link.url,
       metadata: normalizeLinkMetadata(link.metadata, link.url),
     })),
+    images,
     user: apiPost.user
       ? {
           id: apiPost.user.id,

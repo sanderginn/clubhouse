@@ -570,14 +570,30 @@ func TestGetUserCommentsSuccess(t *testing.T) {
 		t.Fatalf("failed to create test post: %v", err)
 	}
 
+	imageID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO post_images (id, post_id, image_url, position, caption, alt_text, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, now())
+	`, imageID, postID, "https://example.com/comment-image.jpg", 1, "Caption", "Alt text")
+	if err != nil {
+		t.Fatalf("failed to create test post image: %v", err)
+	}
+
 	// Create test comments
 	commentID1 := uuid.New()
 	commentID2 := uuid.New()
-	_, err = db.Exec(`INSERT INTO comments (id, user_id, post_id, content, created_at) VALUES ($1, $2, $3, 'Comment 1', now())`, commentID1, userID, postID)
+	now := time.Now()
+	_, err = db.Exec(`
+		INSERT INTO comments (id, user_id, post_id, image_id, content, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+	`, commentID1, userID, postID, imageID, "Comment 1", now.Add(-2*time.Minute))
 	if err != nil {
 		t.Fatalf("failed to create test comment 1: %v", err)
 	}
-	_, err = db.Exec(`INSERT INTO comments (id, user_id, post_id, content, created_at) VALUES ($1, $2, $3, 'Comment 2', now())`, commentID2, userID, postID)
+	_, err = db.Exec(`
+		INSERT INTO comments (id, user_id, post_id, content, created_at)
+		VALUES ($1, $2, $3, $4, $5)
+	`, commentID2, userID, postID, "Comment 2", now.Add(-1*time.Minute))
 	if err != nil {
 		t.Fatalf("failed to create test comment 2: %v", err)
 	}
@@ -604,6 +620,22 @@ func TestGetUserCommentsSuccess(t *testing.T) {
 
 	if response.Meta.HasMore {
 		t.Errorf("expected has_more to be false, got true")
+	}
+
+	var found bool
+	for _, comment := range response.Comments {
+		if comment.ID == commentID1 {
+			found = true
+			if comment.ImageID == nil {
+				t.Fatalf("expected image_id to be set for comment %s", commentID1)
+			}
+			if comment.ImageID.String() != imageID.String() {
+				t.Fatalf("expected image_id %s, got %s", imageID.String(), comment.ImageID.String())
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected comment %s in response", commentID1)
 	}
 }
 

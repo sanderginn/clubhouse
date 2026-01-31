@@ -81,6 +81,10 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_PARENT_COMMENT_ID", err.Error())
 		case "parent comment not found":
 			writeError(r.Context(), w, http.StatusNotFound, "PARENT_COMMENT_NOT_FOUND", err.Error())
+		case "invalid image id":
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_IMAGE_ID", err.Error())
+		case "image not found":
+			writeError(r.Context(), w, http.StatusNotFound, "IMAGE_NOT_FOUND", err.Error())
 		case "content is required":
 			writeError(r.Context(), w, http.StatusBadRequest, "CONTENT_REQUIRED", err.Error())
 		case "content must be less than 5000 characters":

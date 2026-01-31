@@ -18,6 +18,22 @@
   export let commentCount = 0;
   export let highlightCommentId: string | null = null;
   export let highlightCommentIds: string[] = [];
+  export let imageItems: {
+    id?: string;
+    url: string;
+    title: string;
+    altText?: string;
+  }[] = [];
+  export let imageReplyTarget:
+    | {
+        id: string;
+        url: string;
+        index: number;
+        altText?: string;
+      }
+    | null = null;
+  export let onClearImageReply: (() => void) | null = null;
+  export let onImageReferenceClick: ((imageIndex: number) => void) | null = null;
 
   const emptyThread: CommentThreadState = {
     comments: [],
@@ -45,6 +61,31 @@
 
   function getUserReactions(comment: { viewerReactions?: string[] }): Set<string> {
     return new Set(comment.viewerReactions ?? []);
+  }
+
+  function resolveImageReference(imageId?: string): {
+    id?: string;
+    url: string;
+    title: string;
+    altText?: string;
+    index: number;
+  } | null {
+    if (!imageId) {
+      return null;
+    }
+    const index = imageItems.findIndex((item) => item.id === imageId);
+    if (index < 0) {
+      return null;
+    }
+    const item = imageItems[index];
+    return {
+      ...item,
+      index,
+    };
+  }
+
+  function handleImageReferenceClick(index: number) {
+    onImageReferenceClick?.(index);
   }
 
   async function toggleCommentReaction(commentId: string, emoji: string) {
@@ -245,8 +286,12 @@
 </script>
 
 <div class="space-y-4" bind:this={rootEl}>
-  <div class="border border-gray-200 rounded-lg p-3 bg-gray-50">
-    <CommentForm {postId} />
+  <div id={`comment-form-${postId}`} class="border border-gray-200 rounded-lg p-3 bg-gray-50">
+    <CommentForm
+      {postId}
+      imageContext={imageReplyTarget}
+      onClearImageContext={onClearImageReply}
+    />
   </div>
 
   {#if thread.isLoading && thread.comments.length === 0}
@@ -370,6 +415,31 @@
                   </div>
                 {/if}
               </div>
+
+              {#if comment.imageId}
+                {@const imageRef = resolveImageReference(comment.imageId)}
+                <div class="mb-2">
+                  {#if imageRef}
+                    <button
+                      type="button"
+                      class="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs text-blue-700 hover:bg-blue-100"
+                      aria-label={`View image ${imageRef.index + 1}`}
+                      on:click={() => handleImageReferenceClick(imageRef.index)}
+                    >
+                      <img
+                        src={imageRef.url}
+                        alt={imageRef.altText ?? `Image ${imageRef.index + 1}`}
+                        class="h-6 w-6 rounded-md object-cover border border-blue-200 bg-white"
+                      />
+                      <span>Image {imageRef.index + 1}</span>
+                    </button>
+                  {:else}
+                    <span class="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs text-gray-600">
+                      Image
+                    </span>
+                  {/if}
+                </div>
+              {/if}
 
               {#if editingCommentId === comment.id}
                 <div class="space-y-2">

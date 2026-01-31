@@ -442,6 +442,7 @@ class ApiClient {
     return this.post('/comments', {
       post_id: data.postId,
       parent_comment_id: data.parentCommentId,
+      image_id: data.imageId,
       content: data.content,
       links: data.links,
     });

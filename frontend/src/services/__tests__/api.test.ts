@@ -162,6 +162,7 @@ describe('api client', () => {
     await api.createComment({
       postId: 'post-1',
       parentCommentId: 'comment-1',
+      imageId: 'image-1',
       content: 'Reply',
       links: [{ url: 'https://example.com' }],
     });
@@ -170,6 +171,7 @@ describe('api client', () => {
     const body = JSON.parse(commentCall?.[1]?.body as string);
     expect(body.post_id).toBe('post-1');
     expect(body.parent_comment_id).toBe('comment-1');
+    expect(body.image_id).toBe('image-1');
   });
 
   it('getFeed builds query params', async () => {
