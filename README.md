@@ -112,6 +112,7 @@ Optional frontend environment variables:
 - `VITE_APP_VERSION`: Release identifier for error tracking.
 - `VITE_OTEL_EXPORTER_OTLP_ENDPOINT`: OTLP/HTTP traces endpoint for browser telemetry (in dev defaults to `http://localhost:4318/v1/traces`; leave unset in prod to disable).
 - `VITE_OTEL_SERVICE_NAME`: Service name used in frontend traces (defaults to `clubhouse-frontend`).
+- `VITE_PROXY_LOG_LEVEL`: Vite proxy logging level (`none`/`silent`, `error`, `warn`, `info`, `debug`; defaults to `warn`).
 
 ## Architecture
 
