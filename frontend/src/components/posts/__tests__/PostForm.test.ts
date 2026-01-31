@@ -252,6 +252,42 @@ describe('PostForm', () => {
     expect(screen.queryByText('hello.png')).not.toBeInTheDocument();
   });
 
+  it('enforces a maximum image count and shows a warning', async () => {
+    setAuthenticated();
+    setActiveSection();
+
+    const { container } = render(PostForm);
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const files = Array.from({ length: 11 }, (_, index) => {
+      return new File([`image-${index}`], `photo-${index}.png`, { type: 'image/png' });
+    });
+
+    await fireEvent.change(fileInput, { target: { files } });
+
+    expect(screen.getByText('You can upload up to 10 images per post.')).toBeInTheDocument();
+    expect(screen.getByText('10 of 10 images selected')).toBeInTheDocument();
+  });
+
+  it('allows reordering images with move controls', async () => {
+    setAuthenticated();
+    setActiveSection();
+
+    const { container } = render(PostForm);
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const first = new File(['one'], 'first.png', { type: 'image/png' });
+    const second = new File(['two'], 'second.png', { type: 'image/png' });
+
+    await fireEvent.change(fileInput, { target: { files: [first, second] } });
+
+    const moveDownButtons = screen.getAllByLabelText('Move image down');
+    await fireEvent.click(moveDownButtons[0]);
+
+    const names = Array.from(container.querySelectorAll('[data-testid="upload-filename"]')).map(
+      (node) => node.textContent
+    );
+    expect(names).toEqual(['second.png', 'first.png']);
+  });
+
   it('blocks non-image files and prevents submit', async () => {
     setAuthenticated();
     setActiveSection();

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher, tick } from 'svelte';
+  import { createEventDispatcher, onDestroy, tick } from 'svelte';
   import { api } from '../../services/api';
   import { activeSection, postStore, currentUser } from '../../stores';
   import type { Link, LinkMetadata } from '../../stores/postStore';
@@ -31,12 +31,15 @@
     status: 'pending' | 'uploading' | 'done' | 'error';
     error?: string | null;
     url?: string;
+    previewUrl?: string | null;
   };
 
   const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
   const MAX_UPLOAD_LABEL = '10 MB';
+  const MAX_IMAGE_COUNT = 10;
 
   let selectedFiles: UploadItem[] = [];
+  let uploadLimitError: string | null = null;
 
   const URL_REGEX = /https?:\/\/[^\s<>"{}|\\^`[\]]+/gi;
   $: hasLink = Boolean((linkMetadata && linkMetadata.url) || linkUrl.trim());
@@ -84,6 +87,24 @@
 
   function updateUpload(id: string, patch: Partial<UploadItem>) {
     selectedFiles = selectedFiles.map((item) => (item.id === id ? { ...item, ...patch } : item));
+  }
+
+  function canCreateObjectUrl(): boolean {
+    return typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function';
+  }
+
+  function createPreviewUrl(file: File, validationError: string | null): string | null {
+    if (validationError || !canCreateObjectUrl()) {
+      return null;
+    }
+    return URL.createObjectURL(file);
+  }
+
+  function revokePreviewUrl(item: UploadItem) {
+    if (!item.previewUrl || typeof URL === 'undefined' || typeof URL.revokeObjectURL !== 'function') {
+      return;
+    }
+    URL.revokeObjectURL(item.previewUrl);
   }
 
   function extractUrls(text: string): string[] {
@@ -187,7 +208,11 @@
   function handleFileSelect(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files) {
-      const next = Array.from(input.files).map((file) => {
+      uploadLimitError = null;
+      const remainingSlots = MAX_IMAGE_COUNT - selectedFiles.length;
+      const files = Array.from(input.files);
+      const acceptedFiles = remainingSlots > 0 ? files.slice(0, remainingSlots) : [];
+      const next = acceptedFiles.map((file) => {
         const validationError = validateFile(file);
         return {
           id: createUploadId(),
@@ -195,15 +220,36 @@
           progress: 0,
           status: validationError ? 'error' : 'pending',
           error: validationError,
+          previewUrl: createPreviewUrl(file, validationError),
         } as UploadItem;
       });
+      if (files.length > remainingSlots) {
+        uploadLimitError = `You can upload up to ${MAX_IMAGE_COUNT} images per post.`;
+      }
       selectedFiles = [...selectedFiles, ...next];
     }
     input.value = '';
   }
 
   function removeFile(index: number) {
+    const removed = selectedFiles[index];
+    if (removed) {
+      revokePreviewUrl(removed);
+    }
     selectedFiles = selectedFiles.filter((_, i) => i !== index);
+    if (selectedFiles.length < MAX_IMAGE_COUNT) {
+      uploadLimitError = null;
+    }
+  }
+
+  function moveFile(from: number, to: number) {
+    if (to < 0 || to >= selectedFiles.length || from === to) {
+      return;
+    }
+    const next = [...selectedFiles];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    selectedFiles = next;
   }
 
   function formatFileSize(bytes: number): string {
@@ -288,7 +334,9 @@
       linkInputValue = '';
       linkInputError = null;
       isLinkInputVisible = false;
+      selectedFiles.forEach(revokePreviewUrl);
       selectedFiles = [];
+      uploadLimitError = null;
 
       dispatch('submit');
     } catch (err) {
@@ -319,6 +367,10 @@
       handleSubmit();
     }
   }
+
+  onDestroy(() => {
+    selectedFiles.forEach(revokePreviewUrl);
+  });
 </script>
 
 <form on:submit|preventDefault={handleSubmit} class="space-y-4">
@@ -410,64 +462,125 @@
 
   {#if selectedFiles.length > 0}
     <div class="space-y-2">
-      {#each selectedFiles as item, index}
-        <div
-          class="flex items-center justify-between p-2 bg-gray-50 border border-gray-200 rounded"
-        >
-          <div class="flex items-center gap-2 min-w-0">
-            <svg
-              class="w-5 h-5 text-gray-400 flex-shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-              />
-            </svg>
-            <span class="text-sm text-gray-700 truncate">{item.file.name}</span>
-            <span class="text-xs text-gray-500 flex-shrink-0">
-              ({formatFileSize(item.file.size)})
-            </span>
-            {#if item.status === 'uploading'}
-              <span class="text-xs text-gray-400 flex-shrink-0">{item.progress}%</span>
-            {:else if item.status === 'done'}
-              <span class="text-xs text-green-600 flex-shrink-0">Uploaded</span>
-            {:else if item.status === 'error'}
-              <span class="text-xs text-red-600 flex-shrink-0">Error</span>
-            {/if}
+      <div class="flex items-center justify-between text-xs text-gray-500">
+        <span>{selectedFiles.length} of {MAX_IMAGE_COUNT} images selected</span>
+        <span>Reorder to choose the primary image</span>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-2">
+        {#each selectedFiles as item, index}
+          <div class="relative p-3 border border-gray-200 rounded-lg bg-gray-50">
+            <div class="flex items-start gap-3">
+              <div class="relative w-20 h-20 rounded-md overflow-hidden bg-gray-200 flex-shrink-0">
+                {#if item.previewUrl}
+                  <img
+                    src={item.previewUrl}
+                    alt={`Selected image ${index + 1}: ${item.file.name}`}
+                    class="w-full h-full object-cover"
+                  />
+                {:else}
+                  <div class="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                    No preview
+                  </div>
+                {/if}
+                {#if index === 0}
+                  <span
+                    class="absolute top-1 left-1 text-[10px] uppercase tracking-wide bg-primary text-white px-1.5 py-0.5 rounded"
+                  >
+                    Primary
+                  </span>
+                {/if}
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm text-gray-700 font-medium truncate" data-testid="upload-filename">
+                    {item.file.name}
+                  </span>
+                  <span class="text-xs text-gray-500 flex-shrink-0">
+                    {formatFileSize(item.file.size)}
+                  </span>
+                </div>
+                <div class="mt-1 flex items-center gap-2 text-xs">
+                  {#if item.status === 'uploading'}
+                    <span class="text-gray-500">{item.progress}%</span>
+                  {:else if item.status === 'done'}
+                    <span class="text-green-600">Uploaded</span>
+                  {:else if item.status === 'error'}
+                    <span class="text-red-600">Error</span>
+                  {:else}
+                    <span class="text-gray-400">Ready</span>
+                  {/if}
+                </div>
+                {#if item.status === 'uploading'}
+                  <div class="mt-2 h-1 w-full bg-gray-200 rounded">
+                    <div
+                      class="h-1 bg-primary rounded"
+                      style={`width: ${item.progress}%`}
+                    ></div>
+                  </div>
+                {:else if item.status === 'error' && item.error}
+                  <p class="mt-2 text-xs text-red-600">{item.error}</p>
+                {/if}
+              </div>
+              <div class="flex flex-col gap-1">
+                <button
+                  type="button"
+                  on:click={() => moveFile(index, index - 1)}
+                  class="p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-md disabled:opacity-40"
+                  disabled={index === 0 || item.status === 'uploading'}
+                  aria-label="Move image up"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 15l7-7 7 7"
+                    />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  on:click={() => moveFile(index, index + 1)}
+                  class="p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-md disabled:opacity-40"
+                  disabled={index === selectedFiles.length - 1 || item.status === 'uploading'}
+                  aria-label="Move image down"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  on:click={() => removeFile(index)}
+                  class="p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-md disabled:opacity-40"
+                  disabled={item.status === 'uploading'}
+                  aria-label="Remove file"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
-          <button
-            type="button"
-            on:click={() => removeFile(index)}
-            class="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50"
-            disabled={item.status === 'uploading'}
-            aria-label="Remove file"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
-        {#if item.status === 'uploading'}
-          <div class="h-1 w-full bg-gray-200 rounded">
-            <div
-              class="h-1 bg-primary rounded"
-              style={`width: ${item.progress}%`}
-            ></div>
-          </div>
-        {:else if item.status === 'error' && item.error}
-          <p class="text-xs text-red-600">{item.error}</p>
-        {/if}
-      {/each}
+        {/each}
+      </div>
+    </div>
+  {/if}
+
+  {#if uploadLimitError}
+    <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+      <p class="text-sm text-amber-700">{uploadLimitError}</p>
     </div>
   {/if}
 
@@ -490,7 +603,7 @@
       <button
         type="button"
         on:click={() => fileInput.click()}
-        disabled={isSubmitting}
+        disabled={isSubmitting || selectedFiles.length >= MAX_IMAGE_COUNT}
         class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
         aria-label="Attach file"
       >
