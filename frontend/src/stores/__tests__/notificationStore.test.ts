@@ -31,7 +31,8 @@ vi.mock('../authStore', () => {
   };
 });
 
-const { notificationStore, markNotificationRead, markVisibleNotificationsRead } = await import(
+const { notificationStore, markNotificationRead, markVisibleNotificationsRead, handleRealtimeNotification } =
+  await import(
   '../notificationStore'
 );
 
@@ -195,5 +196,45 @@ describe('notificationStore', () => {
     expect(apiPatch).toHaveBeenCalledTimes(2);
     expect(apiGet).toHaveBeenCalledTimes(1);
     expect(logWarn).toHaveBeenCalled();
+  });
+
+  it('adds realtime notifications to the store', () => {
+    handleRealtimeNotification({
+      id: 'notif-10',
+      type: 'mention',
+      created_at: '2026-01-05T00:00:00Z',
+      read_at: null,
+    });
+
+    const state = get(notificationStore);
+    expect(state.notifications).toHaveLength(1);
+    expect(state.notifications[0]?.id).toBe('notif-10');
+    expect(state.unreadCount).toBe(1);
+  });
+
+  it('reloads notifications when realtime payload is incomplete', async () => {
+    storeRefs.isAuthenticated.set(true);
+    apiGet.mockResolvedValue({
+      notifications: [
+        {
+          id: 'notif-11',
+          type: 'new_comment',
+          created_at: '2026-01-06T00:00:00Z',
+          read_at: null,
+        },
+      ],
+      meta: {
+        cursor: null,
+        has_more: false,
+        unread_count: 1,
+      },
+    });
+
+    handleRealtimeNotification({});
+
+    expect(apiGet).toHaveBeenCalledTimes(1);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const state = get(notificationStore);
+    expect(state.notifications[0]?.id).toBe('notif-11');
   });
 });

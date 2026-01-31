@@ -31,7 +31,7 @@ func NewCommentHandler(db *sql.DB, redisClient *redis.Client, pushService *servi
 		commentService: services.NewCommentService(db),
 		userService:    services.NewUserService(db),
 		postService:    services.NewPostService(db),
-		notify:         services.NewNotificationService(db, pushService),
+		notify:         services.NewNotificationService(db, redisClient, pushService),
 		redis:          redisClient,
 		rateLimiter:    services.NewCommentRateLimiter(redisClient),
 	}

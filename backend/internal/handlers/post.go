@@ -29,7 +29,7 @@ func NewPostHandler(db *sql.DB, redisClient *redis.Client, pushService *services
 	return &PostHandler{
 		postService: services.NewPostService(db),
 		userService: services.NewUserService(db),
-		notify:      services.NewNotificationService(db, pushService),
+		notify:      services.NewNotificationService(db, redisClient, pushService),
 		redis:       redisClient,
 		rateLimiter: services.NewPostRateLimiter(redisClient),
 	}
