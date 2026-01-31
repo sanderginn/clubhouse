@@ -405,7 +405,6 @@
   }
 
   let activeImageIndex = 0;
-  let loadedImageIndices = new Set<number>();
   let imageLoadFailures = new Set<number>();
   let lastImageSignature = '';
 
@@ -414,21 +413,9 @@
     if (signature !== lastImageSignature) {
       activeImageIndex = 0;
       lightboxImageIndex = 0;
-      loadedImageIndices = new Set();
       lightboxPreloadedIndices = new Set();
       imageLoadFailures = new Set();
-      if (imageItems.length > 0) {
-        loadedImageIndices.add(0);
-      }
       lastImageSignature = signature;
-    }
-  }
-
-  function markImageLoaded(index: number) {
-    if (!loadedImageIndices.has(index)) {
-      const next = new Set(loadedImageIndices);
-      next.add(index);
-      loadedImageIndices = next;
     }
   }
 
@@ -440,20 +427,11 @@
     }
   }
 
-  function shouldLoadImage(index: number): boolean {
-    return loadedImageIndices.has(index) || index === activeImageIndex;
-  }
-
   function goToImage(index: number) {
     if (imageItems.length === 0) {
       return;
     }
     const clamped = (index + imageItems.length) % imageItems.length;
-    markImageLoaded(clamped);
-    if (imageItems.length > 1) {
-      markImageLoaded((clamped + 1) % imageItems.length);
-      markImageLoaded((clamped - 1 + imageItems.length) % imageItems.length);
-    }
     activeImageIndex = clamped;
   }
 
@@ -994,7 +972,7 @@
                           on:click={() => openImageLightbox(index)}
                         >
                           <img
-                            src={shouldLoadImage(index) ? item.url : undefined}
+                            src={item.url}
                             alt={item.altText ?? item.title}
                             class="w-full max-h-[28rem] object-contain bg-white"
                             loading={index === activeImageIndex ? 'eager' : 'lazy'}
