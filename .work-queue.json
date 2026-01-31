@@ -30,6 +30,7 @@
     520,
     521,
     523,
+    524,
     526,
     527,
     530,
@@ -612,7 +613,7 @@
     {
       "issue_number": 524,
       "title": "Improve replies emoji and counter layout",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 4,
@@ -624,7 +625,9 @@
       "assigned_to": "agent-1769819288-29966",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769819288-29966",
       "branch": "feat/issue-524-improve-replies-emoji-and-counter-layout",
-      "claimed_at": "2026-01-31T00:28:08Z"
+      "claimed_at": "2026-01-31T00:28:08Z",
+      "pr_number": 548,
+      "completed_at": "2026-01-31T00:36:00Z"
     },
     {
       "issue_number": 525,
