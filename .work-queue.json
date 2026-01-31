@@ -535,7 +535,7 @@
     {
       "issue_number": 519,
       "title": "Add reply-to-specific-image functionality",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         515,
         517
@@ -547,7 +547,11 @@
         "frontend",
         "backend",
         "ux"
-      ]
+      ],
+      "assigned_to": "agent-1769822264-78476",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769822264-78476",
+      "branch": "feat/issue-519-add-replytospecificimage-functionality",
+      "claimed_at": "2026-01-31T01:17:44Z"
     },
     {
       "issue_number": 520,
