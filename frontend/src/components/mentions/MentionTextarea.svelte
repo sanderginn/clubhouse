@@ -10,7 +10,7 @@
   export let className = '';
   export let ariaLabel = '';
   export let mentionClassName =
-    'text-indigo-600 hover:text-indigo-800 font-medium bg-indigo-50 rounded px-1';
+    'text-indigo-600 hover:text-indigo-800 font-medium bg-indigo-50 rounded px-0.5';
 
   const dispatch = createEventDispatcher<{
     input: Event;

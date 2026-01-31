@@ -12,7 +12,7 @@
   export let className = '';
   export let linkClassName = 'text-blue-600 hover:text-blue-800 underline';
   export let mentionClassName =
-    'text-indigo-600 hover:text-indigo-800 font-medium bg-indigo-50 rounded px-1';
+    'text-indigo-600 hover:text-indigo-800 font-medium bg-indigo-50 rounded px-0.5';
   export let highlightQuery = '';
   export let validMentions: string[] | null = null;
   export let validateMentions = true;
