@@ -34,6 +34,7 @@
     525,
     526,
     527,
+    528,
     530,
     537
   ],
@@ -688,7 +689,7 @@
     {
       "issue_number": 528,
       "title": "Make Alertmanager log level configurable",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 5,
@@ -699,7 +700,9 @@
       "assigned_to": "agent-1769819292-30147",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769819292-30147",
       "branch": "feat/issue-528-make-alertmanager-log-level-configurable",
-      "claimed_at": "2026-01-31T00:28:12Z"
+      "claimed_at": "2026-01-31T00:28:12Z",
+      "pr_number": 549,
+      "completed_at": "2026-01-31T00:40:19Z"
     },
     {
       "issue_number": 529,
