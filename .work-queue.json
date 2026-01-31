@@ -485,7 +485,7 @@
     {
       "issue_number": 517,
       "title": "Frontend: Display multiple post images as carousel",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         515,
         516
@@ -496,7 +496,11 @@
         "enhancement",
         "frontend",
         "ux"
-      ]
+      ],
+      "assigned_to": "agent-1769819286-29872",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769819286-29872",
+      "branch": "feat/issue-517-frontend-display-multiple-post-images-as",
+      "claimed_at": "2026-01-31T00:28:06Z"
     },
     {
       "issue_number": 518,
