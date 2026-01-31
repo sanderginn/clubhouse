@@ -13,6 +13,7 @@ type Comment struct {
 	PostID          uuid.UUID      `json:"post_id"`
 	SectionID       *uuid.UUID     `json:"section_id,omitempty"`
 	ParentCommentID *uuid.UUID     `json:"parent_comment_id,omitempty"`
+	ImageID         *uuid.UUID     `json:"image_id,omitempty"`
 	Content         string         `json:"content"`
 	Links           []Link         `json:"links,omitempty"`
 	CreatedAt       time.Time      `json:"created_at"`
@@ -29,6 +30,7 @@ type Comment struct {
 type CreateCommentRequest struct {
 	PostID          string        `json:"post_id"`
 	ParentCommentID *string       `json:"parent_comment_id,omitempty"`
+	ImageID         *string       `json:"image_id,omitempty"`
 	Content         string        `json:"content"`
 	Links           []LinkRequest `json:"links,omitempty"`
 }
