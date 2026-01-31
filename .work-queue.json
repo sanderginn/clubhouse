@@ -803,7 +803,7 @@
     {
       "issue_number": 556,
       "title": "Notification click updates URL but does not navigate",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         537
       ],
@@ -814,7 +814,10 @@
         "frontend",
         "ux"
       ],
-      "branch": "fix/issue-556-notification-click-updates-url-but-does-not-navigate"
+      "branch": "fix/issue-556-notification-click-updates-url-but-does-",
+      "assigned_to": "agent-1769857120-66234",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769857120-66234",
+      "claimed_at": "2026-01-31T10:58:40Z"
     },
     {
       "issue_number": 557,
