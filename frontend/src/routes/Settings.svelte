@@ -217,12 +217,12 @@
       </p>
     </div>
     <button
-      class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-100"
+      class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 hover:border-gray-300"
       on:click={handleBack}
       type="button"
     >
       <span aria-hidden="true">←</span>
-      Back
+      <span>Back to feed</span>
     </button>
   </div>
 
