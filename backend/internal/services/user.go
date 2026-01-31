@@ -1176,7 +1176,7 @@ func (s *UserService) GetUserComments(ctx context.Context, userID uuid.UUID, cur
 	// Build query for user's comments
 	query := `
 		SELECT
-			c.id, c.user_id, c.post_id, c.parent_comment_id, c.content,
+			c.id, c.user_id, c.post_id, c.parent_comment_id, c.image_id, c.content,
 			c.created_at, c.updated_at,
 			u.id, u.username, u.profile_picture_url
 		FROM comments c
@@ -1208,9 +1208,10 @@ func (s *UserService) GetUserComments(ctx context.Context, userID uuid.UUID, cur
 	for rows.Next() {
 		var comment models.Comment
 		var user models.User
+		var imageID sql.NullString
 
 		err := rows.Scan(
-			&comment.ID, &comment.UserID, &comment.PostID, &comment.ParentCommentID, &comment.Content,
+			&comment.ID, &comment.UserID, &comment.PostID, &comment.ParentCommentID, &imageID, &comment.Content,
 			&comment.CreatedAt, &comment.UpdatedAt,
 			&user.ID, &user.Username, &user.ProfilePictureURL,
 		)
@@ -1220,6 +1221,10 @@ func (s *UserService) GetUserComments(ctx context.Context, userID uuid.UUID, cur
 		}
 
 		comment.User = &user
+		if imageID.Valid {
+			parsedID, _ := uuid.Parse(imageID.String)
+			comment.ImageID = &parsedID
+		}
 
 		// Fetch reactions
 		// Note: We don't have the viewer ID here in the current signature.
