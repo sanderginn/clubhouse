@@ -1,10 +1,19 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/svelte';
+
+const lookupUserByUsername = vi.hoisted(() => vi.fn());
+
+vi.mock('../../services/api', () => ({
+  api: {
+    lookupUserByUsername,
+  },
+}));
 
 const { default: LinkifiedText } = await import('../LinkifiedText.svelte');
 
 afterEach(() => {
   cleanup();
+  lookupUserByUsername.mockReset();
 });
 
 describe('LinkifiedText', () => {
@@ -59,5 +68,19 @@ describe('LinkifiedText', () => {
 
     expect(screen.queryByRole('link', { name: '@here' })).toBeNull();
     expect(screen.getByText(/@here/)).toBeInTheDocument();
+  });
+
+  it('renders unknown @mentions as plain text when lookup fails', async () => {
+    lookupUserByUsername.mockRejectedValueOnce(Object.assign(new Error('Not found'), { code: 'NOT_FOUND' }));
+
+    render(LinkifiedText, {
+      text: 'Hello @ghostuser',
+    });
+
+    expect(screen.getByText(/@ghostuser/)).toBeInTheDocument();
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(screen.getByText(/@ghostuser/)).toBeInTheDocument();
   });
 });
