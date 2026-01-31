@@ -3,6 +3,7 @@ import { activeSection } from './sectionStore';
 import { isAuthenticated, currentUser } from './authStore';
 import { postStore, type Post } from './postStore';
 import { commentStore, type Comment } from './commentStore';
+import { handleRealtimeNotification } from './notificationStore';
 import { api } from '../services/api';
 import { mapApiComment } from './commentMapper';
 import { mapApiPost, type ApiPost } from './postMapper';
@@ -269,6 +270,10 @@ function connect() {
         if (payload.post_id) {
           postStore.updateReactionCount(payload.post_id, payload.emoji, -1);
         }
+        break;
+      }
+      case 'notification': {
+        handleRealtimeNotification(parsed.data);
         break;
       }
       default:

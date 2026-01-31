@@ -24,6 +24,8 @@
     uiStore,
     threadRouteStore,
     configStore,
+    initNotifications,
+    cleanupNotifications,
   } from './stores';
   import { parseProfileUserId } from './services/profileNavigation';
   import {
@@ -55,6 +57,7 @@
   onMount(() => {
     authStore.checkSession();
     websocketStore.init();
+    initNotifications();
     pwaStore.init();
     configStore.load();
     syncRouteFromLocation();
@@ -68,6 +71,7 @@
 
   onDestroy(() => {
     websocketStore.cleanup();
+    cleanupNotifications();
     popstateHandler?.();
   });
 
