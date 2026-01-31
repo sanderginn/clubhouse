@@ -19,6 +19,7 @@
 
   export let post: Post;
   export let highlightCommentId: string | null = null;
+  export let highlightCommentIds: string[] = [];
 
   $: userReactions = new Set(post.viewerReactions ?? []);
   $: sectionSlug = getSectionSlugById($sections, post.sectionId) ?? post.sectionId;
@@ -726,6 +727,7 @@
           postId={post.id}
           commentCount={post.commentCount ?? 0}
           {highlightCommentId}
+          {highlightCommentIds}
         />
       </div>
     </div>

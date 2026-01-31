@@ -6,11 +6,7 @@
   import type { Post } from '../stores/postStore';
   import type { Comment } from '../stores/commentStore';
   import PostCard from './PostCard.svelte';
-  import ReactionBar from './reactions/ReactionBar.svelte';
-  import LinkifiedText from './LinkifiedText.svelte';
-  import EditedBadge from './EditedBadge.svelte';
-  import RelativeTime from './RelativeTime.svelte';
-  import { buildProfileHref, handleProfileNavigation, returnToFeed } from '../services/profileNavigation';
+  import { returnToFeed } from '../services/profileNavigation';
   import { buildThreadHref } from '../services/routeNavigation';
   import { displayTimezone } from '../stores';
   import { sections } from '../stores/sectionStore';
@@ -68,13 +64,7 @@
   let postContext: Record<string, Post | null> = {};
   let postContextErrors: Record<string, string | null> = {};
   let postContextLoading = new Set<string>();
-  let parentCommentContext: Record<string, Comment | null> = {};
-  let parentCommentLoading = new Set<string>();
-  let parentCommentErrors: Record<string, string | null> = {};
-  let expandedCommentThreads = new Set<string>();
-  let threadPreview: Record<string, { comment: Comment; depth: number }[] | null> = {};
-  let threadPreviewLoading = new Set<string>();
-  let threadPreviewErrors: Record<string, string | null> = {};
+  let commentThreads: { postId: string; commentIds: string[] }[] = [];
 
   let activeTab: 'posts' | 'comments' = 'posts';
   let currentController: AbortController | null = null;
@@ -83,7 +73,6 @@
   let postsRequestId = 0;
   let commentsRequestId = 0;
   let contextRequestId = 0;
-  let pendingCommentReactions = new Set<string>();
 
   function normalizeProfileResponse(
     response: ApiProfileResponse
@@ -114,7 +103,6 @@
     postsRequestId += 1;
     commentsRequestId += 1;
     contextRequestId += 1;
-    pendingCommentReactions = new Set();
     profile = null;
     stats = null;
     profileError = null;
@@ -133,13 +121,7 @@
     postContext = {};
     postContextErrors = {};
     postContextLoading = new Set();
-    parentCommentContext = {};
-    parentCommentErrors = {};
-    parentCommentLoading = new Set();
-    expandedCommentThreads = new Set();
-    threadPreview = {};
-    threadPreviewLoading = new Set();
-    threadPreviewErrors = {};
+    commentThreads = [];
     activeTab = 'posts';
   }
 
@@ -305,11 +287,10 @@
   $: if (activeTab === 'comments' && comments.length > 0) {
     for (const comment of comments) {
       void ensurePostContext(comment.postId);
-      if (comment.parentCommentId) {
-        void ensureParentCommentContext(comment.parentCommentId);
-      }
     }
   }
+
+  $: commentThreads = groupCommentThreads(comments);
 
   async function ensurePostContext(postId: string) {
     if (!postId || postContext[postId] !== undefined || postContextLoading.has(postId)) {
@@ -345,106 +326,26 @@
     }
   }
 
-  async function ensureParentCommentContext(commentId: string) {
-    if (!commentId || parentCommentContext[commentId] !== undefined || parentCommentLoading.has(commentId)) {
-      return;
-    }
-    const requestId = contextRequestId;
-    const activeUserId = userId;
-    const isCurrentRequest = () => requestId === contextRequestId && activeUserId === userId;
-    parentCommentLoading = new Set(parentCommentLoading).add(commentId);
-    parentCommentErrors = { ...parentCommentErrors, [commentId]: null };
-    try {
-      const response = await api.get<{ comment?: ApiComment | null }>(`/comments/${commentId}`);
-      if (!isCurrentRequest()) {
-        return;
-      }
-      const parent = response?.comment ? mapApiComment(response.comment) : null;
-      parentCommentContext = { ...parentCommentContext, [commentId]: parent };
-    } catch (error) {
-      if (!isCurrentRequest()) {
-        return;
-      }
-      parentCommentContext = { ...parentCommentContext, [commentId]: null };
-      parentCommentErrors = {
-        ...parentCommentErrors,
-        [commentId]: error instanceof Error ? error.message : 'Failed to load parent comment.',
-      };
-    } finally {
-      if (isCurrentRequest()) {
-        const nextLoading = new Set(parentCommentLoading);
-        nextLoading.delete(commentId);
-        parentCommentLoading = nextLoading;
-      }
-    }
-  }
+  function groupCommentThreads(items: Comment[]): { postId: string; commentIds: string[] }[] {
+    const groups: { postId: string; commentIds: string[] }[] = [];
+    const indexByPost = new Map<string, number>();
 
-  function toggleThreadContext(comment: Comment) {
-    const nextExpanded = new Set(expandedCommentThreads);
-    if (nextExpanded.has(comment.id)) {
-      nextExpanded.delete(comment.id);
-    } else {
-      nextExpanded.add(comment.id);
-      if (!threadPreview[comment.id]) {
-        void loadThreadPreview(comment);
+    for (const comment of items) {
+      if (!comment.postId) continue;
+      let index = indexByPost.get(comment.postId);
+      if (index === undefined) {
+        index = groups.length;
+        indexByPost.set(comment.postId, index);
+        groups.push({ postId: comment.postId, commentIds: [] });
       }
-    }
-    expandedCommentThreads = nextExpanded;
-  }
 
-  async function loadThreadPreview(comment: Comment) {
-    if (threadPreviewLoading.has(comment.id)) return;
-    const requestId = contextRequestId;
-    const activeUserId = userId;
-    const isCurrentRequest = () => requestId === contextRequestId && activeUserId === userId;
-    threadPreviewLoading = new Set(threadPreviewLoading).add(comment.id);
-    threadPreviewErrors = { ...threadPreviewErrors, [comment.id]: null };
-    try {
-      const response = await api.get<{ comments?: ApiComment[] }>(
-        `/posts/${comment.postId}/comments?limit=12`
-      );
-      if (!isCurrentRequest()) {
-        return;
-      }
-      const flattened = flattenThreadPreview((response.comments ?? []).map(mapApiComment));
-      const hasTarget = flattened.some((item) => item.comment.id === comment.id);
-      const enriched = hasTarget
-        ? flattened
-        : [
-            ...flattened,
-            {
-              comment,
-              depth: comment.parentCommentId ? 1 : 0,
-            },
-          ];
-      threadPreview = { ...threadPreview, [comment.id]: enriched };
-    } catch (error) {
-      if (!isCurrentRequest()) {
-        return;
-      }
-      threadPreview = { ...threadPreview, [comment.id]: null };
-      threadPreviewErrors = {
-        ...threadPreviewErrors,
-        [comment.id]: error instanceof Error ? error.message : 'Failed to load thread context.',
-      };
-    } finally {
-      if (isCurrentRequest()) {
-        const nextLoading = new Set(threadPreviewLoading);
-        nextLoading.delete(comment.id);
-        threadPreviewLoading = nextLoading;
+      const group = groups[index];
+      if (!group.commentIds.includes(comment.id)) {
+        group.commentIds = [...group.commentIds, comment.id];
       }
     }
-  }
 
-  function flattenThreadPreview(items: Comment[], depth = 0): { comment: Comment; depth: number }[] {
-    const flattened: { comment: Comment; depth: number }[] = [];
-    for (const item of items) {
-      flattened.push({ comment: item, depth });
-      if (item.replies?.length) {
-        flattened.push(...flattenThreadPreview(item.replies, depth + 1));
-      }
-    }
-    return flattened;
+    return groups;
   }
 
   function buildThreadLink(post: Post): string {
@@ -455,12 +356,6 @@
   function buildThreadLinkForPost(post?: Post | null): string {
     if (!post) return '#';
     return buildThreadLink(post);
-  }
-
-  function truncateText(text: string, maxLength: number): string {
-    const trimmed = text.trim();
-    if (trimmed.length <= maxLength) return trimmed;
-    return `${trimmed.slice(0, maxLength - 3).trim()}...`;
   }
 
   function formatDate(dateString?: string | null): string {
@@ -475,67 +370,6 @@
       },
       $displayTimezone
     );
-  }
-
-  function getPreviewWindow(items: { comment: Comment; depth: number }[], targetId: string) {
-    const index = items.findIndex((item) => item.comment.id === targetId);
-    if (index === -1) return items.slice(0, 6);
-    const start = Math.max(0, index - 2);
-    const end = Math.min(items.length, index + 3);
-    return items.slice(start, end);
-  }
-
-  async function toggleCommentReaction(comment: Comment, emoji: string) {
-    const key = `${comment.id}-${emoji}`;
-    if (pendingCommentReactions.has(key)) return;
-    pendingCommentReactions.add(key);
-
-    const userReactions = new Set(comment.viewerReactions ?? []);
-    const hasReacted = userReactions.has(emoji);
-
-    if (hasReacted) {
-      comment.viewerReactions = (comment.viewerReactions ?? []).filter((e) => e !== emoji);
-      if (comment.reactionCounts && comment.reactionCounts[emoji]) {
-        comment.reactionCounts[emoji]--;
-        if (comment.reactionCounts[emoji] <= 0) {
-          delete comment.reactionCounts[emoji];
-        }
-      }
-    } else {
-      comment.viewerReactions = [...(comment.viewerReactions ?? []), emoji];
-      comment.reactionCounts = {
-        ...(comment.reactionCounts ?? {}),
-        [emoji]: (comment.reactionCounts?.[emoji] ?? 0) + 1,
-      };
-    }
-    comments = [...comments];
-
-    try {
-      if (hasReacted) {
-        await api.removeCommentReaction(comment.id, emoji);
-      } else {
-        await api.addCommentReaction(comment.id, emoji);
-      }
-    } catch (error) {
-      if (hasReacted) {
-        comment.viewerReactions = [...(comment.viewerReactions ?? []), emoji];
-        comment.reactionCounts = {
-          ...(comment.reactionCounts ?? {}),
-          [emoji]: (comment.reactionCounts?.[emoji] ?? 0) + 1,
-        };
-      } else {
-        comment.viewerReactions = (comment.viewerReactions ?? []).filter((e) => e !== emoji);
-        if (comment.reactionCounts && comment.reactionCounts[emoji]) {
-          comment.reactionCounts[emoji]--;
-          if (comment.reactionCounts[emoji] <= 0) {
-            delete comment.reactionCounts[emoji];
-          }
-        }
-      }
-      comments = [...comments];
-    } finally {
-      pendingCommentReactions.delete(key);
-    }
   }
 
   onDestroy(() => {
@@ -720,193 +554,35 @@
           {:else if comments.length === 0}
             <p class="text-gray-500 text-sm">No comments yet.</p>
           {:else}
-            {#each comments as comment (comment.id)}
-              <article class="bg-white rounded-lg border border-gray-200 p-4 space-y-4">
-                {#if postContextLoading.has(comment.postId)}
-                  <div class="text-xs text-gray-400">Loading thread context...</div>
-                {:else if postContextErrors[comment.postId]}
-                  <div class="text-xs text-red-600">{postContextErrors[comment.postId]}</div>
-                {:else if postContext[comment.postId]}
-                  <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                    <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">Thread context</div>
+            {#each commentThreads as thread (thread.postId)}
+              {@const threadPost = postContext[thread.postId]}
+              <div class="space-y-3">
+                <div class="flex items-center justify-between text-xs text-gray-500">
+                  <span class="font-semibold uppercase tracking-wide text-gray-400">Thread</span>
+                  {#if threadPost}
                     <a
-                      href={buildThreadLinkForPost(postContext[comment.postId])}
-                      class="mt-1 block text-sm font-medium text-gray-900 hover:underline"
-                    >
-                      {truncateText(postContext[comment.postId]?.content ?? '', 140)}
-                    </a>
-                    <a
-                      href={buildThreadLinkForPost(postContext[comment.postId])}
-                      class="mt-1 inline-flex items-center text-xs text-blue-600 hover:text-blue-800"
-                    >
-                      View full thread ->
-                    </a>
-                  </div>
-                {/if}
-
-                {#if comment.parentCommentId}
-                  <div class="rounded-lg border border-gray-200 bg-white p-3">
-                    <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">In reply to</div>
-                    {#if parentCommentLoading.has(comment.parentCommentId)}
-                      <p class="mt-1 text-xs text-gray-400">Loading parent comment...</p>
-                    {:else if parentCommentErrors[comment.parentCommentId]}
-                      <p class="mt-1 text-xs text-red-600">{parentCommentErrors[comment.parentCommentId]}</p>
-                    {:else if parentCommentContext[comment.parentCommentId]}
-                      <p class="mt-1 text-sm text-gray-800">
-                        {truncateText(
-                          parentCommentContext[comment.parentCommentId]?.content ?? '',
-                          120
-                        )}
-                      </p>
-                      <p class="mt-1 text-xs text-gray-500">
-                        -- {parentCommentContext[comment.parentCommentId]?.user?.username ?? 'Unknown'}
-                      </p>
-                    {:else}
-                      <p class="mt-1 text-xs text-gray-400">Parent comment unavailable.</p>
-                    {/if}
-                  </div>
-                {/if}
-
-                <div class="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
-                  {#if comment.user?.id}
-                    <a
-                      href={buildProfileHref(comment.user.id)}
-                      class="flex-shrink-0"
-                      on:click={(event) => handleProfileNavigation(event, comment.user?.id)}
-                      aria-label={`View ${(comment.user?.username ?? 'user')}'s profile`}
-                    >
-                      {#if comment.user?.profilePictureUrl}
-                        <img
-                          src={comment.user.profilePictureUrl}
-                          alt={comment.user.username}
-                          class="w-9 h-9 rounded-full object-cover"
-                        />
-                      {:else}
-                        <div class="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center">
-                          <span class="text-gray-500 text-sm font-medium">
-                            {comment.user?.username?.charAt(0).toUpperCase() || '?'}
-                          </span>
-                        </div>
-                      {/if}
-                    </a>
-                  {:else}
-                    {#if comment.user?.profilePictureUrl}
-                      <img
-                        src={comment.user.profilePictureUrl}
-                        alt={comment.user.username}
-                        class="w-9 h-9 rounded-full object-cover flex-shrink-0"
-                      />
-                    {:else}
-                      <div class="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                        <span class="text-gray-500 text-sm font-medium">
-                          {comment.user?.username?.charAt(0).toUpperCase() || '?'}
-                        </span>
-                      </div>
-                    {/if}
-                  {/if}
-
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 mb-1">
-                      {#if comment.user?.id}
-                        <a
-                          href={buildProfileHref(comment.user.id)}
-                          class="font-medium text-gray-900 truncate hover:underline"
-                          on:click={(event) => handleProfileNavigation(event, comment.user?.id)}
-                        >
-                          {comment.user?.username || 'Unknown'}
-                        </a>
-                      {:else}
-                        <span class="font-medium text-gray-900 truncate">
-                          {comment.user?.username || 'Unknown'}
-                        </span>
-                      {/if}
-                      <span class="text-gray-400 text-sm">commented</span>
-                      <RelativeTime dateString={comment.createdAt} className="text-gray-500 text-sm" />
-                      <EditedBadge createdAt={comment.createdAt} updatedAt={comment.updatedAt} />
-                    </div>
-
-                    <LinkifiedText
-                      text={comment.content}
-                      className="text-gray-800 whitespace-pre-wrap break-words text-sm"
-                      linkClassName="text-blue-600 hover:text-blue-800 underline"
-                    />
-
-                    {#if comment.links && comment.links.length > 0}
-                      <div class="mt-2 text-sm text-blue-600 break-all">
-                        <a
-                          href={comment.links[0].url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="underline"
-                        >
-                          {comment.links[0].url}
-                        </a>
-                      </div>
-                    {/if}
-
-                    <div class="mt-3">
-                      <ReactionBar
-                        reactionCounts={comment.reactionCounts ?? {}}
-                        userReactions={new Set(comment.viewerReactions ?? [])}
-                        onToggle={(emoji) => toggleCommentReaction(comment, emoji)}
-                        commentId={comment.id}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div class="flex items-center justify-between">
-                  <button
-                    type="button"
-                    class="text-xs font-medium text-gray-600 hover:text-gray-900"
-                    on:click={() => toggleThreadContext(comment)}
-                  >
-                    {expandedCommentThreads.has(comment.id)
-                      ? 'Hide thread context'
-                      : 'Show thread context'}
-                  </button>
-                  {#if postContext[comment.postId]}
-                    <a
-                      href={buildThreadLinkForPost(postContext[comment.postId])}
+                      href={buildThreadLinkForPost(threadPost)}
                       class="text-xs text-blue-600 hover:text-blue-800"
                     >
-                      Go to thread ->
+                      Open full thread ->
                     </a>
                   {/if}
                 </div>
 
-                {#if expandedCommentThreads.has(comment.id)}
-                  <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-2">
-                    <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">Thread preview</div>
-                    {#if threadPreviewLoading.has(comment.id)}
-                      <p class="text-xs text-gray-400">Loading thread...</p>
-                    {:else if threadPreviewErrors[comment.id]}
-                      <p class="text-xs text-red-600">{threadPreviewErrors[comment.id]}</p>
-                    {:else if threadPreview[comment.id]}
-                      {#each getPreviewWindow(threadPreview[comment.id] ?? [], comment.id) as item (item.comment.id)}
-                        <div
-                          class={`rounded-md border p-2 ${
-                            item.comment.id === comment.id
-                              ? 'border-amber-200 bg-amber-50'
-                              : 'border-gray-200 bg-white'
-                          }`}
-                          style={`margin-left: ${item.depth * 12}px;`}
-                        >
-                          <div class="text-xs text-gray-500">
-                            {item.comment.user?.username ?? 'Unknown'} ·{' '}
-                            <RelativeTime dateString={item.comment.createdAt} className="text-gray-500 text-xs" />
-                          </div>
-                          <div class="text-sm text-gray-800">
-                            {truncateText(item.comment.content, 160)}
-                          </div>
-                        </div>
-                      {/each}
-                    {:else}
-                      <p class="text-xs text-gray-400">No thread context available.</p>
-                    {/if}
+                {#if postContextLoading.has(thread.postId)}
+                  <div class="text-sm text-gray-500">Loading thread...</div>
+                {:else if postContextErrors[thread.postId]}
+                  <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-600">
+                    {postContextErrors[thread.postId]}
+                  </div>
+                {:else if threadPost}
+                  <PostCard post={threadPost} highlightCommentIds={thread.commentIds} />
+                {:else}
+                  <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+                    Thread unavailable.
                   </div>
                 {/if}
-              </article>
+              </div>
             {/each}
           {/if}
 
