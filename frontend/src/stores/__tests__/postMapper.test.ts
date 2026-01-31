@@ -55,6 +55,31 @@ describe('mapApiPost', () => {
     expect(post.links).toBeUndefined();
   });
 
+  it('maps post images', () => {
+    const post = mapApiPost({
+      id: 'post-6',
+      user_id: 'user-6',
+      section_id: 'section-6',
+      content: 'hello',
+      created_at: '2025-01-01T00:00:00Z',
+      images: [
+        {
+          id: 'image-1',
+          url: 'https://example.com/one.png',
+          position: 0,
+          caption: 'First',
+          alt_text: 'First image',
+          created_at: '2025-01-01T00:00:00Z',
+        },
+      ],
+    });
+
+    expect(post.images?.[0].id).toBe('image-1');
+    expect(post.images?.[0].url).toBe('https://example.com/one.png');
+    expect(post.images?.[0].caption).toBe('First');
+    expect(post.images?.[0].altText).toBe('First image');
+  });
+
   it('falls back to link url when metadata url is missing', () => {
     const post = mapApiPost({
       id: 'post-3',

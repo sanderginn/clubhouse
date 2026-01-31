@@ -6,6 +6,7 @@ const apiComment = {
   user_id: 'user-1',
   post_id: 'post-1',
   parent_comment_id: null,
+  image_id: 'image-1',
   content: 'Hello',
   created_at: '2025-01-01T00:00:00Z',
   user: {
@@ -51,6 +52,7 @@ describe('mapApiComment', () => {
     expect(comment.links?.[0].metadata?.url).toBe('https://example.com');
     expect(comment.replies).toHaveLength(1);
     expect(comment.replies?.[0].parentCommentId).toBe('comment-1');
+    expect(comment.imageId).toBe('image-1');
   });
 
   it('maps API comment without metadata', () => {

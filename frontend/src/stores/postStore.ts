@@ -18,12 +18,22 @@ export interface LinkMetadata {
   type?: string;
 }
 
+export interface PostImage {
+  id: string;
+  url: string;
+  position: number;
+  caption?: string;
+  altText?: string;
+  createdAt?: string;
+}
+
 export interface Post {
   id: string;
   userId: string;
   sectionId: string;
   content: string;
   links?: Link[];
+  images?: PostImage[];
   user?: {
     id: string;
     username: string;

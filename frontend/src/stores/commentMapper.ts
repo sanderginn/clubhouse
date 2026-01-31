@@ -7,6 +7,7 @@ export interface ApiComment {
   user_id: string;
   post_id: string;
   parent_comment_id?: string | null;
+  image_id?: string | null;
   content: string;
   links?: ApiLink[];
   user?: ApiUser;
@@ -23,6 +24,7 @@ export function mapApiComment(apiComment: ApiComment): Comment {
     userId: apiComment.user_id,
     postId: apiComment.post_id,
     parentCommentId: apiComment.parent_comment_id ?? undefined,
+    imageId: apiComment.image_id ?? undefined,
     content: apiComment.content,
     links: apiComment.links?.map((link): Link => ({
       id: link.id,
