@@ -28,6 +28,7 @@
     515,
     516,
     520,
+    521,
     523,
     526,
     527,
@@ -552,7 +553,7 @@
     {
       "issue_number": 521,
       "title": "Standardize \"Back to feed\" navigation text across all pages",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 4,
@@ -564,7 +565,9 @@
       "assigned_to": "agent-1769817470-76582",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769817470-76582",
       "branch": "feat/issue-521-standardize-back-to-feed-navigation-text",
-      "claimed_at": "2026-01-30T23:57:50Z"
+      "claimed_at": "2026-01-30T23:57:50Z",
+      "pr_number": 544,
+      "completed_at": "2026-01-31T00:27:38Z"
     },
     {
       "issue_number": 522,
