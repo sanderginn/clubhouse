@@ -26,7 +26,7 @@ describe('ThreadView', () => {
     const pushStateSpy = vi.spyOn(window.history, 'pushState');
     render(ThreadView);
 
-    const button = screen.getByText('Back to Music');
+    const button = screen.getByText('Back to feed');
     await fireEvent.click(button);
 
     expect(get(activeView)).toBe('feed');

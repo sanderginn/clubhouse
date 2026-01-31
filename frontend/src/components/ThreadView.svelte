@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { activeSection, sections, sectionStore, threadRouteStore, posts, uiStore } from '../stores';
   import { loadThreadTargetPost } from '../stores/threadRouteStore';
-  import { buildFeedHref, getHistoryState, pushPath } from '../services/routeNavigation';
+  import { buildFeedHref, pushPath } from '../services/routeNavigation';
   import PostCard from './PostCard.svelte';
 
   export let highlightCommentId: string | null = null;
@@ -22,11 +21,6 @@
     sectionStore.setActiveSection(sectionContext);
   }
 
-  let fromSearch = false;
-  onMount(() => {
-    fromSearch = getHistoryState()?.fromSearch === true;
-  });
-
   function handleSectionClick() {
     if (!sectionContext) return;
     sectionStore.setActiveSection(sectionContext);
@@ -34,36 +28,17 @@
     threadRouteStore.clearTarget();
     pushPath(buildFeedHref(sectionContext.slug));
   }
-
-  function handleSearchBack() {
-    if (typeof window === 'undefined') return;
-    if (window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-    handleSectionClick();
-  }
 </script>
 
 <div class="space-y-4">
   <div class="flex flex-wrap items-center gap-3">
-    {#if fromSearch}
-      <button
-        class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 hover:border-gray-300"
-        on:click={handleSearchBack}
-      >
-        <span aria-hidden="true">←</span>
-        <span>Back to search results</span>
-      </button>
-    {/if}
-
     {#if sectionContext}
       <button
         class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 hover:border-gray-300"
         on:click={handleSectionClick}
       >
-        <span class="text-base" aria-hidden="true">{sectionContext.icon}</span>
-        <span>Back to {sectionContext.name}</span>
+        <span aria-hidden="true">←</span>
+        <span>Back to feed</span>
       </button>
     {:else}
       <div class="text-xs font-semibold uppercase tracking-wide text-gray-400">Thread</div>
