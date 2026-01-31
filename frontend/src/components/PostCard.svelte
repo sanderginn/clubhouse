@@ -708,14 +708,11 @@
         </a>
       {/if}
 
-      <div class="flex items-center gap-4 mt-3 text-gray-500 text-sm">
-        <div class="flex items-center gap-1">
+      <div class="mt-3 flex flex-wrap items-center gap-2">
+        <div class="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600">
           <span>💬</span>
           <span>{post.commentCount || 0}</span>
         </div>
-      </div>
-
-      <div class="mt-3">
         <ReactionBar
           reactionCounts={post.reactionCounts ?? {}}
           userReactions={userReactions}
