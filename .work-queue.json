@@ -564,7 +564,7 @@
     {
       "issue_number": 522,
       "title": "Unify thread UI in user profile comments section",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 4,
@@ -572,7 +572,11 @@
         "enhancement",
         "frontend",
         "ux"
-      ]
+      ],
+      "assigned_to": "agent-1769818640-9677",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769818640-9677",
+      "branch": "feat/issue-522-unify-thread-ui-in-user-profile-comments",
+      "claimed_at": "2026-01-31T00:17:20Z"
     },
     {
       "issue_number": 523,
