@@ -46,6 +46,7 @@
     556,
     557,
     558,
+    559,
     560,
     562
   ],
@@ -869,7 +870,7 @@
     {
       "issue_number": 559,
       "title": "Editing a post with multiple images only allows replacing/removing the first image",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         515,
         516,
@@ -885,7 +886,9 @@
       "branch": "fix/issue-559-editing-a-post-with-multiple-images-only",
       "assigned_to": "agent-1769857956-98045",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769857956-98045",
-      "claimed_at": "2026-01-31T11:12:36Z"
+      "claimed_at": "2026-01-31T11:12:36Z",
+      "pr_number": 581,
+      "completed_at": "2026-01-31T11:25:52Z"
     },
     {
       "issue_number": 560,
