@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
+  import { fade } from 'svelte/transition';
   import type { Link, Post } from '../stores/postStore';
   import { postStore, currentUser, isAdmin } from '../stores';
   import { api } from '../services/api';
@@ -35,8 +36,7 @@
   let editImageUploadProgress = 0;
   let editImageInput: HTMLInputElement | null = null;
   let isImageLightboxOpen = false;
-  let lightboxImageUrl: string | null = null;
-  let lightboxAltText = 'Full size image';
+  let lightboxImageIndex = 0;
   let isDeleting = false;
   let deleteError: string | null = null;
 
@@ -104,16 +104,17 @@
     }
   });
 
-  function openImageLightbox(url: string, altText: string) {
-    if (!url) {
+  function openImageLightbox(index: number) {
+    if (imageItems.length === 0) {
       return;
     }
     if (!isImageLightboxOpen) {
       lockBodyScroll();
     }
-    lightboxImageUrl = url;
-    lightboxAltText = altText || 'Full size image';
+    const clamped = (index + imageItems.length) % imageItems.length;
+    lightboxImageIndex = clamped;
     isImageLightboxOpen = true;
+    preloadLightboxAdjacent(clamped);
   }
 
   function closeImageLightbox() {
@@ -121,8 +122,24 @@
       return;
     }
     isImageLightboxOpen = false;
-    lightboxImageUrl = null;
     unlockBodyScroll();
+  }
+
+  function goToLightboxImage(index: number) {
+    if (imageItems.length === 0) {
+      return;
+    }
+    const clamped = (index + imageItems.length) % imageItems.length;
+    lightboxImageIndex = clamped;
+    preloadLightboxAdjacent(clamped);
+  }
+
+  function nextLightboxImage() {
+    goToLightboxImage(lightboxImageIndex + 1);
+  }
+
+  function previousLightboxImage() {
+    goToLightboxImage(lightboxImageIndex - 1);
   }
 
   function handleLightboxKeydown(event: KeyboardEvent) {
@@ -131,6 +148,52 @@
     }
     if (event.key === 'Escape') {
       closeImageLightbox();
+    }
+    if (imageItems.length <= 1) {
+      return;
+    }
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      previousLightboxImage();
+    }
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      nextLightboxImage();
+    }
+  }
+
+  function handleLightboxTouchStart(event: TouchEvent) {
+    if (imageItems.length <= 1) {
+      return;
+    }
+    const touch = event.touches[0];
+    if (!touch) {
+      return;
+    }
+    lightboxTouchStartX = touch.clientX;
+    lightboxTouchStartY = touch.clientY;
+    lightboxTouchActive = true;
+  }
+
+  function handleLightboxTouchEnd(event: TouchEvent) {
+    if (!lightboxTouchActive || imageItems.length <= 1) {
+      lightboxTouchActive = false;
+      return;
+    }
+    const touch = event.changedTouches[0];
+    if (!touch) {
+      lightboxTouchActive = false;
+      return;
+    }
+    const deltaX = touch.clientX - lightboxTouchStartX;
+    const deltaY = touch.clientY - lightboxTouchStartY;
+    lightboxTouchActive = false;
+    if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+      if (deltaX < 0) {
+        nextLightboxImage();
+      } else {
+        previousLightboxImage();
+      }
     }
   }
 
@@ -257,6 +320,9 @@
   $: isActiveImageInternal = activeImageLink
     ? isInternalUploadUrl(activeImageLink.url)
     : false;
+  $: lightboxImageItem = imageItems[lightboxImageIndex];
+  $: lightboxImageUrl = lightboxImageItem?.url;
+  $: lightboxAltText = lightboxImageItem?.title ?? 'Full size image';
 
   let activeImageIndex = 0;
   let loadedImageIndices = new Set<number>();
@@ -267,7 +333,9 @@
     const signature = imageItems.map((item) => item.url).join('|');
     if (signature !== lastImageSignature) {
       activeImageIndex = 0;
+      lightboxImageIndex = 0;
       loadedImageIndices = new Set();
+      lightboxPreloadedIndices = new Set();
       imageLoadFailures = new Set();
       if (imageItems.length > 0) {
         loadedImageIndices.add(0);
@@ -334,6 +402,10 @@
   let touchStartX = 0;
   let touchStartY = 0;
   let touchActive = false;
+  let lightboxTouchStartX = 0;
+  let lightboxTouchStartY = 0;
+  let lightboxTouchActive = false;
+  let lightboxPreloadedIndices = new Set<number>();
 
   function handleTouchStart(event: TouchEvent) {
     if (imageItems.length <= 1) {
@@ -368,6 +440,31 @@
         previousImage();
       }
     }
+  }
+
+  function preloadLightboxImage(index: number) {
+    if (lightboxPreloadedIndices.has(index)) {
+      return;
+    }
+    const url = imageItems[index]?.url;
+    if (!url) {
+      return;
+    }
+    const img = new Image();
+    img.src = url;
+    const next = new Set(lightboxPreloadedIndices);
+    next.add(index);
+    lightboxPreloadedIndices = next;
+  }
+
+  function preloadLightboxAdjacent(index: number) {
+    if (imageItems.length <= 1) {
+      preloadLightboxImage(index);
+      return;
+    }
+    preloadLightboxImage(index);
+    preloadLightboxImage((index + 1) % imageItems.length);
+    preloadLightboxImage((index - 1 + imageItems.length) % imageItems.length);
   }
 
   let editImageLoadFailed = false;
@@ -751,7 +848,7 @@
                 class="w-full text-left"
                 aria-label="Open full-size image"
                 aria-haspopup="dialog"
-                on:click={() => openImageLightbox(activeImageUrl, activeImageTitle)}
+                on:click={() => openImageLightbox(0)}
               >
                 <img
                   src={activeImageUrl}
@@ -799,7 +896,7 @@
                           class="w-full text-left"
                           aria-label={`Open image ${index + 1} in full size`}
                           aria-haspopup="dialog"
-                          on:click={() => openImageLightbox(item.url, item.title)}
+                          on:click={() => openImageLightbox(index)}
                         >
                           <img
                             src={shouldLoadImage(index) ? item.url : undefined}
@@ -1004,6 +1101,11 @@
       role="dialog"
       aria-modal="true"
       aria-label="Full size image"
+      on:touchstart={handleLightboxTouchStart}
+      on:touchend={handleLightboxTouchEnd}
+      on:touchcancel={() => {
+        lightboxTouchActive = false;
+      }}
     >
       <button
         type="button"
@@ -1013,12 +1115,44 @@
       >
         ✕
       </button>
-      <img
-        src={lightboxImageUrl}
-        alt={lightboxAltText}
-        class="max-h-[85vh] w-auto max-w-[95vw] rounded-lg object-contain bg-white shadow-lg"
-        style="touch-action: pinch-zoom;"
-      />
+      {#if imageItems.length > 1}
+        <div class="absolute inset-y-0 left-2 flex items-center">
+          <button
+            type="button"
+            class="flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-gray-700 shadow hover:bg-white"
+            aria-label="Previous image"
+            on:click={previousLightboxImage}
+          >
+            ‹
+          </button>
+        </div>
+        <div class="absolute inset-y-0 right-2 flex items-center">
+          <button
+            type="button"
+            class="flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-gray-700 shadow hover:bg-white"
+            aria-label="Next image"
+            on:click={nextLightboxImage}
+          >
+            ›
+          </button>
+        </div>
+      {/if}
+      {#key lightboxImageUrl}
+        <img
+          src={lightboxImageUrl}
+          alt={lightboxAltText}
+          class="max-h-[85vh] w-auto max-w-[95vw] rounded-lg object-contain bg-white shadow-lg"
+          style="touch-action: pan-y pinch-zoom;"
+          transition:fade={{ duration: 180 }}
+        />
+      {/key}
+      {#if imageItems.length > 1}
+        <div class="absolute bottom-3 left-0 right-0 flex items-center justify-center">
+          <span class="rounded-full bg-black/60 px-2.5 py-1 text-xs text-white">
+            {lightboxImageIndex + 1} of {imageItems.length}
+          </span>
+        </div>
+      {/if}
     </div>
   </div>
 {/if}
