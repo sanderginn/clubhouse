@@ -629,7 +629,7 @@
     {
       "issue_number": 525,
       "title": "Reduce padding on highlighted words (@mentions and search matches)",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 4,
@@ -637,7 +637,11 @@
         "enhancement",
         "frontend",
         "ux"
-      ]
+      ],
+      "assigned_to": "agent-1769819290-29881",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769819290-29881",
+      "branch": "feat/issue-525-reduce-padding-on-highlighted-words-ment",
+      "claimed_at": "2026-01-31T00:28:10Z"
     },
     {
       "issue_number": 526,
