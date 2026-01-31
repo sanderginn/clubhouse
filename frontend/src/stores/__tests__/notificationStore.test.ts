@@ -31,7 +31,9 @@ vi.mock('../authStore', () => {
   };
 });
 
-const { notificationStore, markNotificationRead } = await import('../notificationStore');
+const { notificationStore, markNotificationRead, markVisibleNotificationsRead } = await import(
+  '../notificationStore'
+);
 
 beforeEach(() => {
   apiGet.mockReset();
@@ -89,12 +91,28 @@ describe('notificationStore', () => {
     );
 
     apiPatch.mockRejectedValue(new Error('nope'));
+    apiGet.mockResolvedValue({
+      notifications: [
+        {
+          id: 'notif-2',
+          type: 'new_comment',
+          created_at: '2026-01-01T00:00:00Z',
+          read_at: null,
+        },
+      ],
+      meta: {
+        cursor: null,
+        has_more: false,
+        unread_count: 1,
+      },
+    });
 
     await markNotificationRead('notif-2');
 
     const state = get(notificationStore);
     expect(state.unreadCount).toBe(1);
     expect(state.notifications[0]?.readAt).toBeNull();
+    expect(apiGet).toHaveBeenCalledTimes(1);
     expect(logWarn).toHaveBeenCalled();
   });
 
@@ -116,5 +134,66 @@ describe('notificationStore', () => {
     await markNotificationRead('notif-3');
 
     expect(apiPatch).not.toHaveBeenCalled();
+  });
+
+  it('reloads notifications when marking visible ones fails', async () => {
+    notificationStore.setNotifications(
+      [
+        {
+          id: 'notif-4',
+          type: 'new_post',
+          createdAt: '2026-01-01T00:00:00Z',
+          readAt: null,
+        },
+        {
+          id: 'notif-5',
+          type: 'mention',
+          createdAt: '2026-01-01T01:00:00Z',
+          readAt: null,
+        },
+      ],
+      'cursor-1',
+      true,
+      2
+    );
+
+    apiPatch
+      .mockResolvedValueOnce({
+        notification: {
+          id: 'notif-4',
+          type: 'new_post',
+          created_at: '2026-01-01T00:00:00Z',
+          read_at: '2026-01-02T00:00:00Z',
+        },
+      })
+      .mockRejectedValueOnce(new Error('nope'));
+
+    apiGet.mockResolvedValue({
+      notifications: [
+        {
+          id: 'notif-4',
+          type: 'new_post',
+          created_at: '2026-01-01T00:00:00Z',
+          read_at: '2026-01-02T00:00:00Z',
+        },
+        {
+          id: 'notif-5',
+          type: 'mention',
+          created_at: '2026-01-01T01:00:00Z',
+          read_at: null,
+        },
+      ],
+      meta: {
+        cursor: null,
+        has_more: false,
+        unread_count: 1,
+      },
+    });
+
+    await markVisibleNotificationsRead();
+
+    expect(apiPatch).toHaveBeenCalledTimes(2);
+    expect(apiGet).toHaveBeenCalledTimes(1);
+    expect(logWarn).toHaveBeenCalled();
   });
 });

@@ -283,6 +283,7 @@ export async function markNotificationRead(notificationId: string): Promise<void
   } catch (error) {
     notificationStore.markRead(notificationId, previousReadAt);
     logWarn('Failed to mark notification as read', { notificationId, error });
+    await loadNotifications();
   }
 }
 
