@@ -779,6 +779,303 @@
       "claimed_at": "2026-01-30T22:50:39Z",
       "pr_number": 531,
       "completed_at": "2026-01-30T22:57:10Z"
+    },
+    {
+      "issue_number": 555,
+      "title": "Notifications do not update in real time (WebSocket)",
+      "status": "available",
+      "dependencies": [
+        537
+      ],
+      "phase": "bugfix",
+      "priority": 0,
+      "labels": [
+        "bug",
+        "frontend",
+        "backend",
+        "ux"
+      ],
+      "branch": "fix/issue-555-notifications-do-not-update-in-real-time-websocket"
+    },
+    {
+      "issue_number": 556,
+      "title": "Notification click updates URL but does not navigate",
+      "status": "available",
+      "dependencies": [
+        537
+      ],
+      "phase": "bugfix",
+      "priority": 1,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ],
+      "branch": "fix/issue-556-notification-click-updates-url-but-does-not-navigate"
+    },
+    {
+      "issue_number": 557,
+      "title": "Spurious \"User not found\" error logged on login/refresh",
+      "status": "available",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 2,
+      "labels": [
+        "bug",
+        "backend"
+      ],
+      "branch": "fix/issue-557-spurious-user-not-found-error-on-login-refresh"
+    },
+    {
+      "issue_number": 558,
+      "title": "Edit keyboard shortcut does not save posts or comments",
+      "status": "available",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 3,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ],
+      "branch": "fix/issue-558-edit-keyboard-shortcut-does-not-save"
+    },
+    {
+      "issue_number": 559,
+      "title": "Editing a post with multiple images only allows replacing/removing the first image",
+      "status": "available",
+      "dependencies": [
+        515,
+        516,
+        517
+      ],
+      "phase": "bugfix",
+      "priority": 4,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ],
+      "branch": "fix/issue-559-editing-multiple-images-only-first-replace-remove"
+    },
+    {
+      "issue_number": 560,
+      "title": "Carousel renders only first image until lightbox/reply",
+      "status": "available",
+      "dependencies": [
+        517
+      ],
+      "phase": "bugfix",
+      "priority": 5,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ],
+      "branch": "fix/issue-560-carousel-renders-only-first-image"
+    },
+    {
+      "issue_number": 561,
+      "title": "Add UI affordance to reply to a specific image",
+      "status": "available",
+      "dependencies": [
+        519
+      ],
+      "phase": "feature",
+      "priority": 6,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "branch": "feat/issue-561-reply-to-specific-image-ui"
+    },
+    {
+      "issue_number": 562,
+      "title": "Unescaped @ mentions should render as literal text when user does not exist",
+      "status": "available",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 7,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ],
+      "branch": "fix/issue-562-unescaped-mentions-render-literal-text"
+    },
+    {
+      "issue_number": 563,
+      "title": "Exclude current user from @ mention suggestions",
+      "status": "available",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 8,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "branch": "feat/issue-563-exclude-current-user-from-mention-suggestions"
+    },
+    {
+      "issue_number": 564,
+      "title": "Search results should render a unified thread when matches appear in post + comments",
+      "status": "available",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 9,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ],
+      "branch": "fix/issue-564-search-results-unified-thread"
+    },
+    {
+      "issue_number": 565,
+      "title": "Highlight search query in unified thread results (post body + comments)",
+      "status": "available",
+      "dependencies": [
+        564
+      ],
+      "phase": "enhancement",
+      "priority": 10,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "branch": "feat/issue-565-highlight-search-query-in-thread-results"
+    },
+    {
+      "issue_number": 566,
+      "title": "Section-scoped search pill missing container styling",
+      "status": "available",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 11,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ],
+      "branch": "fix/issue-566-section-scoped-search-pill-container"
+    },
+    {
+      "issue_number": 567,
+      "title": "Lightbox image transitions should not slide vertically",
+      "status": "available",
+      "dependencies": [
+        518
+      ],
+      "phase": "enhancement",
+      "priority": 12,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "branch": "feat/issue-567-lightbox-image-transition"
+    },
+    {
+      "issue_number": 568,
+      "title": "Navbar layout: logo left, search centered, user/notifications right",
+      "status": "available",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 13,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "branch": "feat/issue-568-navbar-layout-alignment"
+    },
+    {
+      "issue_number": 569,
+      "title": "Thread comment box should appear below existing comments",
+      "status": "available",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 14,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "branch": "feat/issue-569-thread-comment-box-bottom"
+    },
+    {
+      "issue_number": 570,
+      "title": "Profile Comments tab should ignore deleted posts",
+      "status": "available",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 15,
+      "labels": [
+        "bug",
+        "frontend",
+        "backend",
+        "ux"
+      ],
+      "branch": "fix/issue-570-profile-comments-ignore-deleted-posts"
+    },
+    {
+      "issue_number": 571,
+      "title": "Profile Posts and Comments tabs should display section on thread components",
+      "status": "available",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 16,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "branch": "feat/issue-571-profile-thread-shows-section"
+    },
+    {
+      "issue_number": 572,
+      "title": "Profile Comments tab highlight rules for nested replies",
+      "status": "available",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 17,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "branch": "feat/issue-572-profile-comments-highlight-rules"
+    },
+    {
+      "issue_number": 573,
+      "title": "Remove redundant \"Open full thread\" link and THREAD label in profile comments",
+      "status": "available",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 18,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "branch": "feat/issue-573-remove-redundant-thread-link-label"
+    },
+    {
+      "issue_number": 574,
+      "title": "Frontend OTEL traces endpoint returns 405 due to CORS",
+      "status": "available",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 19,
+      "labels": [
+        "bug",
+        "observability",
+        "frontend"
+      ],
+      "branch": "fix/issue-574-frontend-otel-traces-cors-405"
     }
   ]
 }
