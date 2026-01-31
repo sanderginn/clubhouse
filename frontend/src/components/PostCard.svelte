@@ -230,6 +230,7 @@
     }))
     .filter((item): item is { link: Link; url: string; title: string } => Boolean(item.url));
   $: primaryLink = post.links?.[0];
+  $: primaryLinkIsImage = primaryLink ? Boolean(getImageLinkUrl(primaryLink)) : false;
   $: metadata = primaryLink?.metadata;
   $: primaryImageUrl = imageItems.length > 0 ? imageItems[0].url : undefined;
   $: isInternalUploadLink =
@@ -767,10 +768,11 @@
         {:else}
           <div class="mb-3">
             <div class="relative rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+              <!-- svelte-ignore a11y-no-noninteractive-tabindex a11y-no-noninteractive-element-interactions -->
               <div
                 class="relative"
                 tabindex="0"
-                role="button"
+                role="region"
                 aria-roledescription="carousel"
                 aria-label="Post images"
                 on:keydown={handleCarouselKeydown}
@@ -866,6 +868,49 @@
           >
             <span>🔗</span>
             <span class="underline">{activeImageLink.url}</span>
+          </a>
+        {/if}
+        {#if primaryLink && metadata && !primaryLinkIsImage}
+          <a
+            href={primaryLink.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="mt-3 block rounded-lg border border-gray-200 overflow-hidden hover:border-gray-300 transition-colors"
+          >
+            <div class="flex">
+              {#if metadata.image}
+                <div class="w-24 h-24 flex-shrink-0">
+                  <img
+                    src={metadata.image}
+                    alt={metadata.title || 'Link preview'}
+                    class="w-full h-full object-cover"
+                  />
+                </div>
+              {/if}
+              <div class="flex-1 p-3 min-w-0">
+                <div class="flex items-center gap-1 mb-1">
+                  <span>{getProviderIcon(metadata.provider)}</span>
+                  {#if metadata.provider}
+                    <span class="text-xs text-gray-500 capitalize">{metadata.provider}</span>
+                  {/if}
+                </div>
+                {#if metadata.title}
+                  <h4 class="font-medium text-gray-900 text-sm truncate">
+                    {metadata.title}
+                  </h4>
+                {/if}
+                {#if metadata.description}
+                  <p class="text-gray-600 text-xs line-clamp-2 mt-0.5">
+                    {metadata.description}
+                  </p>
+                {/if}
+                {#if metadata.author}
+                  <p class="text-gray-500 text-xs mt-1">
+                    by {metadata.author}
+                  </p>
+                {/if}
+              </div>
+            </div>
           </a>
         {/if}
       {:else if !isEditing && primaryLink && metadata}
