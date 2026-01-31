@@ -612,7 +612,7 @@
     {
       "issue_number": 524,
       "title": "Improve replies emoji and counter layout",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 4,
@@ -620,7 +620,11 @@
         "enhancement",
         "frontend",
         "ux"
-      ]
+      ],
+      "assigned_to": "agent-1769819288-29966",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769819288-29966",
+      "branch": "feat/issue-524-improve-replies-emoji-and-counter-layout",
+      "claimed_at": "2026-01-31T00:28:08Z"
     },
     {
       "issue_number": 525,
