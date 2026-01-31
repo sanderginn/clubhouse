@@ -78,6 +78,7 @@ services:
     container_name: clubhouse-alertmanager
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--log.level=${LOG_LEVEL:-info}'
     ports:
       - "9093:9093"
     volumes:

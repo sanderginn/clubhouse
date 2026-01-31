@@ -145,6 +145,7 @@ services:
     restart: unless-stopped
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--log.level=${LOG_LEVEL:-info}'
     volumes:
       - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     networks:
