@@ -329,14 +329,24 @@ func TestGetUserPostsSuccess(t *testing.T) {
 	// Create test posts
 	postID1 := uuid.New()
 	postID2 := uuid.New()
-	postQuery := `INSERT INTO posts (id, user_id, section_id, content, created_at) VALUES ($1, $2, $3, $4, now())`
-	_, err = db.Exec(postQuery, postID1, userID, sectionID, "Test post 1")
+	postQuery := `INSERT INTO posts (id, user_id, section_id, content, created_at) VALUES ($1, $2, $3, $4, $5)`
+	_, err = db.Exec(postQuery, postID1, userID, sectionID, "Test post 1", time.Now().Add(-2*time.Minute))
 	if err != nil {
 		t.Fatalf("failed to create test post 1: %v", err)
 	}
-	_, err = db.Exec(postQuery, postID2, userID, sectionID, "Test post 2")
+	_, err = db.Exec(postQuery, postID2, userID, sectionID, "Test post 2", time.Now().Add(-1*time.Minute))
 	if err != nil {
 		t.Fatalf("failed to create test post 2: %v", err)
+	}
+
+	imageID := uuid.New()
+	imageQuery := `
+		INSERT INTO post_images (id, post_id, image_url, position, caption, alt_text, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, now())
+	`
+	_, err = db.Exec(imageQuery, imageID, postID1, "https://example.com/test-image.jpg", 1, "Caption", "Alt text")
+	if err != nil {
+		t.Fatalf("failed to create test post image: %v", err)
 	}
 
 	handler := NewUserHandler(db)
@@ -361,6 +371,19 @@ func TestGetUserPostsSuccess(t *testing.T) {
 
 	if response.HasMore {
 		t.Errorf("expected has_more to be false")
+	}
+
+	postImages := map[uuid.UUID][]models.PostImage{}
+	for _, post := range response.Posts {
+		postImages[post.ID] = post.Images
+	}
+
+	if images := postImages[postID1]; len(images) != 1 {
+		t.Errorf("expected 1 image for post %s, got %d", postID1, len(images))
+	}
+
+	if images := postImages[postID2]; len(images) != 0 {
+		t.Errorf("expected 0 images for post %s, got %d", postID2, len(images))
 	}
 }
 

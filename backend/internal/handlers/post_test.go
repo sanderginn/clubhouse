@@ -515,6 +515,10 @@ func TestRestorePostSuccess(t *testing.T) {
 
 	mock.ExpectQuery("SELECT id, url, metadata, created_at").WithArgs(postID).WillReturnRows(linksRows)
 
+	imageRows := mock.NewRows([]string{"id", "image_url", "position", "caption", "alt_text", "created_at"})
+
+	mock.ExpectQuery("SELECT id, image_url, position, caption, alt_text, created_at").WithArgs(postID).WillReturnRows(imageRows)
+
 	// Mock reactions queries (count + viewer because user context is present)
 
 	mock.ExpectQuery("SELECT emoji, COUNT").WithArgs(postID).WillReturnRows(mock.NewRows([]string{"emoji", "count"}))
@@ -602,6 +606,10 @@ func TestRestorePostByAdmin(t *testing.T) {
 	linksRows := mock.NewRows([]string{"id", "url", "metadata", "created_at"})
 
 	mock.ExpectQuery("SELECT id, url, metadata, created_at").WithArgs(postID).WillReturnRows(linksRows)
+
+	imageRows := mock.NewRows([]string{"id", "image_url", "position", "caption", "alt_text", "created_at"})
+
+	mock.ExpectQuery("SELECT id, image_url, position, caption, alt_text, created_at").WithArgs(postID).WillReturnRows(imageRows)
 
 	// Mock reactions queries (count + viewer)
 

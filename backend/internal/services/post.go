@@ -892,6 +892,7 @@ func (s *PostService) DeletePost(ctx context.Context, postID uuid.UUID, userID u
 	// Copy over the user and links from the original post
 	updatedPost.User = post.User
 	updatedPost.Links = post.Links
+	updatedPost.Images = post.Images
 	updatedPost.ReactionCounts = post.ReactionCounts
 	updatedPost.ViewerReactions = post.ViewerReactions
 	observability.RecordPostDeleted(ctx)
@@ -990,6 +991,14 @@ func (s *PostService) RestorePost(ctx context.Context, postID uuid.UUID, userID 
 	}
 	post.Links = links
 
+	// Fetch images for this post
+	images, err := s.getPostImages(ctx, postID)
+	if err != nil {
+		recordSpanError(span, err)
+		return nil, err
+	}
+	post.Images = images
+
 	// Fetch reactions
 	counts, viewerReactions, err := s.getPostReactions(ctx, postID, userID)
 	if err != nil {
@@ -1076,6 +1085,14 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, targetUserID uuid.UU
 			return nil, err
 		}
 		post.Links = links
+
+		// Fetch images for this post
+		images, err := s.getPostImages(ctx, post.ID)
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+		post.Images = images
 
 		// Fetch reactions
 		counts, viewerReactions, err := s.getPostReactions(ctx, post.ID, viewerID)
