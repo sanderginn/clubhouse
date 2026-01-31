@@ -29,7 +29,7 @@ type ReactionHandler struct {
 func NewReactionHandler(db *sql.DB, redisClient *redis.Client, pushService *services.PushService) *ReactionHandler {
 	return &ReactionHandler{
 		reactionService: services.NewReactionService(db),
-		notify:          services.NewNotificationService(db, pushService),
+		notify:          services.NewNotificationService(db, redisClient, pushService),
 		redis:           redisClient,
 		postService:     services.NewPostService(db),
 		commentService:  services.NewCommentService(db),

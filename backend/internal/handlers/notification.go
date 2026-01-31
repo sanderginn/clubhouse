@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/observability"
@@ -20,9 +21,9 @@ type NotificationHandler struct {
 }
 
 // NewNotificationHandler creates a new notification handler.
-func NewNotificationHandler(db *sql.DB, pushService *services.PushService) *NotificationHandler {
+func NewNotificationHandler(db *sql.DB, redisClient *redis.Client, pushService *services.PushService) *NotificationHandler {
 	return &NotificationHandler{
-		notificationService: services.NewNotificationService(db, pushService),
+		notificationService: services.NewNotificationService(db, redisClient, pushService),
 	}
 }
 

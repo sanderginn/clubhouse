@@ -316,7 +316,9 @@ export function handleRealtimeNotification(payload: unknown): void {
     notificationStore.addNotification(notification);
     return;
   }
-  notificationStore.incrementUnreadCount();
+  if (get(isAuthenticated)) {
+    void loadNotifications();
+  }
 }
 
 export function initNotifications(): void {

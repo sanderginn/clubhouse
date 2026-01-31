@@ -148,7 +148,7 @@ func main() {
 	userHandler := handlers.NewUserHandler(dbConn)
 	sectionHandler := handlers.NewSectionHandler(dbConn)
 	searchHandler := handlers.NewSearchHandler(dbConn)
-	notificationHandler := handlers.NewNotificationHandler(dbConn, pushService)
+	notificationHandler := handlers.NewNotificationHandler(dbConn, redisConn, pushService)
 	wsHandler := handlers.NewWebSocketHandler(redisConn)
 	linkHandler := handlers.NewLinkHandler()
 	frontendMetricsHandler := handlers.NewMetricsHandler()

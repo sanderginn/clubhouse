@@ -36,7 +36,7 @@ func TestGetNotificationsSuccessPagination(t *testing.T) {
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	userID := uuid.MustParse(testutil.CreateTestUser(t, db, "notifuser", "notifuser@test.com", false, true))
-	handler := NewNotificationHandler(db, nil)
+	handler := NewNotificationHandler(db, nil, nil)
 
 	now := time.Now().UTC()
 	notificationID1 := uuid.New()
@@ -116,7 +116,7 @@ func TestGetNotificationsInvalidMethod(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
-	handler := NewNotificationHandler(db, nil)
+	handler := NewNotificationHandler(db, nil, nil)
 	req := httptest.NewRequest("POST", "/api/v1/notifications", nil)
 	w := httptest.NewRecorder()
 
@@ -132,7 +132,7 @@ func TestGetNotificationsInvalidCursor(t *testing.T) {
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	userID := uuid.MustParse(testutil.CreateTestUser(t, db, "notifcursoruser", "notifcursoruser@test.com", false, true))
-	handler := NewNotificationHandler(db, nil)
+	handler := NewNotificationHandler(db, nil, nil)
 
 	req := httptest.NewRequest("GET", "/api/v1/notifications?cursor=not-a-cursor", nil)
 	req = req.WithContext(createTestUserContext(req.Context(), userID, "notifcursoruser", false))
@@ -159,7 +159,7 @@ func TestGetNotificationsCursorNotFound(t *testing.T) {
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	userID := uuid.MustParse(testutil.CreateTestUser(t, db, "notifmissinguser", "notifmissinguser@test.com", false, true))
-	handler := NewNotificationHandler(db, nil)
+	handler := NewNotificationHandler(db, nil, nil)
 
 	req := httptest.NewRequest("GET", "/api/v1/notifications?cursor="+uuid.New().String(), nil)
 	req = req.WithContext(createTestUserContext(req.Context(), userID, "notifmissinguser", false))
@@ -185,7 +185,7 @@ func TestGetNotificationsUnauthorized(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
-	handler := NewNotificationHandler(db, nil)
+	handler := NewNotificationHandler(db, nil, nil)
 	req := httptest.NewRequest("GET", "/api/v1/notifications", nil)
 	w := httptest.NewRecorder()
 
@@ -215,7 +215,7 @@ func TestGetNotificationsIncludesMentionDetails(t *testing.T) {
 		t.Fatalf("failed to insert notification: %v", err)
 	}
 
-	handler := NewNotificationHandler(db, nil)
+	handler := NewNotificationHandler(db, nil, nil)
 	req := httptest.NewRequest("GET", "/api/v1/notifications", nil)
 	req = req.WithContext(createTestUserContext(req.Context(), mentionedID, "mentioned", false))
 	w := httptest.NewRecorder()
@@ -250,7 +250,7 @@ func TestMarkNotificationReadSuccess(t *testing.T) {
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	userID := uuid.MustParse(testutil.CreateTestUser(t, db, "notifreaduser", "notifreaduser@test.com", false, true))
-	handler := NewNotificationHandler(db, nil)
+	handler := NewNotificationHandler(db, nil, nil)
 
 	notificationID := uuid.New()
 	insertTestNotification(t, db, notificationID, userID, time.Now().UTC().Add(-10*time.Minute), nil)
@@ -283,7 +283,7 @@ func TestMarkNotificationReadInvalidMethod(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
-	handler := NewNotificationHandler(db, nil)
+	handler := NewNotificationHandler(db, nil, nil)
 	req := httptest.NewRequest("GET", "/api/v1/notifications/"+uuid.New().String(), nil)
 	w := httptest.NewRecorder()
 
@@ -299,7 +299,7 @@ func TestMarkNotificationReadInvalidID(t *testing.T) {
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	userID := uuid.MustParse(testutil.CreateTestUser(t, db, "notifinvaliduser", "notifinvaliduser@test.com", false, true))
-	handler := NewNotificationHandler(db, nil)
+	handler := NewNotificationHandler(db, nil, nil)
 
 	req := httptest.NewRequest("PATCH", "/api/v1/notifications/not-a-uuid", nil)
 	req = req.WithContext(createTestUserContext(req.Context(), userID, "notifinvaliduser", false))
@@ -326,7 +326,7 @@ func TestMarkNotificationReadNotFound(t *testing.T) {
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	userID := uuid.MustParse(testutil.CreateTestUser(t, db, "notifmissingread", "notifmissingread@test.com", false, true))
-	handler := NewNotificationHandler(db, nil)
+	handler := NewNotificationHandler(db, nil, nil)
 
 	req := httptest.NewRequest("PATCH", "/api/v1/notifications/"+uuid.New().String(), nil)
 	req = req.WithContext(createTestUserContext(req.Context(), userID, "notifmissingread", false))
@@ -354,7 +354,7 @@ func TestMarkNotificationReadForbidden(t *testing.T) {
 
 	ownerID := uuid.MustParse(testutil.CreateTestUser(t, db, "notifowner", "notifowner@test.com", false, true))
 	otherUserID := uuid.MustParse(testutil.CreateTestUser(t, db, "notifother", "notifother@test.com", false, true))
-	handler := NewNotificationHandler(db, nil)
+	handler := NewNotificationHandler(db, nil, nil)
 
 	notificationID := uuid.New()
 	insertTestNotification(t, db, notificationID, ownerID, time.Now().UTC().Add(-5*time.Minute), nil)

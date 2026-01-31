@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/observability"
@@ -27,13 +29,14 @@ const (
 
 // NotificationService handles notification creation.
 type NotificationService struct {
-	db   *sql.DB
-	push *PushService
+	db    *sql.DB
+	push  *PushService
+	redis *redis.Client
 }
 
 // NewNotificationService creates a new notification service.
-func NewNotificationService(db *sql.DB, pushService *PushService) *NotificationService {
-	return &NotificationService{db: db, push: pushService}
+func NewNotificationService(db *sql.DB, redisClient *redis.Client, pushService *PushService) *NotificationService {
+	return &NotificationService{db: db, push: pushService, redis: redisClient}
 }
 
 // CreateNotificationsForNewPost creates notifications for all subscribed users in a section.
@@ -57,15 +60,33 @@ func (s *NotificationService) CreateNotificationsForNewPost(ctx context.Context,
 				SELECT 1 FROM section_subscriptions ss
 				WHERE ss.user_id = u.id AND ss.section_id = $4
 		  )
+		RETURNING user_id, id
 	`
 
-	result, err := s.db.ExecContext(ctx, query, notificationTypeNewPost, postID, authorID, sectionID)
+	rows, err := s.db.QueryContext(ctx, query, notificationTypeNewPost, postID, authorID, sectionID)
 	if err != nil {
 		recordSpanError(span, err)
 		return fmt.Errorf("failed to create new post notifications: %w", err)
 	}
-	if rows, err := result.RowsAffected(); err == nil {
-		observability.RecordNotificationsCreated(ctx, notificationTypeNewPost, rows)
+	defer rows.Close()
+
+	var createdCount int64
+	for rows.Next() {
+		var userID uuid.UUID
+		var notificationID uuid.UUID
+		if err := rows.Scan(&userID, &notificationID); err != nil {
+			recordSpanError(span, err)
+			return fmt.Errorf("failed to scan new post notification: %w", err)
+		}
+		createdCount++
+		s.publishRealtimeNotification(ctx, userID, notificationID)
+	}
+	if err := rows.Err(); err != nil {
+		recordSpanError(span, err)
+		return fmt.Errorf("failed to iterate new post notifications: %w", err)
+	}
+	if createdCount > 0 {
+		observability.RecordNotificationsCreated(ctx, notificationTypeNewPost, createdCount)
 	}
 
 	s.sendPushToSection(ctx, notificationTypeNewPost, postID, nil, &authorID, sectionID, authorID)
@@ -224,15 +245,17 @@ func (s *NotificationService) insertNotification(ctx context.Context, userID uui
 	query := `
 		INSERT INTO notifications (user_id, type, related_post_id, related_comment_id, related_user_id)
 		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id
 	`
 
-	_, err := s.db.ExecContext(ctx, query, userID, notificationType, postID, commentID, relatedUserID)
-	if err != nil {
+	var notificationID uuid.UUID
+	if err := s.db.QueryRowContext(ctx, query, userID, notificationType, postID, commentID, relatedUserID).Scan(&notificationID); err != nil {
 		return fmt.Errorf("failed to insert notification: %w", err)
 	}
 
 	observability.RecordNotificationsCreated(ctx, notificationType, 1)
 	s.sendPush(ctx, userID, notificationType, postID, commentID, relatedUserID)
+	s.publishRealtimeNotification(ctx, userID, notificationID)
 
 	return nil
 }
@@ -260,6 +283,55 @@ func (s *NotificationService) sendPush(ctx context.Context, userID uuid.UUID, no
 		})
 		return
 	}
+}
+
+type realtimeEvent struct {
+	Type      string    `json:"type"`
+	Data      any       `json:"data"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+func (s *NotificationService) publishRealtimeNotification(ctx context.Context, userID uuid.UUID, notificationID uuid.UUID) {
+	if s.redis == nil {
+		return
+	}
+
+	notification, err := s.getNotificationDetails(ctx, userID, notificationID)
+	if err != nil {
+		observability.LogWarn(ctx, "failed to load notification for realtime publish", "notification_id", notificationID.String(), "error", err.Error())
+		return
+	}
+
+	payload, err := json.Marshal(realtimeEvent{
+		Type:      "notification",
+		Data:      map[string]any{"notification": notification},
+		Timestamp: time.Now().UTC(),
+	})
+	if err != nil {
+		observability.LogWarn(ctx, "failed to marshal realtime notification", "notification_id", notificationID.String(), "error", err.Error())
+		return
+	}
+
+	channel := fmt.Sprintf("user:%s:notifications", userID.String())
+	if err := publishWithRetry(ctx, s.redis, channel, payload); err != nil {
+		observability.RecordWebsocketError(ctx, "publish_failed", "notification")
+		observability.LogWarn(ctx, "failed to publish realtime notification", "notification_id", notificationID.String(), "error", err.Error())
+	}
+}
+
+func publishWithRetry(ctx context.Context, redisClient *redis.Client, channel string, payload []byte) error {
+	var err error
+	for attempt := 0; attempt < 3; attempt++ {
+		err = redisClient.Publish(ctx, channel, payload).Err()
+		if err == nil {
+			return nil
+		}
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		time.Sleep(time.Duration(attempt+1) * 50 * time.Millisecond)
+	}
+	return err
 }
 
 func (s *NotificationService) sendPushToSection(ctx context.Context, notificationType string, postID uuid.UUID, commentID *uuid.UUID, relatedUserID *uuid.UUID, sectionID uuid.UUID, authorID uuid.UUID) {
