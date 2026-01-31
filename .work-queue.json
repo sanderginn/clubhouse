@@ -31,6 +31,7 @@
     518,
     520,
     521,
+    522,
     523,
     524,
     525,
@@ -594,7 +595,7 @@
     {
       "issue_number": 522,
       "title": "Unify thread UI in user profile comments section",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 4,
@@ -606,7 +607,9 @@
       "assigned_to": "agent-1769848750-6499",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769848750-6499",
       "branch": "feat/issue-522-unify-thread-ui-in-user-profile-comments",
-      "claimed_at": "2026-01-31T08:39:10Z"
+      "claimed_at": "2026-01-31T08:39:10Z",
+      "pr_number": 554,
+      "completed_at": "2026-01-31T09:12:39Z"
     },
     {
       "issue_number": 523,
