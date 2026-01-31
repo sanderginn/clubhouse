@@ -25,6 +25,7 @@
     512,
     513,
     514,
+    520,
     526,
     527,
     530
@@ -520,7 +521,7 @@
     {
       "issue_number": 520,
       "title": "Improve moderation console layout",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 4,
@@ -532,7 +533,9 @@
       "assigned_to": "agent-1769815953-39030",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769815953-39030",
       "branch": "feat/issue-520-improve-moderation-console-layout",
-      "claimed_at": "2026-01-30T23:32:33Z"
+      "claimed_at": "2026-01-30T23:32:33Z",
+      "pr_number": 540,
+      "completed_at": "2026-01-31T00:03:24Z"
     },
     {
       "issue_number": 521,
