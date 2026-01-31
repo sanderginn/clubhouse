@@ -149,13 +149,51 @@ Do **not** merge the PR yourself. The parent process will handle the merge.
 
 ### If CI is still running or failing
 
-Do **not** mention CI status in any PR comment, even if there are other findings. Only mention CI status in your own output. If CI is pending or failing, wait to approve until it is green and no additional feedback remains. For verdicts:
-- If there are code issues, post the findings comment and use `REVIEW_VERDICT: REQUEST_CHANGES`.
-- If there are no code issues but CI is pending/failing, do not post any PR comment; report that you are waiting for CI in your output and use `REVIEW_VERDICT: REQUEST_CHANGES`.
+If CI is pending or failing, wait to approve until it is green and no additional feedback remains. For verdicts:
+- If there are code issues or CI failures, post the findings comment and use `REVIEW_VERDICT: REQUEST_CHANGES`.
+- If there are no code issues but CI is pending, do not post any PR comment; report that you are waiting for CI in your output and use `REVIEW_VERDICT: REQUEST_CHANGES`.
 
 ```
 REVIEW_VERDICT: REQUEST_CHANGES
 ```
+
+#### Analyzing CI Failures
+
+When CI checks are failing, you must investigate the failure to provide useful context. Follow these steps:
+
+1. **Get detailed status information** using the GitHub MCP server's `pull_request_read` tool with `method: "get_status"`. This returns a JSON object with a `statuses` array containing each check.
+
+2. **Parse the failing status** — For each status with `state: "failure"`, extract the build ID and job ID from the `target_url`:
+   - The `target_url` has format: `https://buildkite.com/sander-ginn/clubhouse/builds/<BUILD_ID>#<JOB_ID>`
+   - **Build ID**: The number after the last `/` up until the `#` character
+   - **Job ID**: Everything after the `#` character
+
+   Example: For `target_url` = `https://buildkite.com/sander-ginn/clubhouse/builds/363#019c136a-38a7-422b-ab34-e697b1821326`
+   - Build ID = `363`
+   - Job ID = `019c136a-38a7-422b-ab34-e697b1821326`
+
+3. **Fetch the job logs** using the `bk` CLI with **exactly** this format:
+   ```bash
+   bk job log <JOB_ID> -b <BUILD_ID> -p clubhouse --no-timestamps -q -y --no-pager
+   ```
+   Example:
+   ```bash
+   bk job log 019c136a-38a7-422b-ab34-e697b1821326 -b 363 -p clubhouse --no-timestamps -q -y --no-pager
+   ```
+
+4. **Analyze the logs** for failure details — Look for test failures, compilation errors, linting errors, or any other build failures.
+
+5. **Include CI failures in your review** — If CI is failing, include a "CI Failures" section in your review comment:
+   ```
+   ## Code Review Findings
+
+   ### CI Failures
+   - **[context-name]** Summary of the failure from the logs
+
+   ### Must Fix
+   - **[file:line]** Description of critical issue
+   ...
+   ```
 
 ## Important Rules
 
@@ -168,4 +206,4 @@ REVIEW_VERDICT: REQUEST_CHANGES
 7. **Be specific** — reference file paths and line numbers in findings.
 8. **One comment** — consolidate all findings into a single PR comment, not multiple.
 9. **Existing comments matter** — factor in prior review feedback and author responses.
-10. **CI must pass** — if checks are failing or still running, never mention it in a PR comment. Note it only in your output and do not approve with failing checks.
+10. **CI must pass** — do not approve with failing or pending checks.
