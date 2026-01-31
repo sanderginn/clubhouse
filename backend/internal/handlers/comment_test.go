@@ -226,6 +226,116 @@ func TestCreateCommentHandlerRequestTooLarge(t *testing.T) {
 	}
 }
 
+func TestCreateCommentHandlerInvalidImageID(t *testing.T) {
+	db, mock, err := setupMockDB(t)
+	if err != nil {
+		t.Fatalf("failed to setup mock db: %v", err)
+	}
+	defer db.Close()
+
+	handler := NewCommentHandler(db, nil, nil)
+	handler.rateLimiter = &stubContentRateLimiter{allowed: true}
+
+	userID := uuid.New()
+	postID := uuid.New()
+
+	body, err := json.Marshal(models.CreateCommentRequest{
+		PostID:  postID.String(),
+		Content: "Comment with invalid image id",
+		ImageID: stringPtr("not-a-uuid"),
+	})
+	if err != nil {
+		t.Fatalf("failed to marshal body: %v", err)
+	}
+
+	mock.ExpectQuery("SELECT EXISTS\\(SELECT 1 FROM posts").
+		WithArgs(postID).
+		WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(true))
+
+	req, err := http.NewRequest(http.MethodPost, "/api/v1/comments", bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req = req.WithContext(createTestUserContext(req.Context(), userID, "testuser", false))
+
+	rr := httptest.NewRecorder()
+	handler.CreateComment(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Fatalf("expected status %v, got %v", http.StatusBadRequest, status)
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if response.Code != "INVALID_IMAGE_ID" {
+		t.Fatalf("expected code INVALID_IMAGE_ID, got %s", response.Code)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unfulfilled expectations: %v", err)
+	}
+}
+
+func TestCreateCommentHandlerImageNotFound(t *testing.T) {
+	db, mock, err := setupMockDB(t)
+	if err != nil {
+		t.Fatalf("failed to setup mock db: %v", err)
+	}
+	defer db.Close()
+
+	handler := NewCommentHandler(db, nil, nil)
+	handler.rateLimiter = &stubContentRateLimiter{allowed: true}
+
+	userID := uuid.New()
+	postID := uuid.New()
+	imageID := uuid.New()
+
+	body, err := json.Marshal(models.CreateCommentRequest{
+		PostID:  postID.String(),
+		Content: "Comment with missing image",
+		ImageID: stringPtr(imageID.String()),
+	})
+	if err != nil {
+		t.Fatalf("failed to marshal body: %v", err)
+	}
+
+	mock.ExpectQuery("SELECT EXISTS\\(SELECT 1 FROM posts").
+		WithArgs(postID).
+		WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectQuery("SELECT EXISTS\\(SELECT 1 FROM post_images").
+		WithArgs(imageID, postID).
+		WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(false))
+
+	req, err := http.NewRequest(http.MethodPost, "/api/v1/comments", bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req = req.WithContext(createTestUserContext(req.Context(), userID, "testuser", false))
+
+	rr := httptest.NewRecorder()
+	handler.CreateComment(rr, req)
+
+	if status := rr.Code; status != http.StatusNotFound {
+		t.Fatalf("expected status %v, got %v", http.StatusNotFound, status)
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if response.Code != "IMAGE_NOT_FOUND" {
+		t.Fatalf("expected code IMAGE_NOT_FOUND, got %s", response.Code)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unfulfilled expectations: %v", err)
+	}
+}
+
 func TestGetCommentHandlerMethodNotAllowed(t *testing.T) {
 	handler := &CommentHandler{}
 
@@ -523,4 +633,8 @@ func TestDeleteCommentHandlerInvalidID(t *testing.T) {
 	if errResp.Code != "INVALID_COMMENT_ID" {
 		t.Errorf("handler returned wrong error code: got %v want INVALID_COMMENT_ID", errResp.Code)
 	}
+}
+
+func stringPtr(value string) *string {
+	return &value
 }

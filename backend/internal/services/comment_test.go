@@ -43,6 +43,91 @@ func TestCreateComment(t *testing.T) {
 	}
 }
 
+func TestCreateCommentWithImageID(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "commentimageuser", "commentimage@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Image Section", "general")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Post with image")
+
+	imageID := uuid.New()
+	_, err := db.Exec(`
+		INSERT INTO post_images (id, post_id, image_url, position, caption, alt_text, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, now())
+	`, imageID, uuid.MustParse(postID), "https://example.com/test.jpg", 1, "Caption", "Alt text")
+	if err != nil {
+		t.Fatalf("failed to create post image: %v", err)
+	}
+
+	service := NewCommentService(db)
+	req := &models.CreateCommentRequest{
+		PostID:  postID,
+		Content: "Comment with image",
+		ImageID: stringPtr(imageID.String()),
+	}
+
+	comment, err := service.CreateComment(context.Background(), req, uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("CreateComment failed: %v", err)
+	}
+
+	if comment.ImageID == nil {
+		t.Fatalf("expected image_id to be set")
+	}
+	if comment.ImageID.String() != imageID.String() {
+		t.Fatalf("expected image_id %s, got %s", imageID.String(), comment.ImageID.String())
+	}
+}
+
+func TestCreateCommentInvalidImageID(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "commentinvalidimage", "commentinvalidimage@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Invalid Image Section", "general")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Post for invalid image test")
+
+	service := NewCommentService(db)
+	req := &models.CreateCommentRequest{
+		PostID:  postID,
+		Content: "Comment with invalid image id",
+		ImageID: stringPtr("not-a-uuid"),
+	}
+
+	_, err := service.CreateComment(context.Background(), req, uuid.MustParse(userID))
+	if err == nil {
+		t.Fatalf("expected error for invalid image id")
+	}
+	if err.Error() != "invalid image id" {
+		t.Fatalf("expected error %q, got %q", "invalid image id", err.Error())
+	}
+}
+
+func TestCreateCommentImageNotFound(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "commentimage404", "commentimage404@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Image 404 Section", "general")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Post for missing image test")
+
+	service := NewCommentService(db)
+	req := &models.CreateCommentRequest{
+		PostID:  postID,
+		Content: "Comment with missing image",
+		ImageID: stringPtr(uuid.New().String()),
+	}
+
+	_, err := service.CreateComment(context.Background(), req, uuid.MustParse(userID))
+	if err == nil {
+		t.Fatalf("expected error for missing image")
+	}
+	if err.Error() != "image not found" {
+		t.Fatalf("expected error %q, got %q", "image not found", err.Error())
+	}
+}
+
 func TestGetCommentByID(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
