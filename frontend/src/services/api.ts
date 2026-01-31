@@ -31,6 +31,10 @@ interface ApiResponse<T> {
   };
 }
 
+interface LogOptions {
+  suppressStatuses?: number[];
+}
+
 export interface ApiReactionUser {
   id: string;
   username: string;
@@ -124,7 +128,8 @@ class ApiClient {
   private async request<T>(
     endpoint: string,
     options: RequestInit = {},
-    retry = true
+    retry = true,
+    logOptions?: LogOptions
   ): Promise<T> {
     const url = `${API_BASE}${endpoint}`;
     const method = (options.method ?? 'GET').toUpperCase();
@@ -197,7 +202,7 @@ class ApiClient {
         ) {
           endSpan();
           await this.refreshCsrfToken();
-          return this.request<T>(endpoint, options, false);
+          return this.request<T>(endpoint, options, false, logOptions);
         }
 
         const error = new Error(errorData?.error ?? 'An unexpected error occurred') as Error & {
@@ -214,10 +219,13 @@ class ApiClient {
           status: response.status,
           code: error.code,
         };
-        if (response.status >= 500) {
-          logError('API request failed', logContext, error);
-        } else {
-          logWarn('API request failed', logContext);
+        const shouldLog = !logOptions?.suppressStatuses?.includes(response.status);
+        if (shouldLog) {
+          if (response.status >= 500) {
+            logError('API request failed', logContext, error);
+          } else {
+            logWarn('API request failed', logContext);
+          }
         }
         endSpan();
         throw error;
@@ -276,9 +284,13 @@ class ApiClient {
     return this.get(`/users/autocomplete?${params.toString()}`);
   }
 
-  async lookupUserByUsername(username: string): Promise<{ user: ApiUserSummary }> {
+  async lookupUserByUsername(
+    username: string,
+    options: { suppressNotFound?: boolean } = {}
+  ): Promise<{ user: ApiUserSummary }> {
     const params = new URLSearchParams({ username });
-    return this.get(`/users/lookup?${params.toString()}`);
+    const logOptions = options.suppressNotFound ? { suppressStatuses: [404] } : undefined;
+    return this.request(`/users/lookup?${params.toString()}`, { method: 'GET' }, true, logOptions);
   }
 
   private async uploadWithRetry(
