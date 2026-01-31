@@ -465,7 +465,14 @@
               {/if}
 
               {#if editingCommentId !== comment.id}
-                <div class="mt-2">
+                <div class="mt-2 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    on:click={() => toggleReply(comment.id)}
+                    class="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:border-gray-300 hover:text-gray-700"
+                  >
+                    Reply
+                  </button>
                   <ReactionBar
                     reactionCounts={comment.reactionCounts ?? {}}
                     userReactions={getUserReactions(comment)}
@@ -474,16 +481,6 @@
                   />
                 </div>
               {/if}
-
-              <div class="mt-2">
-                <button
-                  type="button"
-                  on:click={() => toggleReply(comment.id)}
-                  class="text-xs text-gray-500 hover:text-gray-700"
-                >
-                  Reply
-                </button>
-              </div>
 
               {#if openReplies.has(comment.id)}
                 <div class="mt-3">
