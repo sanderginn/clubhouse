@@ -113,6 +113,63 @@ func TestCreatePostWithLinksNoContent(t *testing.T) {
 	}
 }
 
+func TestCreatePostWithImages(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "postimageuser", "postimage@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Images Section", "general")
+
+	service := NewPostService(db)
+	req := &models.CreatePostRequest{
+		SectionID: sectionID,
+		Content:   "   ",
+		Images: []models.PostImageRequest{
+			{URL: "https://example.com/a.jpg", Caption: stringPtr("First"), AltText: stringPtr("Alt A")},
+			{URL: "https://example.com/b.jpg"},
+		},
+	}
+
+	post, err := service.CreatePost(context.Background(), req, uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("CreatePost failed: %v", err)
+	}
+
+	if post.Content != "" {
+		t.Errorf("expected empty content, got %q", post.Content)
+	}
+	if len(post.Images) != 2 {
+		t.Fatalf("expected 2 images, got %d", len(post.Images))
+	}
+	if post.Images[0].URL != "https://example.com/a.jpg" || post.Images[0].Position != 0 {
+		t.Errorf("unexpected first image: %+v", post.Images[0])
+	}
+	if post.Images[0].Caption == nil || *post.Images[0].Caption != "First" {
+		t.Errorf("expected caption 'First', got %v", post.Images[0].Caption)
+	}
+	if post.Images[1].URL != "https://example.com/b.jpg" || post.Images[1].Position != 1 {
+		t.Errorf("unexpected second image: %+v", post.Images[1])
+	}
+
+	rows, err := db.Query(`SELECT position FROM post_images WHERE post_id = $1 ORDER BY position ASC`, post.ID)
+	if err != nil {
+		t.Fatalf("failed to query post images: %v", err)
+	}
+	defer rows.Close()
+
+	var positions []int
+	for rows.Next() {
+		var position int
+		if err := rows.Scan(&position); err != nil {
+			t.Fatalf("failed to scan post images: %v", err)
+		}
+		positions = append(positions, position)
+	}
+	if len(positions) != 2 || positions[0] != 0 || positions[1] != 1 {
+		t.Fatalf("expected positions [0 1], got %v", positions)
+	}
+}
+
 func TestCreatePostRequiresContentOrLinks(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
@@ -194,6 +251,96 @@ func TestUpdatePostCreatesAuditLogWithMetadata(t *testing.T) {
 	}
 	if linksProvided {
 		t.Errorf("expected links_provided false, got %v", linksProvided)
+	}
+	imagesChanged, ok := metadata["images_changed"].(bool)
+	if !ok {
+		t.Fatalf("expected images_changed to be bool, got %T", metadata["images_changed"])
+	}
+	if imagesChanged {
+		t.Errorf("expected images_changed false, got %v", imagesChanged)
+	}
+	imagesProvided, ok := metadata["images_provided"].(bool)
+	if !ok {
+		t.Fatalf("expected images_provided to be bool, got %T", metadata["images_provided"])
+	}
+	if imagesProvided {
+		t.Errorf("expected images_provided false, got %v", imagesProvided)
+	}
+}
+
+func TestUpdatePostImages(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "updatepostimages", "updatepostimages@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Update Images Section", "general")
+
+	service := NewPostService(db)
+	createReq := &models.CreatePostRequest{
+		SectionID: sectionID,
+		Content:   "Post with images",
+		Images: []models.PostImageRequest{
+			{URL: "https://example.com/one.jpg"},
+			{URL: "https://example.com/two.jpg"},
+		},
+	}
+
+	post, err := service.CreatePost(context.Background(), createReq, uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("CreatePost failed: %v", err)
+	}
+
+	updateReq := &models.UpdatePostRequest{
+		Content: "Post with images",
+		Images: &[]models.PostImageRequest{
+			{URL: "https://example.com/two.jpg", Caption: stringPtr("Second")},
+		},
+	}
+
+	updated, err := service.UpdatePost(context.Background(), post.ID, uuid.MustParse(userID), updateReq)
+	if err != nil {
+		t.Fatalf("UpdatePost failed: %v", err)
+	}
+
+	if len(updated.Images) != 1 {
+		t.Fatalf("expected 1 image after update, got %d", len(updated.Images))
+	}
+	if updated.Images[0].URL != "https://example.com/two.jpg" || updated.Images[0].Position != 0 {
+		t.Errorf("unexpected updated image: %+v", updated.Images[0])
+	}
+	if updated.Images[0].Caption == nil || *updated.Images[0].Caption != "Second" {
+		t.Errorf("expected caption 'Second', got %v", updated.Images[0].Caption)
+	}
+
+	var metadataBytes []byte
+	err = db.QueryRow(`
+		SELECT metadata
+		FROM audit_logs
+		WHERE admin_user_id = $1 AND action = 'update_post'
+		ORDER BY created_at DESC
+		LIMIT 1
+	`, userID).Scan(&metadataBytes)
+	if err != nil {
+		t.Fatalf("failed to query audit log: %v", err)
+	}
+
+	var metadata map[string]interface{}
+	if err := json.Unmarshal(metadataBytes, &metadata); err != nil {
+		t.Fatalf("failed to unmarshal metadata: %v", err)
+	}
+	imagesChanged, ok := metadata["images_changed"].(bool)
+	if !ok {
+		t.Fatalf("expected images_changed to be bool, got %T", metadata["images_changed"])
+	}
+	if !imagesChanged {
+		t.Errorf("expected images_changed true, got %v", imagesChanged)
+	}
+	imageCount, ok := metadata["image_count"].(float64)
+	if !ok {
+		t.Fatalf("expected image_count to be number, got %T", metadata["image_count"])
+	}
+	if int(imageCount) != 1 {
+		t.Errorf("expected image_count 1, got %v", imageCount)
 	}
 }
 

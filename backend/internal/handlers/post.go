@@ -83,6 +83,12 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 			writeError(r.Context(), w, http.StatusBadRequest, "LINK_URL_REQUIRED", err.Error())
 		case "link url must be less than 2048 characters":
 			writeError(r.Context(), w, http.StatusBadRequest, "LINK_URL_TOO_LONG", err.Error())
+		case "image url cannot be empty":
+			writeError(r.Context(), w, http.StatusBadRequest, "IMAGE_URL_REQUIRED", err.Error())
+		case "image url must be less than 2048 characters":
+			writeError(r.Context(), w, http.StatusBadRequest, "IMAGE_URL_TOO_LONG", err.Error())
+		case "too many images":
+			writeError(r.Context(), w, http.StatusBadRequest, "TOO_MANY_IMAGES", "Too many images (maximum 10)")
 		default:
 			writeError(r.Context(), w, http.StatusInternalServerError, "POST_CREATION_FAILED", "Failed to create post")
 		}
@@ -177,6 +183,12 @@ func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 			writeError(r.Context(), w, http.StatusBadRequest, "LINK_URL_REQUIRED", err.Error())
 		case "link url must be less than 2048 characters":
 			writeError(r.Context(), w, http.StatusBadRequest, "LINK_URL_TOO_LONG", err.Error())
+		case "image url cannot be empty":
+			writeError(r.Context(), w, http.StatusBadRequest, "IMAGE_URL_REQUIRED", err.Error())
+		case "image url must be less than 2048 characters":
+			writeError(r.Context(), w, http.StatusBadRequest, "IMAGE_URL_TOO_LONG", err.Error())
+		case "too many images":
+			writeError(r.Context(), w, http.StatusBadRequest, "TOO_MANY_IMAGES", "Too many images (maximum 10)")
 		default:
 			writeError(r.Context(), w, http.StatusInternalServerError, "POST_UPDATE_FAILED", "Failed to update post")
 		}

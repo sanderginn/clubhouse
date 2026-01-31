@@ -21,6 +21,8 @@ type PostService struct {
 	db *sql.DB
 }
 
+const maxPostImages = 10
+
 // NewPostService creates a new post service
 func NewPostService(db *sql.DB) *PostService {
 	return &PostService{db: db}
@@ -54,6 +56,8 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 		attribute.String("user_id", userID.String()),
 		attribute.Int("content_length", len(strings.TrimSpace(req.Content))),
 		attribute.Bool("has_links", len(req.Links) > 0),
+		attribute.Bool("has_images", len(req.Images) > 0),
+		attribute.Int("image_count", len(req.Images)),
 	)
 	defer span.End()
 
@@ -151,6 +155,51 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 		}
 	}
 
+	// Insert images if provided
+	if len(req.Images) > 0 {
+		post.Images = make([]models.PostImage, 0, len(req.Images))
+
+		for i, imageReq := range req.Images {
+			imageReq = normalizePostImageRequest(imageReq)
+			imageID := uuid.New()
+			position := i
+			captionValue := interface{}(nil)
+			if imageReq.Caption != nil {
+				captionValue = *imageReq.Caption
+			}
+			altValue := interface{}(nil)
+			if imageReq.AltText != nil {
+				altValue = *imageReq.AltText
+			}
+
+			imageQuery := `
+				INSERT INTO post_images (id, post_id, image_url, position, caption, alt_text, created_at)
+				VALUES ($1, $2, $3, $4, $5, $6, now())
+				RETURNING id, image_url, position, caption, alt_text, created_at
+			`
+
+			var image models.PostImage
+			var captionDB sql.NullString
+			var altDB sql.NullString
+			err := tx.QueryRowContext(ctx, imageQuery, imageID, postID, imageReq.URL, position, captionValue, altValue).
+				Scan(&image.ID, &image.URL, &image.Position, &captionDB, &altDB, &image.CreatedAt)
+
+			if err != nil {
+				recordSpanError(span, err)
+				return nil, fmt.Errorf("failed to create post image: %w", err)
+			}
+
+			if captionDB.Valid {
+				image.Caption = &captionDB.String
+			}
+			if altDB.Valid {
+				image.AltText = &altDB.String
+			}
+
+			post.Images = append(post.Images, image)
+		}
+	}
+
 	// Commit transaction
 	if err := tx.Commit(); err != nil {
 		recordSpanError(span, err)
@@ -177,11 +226,15 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 		attribute.String("post_id", postID.String()),
 		attribute.Int("content_length", len(strings.TrimSpace(req.Content))),
 		attribute.Bool("has_links", req.Links != nil && len(*req.Links) > 0),
+		attribute.Bool("has_images", req.Images != nil && len(*req.Images) > 0),
+		attribute.Int("image_count", imageCount(req.Images)),
 	)
 
 	trimmedContent := strings.TrimSpace(req.Content)
 	var linkMetadata []models.JSONMap
 	linksChanged := false
+	imagesChanged := false
+	var normalizedImages []models.PostImageRequest
 
 	var ownerID uuid.UUID
 	var previousContent string
@@ -218,6 +271,17 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 		if linksChanged && len(*req.Links) > 0 {
 			linkMetadata = fetchLinkMetadata(ctx, *req.Links)
 		}
+	}
+
+	if req.Images != nil {
+		normalizedImages = normalizePostImageRequests(*req.Images)
+		existingImages, err := getPostImageEntries(ctx, s.db, postID)
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, fmt.Errorf("failed to fetch post images: %w", err)
+		}
+
+		imagesChanged = !postImageRequestsMatchEntries(existingImages, normalizedImages)
 	}
 
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -266,6 +330,35 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 		}
 	}
 
+	if req.Images != nil && imagesChanged {
+		if _, err := tx.ExecContext(ctx, "DELETE FROM post_images WHERE post_id = $1", postID); err != nil {
+			recordSpanError(span, err)
+			return nil, fmt.Errorf("failed to delete post images: %w", err)
+		}
+
+		if len(normalizedImages) > 0 {
+			for i, imageReq := range normalizedImages {
+				captionValue := interface{}(nil)
+				if imageReq.Caption != nil {
+					captionValue = *imageReq.Caption
+				}
+				altValue := interface{}(nil)
+				if imageReq.AltText != nil {
+					altValue = *imageReq.AltText
+				}
+
+				_, err := tx.ExecContext(ctx, `
+					INSERT INTO post_images (id, post_id, image_url, position, caption, alt_text, created_at)
+					VALUES ($1, $2, $3, $4, $5, $6, now())
+				`, uuid.New(), postID, imageReq.URL, i, captionValue, altValue)
+				if err != nil {
+					recordSpanError(span, err)
+					return nil, fmt.Errorf("failed to create post image: %w", err)
+				}
+			}
+		}
+	}
+
 	metadata := map[string]interface{}{
 		"post_id":          postID.String(),
 		"section_id":       sectionID.String(),
@@ -273,9 +366,14 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 		"previous_content": previousContent,
 		"links_changed":    linksChanged,
 		"links_provided":   req.Links != nil,
+		"images_changed":   imagesChanged,
+		"images_provided":  req.Images != nil,
 	}
 	if req.Links != nil {
 		metadata["link_count"] = len(*req.Links)
+	}
+	if req.Images != nil {
+		metadata["image_count"] = len(*req.Images)
 	}
 
 	auditService := NewAuditService(tx)
@@ -344,6 +442,14 @@ func (s *PostService) GetPostByID(ctx context.Context, postID uuid.UUID, userID 
 	}
 	post.Links = links
 
+	// Fetch images for this post
+	images, err := s.getPostImages(ctx, postID)
+	if err != nil {
+		recordSpanError(span, err)
+		return nil, err
+	}
+	post.Images = images
+
 	// Fetch reactions
 	counts, viewerReactions, err := s.getPostReactions(ctx, postID, userID)
 	if err != nil {
@@ -400,6 +506,48 @@ func (s *PostService) getPostLinks(ctx context.Context, postID uuid.UUID) ([]mod
 	return links, nil
 }
 
+// getPostImages retrieves all images for a post in order.
+func (s *PostService) getPostImages(ctx context.Context, postID uuid.UUID) ([]models.PostImage, error) {
+	query := `
+		SELECT id, image_url, position, caption, alt_text, created_at
+		FROM post_images
+		WHERE post_id = $1
+		ORDER BY position ASC
+	`
+
+	rows, err := s.db.QueryContext(ctx, query, postID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var images []models.PostImage
+	for rows.Next() {
+		var image models.PostImage
+		var caption sql.NullString
+		var altText sql.NullString
+
+		if err := rows.Scan(&image.ID, &image.URL, &image.Position, &caption, &altText, &image.CreatedAt); err != nil {
+			return nil, err
+		}
+
+		if caption.Valid {
+			image.Caption = &caption.String
+		}
+		if altText.Valid {
+			image.AltText = &altText.String
+		}
+
+		images = append(images, image)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return images, nil
+}
+
 func getPostLinkURLs(ctx context.Context, queryer interface {
 	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
 }, postID uuid.UUID) ([]string, error) {
@@ -424,6 +572,65 @@ func getPostLinkURLs(ctx context.Context, queryer interface {
 	}
 
 	return urls, rows.Err()
+}
+
+type postImageEntry struct {
+	url     string
+	caption sql.NullString
+	altText sql.NullString
+}
+
+func getPostImageEntries(ctx context.Context, queryer interface {
+	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
+}, postID uuid.UUID) ([]postImageEntry, error) {
+	rows, err := queryer.QueryContext(ctx, `
+		SELECT image_url, caption, alt_text
+		FROM post_images
+		WHERE post_id = $1
+		ORDER BY position ASC
+	`, postID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var entries []postImageEntry
+	for rows.Next() {
+		var entry postImageEntry
+		if err := rows.Scan(&entry.url, &entry.caption, &entry.altText); err != nil {
+			return nil, err
+		}
+		entries = append(entries, entry)
+	}
+
+	return entries, rows.Err()
+}
+
+func postImageRequestsMatchEntries(existing []postImageEntry, req []models.PostImageRequest) bool {
+	if len(existing) != len(req) {
+		return false
+	}
+
+	for i, entry := range existing {
+		if entry.url != req[i].URL {
+			return false
+		}
+		if !optionalTextMatches(entry.caption, req[i].Caption) {
+			return false
+		}
+		if !optionalTextMatches(entry.altText, req[i].AltText) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func optionalTextMatches(value sql.NullString, expected *string) bool {
+	if expected == nil {
+		return !value.Valid
+	}
+	return value.Valid && value.String == *expected
 }
 
 // getPostReactions retrieves reaction counts and viewer reactions for a post
@@ -547,6 +754,14 @@ func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *
 			return nil, err
 		}
 		post.Links = links
+
+		// Fetch images for this post
+		images, err := s.getPostImages(ctx, post.ID)
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+		post.Images = images
 
 		// Fetch reactions
 		counts, viewerReactions, err := s.getPostReactions(ctx, post.ID, userID)
@@ -677,6 +892,7 @@ func (s *PostService) DeletePost(ctx context.Context, postID uuid.UUID, userID u
 	// Copy over the user and links from the original post
 	updatedPost.User = post.User
 	updatedPost.Links = post.Links
+	updatedPost.Images = post.Images
 	updatedPost.ReactionCounts = post.ReactionCounts
 	updatedPost.ViewerReactions = post.ViewerReactions
 	observability.RecordPostDeleted(ctx)
@@ -775,6 +991,14 @@ func (s *PostService) RestorePost(ctx context.Context, postID uuid.UUID, userID 
 	}
 	post.Links = links
 
+	// Fetch images for this post
+	images, err := s.getPostImages(ctx, postID)
+	if err != nil {
+		recordSpanError(span, err)
+		return nil, err
+	}
+	post.Images = images
+
 	// Fetch reactions
 	counts, viewerReactions, err := s.getPostReactions(ctx, postID, userID)
 	if err != nil {
@@ -861,6 +1085,14 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, targetUserID uuid.UU
 			return nil, err
 		}
 		post.Links = links
+
+		// Fetch images for this post
+		images, err := s.getPostImages(ctx, post.ID)
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+		post.Images = images
 
 		// Fetch reactions
 		counts, viewerReactions, err := s.getPostReactions(ctx, post.ID, viewerID)
@@ -1125,7 +1357,7 @@ func validateCreatePostInput(req *models.CreatePostRequest) error {
 	}
 
 	trimmedContent := strings.TrimSpace(req.Content)
-	if trimmedContent == "" && len(req.Links) == 0 {
+	if trimmedContent == "" && len(req.Links) == 0 && len(req.Images) == 0 {
 		return fmt.Errorf("content is required")
 	}
 
@@ -1140,6 +1372,19 @@ func validateCreatePostInput(req *models.CreatePostRequest) error {
 		}
 		if len(link.URL) > 2048 {
 			return fmt.Errorf("link url must be less than 2048 characters")
+		}
+	}
+
+	if len(req.Images) > maxPostImages {
+		return fmt.Errorf("too many images")
+	}
+
+	for _, image := range req.Images {
+		if strings.TrimSpace(image.URL) == "" {
+			return fmt.Errorf("image url cannot be empty")
+		}
+		if len(image.URL) > 2048 {
+			return fmt.Errorf("image url must be less than 2048 characters")
 		}
 	}
 
@@ -1172,5 +1417,52 @@ func validateUpdatePostInput(req *models.UpdatePostRequest) error {
 		}
 	}
 
+	if req.Images != nil {
+		if len(*req.Images) > maxPostImages {
+			return fmt.Errorf("too many images")
+		}
+		for _, image := range *req.Images {
+			if strings.TrimSpace(image.URL) == "" {
+				return fmt.Errorf("image url cannot be empty")
+			}
+			if len(image.URL) > 2048 {
+				return fmt.Errorf("image url must be less than 2048 characters")
+			}
+		}
+	}
+
 	return nil
+}
+
+func imageCount(images *[]models.PostImageRequest) int {
+	if images == nil {
+		return 0
+	}
+	return len(*images)
+}
+
+func normalizePostImageRequests(images []models.PostImageRequest) []models.PostImageRequest {
+	normalized := make([]models.PostImageRequest, 0, len(images))
+	for _, image := range images {
+		normalized = append(normalized, normalizePostImageRequest(image))
+	}
+	return normalized
+}
+
+func normalizePostImageRequest(image models.PostImageRequest) models.PostImageRequest {
+	image.URL = strings.TrimSpace(image.URL)
+	image.Caption = normalizeOptionalText(image.Caption)
+	image.AltText = normalizeOptionalText(image.AltText)
+	return image
+}
+
+func normalizeOptionalText(value *string) *string {
+	if value == nil {
+		return nil
+	}
+	trimmed := strings.TrimSpace(*value)
+	if trimmed == "" {
+		return nil
+	}
+	return &trimmed
 }
