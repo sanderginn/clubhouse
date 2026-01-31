@@ -139,23 +139,31 @@ function createNotificationStore() {
       }),
     markRead: (notificationId: string, readAt?: string | null) =>
       update((state) => {
-        let unreadDelta = 0;
+        let unreadCount = state.unreadCount;
         const notifications = state.notifications.map((notification) => {
           if (notification.id !== notificationId) {
             return notification;
           }
-          if (!notification.readAt) {
-            unreadDelta = 1;
+          const wasUnread = !notification.readAt;
+          const hasReadAt = readAt !== undefined;
+          const nextReadAt = hasReadAt ? readAt : notification.readAt ?? new Date().toISOString();
+          const willBeUnread = !nextReadAt;
+
+          if (wasUnread && !willBeUnread) {
+            unreadCount = Math.max(0, unreadCount - 1);
+          } else if (!wasUnread && willBeUnread) {
+            unreadCount += 1;
           }
+
           return {
             ...notification,
-            readAt: readAt ?? notification.readAt ?? new Date().toISOString(),
+            readAt: nextReadAt ?? null,
           };
         });
         return {
           ...state,
           notifications,
-          unreadCount: Math.max(0, state.unreadCount - unreadDelta),
+          unreadCount,
         };
       }),
     markAllReadLocal: () =>
@@ -263,6 +271,7 @@ export async function markNotificationRead(notificationId: string): Promise<void
     return;
   }
 
+  const previousReadAt = target.readAt ?? null;
   notificationStore.markRead(notificationId);
 
   try {
@@ -272,6 +281,7 @@ export async function markNotificationRead(notificationId: string): Promise<void
     const updated = mapApiNotification(response.notification);
     notificationStore.markRead(updated.id, updated.readAt ?? undefined);
   } catch (error) {
+    notificationStore.markRead(notificationId, previousReadAt);
     logWarn('Failed to mark notification as read', { notificationId, error });
   }
 }
