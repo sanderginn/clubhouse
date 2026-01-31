@@ -707,14 +707,18 @@
     {
       "issue_number": 529,
       "title": "Make frontend Vite proxy log level configurable",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 5,
       "labels": [
         "enhancement",
         "frontend"
-      ]
+      ],
+      "assigned_to": "agent-1769820058-50954",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769820058-50954",
+      "branch": "feat/issue-529-make-frontend-vite-proxy-log-level-confi",
+      "claimed_at": "2026-01-31T00:40:58Z"
     },
     {
       "issue_number": 537,
