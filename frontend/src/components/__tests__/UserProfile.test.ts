@@ -6,6 +6,7 @@ const apiGet = vi.hoisted(() => vi.fn());
 const apiAddCommentReaction = vi.hoisted(() => vi.fn());
 const apiRemoveCommentReaction = vi.hoisted(() => vi.fn());
 const apiLookupUserByUsername = vi.hoisted(() => vi.fn());
+const apiGetThreadComments = vi.hoisted(() => vi.fn());
 
 vi.mock('../../services/api', () => ({
   api: {
@@ -13,6 +14,7 @@ vi.mock('../../services/api', () => ({
     addCommentReaction: apiAddCommentReaction,
     removeCommentReaction: apiRemoveCommentReaction,
     lookupUserByUsername: apiLookupUserByUsername,
+    getThreadComments: apiGetThreadComments,
   },
 }));
 
@@ -30,6 +32,7 @@ afterEach(() => {
   apiAddCommentReaction.mockReset();
   apiRemoveCommentReaction.mockReset();
   apiLookupUserByUsername.mockReset();
+  apiGetThreadComments.mockReset();
 });
 
 describe('UserProfile', () => {
@@ -66,7 +69,7 @@ describe('UserProfile', () => {
     expect(screen.getByRole('button', { name: 'Comments' })).toBeInTheDocument();
   });
 
-  it('shows comment thread context on profile comments', async () => {
+  it('renders comment threads with highlighted profile comments', async () => {
     apiGet.mockImplementation((endpoint: string) => {
       if (endpoint === '/users/user-2') {
         return Promise.resolve({
@@ -94,6 +97,15 @@ describe('UserProfile', () => {
               created_at: '2025-02-01T10:00:00Z',
               user: { id: 'user-2', username: 'Sam', profile_picture_url: null },
             },
+            {
+              id: 'comment-2',
+              user_id: 'user-2',
+              post_id: 'post-9',
+              parent_comment_id: 'comment-parent',
+              content: 'Following up with another reply.',
+              created_at: '2025-02-01T11:00:00Z',
+              user: { id: 'user-2', username: 'Sam', profile_picture_url: null },
+            },
           ],
           meta: { cursor: null, hasMore: false },
         });
@@ -106,48 +118,45 @@ describe('UserProfile', () => {
             section_id: 'section-1',
             content: 'A post about the new album drop.',
             created_at: '2025-01-20T10:00:00Z',
+            comment_count: 2,
             user: { id: 'user-3', username: 'Riley', profile_picture_url: null },
           },
         });
       }
-      if (endpoint === '/comments/comment-parent') {
-        return Promise.resolve({
-          comment: {
-            id: 'comment-parent',
-            user_id: 'user-4',
-            post_id: 'post-9',
-            content: 'Parent comment message.',
-            created_at: '2025-02-01T09:00:00Z',
-            user: { id: 'user-4', username: 'Avery', profile_picture_url: null },
-          },
-        });
-      }
-      if (endpoint.startsWith('/posts/post-9/comments')) {
-        return Promise.resolve({
-          comments: [
+      return Promise.resolve({});
+    });
+    apiGetThreadComments.mockResolvedValue({
+      comments: [
+        {
+          id: 'comment-parent',
+          user_id: 'user-4',
+          post_id: 'post-9',
+          content: 'Parent comment message.',
+          created_at: '2025-02-01T09:00:00Z',
+          user: { id: 'user-4', username: 'Avery', profile_picture_url: null },
+          replies: [
             {
-              id: 'comment-parent',
-              user_id: 'user-4',
+              id: 'comment-1',
+              user_id: 'user-2',
               post_id: 'post-9',
-              content: 'Parent comment message.',
-              created_at: '2025-02-01T09:00:00Z',
-              user: { id: 'user-4', username: 'Avery', profile_picture_url: null },
-              replies: [
-                {
-                  id: 'comment-1',
-                  user_id: 'user-2',
-                  post_id: 'post-9',
-                  parent_comment_id: 'comment-parent',
-                  content: 'Replying with more context.',
-                  created_at: '2025-02-01T10:00:00Z',
-                  user: { id: 'user-2', username: 'Sam', profile_picture_url: null },
-                },
-              ],
+              parent_comment_id: 'comment-parent',
+              content: 'Replying with more context.',
+              created_at: '2025-02-01T10:00:00Z',
+              user: { id: 'user-2', username: 'Sam', profile_picture_url: null },
+            },
+            {
+              id: 'comment-2',
+              user_id: 'user-2',
+              post_id: 'post-9',
+              parent_comment_id: 'comment-parent',
+              content: 'Following up with another reply.',
+              created_at: '2025-02-01T11:00:00Z',
+              user: { id: 'user-2', username: 'Sam', profile_picture_url: null },
             },
           ],
-        });
-      }
-      return Promise.resolve({});
+        },
+      ],
+      meta: { cursor: null, has_more: false },
     });
     apiLookupUserByUsername.mockResolvedValue({
       user: { id: 'user-2', username: 'user-2', profile_picture_url: null },
@@ -160,8 +169,25 @@ describe('UserProfile', () => {
     await commentsTab.click();
     await flushProfileLoad();
 
-    expect(await screen.findByText('Thread context')).toBeInTheDocument();
-    expect(await screen.findByText('In reply to')).toBeInTheDocument();
-    expect(await screen.findByText('View full thread ->')).toBeInTheDocument();
+    expect(await screen.findByText('Thread')).toBeInTheDocument();
+    expect(await screen.findByText('Open full thread ->')).toBeInTheDocument();
+
+    const observer = (globalThis as { __lastObserver?: { trigger: (value: boolean) => void } })
+      .__lastObserver;
+    observer?.trigger(true);
+    await flushProfileLoad();
+
+    expect(await screen.findByText('Replying with more context.')).toBeInTheDocument();
+
+    const highlighted = [
+      document.getElementById('comment-comment-1'),
+      document.getElementById('comment-comment-2'),
+    ];
+    highlighted.forEach((node) => {
+      expect(node).toBeTruthy();
+      expect(node?.className).toContain('ring-2');
+    });
+
+    expect(screen.getAllByRole('button', { name: 'Share' })).toHaveLength(1);
   });
 });

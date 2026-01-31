@@ -17,6 +17,7 @@
   export let postId: string;
   export let commentCount = 0;
   export let highlightCommentId: string | null = null;
+  export let highlightCommentIds: string[] = [];
 
   const emptyThread: CommentThreadState = {
     comments: [],
@@ -237,6 +238,10 @@
       }
     });
   }
+
+  $: highlightIdSet = new Set(
+    [highlightCommentId, ...highlightCommentIds].filter((value): value is string => !!value)
+  );
 </script>
 
 <div class="space-y-4" bind:this={rootEl}>
@@ -279,7 +284,7 @@
         <article
           id={`comment-${comment.id}`}
           class={`border border-gray-200 rounded-lg p-3 ${
-            highlightCommentId === comment.id ? 'bg-amber-50 ring-2 ring-amber-300' : 'bg-white'
+            highlightIdSet.has(comment.id) ? 'bg-amber-50 ring-2 ring-amber-300' : 'bg-white'
           }`}
         >
           <div class="flex items-start gap-3">
@@ -499,7 +504,9 @@
                     <div
                       id={`comment-${reply.id}`}
                       class={`flex items-start gap-2 ${
-                        highlightCommentId === reply.id ? 'bg-amber-50 ring-2 ring-amber-300 rounded-lg p-2' : ''
+                        highlightIdSet.has(reply.id)
+                          ? 'bg-amber-50 ring-2 ring-amber-300 rounded-lg p-2'
+                          : ''
                       }`}
                     >
                       {#if reply.user?.id}
