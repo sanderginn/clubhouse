@@ -822,7 +822,7 @@
     {
       "issue_number": 557,
       "title": "Spurious \"User not found\" error logged on login/refresh",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 2,
@@ -830,7 +830,10 @@
         "bug",
         "backend"
       ],
-      "branch": "fix/issue-557-spurious-user-not-found-error-on-login-refresh"
+      "branch": "fix/issue-557-spurious-user-not-found-error-logged-on-",
+      "assigned_to": "agent-1769857122-66396",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769857122-66396",
+      "claimed_at": "2026-01-31T10:58:42Z"
     },
     {
       "issue_number": 558,
