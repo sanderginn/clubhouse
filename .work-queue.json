@@ -28,6 +28,7 @@
     515,
     516,
     517,
+    518,
     520,
     521,
     523,
@@ -512,7 +513,7 @@
     {
       "issue_number": 518,
       "title": "Frontend: Add lightbox navigation between multiple images",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         515,
         517
@@ -527,7 +528,9 @@
       "assigned_to": "agent-1769820401-60632",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769820401-60632",
       "branch": "feat/issue-518-frontend-add-lightbox-navigation-between",
-      "claimed_at": "2026-01-31T00:46:41Z"
+      "claimed_at": "2026-01-31T00:46:41Z",
+      "pr_number": 552,
+      "completed_at": "2026-01-31T00:55:07Z"
     },
     {
       "issue_number": 519,
