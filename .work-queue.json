@@ -41,7 +41,7 @@
     {
       "issue_number": 617,
       "title": "Display image reply indicator on posted comments",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         616
       ],
@@ -50,7 +50,11 @@
         "frontend",
         "backend"
       ],
-      "priority": 2
+      "priority": 2,
+      "assigned_to": "agent-1769979906-38748",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769979906-38748",
+      "branch": "fix/issue-617-display-image-reply-indicator-on-posted-",
+      "claimed_at": "2026-02-01T21:05:06Z"
     },
     {
       "issue_number": 618,
