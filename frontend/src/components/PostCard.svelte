@@ -23,6 +23,7 @@
   export let highlightCommentIds: string[] = [];
   export let showSectionPill: boolean = false;
   export let profileUserId: string | null = null;
+  export let highlightQuery: string = '';
 
   type ImageItem = {
     id?: string;
@@ -982,6 +983,7 @@
       {:else}
         <LinkifiedText
           text={displayContent}
+          highlightQuery={highlightQuery}
           className="text-gray-800 whitespace-pre-wrap break-words mb-3"
         />
       {/if}
@@ -1256,6 +1258,7 @@
           {highlightCommentId}
           {highlightCommentIds}
           {profileUserId}
+          {highlightQuery}
           {imageItems}
           imageReplyTarget={imageReplyTarget}
           onClearImageReply={clearImageReplyTarget}
