@@ -1063,7 +1063,7 @@
     {
       "issue_number": 569,
       "title": "Thread comment box should appear below existing comments",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 14,
@@ -1072,7 +1072,10 @@
         "frontend",
         "ux"
       ],
-      "branch": "feat/issue-569-thread-comment-box-bottom"
+      "branch": "feat/issue-569-thread-comment-box-should-appear-below-e",
+      "assigned_to": "agent-1769950331-21811",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769950331-21811",
+      "claimed_at": "2026-02-01T12:52:11Z"
     },
     {
       "issue_number": 570,
