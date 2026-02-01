@@ -79,6 +79,7 @@ services:
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--log.level=${LOG_LEVEL:-info}'
+      - '--log.format=json'
     ports:
       - "9093:9093"
     volumes:
