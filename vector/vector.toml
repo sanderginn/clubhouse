@@ -16,9 +16,18 @@ inputs = ["third_party_docker"]
 source = '''
 service = .container_name
 ts = .timestamp
-parsed = parse_json(.message)
+parsed = parse_json(.message) ?? null
 if is_object(parsed) {
   . = parsed
+}
+if service == "clubhouse-redis" && !is_object(parsed) {
+  redis_match = parse_regex(.message, r'^(?P<pid>\d+):(?P<role>[A-Z]) (?P<date>\d{2} \w{3} \d{4}) (?P<time>\d{2}:\d{2}:\d{2}\.\d{3}) (?P<level>[#*.-]) (?P<msg>.*)$') ?? null
+  if is_object(redis_match) {
+    .redis_pid = redis_match.pid
+    .redis_role = redis_match.role
+    .redis_level = redis_match.level
+    .message = redis_match.msg
+  }
 }
 .timestamp = ts
 .service = service
@@ -28,7 +37,7 @@ if is_object(parsed) {
 
 [sources.postgres_json]
 type = "file"
-include = ["/var/lib/postgresql/data/log/*.json"]
+include = ["/var/lib/postgresql/log/*.json"]
 read_from = "end"
 
 [transforms.normalize_postgres]

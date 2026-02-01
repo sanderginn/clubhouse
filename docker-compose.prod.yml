@@ -88,7 +88,7 @@ services:
       - "-c"
       - "logging_collector=on"
       - "-c"
-      - "log_directory=/var/lib/postgresql/data/log"
+      - "log_directory=/var/lib/postgresql/log"
       - "-c"
       - "log_filename=postgresql-%Y-%m-%d.json"
     environment:
@@ -97,6 +97,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - postgres_logs:/var/lib/postgresql/log
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
       interval: 10s
@@ -210,7 +211,7 @@ services:
     volumes:
       - ./vector/vector.toml:/etc/vector/vector.toml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - postgres_data:/var/lib/postgresql/data:ro
+      - postgres_logs:/var/lib/postgresql/log:ro
       - vector_data:/var/lib/vector
     depends_on:
       - loki
@@ -225,6 +226,7 @@ services:
 
 volumes:
   postgres_data:
+  postgres_logs:
   redis_data:
   loki_data:
   prometheus_data:
