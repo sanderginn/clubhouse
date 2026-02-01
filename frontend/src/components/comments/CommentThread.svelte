@@ -690,6 +690,32 @@
                             </div>
                           {/if}
                         </div>
+                        {#if reply.imageId}
+                          {@const imageRef = resolveImageReference(reply.imageId)}
+                          <div class="mb-2">
+                            {#if imageRef}
+                              <button
+                                type="button"
+                                class="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs text-blue-700 hover:bg-blue-100"
+                                aria-label={`View image ${imageRef.index + 1}`}
+                                on:click={() => handleImageReferenceClick(imageRef.index)}
+                              >
+                                <img
+                                  src={imageRef.url}
+                                  alt={imageRef.altText ?? `Image ${imageRef.index + 1}`}
+                                  class="h-6 w-6 rounded-md object-cover border border-blue-200 bg-white"
+                                />
+                                <span>Image {imageRef.index + 1}</span>
+                              </button>
+                            {:else}
+                              <span
+                                class="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs text-gray-600"
+                              >
+                                Image
+                              </span>
+                            {/if}
+                          </div>
+                        {/if}
                         {#if editingCommentId === reply.id}
                           <div class="space-y-2">
                               <MentionTextarea

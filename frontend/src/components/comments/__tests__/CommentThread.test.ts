@@ -228,6 +228,51 @@ describe('CommentThread', () => {
     expect(screen.getByText('Image 1')).toBeInTheDocument();
   });
 
+  it('shows image indicator for replies that reference images', () => {
+    commentStore.setThread('post-1', [
+      {
+        id: 'comment-1',
+        postId: 'post-1',
+        userId: 'user-1',
+        content: 'Parent',
+        createdAt: 'now',
+        user: { id: 'user-1', username: 'Sander' },
+        replies: [
+          {
+            id: 'reply-1',
+            postId: 'post-1',
+            userId: 'user-2',
+            content: 'Replying to image',
+            imageId: 'image-2',
+            createdAt: 'now',
+            user: { id: 'user-2', username: 'Alex' },
+            replies: [],
+          },
+        ],
+      },
+    ], null, false);
+
+    render(CommentThread, {
+      postId: 'post-1',
+      commentCount: 1,
+      imageItems: [
+        {
+          id: 'image-1',
+          url: 'https://cdn.example.com/uploads/photo-1.png',
+          title: 'Image 1',
+        },
+        {
+          id: 'image-2',
+          url: 'https://cdn.example.com/uploads/photo-2.png',
+          title: 'Image 2',
+        },
+      ],
+    });
+
+    expect(screen.getByRole('button', { name: 'View image 2' })).toBeInTheDocument();
+    expect(screen.getByText('Image 2')).toBeInTheDocument();
+  });
+
   it('saves edits with ctrl+enter', async () => {
     authStore.setUser({
       id: 'user-1',
