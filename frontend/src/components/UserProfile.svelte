@@ -7,7 +7,10 @@
   import type { Comment } from '../stores/commentStore';
   import PostCard from './PostCard.svelte';
   import { returnToFeed } from '../services/profileNavigation';
+  import { buildThreadHref } from '../services/routeNavigation';
   import { displayTimezone } from '../stores';
+  import { sections } from '../stores/sectionStore';
+  import { getSectionSlugById } from '../services/sectionSlug';
   import { formatInTimezone } from '../lib/time';
 
   export let userId: string | null;
@@ -345,6 +348,11 @@
     return groups;
   }
 
+  function buildThreadLink(post: Post): string {
+    const sectionSlug = getSectionSlugById($sections, post.sectionId) ?? post.sectionId;
+    return buildThreadHref(sectionSlug, post.id);
+  }
+
   function formatDate(dateString?: string | null): string {
     if (!dateString) return 'Unknown date';
     const date = new Date(dateString);
@@ -551,7 +559,9 @@
                     {postContextErrors[thread.postId]}
                   </div>
                 {:else if threadPost}
-                  <PostCard post={threadPost} highlightCommentIds={thread.commentIds} showSectionPill={true} profileUserId={resolvedUserId} />
+                  <a href={buildThreadLink(threadPost)} class="block hover:opacity-90 transition-opacity">
+                    <PostCard post={threadPost} highlightCommentIds={thread.commentIds} showSectionPill={true} profileUserId={resolvedUserId} />
+                  </a>
                 {:else}
                   <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
                     Thread unavailable.
