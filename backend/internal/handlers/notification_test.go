@@ -277,6 +277,14 @@ func TestMarkNotificationReadSuccess(t *testing.T) {
 	if response.Notification.ReadAt == nil {
 		t.Error("expected read_at to be set")
 	}
+
+	var auditCount int
+	if err := db.QueryRow("SELECT COUNT(*) FROM audit_logs WHERE action = 'mark_notification_read' AND admin_user_id = $1", userID).Scan(&auditCount); err != nil {
+		t.Fatalf("failed to query audit logs: %v", err)
+	}
+	if auditCount != 1 {
+		t.Errorf("expected 1 audit log, got %d", auditCount)
+	}
 }
 
 func TestMarkNotificationReadInvalidMethod(t *testing.T) {
@@ -376,5 +384,84 @@ func TestMarkNotificationReadForbidden(t *testing.T) {
 
 	if response.Code != "FORBIDDEN" {
 		t.Errorf("expected error code FORBIDDEN, got %s", response.Code)
+	}
+}
+
+func TestMarkAllNotificationsReadSuccess(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := uuid.MustParse(testutil.CreateTestUser(t, db, "notifmarkall", "notifmarkall@test.com", false, true))
+	handler := NewNotificationHandler(db, nil, nil)
+
+	now := time.Now().UTC()
+	insertTestNotification(t, db, uuid.New(), userID, now.Add(-2*time.Hour), nil)
+	insertTestNotification(t, db, uuid.New(), userID, now.Add(-90*time.Minute), nil)
+	readAt := now.Add(-30 * time.Minute)
+	insertTestNotification(t, db, uuid.New(), userID, now.Add(-1*time.Hour), &readAt)
+
+	req := httptest.NewRequest("PATCH", "/api/v1/notifications/read", nil)
+	req = req.WithContext(createTestUserContext(req.Context(), userID, "notifmarkall", false))
+	w := httptest.NewRecorder()
+
+	handler.MarkAllNotificationsRead(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response models.MarkAllNotificationsReadResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if response.UnreadCount != 0 {
+		t.Errorf("expected unread count 0, got %d", response.UnreadCount)
+	}
+
+	var unreadCount int
+	if err := db.QueryRow("SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND read_at IS NULL", userID).Scan(&unreadCount); err != nil {
+		t.Fatalf("failed to query unread notifications: %v", err)
+	}
+	if unreadCount != 0 {
+		t.Errorf("expected no unread notifications, got %d", unreadCount)
+	}
+
+	var auditCount int
+	if err := db.QueryRow("SELECT COUNT(*) FROM audit_logs WHERE action = 'mark_all_notifications_read' AND admin_user_id = $1", userID).Scan(&auditCount); err != nil {
+		t.Fatalf("failed to query audit logs: %v", err)
+	}
+	if auditCount != 1 {
+		t.Errorf("expected 1 audit log, got %d", auditCount)
+	}
+}
+
+func TestMarkAllNotificationsReadInvalidMethod(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	handler := NewNotificationHandler(db, nil, nil)
+	req := httptest.NewRequest("GET", "/api/v1/notifications/read", nil)
+	w := httptest.NewRecorder()
+
+	handler.MarkAllNotificationsRead(w, req)
+
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("expected status %d, got %d", http.StatusMethodNotAllowed, w.Code)
+	}
+}
+
+func TestMarkAllNotificationsReadUnauthorized(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	handler := NewNotificationHandler(db, nil, nil)
+	req := httptest.NewRequest("PATCH", "/api/v1/notifications/read", nil)
+	w := httptest.NewRecorder()
+
+	handler.MarkAllNotificationsRead(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status %d, got %d", http.StatusUnauthorized, w.Code)
 	}
 }

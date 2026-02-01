@@ -13,7 +13,7 @@ const storeRefs: {
   loadNotifications: ReturnType<typeof vi.fn>;
   loadMoreNotifications: ReturnType<typeof vi.fn>;
   markNotificationRead: ReturnType<typeof vi.fn>;
-  markVisibleNotificationsRead: ReturnType<typeof vi.fn>;
+  markAllNotificationsRead: ReturnType<typeof vi.fn>;
 } = {} as any;
 
 const routeRefs = {
@@ -36,7 +36,7 @@ vi.mock('../../../stores', () => {
   storeRefs.loadNotifications = vi.fn();
   storeRefs.loadMoreNotifications = vi.fn();
   storeRefs.markNotificationRead = vi.fn();
-  storeRefs.markVisibleNotificationsRead = vi.fn();
+  storeRefs.markAllNotificationsRead = vi.fn();
 
   return storeRefs;
 });
@@ -65,7 +65,7 @@ beforeEach(() => {
   storeRefs.loadNotifications.mockReset();
   storeRefs.loadMoreNotifications.mockReset();
   storeRefs.markNotificationRead.mockReset();
-  storeRefs.markVisibleNotificationsRead.mockReset();
+  storeRefs.markAllNotificationsRead.mockReset();
   routeRefs.buildStandaloneThreadHref.mockReset();
   routeRefs.pushPath.mockReset();
 });
@@ -82,10 +82,10 @@ describe('NotificationMenu', () => {
     await fireEvent.click(toggle);
 
     expect(storeRefs.loadNotifications).toHaveBeenCalledTimes(1);
-    expect(storeRefs.markVisibleNotificationsRead).not.toHaveBeenCalled();
+    expect(storeRefs.markAllNotificationsRead).not.toHaveBeenCalled();
   });
 
-  it('marks visible notifications when opening with items', async () => {
+  it('does not mark notifications when opening with items', async () => {
     storeRefs.notificationStore.set({
       ...baseState,
       notifications: [
@@ -105,7 +105,7 @@ describe('NotificationMenu', () => {
     await fireEvent.click(toggle);
     await tick();
 
-    expect(storeRefs.markVisibleNotificationsRead).toHaveBeenCalledTimes(1);
+    expect(storeRefs.markAllNotificationsRead).not.toHaveBeenCalled();
   });
 
   it('marks a notification read and navigates on click', async () => {
@@ -132,7 +132,7 @@ describe('NotificationMenu', () => {
     await fireEvent.click(toggle);
     await tick();
 
-    storeRefs.markVisibleNotificationsRead.mockClear();
+    storeRefs.markAllNotificationsRead.mockClear();
 
     const notificationButton = screen.getByText('Someone commented on your post');
     await fireEvent.click(notificationButton);
@@ -161,11 +161,11 @@ describe('NotificationMenu', () => {
     await fireEvent.click(toggle);
     await tick();
 
-    storeRefs.markVisibleNotificationsRead.mockClear();
+    storeRefs.markAllNotificationsRead.mockClear();
 
     const markAll = screen.getByText('Mark all as read');
     await fireEvent.click(markAll);
 
-    expect(storeRefs.markVisibleNotificationsRead).toHaveBeenCalledTimes(1);
+    expect(storeRefs.markAllNotificationsRead).toHaveBeenCalledTimes(1);
   });
 });

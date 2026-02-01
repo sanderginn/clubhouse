@@ -312,6 +312,7 @@ func main() {
 
 	// Notification routes (protected)
 	mux.Handle("/api/v1/notifications", requireAuth(http.HandlerFunc(notificationHandler.GetNotifications)))
+	mux.Handle("/api/v1/notifications/read", requireAuthCSRF(http.HandlerFunc(notificationHandler.MarkAllNotificationsRead)))
 	mux.Handle("/api/v1/notifications/", requireAuthCSRF(http.HandlerFunc(notificationHandler.MarkNotificationRead)))
 
 	// Push routes (protected)

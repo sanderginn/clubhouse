@@ -36,7 +36,11 @@ type NotificationService struct {
 
 // NewNotificationService creates a new notification service.
 func NewNotificationService(db *sql.DB, redisClient *redis.Client, pushService *PushService) *NotificationService {
-	return &NotificationService{db: db, push: pushService, redis: redisClient}
+	return &NotificationService{
+		db:    db,
+		push:  pushService,
+		redis: redisClient,
+	}
 }
 
 // CreateNotificationsForNewPost creates notifications for all subscribed users in a section.
@@ -651,15 +655,43 @@ func (s *NotificationService) MarkNotificationRead(ctx context.Context, userID u
 		return nil, forbiddenErr
 	}
 
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
 	query := `
 		UPDATE notifications
 		SET read_at = CASE WHEN read_at IS NULL THEN now() ELSE read_at END
 		WHERE id = $1 AND user_id = $2
 	`
 
-	if _, err := s.db.ExecContext(ctx, query, notificationID, userID); err != nil {
+	if _, err := tx.ExecContext(ctx, query, notificationID, userID); err != nil {
 		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to mark notification read: %w", err)
+	}
+
+	audit := NewAuditService(tx)
+	if err := audit.LogAuditWithMetadata(
+		ctx,
+		"mark_notification_read",
+		userID,
+		userID,
+		map[string]interface{}{
+			"notification_id": notificationID.String(),
+		},
+	); err != nil {
+		recordSpanError(span, err)
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("failed to commit notification read: %w", err)
 	}
 
 	notification, err := s.getNotificationDetails(ctx, userID, notificationID)
@@ -674,6 +706,65 @@ func (s *NotificationService) MarkNotificationRead(ctx context.Context, userID u
 	}
 
 	return notification, nil
+}
+
+// MarkAllNotificationsRead sets read_at for all unread notifications and returns the unread count.
+func (s *NotificationService) MarkAllNotificationsRead(ctx context.Context, userID uuid.UUID) (int, error) {
+	ctx, span := otel.Tracer("clubhouse.notifications").Start(ctx, "NotificationService.MarkAllNotificationsRead")
+	span.SetAttributes(attribute.String("user_id", userID.String()))
+	defer span.End()
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		recordSpanError(span, err)
+		return 0, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	result, err := tx.ExecContext(ctx, `
+		UPDATE notifications
+		SET read_at = now()
+		WHERE user_id = $1 AND read_at IS NULL
+	`, userID)
+	if err != nil {
+		recordSpanError(span, err)
+		return 0, fmt.Errorf("failed to mark notifications read: %w", err)
+	}
+
+	updatedCount, err := result.RowsAffected()
+	if err != nil {
+		recordSpanError(span, err)
+		return 0, fmt.Errorf("failed to count updated notifications: %w", err)
+	}
+
+	audit := NewAuditService(tx)
+	if err := audit.LogAuditWithMetadata(
+		ctx,
+		"mark_all_notifications_read",
+		userID,
+		userID,
+		map[string]interface{}{
+			"updated_count": updatedCount,
+		},
+	); err != nil {
+		recordSpanError(span, err)
+		return 0, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
+		return 0, fmt.Errorf("failed to commit notification read updates: %w", err)
+	}
+
+	unreadCount, err := s.getUnreadCount(ctx, userID)
+	if err != nil {
+		recordSpanError(span, err)
+		return 0, err
+	}
+
+	return unreadCount, nil
 }
 
 type notificationScanner interface {

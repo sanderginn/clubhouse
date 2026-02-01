@@ -287,25 +287,27 @@ export async function markNotificationRead(notificationId: string): Promise<void
   }
 }
 
-export async function markVisibleNotificationsRead(): Promise<void> {
+export async function markAllNotificationsRead(): Promise<void> {
   const state = get(notificationStore);
   const unreadIds = state.notifications.filter((notification) => !notification.readAt).map((n) => n.id);
-  if (unreadIds.length === 0) {
+  if (unreadIds.length === 0 && state.unreadCount === 0) {
     return;
   }
-  const totalUnread = state.unreadCount;
+  const previousUnreadCount = state.unreadCount;
 
   notificationStore.markAllReadLocal();
 
-  const results = await Promise.allSettled(
-    unreadIds.map((notificationId) =>
-      api.patch<{ notification: ApiNotification }>(`/notifications/${notificationId}`)
-    )
-  );
-
-  const failed = results.filter((result) => result.status === 'rejected');
-  if (failed.length > 0 || totalUnread > unreadIds.length) {
-    logWarn('Failed to mark some notifications as read', { failed: failed.length });
+  try {
+    const response = await api.patch<{ unread_count?: number; unreadCount?: number }>(
+      '/notifications/read'
+    );
+    const unreadCount = response.unread_count ?? response.unreadCount;
+    if (typeof unreadCount === 'number') {
+      notificationStore.setUnreadCount(unreadCount);
+    }
+  } catch (error) {
+    notificationStore.setUnreadCount(previousUnreadCount);
+    logWarn('Failed to mark notifications as read', { error });
     await loadNotifications();
   }
 }

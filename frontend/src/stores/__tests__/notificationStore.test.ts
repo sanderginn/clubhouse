@@ -31,7 +31,7 @@ vi.mock('../authStore', () => {
   };
 });
 
-const { notificationStore, markNotificationRead, markVisibleNotificationsRead, handleRealtimeNotification } =
+const { notificationStore, markNotificationRead, markAllNotificationsRead, handleRealtimeNotification } =
   await import(
   '../notificationStore'
 );
@@ -137,7 +137,7 @@ describe('notificationStore', () => {
     expect(apiPatch).not.toHaveBeenCalled();
   });
 
-  it('reloads notifications when marking visible ones fails', async () => {
+  it('reloads notifications when marking all fails', async () => {
     notificationStore.setNotifications(
       [
         {
@@ -158,16 +158,7 @@ describe('notificationStore', () => {
       2
     );
 
-    apiPatch
-      .mockResolvedValueOnce({
-        notification: {
-          id: 'notif-4',
-          type: 'new_post',
-          created_at: '2026-01-01T00:00:00Z',
-          read_at: '2026-01-02T00:00:00Z',
-        },
-      })
-      .mockRejectedValueOnce(new Error('nope'));
+    apiPatch.mockRejectedValueOnce(new Error('nope'));
 
     apiGet.mockResolvedValue({
       notifications: [
@@ -191,9 +182,9 @@ describe('notificationStore', () => {
       },
     });
 
-    await markVisibleNotificationsRead();
+    await markAllNotificationsRead();
 
-    expect(apiPatch).toHaveBeenCalledTimes(2);
+    expect(apiPatch).toHaveBeenCalledTimes(1);
     expect(apiGet).toHaveBeenCalledTimes(1);
     expect(logWarn).toHaveBeenCalled();
   });

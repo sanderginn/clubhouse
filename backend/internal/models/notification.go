@@ -37,3 +37,8 @@ type GetNotificationsResponse struct {
 type UpdateNotificationResponse struct {
 	Notification Notification `json:"notification"`
 }
+
+// MarkAllNotificationsReadResponse represents the response for marking all notifications read.
+type MarkAllNotificationsReadResponse struct {
+	UnreadCount int `json:"unread_count"`
+}
