@@ -17,7 +17,8 @@
     604,
     616,
     619,
-    620
+    620,
+    621
   ],
   "issues": [
     {
@@ -102,7 +103,7 @@
     {
       "issue_number": 621,
       "title": "Fix search bar alignment - center within main container",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -113,7 +114,9 @@
       "assigned_to": "agent-1769978987-15325",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769978987-15325",
       "branch": "fix/issue-621-fix-search-bar-alignment-center-within-m",
-      "claimed_at": "2026-02-01T20:49:47Z"
+      "claimed_at": "2026-02-01T20:49:47Z",
+      "pr_number": 625,
+      "completed_at": "2026-02-01T21:04:39Z"
     },
     {
       "issue_number": 595,
