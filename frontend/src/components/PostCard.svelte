@@ -57,7 +57,7 @@
   let deleteError: string | null = null;
   let imageReplyTarget:
     | {
-        id: string;
+        id?: string;
         url: string;
         index: number;
         altText?: string;
@@ -233,7 +233,7 @@
 
   function startImageReply(index: number) {
     const item = imageItems[index];
-    if (!item?.id) {
+    if (!item) {
       return;
     }
     imageReplyTarget = {
@@ -421,8 +421,16 @@
   $: lightboxImageUrl = lightboxImageItem?.url;
   $: lightboxAltText =
     lightboxImageItem?.altText ?? lightboxImageItem?.title ?? 'Full size image';
-  $: if (imageReplyTarget && !imageItems.find((item) => item.id === imageReplyTarget?.id)) {
-    imageReplyTarget = null;
+  $: if (imageReplyTarget) {
+    const target = imageReplyTarget;
+    const stillExists = imageItems.find((item, index) =>
+      item.id && target.id
+        ? item.id === target.id
+        : item.url === target.url && index === target.index
+    );
+    if (!stillExists) {
+      imageReplyTarget = null;
+    }
   }
 
   let activeImageIndex = 0;
