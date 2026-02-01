@@ -29,7 +29,7 @@
 <svelte:window on:click={closeMenu} />
 
 <header class="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200">
-  <div class="flex items-center h-16 px-4 sm:px-6">
+  <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,56rem)_minmax(0,1fr)] items-center h-16 px-4 sm:px-6 gap-4">
     <!-- Left: Logo/app name -->
     <div class="flex items-center gap-2 sm:gap-4 flex-shrink-0 lg:w-64">
       <button
@@ -54,12 +54,12 @@
     </div>
 
     <!-- Center: Search bar -->
-    <div class="flex-1 flex justify-center max-w-4xl mx-auto">
+    <div class="min-w-0 w-full">
       <NavbarSearch />
     </div>
 
     <!-- Right: Notifications + user controls -->
-    <div class="flex items-center gap-2 sm:gap-4 flex-shrink-0 lg:w-64 justify-end">
+    <div class="flex items-center gap-2 sm:gap-4 flex-shrink-0 lg:w-64 justify-end justify-self-end">
       <NotificationMenu />
         {#if $isAuthenticated && $currentUser}
           <div class="relative">
