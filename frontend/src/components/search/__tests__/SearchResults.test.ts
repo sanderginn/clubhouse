@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { render, screen, cleanup, within } from '@testing-library/svelte';
+import { render, screen, cleanup } from '@testing-library/svelte';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
@@ -131,7 +131,7 @@ describe('SearchResults', () => {
     expect(screen.getByText('Press Search to refresh results for "updated".')).toBeInTheDocument();
   });
 
-  it('renders comment results', () => {
+  it('renders comment results without parent post as standalone', () => {
     storeRefs.searchQuery.set('nice');
     storeRefs.lastSearchQuery.set('nice');
     storeRefs.lastSearchScope.set('section');
@@ -163,7 +163,7 @@ describe('SearchResults', () => {
     expect(sectionLabels.length).toBeGreaterThan(0);
   });
 
-  it('strips internal upload URLs from parent post content in search results', () => {
+  it('renders unified thread when comment and parent post are both in results', () => {
     storeRefs.searchQuery.set('photo');
     storeRefs.lastSearchQuery.set('photo');
     storeRefs.lastSearchScope.set('section');
@@ -196,12 +196,8 @@ describe('SearchResults', () => {
 
     render(SearchResults);
 
-    expect(screen.getByText(/Look/)).toBeInTheDocument();
-    expect(screen.getByText(/today/)).toBeInTheDocument();
-    expect(screen.queryByText('/api/v1/uploads/user-1/photo.png')).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('link', { name: '/api/v1/uploads/user-1/photo.png' })
-    ).not.toBeInTheDocument();
+    expect(screen.getByText('post-1')).toBeInTheDocument();
+    expect(screen.queryByText('Parent post')).not.toBeInTheDocument();
   });
 
   it('renders section label for post results', () => {
@@ -230,7 +226,7 @@ describe('SearchResults', () => {
     expect(screen.getAllByText('Movies').length).toBeGreaterThan(0);
   });
 
-  it('hides section pill on parent post in section scope', () => {
+  it('renders unified thread when comment matches and parent post is provided', () => {
     storeRefs.searchQuery.set('reply');
     storeRefs.lastSearchQuery.set('reply');
     storeRefs.sections.set([
@@ -260,10 +256,8 @@ describe('SearchResults', () => {
     ]);
 
     render(SearchResults);
-    const parentLabel = screen.getByText('Parent post');
-    const parentHeader = parentLabel.parentElement;
-    expect(parentHeader).toBeTruthy();
-    expect(within(parentHeader as HTMLElement).queryByText('Music')).not.toBeInTheDocument();
+    expect(screen.getByText('post-1')).toBeInTheDocument();
+    expect(screen.queryByText('Parent post')).not.toBeInTheDocument();
   });
 
   it('groups global search results by section', () => {
@@ -324,6 +318,100 @@ describe('SearchResults', () => {
     expect(screen.getByText('Movies')).toBeInTheDocument();
     expect(screen.getByText('post-1')).toBeInTheDocument();
     expect(screen.getByText('post-2')).toBeInTheDocument();
-    expect(screen.getByText('Parent post')).toBeInTheDocument();
+    expect(screen.queryByText('Parent post')).not.toBeInTheDocument();
+  });
+
+  it('renders unified thread when both post and comment match in section search', () => {
+    storeRefs.searchQuery.set('track');
+    storeRefs.lastSearchQuery.set('track');
+    storeRefs.lastSearchScope.set('section');
+    storeRefs.sections.set([
+      { id: 'section-1', name: 'Music', type: 'music', icon: '🎵', slug: 'music' },
+    ]);
+    storeRefs.activeSection.set({ id: 'section-1', name: 'Music', slug: 'music' });
+    storeRefs.searchResults.set([
+      {
+        type: 'post',
+        score: 2,
+        post: {
+          id: 'post-1',
+          sectionId: 'section-1',
+          content: 'New track released',
+          createdAt: '2025-01-02T00:00:00Z',
+          userId: 'user-1',
+        },
+      },
+      {
+        type: 'comment',
+        score: 1,
+        comment: {
+          id: 'comment-1',
+          postId: 'post-1',
+          sectionId: 'section-1',
+          content: 'Love this track',
+          createdAt: '2025-01-03T00:00:00Z',
+          user: { id: 'user-2', username: 'Alex' },
+        },
+        post: {
+          id: 'post-1',
+          sectionId: 'section-1',
+          content: 'New track released',
+          createdAt: '2025-01-02T00:00:00Z',
+          userId: 'user-1',
+        },
+      },
+    ]);
+
+    render(SearchResults);
+    const postCards = screen.getAllByTestId('post-card');
+    expect(postCards).toHaveLength(1);
+    expect(screen.getByText('post-1')).toBeInTheDocument();
+  });
+
+  it('renders unified thread when both post and comment match in global search', () => {
+    storeRefs.searchQuery.set('film');
+    storeRefs.lastSearchQuery.set('film');
+    storeRefs.lastSearchScope.set('global');
+    storeRefs.searchScope.set('global');
+    storeRefs.sections.set([
+      { id: 'section-2', name: 'Movies', type: 'movie', icon: '🎬', slug: 'movies' },
+    ]);
+    storeRefs.searchResults.set([
+      {
+        type: 'post',
+        score: 2,
+        post: {
+          id: 'post-1',
+          sectionId: 'section-2',
+          content: 'Great film',
+          createdAt: '2025-01-02T00:00:00Z',
+          userId: 'user-1',
+        },
+      },
+      {
+        type: 'comment',
+        score: 1,
+        comment: {
+          id: 'comment-1',
+          postId: 'post-1',
+          sectionId: 'section-2',
+          content: 'This film is amazing',
+          createdAt: '2025-01-03T00:00:00Z',
+          user: { id: 'user-2', username: 'Alex' },
+        },
+        post: {
+          id: 'post-1',
+          sectionId: 'section-2',
+          content: 'Great film',
+          createdAt: '2025-01-02T00:00:00Z',
+          userId: 'user-1',
+        },
+      },
+    ]);
+
+    render(SearchResults);
+    const postCards = screen.getAllByTestId('post-card');
+    expect(postCards).toHaveLength(1);
+    expect(screen.getByText('post-1')).toBeInTheDocument();
   });
 });
