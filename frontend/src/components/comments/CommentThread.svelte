@@ -299,10 +299,10 @@
 
   function getHighlightClass(commentId: string, commentUserId: string, isNested: boolean): string {
     if (!highlightIdSet.has(commentId)) {
-      return isNested ? '' : 'bg-white';
+      return 'bg-white';
     }
     if (profileUserId && commentUserId !== profileUserId) {
-      return isNested ? '' : 'bg-white';
+      return 'bg-white';
     }
     if (isNested) {
       return 'bg-amber-100 ring-2 ring-amber-400 rounded-lg p-2';
