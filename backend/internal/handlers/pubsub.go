@@ -146,12 +146,52 @@ func isUsernameRune(r rune) bool {
 	return unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_'
 }
 
-func resolveMentionedUserIDs(ctx context.Context, userService *services.UserService, content string, authorID uuid.UUID) ([]uuid.UUID, error) {
+func normalizeMentionUsernames(usernames []string) []string {
+	if len(usernames) == 0 {
+		return nil
+	}
+
+	seen := make(map[string]struct{}, len(usernames))
+	result := make([]string, 0, len(usernames))
+	for _, username := range usernames {
+		trimmed := strings.TrimSpace(username)
+		if trimmed == "" || len(trimmed) < 3 || len(trimmed) > 50 {
+			continue
+		}
+		valid := true
+		for _, r := range trimmed {
+			if !isUsernameRune(r) {
+				valid = false
+				break
+			}
+		}
+		if !valid {
+			continue
+		}
+		key := strings.ToLower(trimmed)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		result = append(result, trimmed)
+	}
+
+	if len(result) == 0 {
+		return nil
+	}
+	return result
+}
+
+func resolveMentionedUserIDs(ctx context.Context, userService *services.UserService, mentionUsernames []string, content string, authorID uuid.UUID) ([]uuid.UUID, error) {
 	if userService == nil {
 		return nil, nil
 	}
 
-	usernames := extractMentionedUsernames(content)
+	usernames := mentionUsernames
+	if usernames == nil {
+		usernames = extractMentionedUsernames(content)
+	}
+	usernames = normalizeMentionUsernames(usernames)
 	if len(usernames) == 0 {
 		return nil, nil
 	}

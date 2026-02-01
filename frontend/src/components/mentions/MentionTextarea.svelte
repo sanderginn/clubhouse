@@ -10,6 +10,7 @@
   export let disabled = false;
   export let className = '';
   export let ariaLabel = '';
+  export let mentionUsernames: string[] = [];
   export let mentionClassName =
     'text-indigo-600 hover:text-indigo-800 font-medium bg-indigo-50 rounded px-0.5';
 
@@ -32,6 +33,43 @@
 
   function isUsernameChar(char: string): boolean {
     return /[A-Za-z0-9_]/.test(char);
+  }
+
+  function hasUnescapedMention(text: string, username: string): boolean {
+    if (!text || !username) return false;
+    const needle = `@${username}`;
+    let index = text.indexOf(needle);
+    while (index !== -1) {
+      const before = index > 0 ? text[index - 1] : '';
+      if (before === '\\' || (before && isUsernameChar(before))) {
+        index = text.indexOf(needle, index + needle.length);
+        continue;
+      }
+      const afterIndex = index + needle.length;
+      const after = afterIndex < text.length ? text[afterIndex] : '';
+      if (after && isUsernameChar(after)) {
+        index = text.indexOf(needle, index + needle.length);
+        continue;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  function pruneMentionUsernames() {
+    if (mentionUsernames.length === 0) {
+      return;
+    }
+    const next = mentionUsernames.filter((username) => hasUnescapedMention(value, username));
+    if (next.length !== mentionUsernames.length) {
+      mentionUsernames = next;
+    }
+  }
+
+  function addMentionUsername(username: string) {
+    if (!username) return;
+    if (mentionUsernames.includes(username)) return;
+    mentionUsernames = [...mentionUsernames, username];
   }
 
   function findMentionContext(text: string, cursor: number): { start: number; query: string } | null {
@@ -118,6 +156,7 @@
     const after = value.slice(cursor);
     const spacer = after.startsWith(' ') || after.startsWith('\n') || after.length === 0 ? '' : ' ';
     value = `${before}${user.username}${spacer}${after}`;
+    addMentionUsername(user.username);
     showSuggestions = false;
     suggestions = [];
     highlightedIndex = 0;
@@ -134,6 +173,7 @@
   function handleInput(event: Event) {
     dispatch('input', event);
     updateMentionContext();
+    pruneMentionUsernames();
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -168,6 +208,7 @@
   function handleBlur(event: FocusEvent) {
     dispatch('blur', event);
     clearSuggestions();
+    pruneMentionUsernames();
   }
 
   function handleClick() {

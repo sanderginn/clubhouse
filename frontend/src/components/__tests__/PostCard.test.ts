@@ -255,6 +255,7 @@ describe('PostCard', () => {
         { url: 'https://example.com/article' },
         { url: 'https://example.com/extra' },
       ],
+      mentionUsernames: [],
     });
   });
 
@@ -300,6 +301,7 @@ describe('PostCard', () => {
         { url: 'https://example.com/article' },
         { url: 'https://cdn.example.com/uploads/new.png' },
       ],
+      mentionUsernames: [],
     });
   });
 
@@ -328,6 +330,7 @@ describe('PostCard', () => {
     expect(apiUpdatePost).toHaveBeenCalledWith('post-1', {
       content: 'Hello world',
       links: undefined,
+      mentionUsernames: [],
     });
   });
 

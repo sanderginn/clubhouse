@@ -51,6 +51,8 @@ type CreatePostRequest struct {
 	Content   string             `json:"content"`
 	Links     []LinkRequest      `json:"links,omitempty"`
 	Images    []PostImageRequest `json:"images,omitempty"`
+	// MentionUsernames contains explicitly selected mentions from the client.
+	MentionUsernames []string `json:"mention_usernames,omitempty"`
 }
 
 // LinkRequest represents a link in the request
@@ -70,6 +72,8 @@ type UpdatePostRequest struct {
 	Content string              `json:"content"`
 	Links   *[]LinkRequest      `json:"links,omitempty"`
 	Images  *[]PostImageRequest `json:"images,omitempty"`
+	// MentionUsernames contains explicitly selected mentions from the client.
+	MentionUsernames []string `json:"mention_usernames,omitempty"`
 }
 
 // CreatePostResponse represents the response for creating a post

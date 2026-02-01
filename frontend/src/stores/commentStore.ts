@@ -27,6 +27,7 @@ export interface CreateCommentRequest {
   imageId?: string;
   content: string;
   links?: { url: string }[];
+  mentionUsernames?: string[];
 }
 
 export interface CommentThreadState {

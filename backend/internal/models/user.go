@@ -105,7 +105,7 @@ type UserAutocompleteResponse struct {
 
 // UserLookupResponse represents the response from /users/lookup.
 type UserLookupResponse struct {
-	User UserSummary `json:"user"`
+	User *UserSummary `json:"user"`
 }
 
 // ApproveUserResponse represents the response from approving a user

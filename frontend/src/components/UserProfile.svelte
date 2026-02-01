@@ -142,6 +142,9 @@
         resolvedUserId = identifier;
       } else {
         const response = await api.lookupUserByUsername(identifier);
+        if (!response.user) {
+          throw new Error('User not found.');
+        }
         resolvedUserId = response.user.id;
       }
     } catch (error) {

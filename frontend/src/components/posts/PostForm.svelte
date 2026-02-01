@@ -11,6 +11,7 @@
   }>();
 
   let content = '';
+  let mentionUsernames: string[] = [];
   let isSubmitting = false;
   let error: string | null = null;
 
@@ -313,7 +314,14 @@
       const payload = {
         sectionId: $activeSection.id,
         content: trimmedContent,
-      } as { sectionId: string; content: string; links?: { url: string }[]; images?: { url: string }[] };
+        mentionUsernames,
+      } as {
+        sectionId: string;
+        content: string;
+        links?: { url: string }[];
+        images?: { url: string }[];
+        mentionUsernames?: string[];
+      };
 
       if (links.length > 0) {
         payload.links = links;
@@ -335,6 +343,7 @@
       postStore.addPost(createdPost);
 
       content = '';
+      mentionUsernames = [];
       linkUrl = '';
       linkMetadata = null;
       linkInputValue = '';
@@ -385,6 +394,7 @@
     <MentionTextarea
       id="post-content"
       bind:value={content}
+      bind:mentionUsernames
       on:input={handleContentChange}
       on:keydown={(event) => handleKeyDown(event.detail)}
       placeholder={$activeSection

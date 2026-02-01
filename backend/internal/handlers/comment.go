@@ -108,7 +108,7 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 
 	publishCtx, cancel := publishContext()
 	_ = h.notify.CreateNotificationForPostComment(publishCtx, comment.PostID, comment.ID, userID)
-	mentionedUserIDs, _ := resolveMentionedUserIDs(publishCtx, h.userService, comment.Content, userID)
+	mentionedUserIDs, _ := resolveMentionedUserIDs(publishCtx, h.userService, req.MentionUsernames, comment.Content, userID)
 	_ = publishEvent(publishCtx, h.redis, formatChannel(postPrefix, comment.PostID), "new_comment", commentEventData{Comment: comment})
 	if sectionID, err := h.postService.GetSectionIDByPostID(publishCtx, comment.PostID); err == nil {
 		_ = h.notify.CreateMentionNotifications(publishCtx, mentionedUserIDs, userID, sectionID, comment.PostID, &comment.ID)
@@ -203,7 +203,7 @@ func (h *CommentHandler) UpdateComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	publishCtx, cancel := publishContext()
-	mentionedUserIDs, _ := resolveMentionedUserIDs(publishCtx, h.userService, comment.Content, userID)
+	mentionedUserIDs, _ := resolveMentionedUserIDs(publishCtx, h.userService, req.MentionUsernames, comment.Content, userID)
 	if comment.SectionID != nil {
 		_ = h.notify.CreateMentionNotifications(publishCtx, mentionedUserIDs, userID, *comment.SectionID, comment.PostID, &comment.ID)
 	} else if sectionID, err := h.postService.GetSectionIDByPostID(publishCtx, comment.PostID); err == nil {

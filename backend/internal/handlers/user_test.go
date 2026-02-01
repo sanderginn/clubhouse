@@ -192,11 +192,39 @@ func TestLookupUserByUsername(t *testing.T) {
 		t.Fatalf("failed to decode response: %v", err)
 	}
 
+	if response.User == nil {
+		t.Fatalf("expected user, got nil")
+	}
 	if response.User.ID != userID {
 		t.Errorf("expected user ID %s, got %s", userID, response.User.ID)
 	}
 	if response.User.Username != "Sander" {
 		t.Errorf("expected username Sander, got %s", response.User.Username)
+	}
+}
+
+func TestLookupUserByUsernameNotFoundReturnsEmpty(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	handler := NewUserHandler(db)
+
+	req := httptest.NewRequest("GET", "/api/v1/users/lookup?username=ghost", nil)
+	w := httptest.NewRecorder()
+
+	handler.LookupUserByUsername(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response models.UserLookupResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if response.User != nil {
+		t.Fatalf("expected user to be nil, got %+v", response.User)
 	}
 }
 

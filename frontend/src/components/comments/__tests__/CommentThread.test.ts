@@ -272,7 +272,10 @@ describe('CommentThread', () => {
     }
     await fireEvent.keyDown(textarea, { key: 'Enter', ctrlKey: true });
 
-    expect(apiUpdateComment).toHaveBeenCalledWith('comment-1', { content: 'Hello' });
+    expect(apiUpdateComment).toHaveBeenCalledWith('comment-1', {
+      content: 'Hello',
+      mentionUsernames: [],
+    });
   });
 
   it('ignores ctrl+enter when edit content is empty', async () => {

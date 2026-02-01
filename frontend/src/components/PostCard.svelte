@@ -11,6 +11,7 @@
   import { buildProfileHref, handleProfileNavigation } from '../services/profileNavigation';
   import { buildThreadHref } from '../services/routeNavigation';
   import LinkifiedText from './LinkifiedText.svelte';
+  import MentionTextarea from './mentions/MentionTextarea.svelte';
   import { getImageLinkUrl, isInternalUploadUrl, stripInternalUploadUrls } from '../services/linkUtils';
   import { sections } from '../stores/sectionStore';
   import { getSectionSlugById } from '../services/sectionSlug';
@@ -41,6 +42,7 @@
   let copyTimeout: ReturnType<typeof setTimeout> | null = null;
   let isEditing = false;
   let editContent = '';
+  let editMentionUsernames: string[] = [];
   let editError: string | null = null;
   let isSaving = false;
   type EditImageState = {
@@ -274,6 +276,7 @@
 
   function startEdit() {
     editContent = post.content;
+    editMentionUsernames = [];
     editError = null;
     resetEditImages();
     isEditing = true;
@@ -282,6 +285,7 @@
   function cancelEdit() {
     isEditing = false;
     editContent = post.content;
+    editMentionUsernames = [];
     editError = null;
     resetEditImages();
   }
@@ -304,10 +308,12 @@
       const response = await api.updatePost(post.id, {
         content: trimmed,
         links: linksPayload,
+        mentionUsernames: editMentionUsernames,
       });
       postStore.upsertPost(response.post);
       post = { ...post, ...response.post };
       isEditing = false;
+      editMentionUsernames = [];
     } catch (err) {
       editError = err instanceof Error ? err.message : 'Failed to update post';
     } finally {
@@ -962,11 +968,13 @@
               {/each}
             </div>
           {/if}
-          <textarea
-            class="w-full rounded-lg border border-gray-300 p-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            rows="4"
+          <MentionTextarea
             bind:value={editContent}
-            on:keydown={handleEditKeyDown}
+            bind:mentionUsernames={editMentionUsernames}
+            on:keydown={(event) => handleEditKeyDown(event.detail)}
+            rows={4}
+            ariaLabel="Edit post content"
+            className="w-full rounded-lg border border-gray-300 p-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
           {#if editError}
             <div class="text-sm text-red-600">{editError}</div>

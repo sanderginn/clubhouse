@@ -265,14 +265,24 @@ func (h *UserHandler) LookupUserByUsername(w http.ResponseWriter, r *http.Reques
 	user, err := h.userService.LookupUserByUsername(r.Context(), username)
 	if err != nil {
 		if err.Error() == "user not found" {
-			writeError(r.Context(), w, http.StatusNotFound, "USER_NOT_FOUND", "User not found")
+			response := models.UserLookupResponse{User: nil}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				observability.LogError(r.Context(), observability.ErrorLog{
+					Message:    "failed to encode user lookup response",
+					Code:       "ENCODE_FAILED",
+					StatusCode: http.StatusOK,
+					Err:        err,
+				})
+			}
 			return
 		}
 		writeError(r.Context(), w, http.StatusInternalServerError, "USER_LOOKUP_FAILED", "Failed to lookup user")
 		return
 	}
 
-	response := models.UserLookupResponse{User: *user}
+	response := models.UserLookupResponse{User: user}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
