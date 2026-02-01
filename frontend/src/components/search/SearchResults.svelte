@@ -222,9 +222,16 @@
     availableSections: typeof $sections,
   ): SectionGroup | null {
     if (results.length === 0) return null;
-    const sectionId = currentSection?.id ?? resolveSectionId(results[0], null);
-    const name = currentSection?.name ?? resolveSectionNameById(sectionId, null, availableSections) ?? 'Section';
-    const icon = currentSection?.icon ?? resolveSectionIconById(sectionId, '📁', availableSections);
+    const resultSectionId = resolveSectionId(results[0], null);
+    const currentSectionId = currentSection?.id ?? null;
+    const sectionId = resultSectionId ?? currentSectionId;
+    const useCurrentSection = Boolean(sectionId && currentSectionId && sectionId === currentSectionId);
+    const name = useCurrentSection
+      ? currentSection?.name ?? resolveSectionNameById(sectionId, null, availableSections) ?? 'Section'
+      : resolveSectionNameById(sectionId, null, availableSections) ?? 'Section';
+    const icon = useCurrentSection
+      ? currentSection?.icon ?? resolveSectionIconById(sectionId, '📁', availableSections)
+      : resolveSectionIconById(sectionId, '📁', availableSections);
     return {
       id: sectionId,
       name,
