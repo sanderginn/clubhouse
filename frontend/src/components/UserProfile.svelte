@@ -353,11 +353,6 @@
     return buildThreadHref(sectionSlug, post.id);
   }
 
-  function buildThreadLinkForPost(post?: Post | null): string {
-    if (!post) return '#';
-    return buildThreadLink(post);
-  }
-
   function formatDate(dateString?: string | null): string {
     if (!dateString) return 'Unknown date';
     const date = new Date(dateString);
@@ -557,18 +552,6 @@
             {#each commentThreads as thread (thread.postId)}
               {@const threadPost = postContext[thread.postId]}
               <div class="space-y-3">
-                <div class="flex items-center justify-between text-xs text-gray-500">
-                  <span class="font-semibold uppercase tracking-wide text-gray-400">Thread</span>
-                  {#if threadPost}
-                    <a
-                      href={buildThreadLinkForPost(threadPost)}
-                      class="text-xs text-blue-600 hover:text-blue-800"
-                    >
-                      Open full thread ->
-                    </a>
-                  {/if}
-                </div>
-
                 {#if postContextLoading.has(thread.postId)}
                   <div class="text-sm text-gray-500">Loading thread...</div>
                 {:else if postContextErrors[thread.postId]}
@@ -576,7 +559,9 @@
                     {postContextErrors[thread.postId]}
                   </div>
                 {:else if threadPost}
-                  <PostCard post={threadPost} highlightCommentIds={thread.commentIds} showSectionPill={true} profileUserId={resolvedUserId} />
+                  <a href={buildThreadLink(threadPost)} class="block hover:opacity-90 transition-opacity">
+                    <PostCard post={threadPost} highlightCommentIds={thread.commentIds} showSectionPill={true} profileUserId={resolvedUserId} />
+                  </a>
                 {:else}
                   <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
                     Thread unavailable.
