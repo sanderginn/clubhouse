@@ -15,7 +15,8 @@
     602,
     603,
     604,
-    616
+    616,
+    620
   ],
   "issues": [
     {
@@ -80,7 +81,7 @@
     {
       "issue_number": 620,
       "title": "Make posts clickable on user profile Posts tab",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -91,7 +92,9 @@
       "assigned_to": "agent-1769978985-15443",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769978985-15443",
       "branch": "fix/issue-620-make-posts-clickable-on-user-profile-pos",
-      "claimed_at": "2026-02-01T20:49:45Z"
+      "claimed_at": "2026-02-01T20:49:45Z",
+      "pr_number": 622,
+      "completed_at": "2026-02-01T20:58:38Z"
     },
     {
       "issue_number": 621,
