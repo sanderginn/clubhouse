@@ -506,7 +506,7 @@
             <p class="text-gray-500 text-sm">No posts yet.</p>
           {:else}
             {#each posts as post (post.id)}
-              <PostCard {post} showSectionPill={true} />
+              <PostCard {post} showSectionPill={true} showSectionLabel={true} />
             {/each}
           {/if}
 
@@ -560,7 +560,13 @@
                   </div>
                 {:else if threadPost}
                   <a href={buildThreadLink(threadPost)} class="block hover:opacity-90 transition-opacity">
-                    <PostCard post={threadPost} highlightCommentIds={thread.commentIds} showSectionPill={true} profileUserId={resolvedUserId} />
+                    <PostCard
+                      post={threadPost}
+                      highlightCommentIds={thread.commentIds}
+                      showSectionPill={true}
+                      showSectionLabel={true}
+                      profileUserId={resolvedUserId}
+                    />
                   </a>
                 {:else}
                   <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">

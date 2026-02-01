@@ -22,6 +22,7 @@
   export let highlightCommentId: string | null = null;
   export let highlightCommentIds: string[] = [];
   export let showSectionPill: boolean = false;
+  export let showSectionLabel: boolean = false;
   export let profileUserId: string | null = null;
   export let highlightQuery: string = '';
 
@@ -725,7 +726,10 @@
 
 <article class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
   {#if showSectionPill && sectionInfo}
-    <div class="mb-3">
+    <div class="mb-3 flex flex-wrap items-center gap-2">
+      {#if showSectionLabel}
+        <span class="text-sm font-medium text-gray-500">Posted in:</span>
+      {/if}
       <span class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-100 px-3 py-1 text-sm font-semibold text-gray-600">
         {#if sectionInfo.icon}
           <span class="text-base leading-none" aria-hidden="true">{sectionInfo.icon}</span>

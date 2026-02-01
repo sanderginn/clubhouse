@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/svelte';
 import type { Post } from '../../stores/postStore';
 import { authStore } from '../../stores';
+import { sectionStore } from '../../stores/sectionStore';
 import { tick } from 'svelte';
 
 const loadThreadComments = vi.hoisted(() => vi.fn());
@@ -41,6 +42,7 @@ const basePost: Post = {
 beforeEach(() => {
   vi.clearAllMocks();
   authStore.setUser(null);
+  sectionStore.setSections([]);
 });
 
 afterEach(() => {
@@ -75,6 +77,23 @@ describe('PostCard', () => {
 
     render(PostCard, { post: postWithLink });
     expect(screen.getByText('Example')).toBeInTheDocument();
+  });
+
+  it('shows a posted in label when section pill label is enabled', () => {
+    sectionStore.setSections([
+      {
+        id: 'section-1',
+        name: 'General',
+        type: 'general',
+        icon: '💬',
+        slug: 'general',
+      },
+    ]);
+
+    render(PostCard, { post: basePost, showSectionPill: true, showSectionLabel: true });
+
+    expect(screen.getByText('Posted in:')).toBeInTheDocument();
+    expect(screen.getByText('General')).toBeInTheDocument();
   });
 
   it('renders plain link when metadata missing', () => {
