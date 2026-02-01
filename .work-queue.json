@@ -958,7 +958,7 @@
     {
       "issue_number": 563,
       "title": "Exclude current user from @ mention suggestions",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 8,
@@ -967,7 +967,10 @@
         "frontend",
         "ux"
       ],
-      "branch": "feat/issue-563-exclude-current-user-from-mention-suggestions"
+      "branch": "feat/issue-563-exclude-current-user-from-mention-sugges",
+      "assigned_to": "agent-1769950327-21895",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769950327-21895",
+      "claimed_at": "2026-02-01T12:52:07Z"
     },
     {
       "issue_number": 564,
