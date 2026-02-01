@@ -139,14 +139,18 @@
     {
       "issue_number": 603,
       "title": "Format backend logs as JSON",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
         "backend",
         "observability"
       ],
-      "priority": 5
+      "priority": 5,
+      "assigned_to": "agent-1769966281-12250",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769966281-12250",
+      "branch": "feat/issue-603-format-backend-logs-as-json",
+      "claimed_at": "2026-02-01T17:18:01Z"
     },
     {
       "issue_number": 604,
