@@ -50,6 +50,7 @@
     560,
     561,
     562,
+    570,
     574
   ],
   "issues": [
@@ -1064,7 +1065,7 @@
     {
       "issue_number": 570,
       "title": "Profile Comments tab should ignore deleted posts",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 15,
@@ -1077,7 +1078,9 @@
       "branch": "fix/issue-570-profile-comments-tab-should-ignore-delet",
       "assigned_to": "agent-1769945970-88281",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769945970-88281",
-      "claimed_at": "2026-02-01T11:39:30Z"
+      "claimed_at": "2026-02-01T11:39:30Z",
+      "pr_number": 582,
+      "completed_at": "2026-02-01T11:54:05Z"
     },
     {
       "issue_number": 571,
