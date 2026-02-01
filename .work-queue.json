@@ -58,6 +58,7 @@
     570,
     571,
     572,
+    573,
     574
   ],
   "issues": [
@@ -1148,7 +1149,7 @@
     {
       "issue_number": 573,
       "title": "Remove redundant \"Open full thread\" link and THREAD label in profile comments",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 18,
@@ -1161,7 +1162,8 @@
       "assigned_to": "agent-1769950908-27105",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769950908-27105",
       "claimed_at": "2026-02-01T13:01:48Z",
-      "pr_number": 592
+      "pr_number": 592,
+      "completed_at": "2026-02-01T13:38:26Z"
     },
     {
       "issue_number": 574,
