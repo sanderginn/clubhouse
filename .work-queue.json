@@ -16,6 +16,7 @@
     603,
     604,
     616,
+    617,
     619,
     620,
     621
@@ -41,7 +42,7 @@
     {
       "issue_number": 617,
       "title": "Display image reply indicator on posted comments",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         616
       ],
@@ -54,7 +55,9 @@
       "assigned_to": "agent-1769979906-38748",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769979906-38748",
       "branch": "fix/issue-617-display-image-reply-indicator-on-posted-",
-      "claimed_at": "2026-02-01T21:05:06Z"
+      "claimed_at": "2026-02-01T21:05:06Z",
+      "pr_number": 626,
+      "completed_at": "2026-02-01T21:41:32Z"
     },
     {
       "issue_number": 618,
