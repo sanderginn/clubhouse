@@ -963,7 +963,7 @@
     {
       "issue_number": 564,
       "title": "Search results should render a unified thread when matches appear in post + comments",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 9,
@@ -971,7 +971,11 @@
         "bug",
         "frontend",
         "ux"
-      ]
+      ],
+      "assigned_to": "agent-1769945966-88271",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769945966-88271",
+      "branch": "fix/issue-564-search-results-should-render-a-unified-t",
+      "claimed_at": "2026-02-01T11:39:26Z"
     },
     {
       "issue_number": 565,
