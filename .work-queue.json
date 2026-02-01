@@ -16,6 +16,7 @@
     603,
     604,
     616,
+    619,
     620
   ],
   "issues": [
@@ -65,7 +66,7 @@
     {
       "issue_number": 619,
       "title": "Fix nested reply styling on user profile Comments tab",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -76,7 +77,9 @@
       "assigned_to": "agent-1769978983-15417",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769978983-15417",
       "branch": "fix/issue-619-fix-nested-reply-styling-on-user-profile",
-      "claimed_at": "2026-02-01T20:49:43Z"
+      "claimed_at": "2026-02-01T20:49:43Z",
+      "pr_number": 624,
+      "completed_at": "2026-02-01T21:00:57Z"
     },
     {
       "issue_number": 620,
