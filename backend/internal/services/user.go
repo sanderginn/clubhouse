@@ -699,10 +699,12 @@ func (s *UserService) ApproveUser(ctx context.Context, userID uuid.UUID, adminUs
 
 	if _, err := tx.ExecContext(ctx, `
 		UPDATE notifications
-		SET read_at = COALESCE(read_at, now()),
+		SET read_at = CASE
+				WHEN type = 'user_registration_pending' THEN COALESCE(read_at, now())
+				ELSE read_at
+			END,
 		    related_user_id = NULL
-		WHERE type = 'user_registration_pending'
-		  AND related_user_id = $1
+		WHERE related_user_id = $1
 	`, userID); err != nil {
 		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to resolve registration notifications: %w", err)
