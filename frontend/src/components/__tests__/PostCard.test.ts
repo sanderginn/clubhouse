@@ -103,6 +103,7 @@ describe('PostCard', () => {
 
     render(PostCard, { post: postWithImage });
     expect(screen.getByRole('img', { name: 'Uploaded image' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reply to image' })).toBeInTheDocument();
   });
 
   it('hides internal upload URLs from post content when an image is rendered', () => {

@@ -10,7 +10,7 @@
   export let postId: string;
   export let imageContext:
     | {
-        id: string;
+        id?: string;
         url: string;
         index: number;
         altText?: string;
