@@ -1112,7 +1112,7 @@
     {
       "issue_number": 571,
       "title": "Profile Posts and Comments tabs should display section on thread components",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 16,
@@ -1121,7 +1121,10 @@
         "frontend",
         "ux"
       ],
-      "branch": "feat/issue-571-profile-thread-shows-section"
+      "branch": "feat/issue-571-profile-posts-and-comments-tabs-should-d",
+      "assigned_to": "agent-1769950904-27041",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769950904-27041",
+      "claimed_at": "2026-02-01T13:01:44Z"
     },
     {
       "issue_number": 572,
