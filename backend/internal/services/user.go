@@ -699,7 +699,8 @@ func (s *UserService) ApproveUser(ctx context.Context, userID uuid.UUID, adminUs
 
 	if _, err := tx.ExecContext(ctx, `
 		UPDATE notifications
-		SET read_at = now()
+		SET read_at = now(),
+		    related_user_id = NULL
 		WHERE type = 'user_registration_pending'
 		  AND related_user_id = $1
 		  AND read_at IS NULL
