@@ -29,7 +29,9 @@
 <svelte:window on:click={closeMenu} />
 
 <header class="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200">
-  <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,56rem)_minmax(0,1fr)] items-center h-16 px-4 sm:px-6 gap-4">
+  <div
+    class="grid grid-cols-[minmax(0,1fr)_minmax(0,56rem)_minmax(0,1fr)] items-center h-16 px-4 sm:px-6 gap-4 lg:ml-64 lg:w-[calc(100%-16rem)]"
+  >
     <!-- Left: Logo/app name -->
     <div class="flex items-center gap-2 sm:gap-4 flex-shrink-0 lg:w-64">
       <button
