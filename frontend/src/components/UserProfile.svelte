@@ -7,10 +7,7 @@
   import type { Comment } from '../stores/commentStore';
   import PostCard from './PostCard.svelte';
   import { returnToFeed } from '../services/profileNavigation';
-  import { buildThreadHref } from '../services/routeNavigation';
   import { displayTimezone } from '../stores';
-  import { sections } from '../stores/sectionStore';
-  import { getSectionSlugById } from '../services/sectionSlug';
   import { formatInTimezone } from '../lib/time';
 
   export let userId: string | null;
@@ -348,16 +345,6 @@
     return groups;
   }
 
-  function buildThreadLink(post: Post): string {
-    const sectionSlug = getSectionSlugById($sections, post.sectionId) ?? post.sectionId;
-    return buildThreadHref(sectionSlug, post.id);
-  }
-
-  function buildThreadLinkForPost(post?: Post | null): string {
-    if (!post) return '#';
-    return buildThreadLink(post);
-  }
-
   function formatDate(dateString?: string | null): string {
     if (!dateString) return 'Unknown date';
     const date = new Date(dateString);
@@ -557,18 +544,6 @@
             {#each commentThreads as thread (thread.postId)}
               {@const threadPost = postContext[thread.postId]}
               <div class="space-y-3">
-                <div class="flex items-center justify-between text-xs text-gray-500">
-                  <span class="font-semibold uppercase tracking-wide text-gray-400">Thread</span>
-                  {#if threadPost}
-                    <a
-                      href={buildThreadLinkForPost(threadPost)}
-                      class="text-xs text-blue-600 hover:text-blue-800"
-                    >
-                      Open full thread ->
-                    </a>
-                  {/if}
-                </div>
-
                 {#if postContextLoading.has(thread.postId)}
                   <div class="text-sm text-gray-500">Loading thread...</div>
                 {:else if postContextErrors[thread.postId]}

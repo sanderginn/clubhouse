@@ -169,8 +169,7 @@ describe('UserProfile', () => {
     await commentsTab.click();
     await flushProfileLoad();
 
-    expect(await screen.findByText('Thread')).toBeInTheDocument();
-    expect(await screen.findByText('Open full thread ->')).toBeInTheDocument();
+    expect(await screen.findByText('Riley')).toBeInTheDocument();
 
     const observer = (globalThis as { __lastObserver?: { trigger: (value: boolean) => void } })
       .__lastObserver;
