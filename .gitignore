@@ -4,4 +4,4 @@ tmp/
 clubhouse-server
 uploads/
 .agents
-.agents/
+.claude/skills
