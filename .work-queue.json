@@ -164,14 +164,18 @@
     {
       "issue_number": 604,
       "title": "Configure all third-party services to log in JSON",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
         "infrastructure",
         "observability"
       ],
-      "priority": 5
+      "priority": 5,
+      "assigned_to": "agent-1769966719-31324",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769966719-31324",
+      "branch": "feat/issue-604-configure-all-thirdparty-services-to-log",
+      "claimed_at": "2026-02-01T17:25:19Z"
     }
   ]
 }
