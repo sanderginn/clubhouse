@@ -54,12 +54,11 @@
   let editImageInputs: Array<HTMLInputElement | null> = [];
   let isImageLightboxOpen = false;
   let lightboxImageIndex = 0;
-  let lightboxImageId: string | null = null;
   let isDeleting = false;
   let deleteError: string | null = null;
   let imageReplyTarget:
     | {
-        id: string;
+        id?: string;
         url: string;
         index: number;
         altText?: string;
@@ -235,11 +234,11 @@
 
   function startImageReply(index: number) {
     const item = imageItems[index];
-    if (!item?.id) {
+    if (!item) {
       return;
     }
     imageReplyTarget = {
-      id: item.id,
+      id: item.id ?? undefined,
       url: item.url,
       index,
       altText: item.altText ?? item.title,
@@ -423,9 +422,16 @@
   $: lightboxImageUrl = lightboxImageItem?.url;
   $: lightboxAltText =
     lightboxImageItem?.altText ?? lightboxImageItem?.title ?? 'Full size image';
-  $: lightboxImageId = lightboxImageItem?.id ?? null;
-  $: if (imageReplyTarget && !imageItems.find((item) => item.id === imageReplyTarget?.id)) {
-    imageReplyTarget = null;
+  $: if (imageReplyTarget) {
+    const target = imageReplyTarget;
+    const stillExists = imageItems.find((item, index) =>
+      item.id && target.id
+        ? item.id === target.id
+        : item.url === target.url && index === target.index
+    );
+    if (!stillExists) {
+      imageReplyTarget = null;
+    }
   }
 
   let activeImageIndex = 0;
@@ -1021,7 +1027,7 @@
                 />
               </button>
             {/if}
-            {#if activeImageItem?.id}
+            {#if activeImageItem}
               <button
                 type="button"
                 class="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full border border-blue-200 bg-white/95 px-3 py-1 text-xs text-blue-700 shadow-sm hover:bg-white"
@@ -1078,7 +1084,7 @@
                           />
                         </button>
                       {/if}
-                      {#if item.id}
+                      {#if item}
                         <button
                           type="button"
                           class="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full border border-blue-200 bg-white/95 px-3 py-1 text-xs text-blue-700 shadow-sm hover:bg-white"
@@ -1333,7 +1339,7 @@
           />
         {/key}
       </div>
-      {#if lightboxImageId}
+      {#if lightboxImageUrl}
         <div class="mt-3 flex justify-center">
           <button
             type="button"

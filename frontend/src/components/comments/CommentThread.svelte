@@ -28,7 +28,7 @@
   }[] = [];
   export let imageReplyTarget:
     | {
-        id: string;
+        id?: string;
         url: string;
         index: number;
         altText?: string;

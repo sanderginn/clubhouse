@@ -198,6 +198,36 @@ describe('CommentThread', () => {
     expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
   });
 
+  it('shows reply action for comments with images', () => {
+    commentStore.setThread('post-1', [
+      {
+        id: 'comment-1',
+        postId: 'post-1',
+        userId: 'user-1',
+        content: 'Image comment',
+        imageId: 'image-1',
+        createdAt: 'now',
+        user: { id: 'user-1', username: 'Sander' },
+        replies: [],
+      },
+    ], null, false);
+
+    render(CommentThread, {
+      postId: 'post-1',
+      commentCount: 1,
+      imageItems: [
+        {
+          id: 'image-1',
+          url: 'https://cdn.example.com/uploads/photo.png',
+          title: 'Image 1',
+        },
+      ],
+    });
+
+    expect(screen.getByRole('button', { name: 'Reply' })).toBeInTheDocument();
+    expect(screen.getByText('Image 1')).toBeInTheDocument();
+  });
+
   it('saves edits with ctrl+enter', async () => {
     authStore.setUser({
       id: 'user-1',

@@ -307,16 +307,22 @@
         return;
       }
 
-      const links = [
-        ...uploadedUrls.map((url) => ({ url })),
-        ...(linkValue ? [{ url: linkValue }] : []),
-      ];
+      const images = uploadedUrls.map((url) => ({ url }));
+      const links = linkValue ? [{ url: linkValue }] : [];
 
-      const response = await api.createPost({
+      const payload = {
         sectionId: $activeSection.id,
         content: trimmedContent,
-        links: links.length > 0 ? links : undefined,
-      });
+      } as { sectionId: string; content: string; links?: { url: string }[]; images?: { url: string }[] };
+
+      if (links.length > 0) {
+        payload.links = links;
+      }
+      if (images.length > 0) {
+        payload.images = images;
+      }
+
+      const response = await api.createPost(payload);
 
       const createdPost =
         linkMetadata && uploadedUrls.length === 0

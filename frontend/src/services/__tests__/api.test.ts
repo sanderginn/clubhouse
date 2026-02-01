@@ -112,12 +112,14 @@ describe('api client', () => {
       sectionId: 'section-1',
       content: 'Hello',
       links: [{ url: 'https://example.com' }],
+      images: [{ url: '/api/v1/uploads/user-1/photo.png' }],
     });
 
     const postCall = findCall('/posts');
     const body = JSON.parse(postCall?.[1]?.body as string);
     expect(body.section_id).toBe('section-1');
     expect(body.content).toBe('Hello');
+    expect(body.images).toEqual([{ url: '/api/v1/uploads/user-1/photo.png' }]);
     expect(response.post.createdAt).toBe('2025-01-01T00:00:00Z');
     expect(response.post.userId).toBe('user-1');
   });
