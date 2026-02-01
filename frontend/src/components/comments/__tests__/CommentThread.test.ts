@@ -412,6 +412,7 @@ describe('CommentThread', () => {
       const replyEl = document.getElementById('comment-reply-1');
       expect(replyEl?.className).not.toContain('bg-amber');
       expect(replyEl?.className).not.toContain('ring-amber');
+      expect(replyEl?.className).toContain('bg-white');
     });
 
     it('highlights comments without profileUserId filter (backward compatibility)', () => {
