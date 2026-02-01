@@ -3,6 +3,16 @@ services:
   postgres:
     image: postgres:16
     container_name: clubhouse-postgres
+    command:
+      - "postgres"
+      - "-c"
+      - "log_destination=jsonlog"
+      - "-c"
+      - "logging_collector=on"
+      - "-c"
+      - "log_directory=/var/lib/postgresql/log"
+      - "-c"
+      - "log_filename=postgresql-%Y-%m-%d.json"
     environment:
       POSTGRES_USER: clubhouse
       POSTGRES_PASSWORD: changeme
@@ -11,6 +21,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - postgres_logs:/var/lib/postgresql/log
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U clubhouse"]
       interval: 10s
@@ -23,7 +34,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: clubhouse-redis
-    command: redis-server --requirepass changeme
+    command: redis-server --requirepass changeme --loglevel notice --logfile /proc/1/fd/1
     ports:
       - "6379:6379"
     volumes:
@@ -79,6 +90,7 @@ services:
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--log.level=${LOG_LEVEL:-info}'
+      - '--log.format=json'
     ports:
       - "9093:9093"
     volumes:
@@ -111,7 +123,7 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: admin
       # Optional plugin preinstall list (e.g. "grafana-piechart-panel")
       GF_PLUGINS_PREINSTALL: ${GF_PLUGINS_PREINSTALL:-}
-      GF_LOG_LEVEL: warn
+      GF_LOG_LEVEL: ${GF_LOG_LEVEL:-warn}
       GF_LOG_CONSOLE_FORMAT: json
       GF_LOG_FILE_FORMAT: json
     ports:
@@ -128,6 +140,27 @@ services:
       - prometheus
       - tempo
       - alertmanager
+
+  # Vector (Log Forwarder)
+  vector:
+    image: timberio/vector:0.38.0-alpine
+    container_name: clubhouse-vector
+    command: ["-c", "/etc/vector/vector.toml"]
+    volumes:
+      - ./vector/vector.toml:/etc/vector/vector.toml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - postgres_logs:/var/lib/postgresql/log:ro
+      - vector_data:/var/lib/vector
+    depends_on:
+      - loki
+      - postgres
+      - redis
+      - prometheus
+      - alertmanager
+      - tempo
+      - grafana
+    networks:
+      - clubhouse
 
   # Backend API
   backend:
@@ -186,12 +219,14 @@ services:
 
 volumes:
   postgres_data:
+  postgres_logs:
   redis_data:
   loki_data:
   prometheus_data:
   tempo_data:
   grafana_data:
   uploads_data:
+  vector_data:
 
 networks:
   clubhouse:
