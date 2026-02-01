@@ -147,3 +147,38 @@ func (h *NotificationHandler) MarkNotificationRead(w http.ResponseWriter, r *htt
 		})
 	}
 }
+
+// MarkAllNotificationsRead handles PATCH /api/v1/notifications/read.
+func (h *NotificationHandler) MarkAllNotificationsRead(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPatch {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only PATCH requests are allowed")
+		return
+	}
+
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		writeError(r.Context(), w, http.StatusUnauthorized, "UNAUTHORIZED", "Missing or invalid user ID")
+		return
+	}
+
+	unreadCount, err := h.notificationService.MarkAllNotificationsRead(r.Context(), userID)
+	if err != nil {
+		writeError(r.Context(), w, http.StatusInternalServerError, "MARK_ALL_NOTIFICATIONS_READ_FAILED", "Failed to mark notifications as read")
+		return
+	}
+
+	response := models.MarkAllNotificationsReadResponse{
+		UnreadCount: unreadCount,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode mark all notifications read response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}

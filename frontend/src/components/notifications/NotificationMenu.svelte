@@ -5,14 +5,13 @@
     loadNotifications,
     loadMoreNotifications,
     markNotificationRead,
-    markVisibleNotificationsRead,
+    markAllNotificationsRead,
   } from '../../stores';
   import type { Notification } from '../../stores';
   import { buildStandaloneThreadHref, pushPath } from '../../services/routeNavigation';
   import RelativeTime from '../RelativeTime.svelte';
 
   let menuOpen = false;
-  let markedOnOpen = false;
 
   const typeLabels: Record<string, string> = {
     new_post: 'New post',
@@ -24,7 +23,6 @@
   function toggleMenu() {
     menuOpen = !menuOpen;
     if (menuOpen) {
-      markedOnOpen = false;
       if ($notificationStore.notifications.length === 0 && !$notificationStore.isLoading) {
         loadNotifications();
       }
@@ -96,12 +94,7 @@
   }
 
   function handleMarkAll() {
-    markVisibleNotificationsRead();
-  }
-
-  $: if (menuOpen && !markedOnOpen && $notificationStore.notifications.length > 0) {
-    markedOnOpen = true;
-    markVisibleNotificationsRead();
+    markAllNotificationsRead();
   }
 
 </script>
@@ -174,7 +167,12 @@
                   </span>
                   <div class="flex-1">
                     <div class="flex items-center justify-between gap-2">
-                      <p class="text-sm text-gray-900">{notificationTitle(notification)}</p>
+                      <div class="flex items-center gap-2">
+                        {#if !notification.readAt}
+                          <span class="h-2 w-2 rounded-full bg-blue-500" aria-label="Unread"></span>
+                        {/if}
+                        <p class="text-sm text-gray-900">{notificationTitle(notification)}</p>
+                      </div>
                       <RelativeTime
                         dateString={notification.createdAt}
                         className="text-xs text-gray-400"
