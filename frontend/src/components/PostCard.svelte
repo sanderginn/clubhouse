@@ -237,7 +237,7 @@
       return;
     }
     imageReplyTarget = {
-      id: item.id,
+      id: item.id ?? undefined,
       url: item.url,
       index,
       altText: item.altText ?? item.title,
