@@ -20,7 +20,7 @@
     {
       "issue_number": 616,
       "title": "Fix \"Reply to image\" button not clickable in carousel and overlapped in lightbox",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "labels": [
         "bug",
@@ -31,7 +31,7 @@
     {
       "issue_number": 617,
       "title": "Display image reply indicator on posted comments",
-      "status": "pending",
+      "status": "available",
       "dependencies": [616],
       "labels": [
         "bug",
@@ -43,7 +43,7 @@
     {
       "issue_number": 618,
       "title": "Add admin notification for new user registrations",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -55,7 +55,7 @@
     {
       "issue_number": 619,
       "title": "Fix nested reply styling on user profile Comments tab",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "labels": [
         "bug",
@@ -67,7 +67,7 @@
     {
       "issue_number": 620,
       "title": "Make posts clickable on user profile Posts tab",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "labels": [
         "bug",
@@ -79,7 +79,7 @@
     {
       "issue_number": 621,
       "title": "Fix search bar alignment - center within main container",
-      "status": "pending",
+      "status": "available",
       "dependencies": [],
       "labels": [
         "bug",
