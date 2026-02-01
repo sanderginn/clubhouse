@@ -275,13 +275,14 @@
         Showing {$searchResults.length} result{$searchResults.length === 1 ? '' : 's'} for
         "{$lastSearchQuery}"
       </span>
-      <span>
+      <span class={sectionPillClass}>
         {#if displayScope === 'global'}
-          All sections
-        {:else if $activeSection}
-          {$activeSection.name}
+          <span class={sectionPillTextClass}>Everywhere</span>
         {:else}
-          Section
+          {#if $activeSection?.icon}
+            <span class={sectionPillIconClass} aria-hidden="true">{$activeSection.icon}</span>
+          {/if}
+          <span class={sectionPillTextClass}>{$activeSection?.name ?? 'Section'}</span>
         {/if}
       </span>
     </div>
