@@ -108,6 +108,11 @@ If prior review comments raised valid issues that are still unresolved, include 
 
 ## Step 5: Decide and Act
 
+Your review will result in one of three verdicts:
+- `REVIEW_VERDICT: APPROVE` — Code looks good and CI is passing
+- `REVIEW_VERDICT: REQUEST_CHANGES` — Code has issues that need fixing
+- `REVIEW_VERDICT: PENDING_CI` — Code looks good but CI checks are still pending/running
+
 ### If you have findings
 
 Post a single comment on the PR summarizing all issues. Group findings by severity.
@@ -150,11 +155,11 @@ Do **not** merge the PR yourself. The parent process will handle the merge.
 ### If CI is still running or failing
 
 If CI is pending or failing, wait to approve until it is green and no additional feedback remains. For verdicts:
-- If there are code issues or CI failures, post the findings comment and use `REVIEW_VERDICT: REQUEST_CHANGES`.
-- If there are no code issues but CI is pending, do not post any PR comment; report that you are waiting for CI in your output and use `REVIEW_VERDICT: REQUEST_CHANGES`.
+- If there are code issues or CI failures that need fixes, post the findings comment and use `REVIEW_VERDICT: REQUEST_CHANGES`.
+- If there are no code issues but CI is pending, do not post any PR comment; report that you are waiting for CI in your output and use `REVIEW_VERDICT: PENDING_CI`.
 
 ```
-REVIEW_VERDICT: REQUEST_CHANGES
+REVIEW_VERDICT: PENDING_CI
 ```
 
 #### Analyzing CI Failures
