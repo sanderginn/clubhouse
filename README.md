@@ -111,7 +111,7 @@ Optional frontend environment variables:
 - `VITE_SENTRY_DSN`: Sentry DSN for client error tracking (leave unset to disable).
 - `VITE_APP_VERSION`: Release identifier for error tracking.
 - `VITE_OTEL_EXPORTER_OTLP_ENDPOINT`: OTLP/HTTP traces endpoint for browser telemetry (in dev defaults to `/otlp/v1/traces` via the Vite proxy; leave unset in prod to disable).
-- `VITE_OTEL_PROXY_TARGET`: Dev-only target for the Vite OTLP proxy (defaults to `http://localhost:4318`).
+- `VITE_OTEL_PROXY_TARGET`: Dev-only target for the Vite OTLP proxy (defaults to `http://localhost:4318`; `docker compose` sets this to `http://tempo:4318`).
 - `VITE_OTEL_SERVICE_NAME`: Service name used in frontend traces (defaults to `clubhouse-frontend`).
 - `VITE_PROXY_LOG_LEVEL`: Vite proxy logging level (`none`/`silent`, `error`, `warn`, `info`, `debug`; defaults to `warn`).
 
