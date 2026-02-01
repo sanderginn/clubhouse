@@ -6,6 +6,7 @@
   },
   "completed_issues": [
     597,
+    598,
     599,
     600,
     601,
@@ -65,7 +66,7 @@
     {
       "issue_number": 598,
       "title": "Improve notification read status and counter behavior",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -76,7 +77,9 @@
       "assigned_to": "agent-1769965679-82169",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769965679-82169",
       "branch": "feat/issue-598-improve-notification-read-status-and-cou",
-      "claimed_at": "2026-02-01T17:07:59Z"
+      "claimed_at": "2026-02-01T17:07:59Z",
+      "pr_number": 613,
+      "completed_at": "2026-02-01T17:37:12Z"
     },
     {
       "issue_number": 599,
