@@ -9,33 +9,25 @@
     {
       "issue_number": 595,
       "title": "Reply option missing on images (regression)",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [],
       "labels": [
         "bug",
         "frontend"
       ],
-      "priority": 1,
-      "assigned_to": "agent-1769965656-77184",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769965656-77184",
-      "branch": "fix/issue-595-reply-option-missing-on-images-regressio",
-      "claimed_at": "2026-02-01T17:07:36Z"
+      "priority": 1
     },
     {
       "issue_number": 596,
       "title": "Fix @mention behavior for nonexistent users",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [],
       "labels": [
         "bug",
         "frontend",
         "backend"
       ],
-      "priority": 1,
-      "assigned_to": "agent-1769965658-77327",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769965658-77327",
-      "branch": "fix/issue-596-fix-mention-behavior-for-nonexistent-use",
-      "claimed_at": "2026-02-01T17:07:38Z"
+      "priority": 1
     },
     {
       "issue_number": 597,
@@ -120,18 +112,14 @@
     {
       "issue_number": 602,
       "title": "Center search bar in navbar",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [],
       "labels": [
         "bug",
         "frontend",
         "ui"
       ],
-      "priority": 4,
-      "assigned_to": "agent-1769965665-77633",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769965665-77633",
-      "branch": "fix/issue-602-center-search-bar-in-navbar",
-      "claimed_at": "2026-02-01T17:07:45Z"
+      "priority": 4
     },
     {
       "issue_number": 603,
