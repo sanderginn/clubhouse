@@ -57,6 +57,7 @@
     569,
     570,
     571,
+    572,
     574
   ],
   "issues": [
@@ -1128,7 +1129,7 @@
     {
       "issue_number": 572,
       "title": "Profile Comments tab highlight rules for nested replies",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 17,
@@ -1141,7 +1142,8 @@
       "assigned_to": "agent-1769950906-27051",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769950906-27051",
       "claimed_at": "2026-02-01T13:01:46Z",
-      "pr_number": 591
+      "pr_number": 591,
+      "completed_at": "2026-02-01T13:31:44Z"
     },
     {
       "issue_number": 573,
