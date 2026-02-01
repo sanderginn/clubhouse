@@ -186,7 +186,13 @@ describe('UserProfile', () => {
     highlighted.forEach((node) => {
       expect(node).toBeTruthy();
       expect(node?.className).toContain('ring-2');
+      expect(node?.className).toContain('bg-amber-100');
+      expect(node?.className).toContain('ring-amber-400');
     });
+
+    const parentComment = document.getElementById('comment-comment-parent');
+    expect(parentComment).toBeTruthy();
+    expect(parentComment?.className).not.toContain('bg-amber');
 
     expect(screen.getAllByRole('button', { name: 'Share' })).toHaveLength(1);
   });

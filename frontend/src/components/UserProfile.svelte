@@ -576,7 +576,7 @@
                     {postContextErrors[thread.postId]}
                   </div>
                 {:else if threadPost}
-                  <PostCard post={threadPost} highlightCommentIds={thread.commentIds} showSectionPill={true} />
+                  <PostCard post={threadPost} highlightCommentIds={thread.commentIds} showSectionPill={true} profileUserId={resolvedUserId} />
                 {:else}
                   <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
                     Thread unavailable.

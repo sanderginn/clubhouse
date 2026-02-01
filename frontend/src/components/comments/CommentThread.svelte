@@ -18,6 +18,7 @@
   export let commentCount = 0;
   export let highlightCommentId: string | null = null;
   export let highlightCommentIds: string[] = [];
+  export let profileUserId: string | null = null;
   export let imageItems: {
     id?: string;
     url: string;
@@ -294,6 +295,19 @@
   $: highlightIdSet = new Set(
     [highlightCommentId, ...highlightCommentIds].filter((value): value is string => !!value)
   );
+
+  function getHighlightClass(commentId: string, commentUserId: string, isNested: boolean): string {
+    if (!highlightIdSet.has(commentId)) {
+      return isNested ? '' : 'bg-white';
+    }
+    if (profileUserId && commentUserId !== profileUserId) {
+      return isNested ? '' : 'bg-white';
+    }
+    if (isNested) {
+      return 'bg-amber-100 ring-2 ring-amber-400 rounded-lg p-2';
+    }
+    return 'bg-amber-50 ring-2 ring-amber-300';
+  }
 </script>
 
 <div class="space-y-4" bind:this={rootEl}>
@@ -331,9 +345,7 @@
       {#each thread.comments as comment (comment.id)}
         <article
           id={`comment-${comment.id}`}
-          class={`border border-gray-200 rounded-lg p-3 ${
-            highlightIdSet.has(comment.id) ? 'bg-amber-50 ring-2 ring-amber-300' : 'bg-white'
-          }`}
+          class={`border border-gray-200 rounded-lg p-3 ${getHighlightClass(comment.id, comment.userId, false)}`}
         >
           <div class="flex items-start gap-3">
             {#if comment.user?.id}
@@ -577,11 +589,7 @@
                   {#each comment.replies as reply (reply.id)}
                     <div
                       id={`comment-${reply.id}`}
-                      class={`flex items-start gap-2 ${
-                        highlightIdSet.has(reply.id)
-                          ? 'bg-amber-50 ring-2 ring-amber-300 rounded-lg p-2'
-                          : ''
-                      }`}
+                      class={`flex items-start gap-2 ${getHighlightClass(reply.id, reply.userId, true)}`}
                     >
                       {#if reply.user?.id}
                         <a

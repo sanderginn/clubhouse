@@ -22,6 +22,7 @@
   export let highlightCommentId: string | null = null;
   export let highlightCommentIds: string[] = [];
   export let showSectionPill: boolean = false;
+  export let profileUserId: string | null = null;
 
   type ImageItem = {
     id?: string;
@@ -1254,6 +1255,7 @@
           commentCount={post.commentCount ?? 0}
           {highlightCommentId}
           {highlightCommentIds}
+          {profileUserId}
           {imageItems}
           imageReplyTarget={imageReplyTarget}
           onClearImageReply={clearImageReplyTarget}
