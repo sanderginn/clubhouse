@@ -72,14 +72,18 @@
     {
       "issue_number": 599,
       "title": "Un-highlight nested comments by other users in profile and search",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
         "frontend",
         "ux"
       ],
-      "priority": 2
+      "priority": 2,
+      "assigned_to": "agent-1769965681-82306",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769965681-82306",
+      "branch": "feat/issue-599-unhighlight-nested-comments-by-other-use",
+      "claimed_at": "2026-02-01T17:08:01Z"
     },
     {
       "issue_number": 600,
