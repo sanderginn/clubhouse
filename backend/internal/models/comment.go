@@ -33,6 +33,8 @@ type CreateCommentRequest struct {
 	ImageID         *string       `json:"image_id,omitempty"`
 	Content         string        `json:"content"`
 	Links           []LinkRequest `json:"links,omitempty"`
+	// MentionUsernames contains explicitly selected mentions from the client.
+	MentionUsernames []string `json:"mention_usernames,omitempty"`
 }
 
 // CreateCommentResponse represents the response for creating a comment
@@ -44,6 +46,8 @@ type CreateCommentResponse struct {
 type UpdateCommentRequest struct {
 	Content string         `json:"content"`
 	Links   *[]LinkRequest `json:"links,omitempty"`
+	// MentionUsernames contains explicitly selected mentions from the client.
+	MentionUsernames []string `json:"mention_usernames,omitempty"`
 }
 
 // GetCommentResponse represents the response for getting a single comment

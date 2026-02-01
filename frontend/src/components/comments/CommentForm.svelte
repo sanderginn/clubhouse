@@ -21,6 +21,7 @@
   const dispatch = createEventDispatcher<{ submit: Comment }>();
 
   let content = '';
+  let mentionUsernames: string[] = [];
   let isSubmitting = false;
   let error: string | null = null;
 
@@ -37,6 +38,7 @@
         postId,
         imageId: imageContext?.id,
         content: content.trim(),
+        mentionUsernames,
       });
       const comment = mapApiComment(response.comment);
       const skipIncrement = commentStore.consumeSeenComment(postId, comment.id);
@@ -45,6 +47,7 @@
         postStore.incrementCommentCount(postId, 1);
       }
       content = '';
+      mentionUsernames = [];
       onClearImageContext?.();
       dispatch('submit', comment);
     } catch (err) {
@@ -87,6 +90,7 @@
   <MentionTextarea
     id="comment-content"
     bind:value={content}
+    bind:mentionUsernames
     on:keydown={(event) => handleKeyDown(event.detail)}
     ariaLabel="Add a comment"
     placeholder="Add a comment..."

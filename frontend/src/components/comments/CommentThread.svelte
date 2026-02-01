@@ -9,6 +9,7 @@
   import ReplyForm from './ReplyForm.svelte';
   import ReactionBar from '../reactions/ReactionBar.svelte';
   import LinkifiedText from '../LinkifiedText.svelte';
+  import MentionTextarea from '../mentions/MentionTextarea.svelte';
   import EditedBadge from '../EditedBadge.svelte';
   import RelativeTime from '../RelativeTime.svelte';
   import { logError } from '../../lib/observability/logger';
@@ -53,6 +54,7 @@
   let isVisible = false;
   let editingCommentId: string | null = null;
   let editCommentContent = '';
+  let editMentionUsernames: string[] = [];
   let editCommentError: string | null = null;
   let isSavingComment = false;
   let deletingCommentIds = new Set<string>();
@@ -142,12 +144,14 @@
   function startEdit(commentId: string, content: string) {
     editingCommentId = commentId;
     editCommentContent = content;
+    editMentionUsernames = [];
     editCommentError = null;
   }
 
   function cancelEdit() {
     editingCommentId = null;
     editCommentContent = '';
+    editMentionUsernames = [];
     editCommentError = null;
   }
 
@@ -162,9 +166,13 @@
     editCommentError = null;
 
     try {
-      const response = await api.updateComment(commentId, { content: trimmed });
+      const response = await api.updateComment(commentId, {
+        content: trimmed,
+        mentionUsernames: editMentionUsernames,
+      });
       commentStore.updateComment(postId, response.comment);
       editingCommentId = null;
+      editMentionUsernames = [];
     } catch (err) {
       editCommentError = err instanceof Error ? err.message : 'Failed to update comment';
     } finally {
@@ -459,11 +467,13 @@
 
               {#if editingCommentId === comment.id}
                 <div class="space-y-2">
-                  <textarea
-                    class="w-full rounded-lg border border-gray-300 p-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                    rows="3"
+                  <MentionTextarea
                     bind:value={editCommentContent}
-                    on:keydown={(event) => handleEditKeyDown(event, comment.id)}
+                    bind:mentionUsernames={editMentionUsernames}
+                    on:keydown={(event) => handleEditKeyDown(event.detail, comment.id)}
+                    rows={3}
+                    ariaLabel="Edit comment"
+                    className="w-full rounded-lg border border-gray-300 p-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
                   {#if editCommentError}
                     <div class="text-sm text-red-600">{editCommentError}</div>
@@ -677,12 +687,14 @@
                         </div>
                         {#if editingCommentId === reply.id}
                           <div class="space-y-2">
-                            <textarea
-                              class="w-full rounded-lg border border-gray-300 p-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                              rows="3"
-                              bind:value={editCommentContent}
-                              on:keydown={(event) => handleEditKeyDown(event, reply.id)}
-                            />
+                              <MentionTextarea
+                                bind:value={editCommentContent}
+                                bind:mentionUsernames={editMentionUsernames}
+                                on:keydown={(event) => handleEditKeyDown(event.detail, reply.id)}
+                                rows={3}
+                                ariaLabel="Edit reply"
+                                className="w-full rounded-lg border border-gray-300 p-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                              />
                             {#if editCommentError}
                               <div class="text-sm text-red-600">{editCommentError}</div>
                             {/if}

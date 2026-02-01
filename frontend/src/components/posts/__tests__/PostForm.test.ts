@@ -233,6 +233,7 @@ describe('PostForm', () => {
       sectionId: 'section-1',
       content: '',
       links: [{ url: 'https://example.com' }],
+      mentionUsernames: [],
     });
   });
 
@@ -364,6 +365,7 @@ describe('PostForm', () => {
       sectionId: 'section-1',
       content: '',
       images: [{ url: '/api/v1/uploads/user-1/photo.png' }],
+      mentionUsernames: [],
     });
     expect(screen.getByText('Uploaded')).toBeInTheDocument();
   });

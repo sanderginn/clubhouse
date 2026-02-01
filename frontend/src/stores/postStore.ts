@@ -51,6 +51,7 @@ export interface CreatePostRequest {
   content: string;
   links?: { url: string }[];
   images?: { url: string; caption?: string; altText?: string }[];
+  mentionUsernames?: string[];
 }
 
 interface PostState {

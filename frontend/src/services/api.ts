@@ -287,7 +287,7 @@ class ApiClient {
   async lookupUserByUsername(
     username: string,
     options: { suppressNotFound?: boolean } = {}
-  ): Promise<{ user: ApiUserSummary }> {
+  ): Promise<{ user: ApiUserSummary | null }> {
     const params = new URLSearchParams({ username });
     const logOptions = options.suppressNotFound ? { suppressStatuses: [404] } : undefined;
     return this.request(`/users/lookup?${params.toString()}`, { method: 'GET' }, true, logOptions);
@@ -417,6 +417,7 @@ class ApiClient {
         caption: image.caption,
         alt_text: image.altText,
       })),
+      mention_usernames: data.mentionUsernames ?? [],
     });
     return { post: mapApiPost(response.post) };
   }
@@ -442,11 +443,12 @@ class ApiClient {
 
   async updatePost(
     postId: string,
-    data: { content: string; links?: { url: string }[] | null }
+    data: { content: string; links?: { url: string }[] | null; mentionUsernames?: string[] }
   ): Promise<{ post: Post }> {
     const response = await this.patch<{ post: ApiPost }>(`/posts/${postId}`, {
       content: data.content,
       links: data.links ?? undefined,
+      mention_usernames: data.mentionUsernames ?? [],
     });
     return { post: mapApiPost(response.post) };
   }
@@ -462,6 +464,7 @@ class ApiClient {
       image_id: data.imageId,
       content: data.content,
       links: data.links,
+      mention_usernames: data.mentionUsernames ?? [],
     });
   }
 
@@ -481,11 +484,12 @@ class ApiClient {
 
   async updateComment(
     commentId: string,
-    data: { content: string; links?: { url: string }[] | null }
+    data: { content: string; links?: { url: string }[] | null; mentionUsernames?: string[] }
   ): Promise<{ comment: Comment }> {
     const response = await this.patch<{ comment: ApiComment }>(`/comments/${commentId}`, {
       content: data.content,
       links: data.links ?? undefined,
+      mention_usernames: data.mentionUsernames ?? [],
     });
     return { comment: mapApiComment(response.comment) };
   }

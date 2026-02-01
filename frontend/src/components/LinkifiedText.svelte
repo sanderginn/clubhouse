@@ -95,8 +95,8 @@
         }
         const task = api
           .lookupUserByUsername(username, { suppressNotFound: true })
-          .then(() => {
-            mentionValidationCache.set(username, true);
+          .then((response) => {
+            mentionValidationCache.set(username, Boolean(response.user));
           })
           .catch(() => {
             mentionValidationCache.set(username, false);

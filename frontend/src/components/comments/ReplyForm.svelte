@@ -13,6 +13,7 @@
   const dispatch = createEventDispatcher<{ submit: Comment; cancel: void }>();
 
   let content = '';
+  let mentionUsernames: string[] = [];
   let isSubmitting = false;
   let error: string | null = null;
 
@@ -29,6 +30,7 @@
         postId,
         parentCommentId,
         content: content.trim(),
+        mentionUsernames,
       });
       const reply = mapApiComment(response.comment);
       const skipIncrement = commentStore.consumeSeenComment(postId, reply.id);
@@ -37,6 +39,7 @@
         postStore.incrementCommentCount(postId, 1);
       }
       content = '';
+      mentionUsernames = [];
       dispatch('submit', reply);
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to add reply';
@@ -57,6 +60,7 @@
   <MentionTextarea
     id={`reply-${parentCommentId}`}
     bind:value={content}
+    bind:mentionUsernames
     on:keydown={(event) => handleKeyDown(event.detail)}
     ariaLabel="Write a reply"
     placeholder="Write a reply..."
