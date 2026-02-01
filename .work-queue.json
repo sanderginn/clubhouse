@@ -1046,7 +1046,7 @@
     {
       "issue_number": 568,
       "title": "Navbar layout: logo left, search centered, user/notifications right",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 13,
@@ -1055,7 +1055,10 @@
         "frontend",
         "ux"
       ],
-      "branch": "feat/issue-568-navbar-layout-alignment"
+      "branch": "feat/issue-568-navbar-layout-logo-left-search-centered-",
+      "assigned_to": "agent-1769950330-22083",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769950330-22083",
+      "claimed_at": "2026-02-01T12:52:10Z"
     },
     {
       "issue_number": 569,
