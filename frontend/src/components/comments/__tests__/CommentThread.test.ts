@@ -292,4 +292,150 @@ describe('CommentThread', () => {
 
     expect(apiUpdateComment).not.toHaveBeenCalled();
   });
+
+  describe('profile highlighting', () => {
+    it('highlights top-level comment by profile user with amber-50', () => {
+      commentStore.setThread('post-1', [
+        {
+          id: 'comment-1',
+          postId: 'post-1',
+          userId: 'profile-user',
+          content: 'Profile user comment',
+          createdAt: 'now',
+          user: { id: 'profile-user', username: 'ProfileUser' },
+          replies: [],
+        },
+      ], null, false);
+
+      render(CommentThread, {
+        postId: 'post-1',
+        commentCount: 1,
+        highlightCommentIds: ['comment-1'],
+        profileUserId: 'profile-user',
+      });
+
+      const article = document.getElementById('comment-comment-1');
+      expect(article?.className).toContain('bg-amber-50');
+      expect(article?.className).toContain('ring-amber-300');
+    });
+
+    it('does not highlight comment by other user even if in highlightCommentIds', () => {
+      commentStore.setThread('post-1', [
+        {
+          id: 'comment-1',
+          postId: 'post-1',
+          userId: 'other-user',
+          content: 'Other user comment',
+          createdAt: 'now',
+          user: { id: 'other-user', username: 'OtherUser' },
+          replies: [],
+        },
+      ], null, false);
+
+      render(CommentThread, {
+        postId: 'post-1',
+        commentCount: 1,
+        highlightCommentIds: ['comment-1'],
+        profileUserId: 'profile-user',
+      });
+
+      const article = document.getElementById('comment-comment-1');
+      expect(article?.className).toContain('bg-white');
+      expect(article?.className).not.toContain('ring-amber');
+    });
+
+    it('highlights nested reply by profile user with darker amber-100', () => {
+      commentStore.setThread('post-1', [
+        {
+          id: 'comment-1',
+          postId: 'post-1',
+          userId: 'other-user',
+          content: 'Parent comment',
+          createdAt: 'now',
+          user: { id: 'other-user', username: 'OtherUser' },
+          replies: [
+            {
+              id: 'reply-1',
+              postId: 'post-1',
+              userId: 'profile-user',
+              parentCommentId: 'comment-1',
+              content: 'Profile user reply',
+              createdAt: 'now',
+              user: { id: 'profile-user', username: 'ProfileUser' },
+            },
+          ],
+        },
+      ], null, false);
+
+      render(CommentThread, {
+        postId: 'post-1',
+        commentCount: 2,
+        highlightCommentIds: ['reply-1'],
+        profileUserId: 'profile-user',
+      });
+
+      const replyEl = document.getElementById('comment-reply-1');
+      expect(replyEl?.className).toContain('bg-amber-100');
+      expect(replyEl?.className).toContain('ring-amber-400');
+    });
+
+    it('does not highlight nested reply by other user', () => {
+      commentStore.setThread('post-1', [
+        {
+          id: 'comment-1',
+          postId: 'post-1',
+          userId: 'profile-user',
+          content: 'Profile user comment',
+          createdAt: 'now',
+          user: { id: 'profile-user', username: 'ProfileUser' },
+          replies: [
+            {
+              id: 'reply-1',
+              postId: 'post-1',
+              userId: 'other-user',
+              parentCommentId: 'comment-1',
+              content: 'Other user reply',
+              createdAt: 'now',
+              user: { id: 'other-user', username: 'OtherUser' },
+            },
+          ],
+        },
+      ], null, false);
+
+      render(CommentThread, {
+        postId: 'post-1',
+        commentCount: 2,
+        highlightCommentIds: ['comment-1', 'reply-1'],
+        profileUserId: 'profile-user',
+      });
+
+      const replyEl = document.getElementById('comment-reply-1');
+      expect(replyEl?.className).not.toContain('bg-amber');
+      expect(replyEl?.className).not.toContain('ring-amber');
+    });
+
+    it('highlights comments without profileUserId filter (backward compatibility)', () => {
+      commentStore.setThread('post-1', [
+        {
+          id: 'comment-1',
+          postId: 'post-1',
+          userId: 'any-user',
+          content: 'Any user comment',
+          createdAt: 'now',
+          user: { id: 'any-user', username: 'AnyUser' },
+          replies: [],
+        },
+      ], null, false);
+
+      render(CommentThread, {
+        postId: 'post-1',
+        commentCount: 1,
+        highlightCommentIds: ['comment-1'],
+      });
+
+      const article = document.getElementById('comment-comment-1');
+      expect(article?.className).toContain('bg-amber-50');
+      expect(article?.className).toContain('ring-amber-300');
+    });
+  });
 });
