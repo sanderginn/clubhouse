@@ -51,6 +51,7 @@
     561,
     562,
     566,
+    567,
     570,
     574
   ],
@@ -1027,7 +1028,7 @@
     {
       "issue_number": 567,
       "title": "Lightbox image transitions should not slide vertically",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         518
       ],
@@ -1041,7 +1042,9 @@
       "branch": "feat/issue-567-lightbox-image-transitions-should-not-sl",
       "assigned_to": "agent-1769950329-21912",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769950329-21912",
-      "claimed_at": "2026-02-01T12:52:09Z"
+      "claimed_at": "2026-02-01T12:52:09Z",
+      "pr_number": 586,
+      "completed_at": "2026-02-01T13:00:19Z"
     },
     {
       "issue_number": 568,
