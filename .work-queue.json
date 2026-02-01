@@ -1001,7 +1001,7 @@
     {
       "issue_number": 565,
       "title": "Highlight search query in unified thread results (post body + comments)",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         564
       ],
@@ -1012,7 +1012,10 @@
         "frontend",
         "ux"
       ],
-      "branch": "feat/issue-565-highlight-search-query-in-thread-results"
+      "branch": "feat/issue-565-highlight-search-query-in-unified-thread",
+      "assigned_to": "agent-1769953797-46377",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769953797-46377",
+      "claimed_at": "2026-02-01T13:49:57Z"
     },
     {
       "issue_number": 566,
