@@ -511,7 +511,7 @@
             <p class="text-gray-500 text-sm">No posts yet.</p>
           {:else}
             {#each posts as post (post.id)}
-              <PostCard {post} />
+              <PostCard {post} showSectionPill={true} />
             {/each}
           {/if}
 
@@ -576,7 +576,7 @@
                     {postContextErrors[thread.postId]}
                   </div>
                 {:else if threadPost}
-                  <PostCard post={threadPost} highlightCommentIds={thread.commentIds} />
+                  <PostCard post={threadPost} highlightCommentIds={thread.commentIds} showSectionPill={true} />
                 {:else}
                   <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
                     Thread unavailable.
