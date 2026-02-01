@@ -1117,7 +1117,7 @@
     {
       "issue_number": 574,
       "title": "Frontend OTEL traces endpoint returns 405 due to CORS",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 19,
@@ -1126,7 +1126,10 @@
         "observability",
         "frontend"
       ],
-      "branch": "fix/issue-574-frontend-otel-traces-cors-405"
+      "branch": "fix/issue-574-frontend-otel-traces-endpoint-returns-40",
+      "assigned_to": "agent-1769945972-88519",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769945972-88519",
+      "claimed_at": "2026-02-01T11:39:32Z"
     }
   ]
 }
