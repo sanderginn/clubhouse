@@ -3,3 +3,4 @@ tmp/
 .env.production
 clubhouse-server
 uploads/
+.agents/
