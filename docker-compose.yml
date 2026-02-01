@@ -23,7 +23,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: clubhouse-redis
-    command: redis-server --requirepass changeme
+    command: redis-server --requirepass changeme --loglevel notice
     ports:
       - "6379:6379"
     volumes:
