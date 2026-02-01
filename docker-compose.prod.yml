@@ -81,6 +81,16 @@ services:
     image: postgres:16
     container_name: clubhouse-postgres
     restart: unless-stopped
+    command:
+      - "postgres"
+      - "-c"
+      - "log_destination=jsonlog"
+      - "-c"
+      - "logging_collector=on"
+      - "-c"
+      - "log_directory=/var/lib/postgresql/data/log"
+      - "-c"
+      - "log_filename=postgresql-%Y-%m-%d.json"
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -99,7 +109,7 @@ services:
     image: redis:7-alpine
     container_name: clubhouse-redis
     restart: unless-stopped
-    command: redis-server --requirepass ${REDIS_PASSWORD}
+    command: redis-server --requirepass ${REDIS_PASSWORD} --loglevel notice --logfile /proc/1/fd/1
     volumes:
       - redis_data:/data
     healthcheck:
@@ -129,6 +139,8 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=30d'
+      - '--log.level=${LOG_LEVEL:-info}'
+      - '--log.format=json'
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/alerts:/etc/prometheus/alerts:ro
@@ -146,6 +158,7 @@ services:
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--log.level=${LOG_LEVEL:-info}'
+      - '--log.format=json'
     volumes:
       - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     networks:
@@ -173,6 +186,9 @@ services:
       GF_SERVER_ROOT_URL: ${GF_SERVER_ROOT_URL}
       GF_SERVER_SERVE_FROM_SUB_PATH: ${GF_SERVER_SERVE_FROM_SUB_PATH:-false}
       GF_PLUGINS_PREINSTALL: ${GF_PLUGINS_PREINSTALL:-}
+      GF_LOG_LEVEL: ${GF_LOG_LEVEL:-warn}
+      GF_LOG_CONSOLE_FORMAT: json
+      GF_LOG_FILE_FORMAT: json
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/entrypoint.sh:/etc/grafana/entrypoint.sh:ro
