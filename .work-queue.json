@@ -6,6 +6,7 @@
   },
   "completed_issues": [
     595,
+    596,
     597,
     598,
     599,
@@ -36,7 +37,7 @@
     {
       "issue_number": 596,
       "title": "Fix @mention behavior for nonexistent users",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -47,7 +48,9 @@
       "assigned_to": "agent-1769967885-60504",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769967885-60504",
       "branch": "fix/issue-596-fix-mention-behavior-for-nonexistent-use",
-      "claimed_at": "2026-02-01T17:44:45Z"
+      "claimed_at": "2026-02-01T17:44:45Z",
+      "pr_number": 614,
+      "completed_at": "2026-02-01T18:11:08Z"
     },
     {
       "issue_number": 597,
