@@ -412,6 +412,11 @@ class ApiClient {
       section_id: data.sectionId,
       content: data.content,
       links: data.links,
+      images: data.images?.map((image) => ({
+        url: image.url,
+        caption: image.caption,
+        alt_text: image.altText,
+      })),
     });
     return { post: mapApiPost(response.post) };
   }

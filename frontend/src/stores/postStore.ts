@@ -50,6 +50,7 @@ export interface CreatePostRequest {
   sectionId: string;
   content: string;
   links?: { url: string }[];
+  images?: { url: string; caption?: string; altText?: string }[];
 }
 
 interface PostState {

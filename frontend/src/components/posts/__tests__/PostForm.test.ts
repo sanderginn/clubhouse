@@ -336,7 +336,7 @@ describe('PostForm', () => {
     expect(screen.getByText('Images must be 10 MB or smaller.')).toBeInTheDocument();
   });
 
-  it('uploads an image and includes it in the post links', async () => {
+  it('uploads an image and includes it in the post images', async () => {
     setAuthenticated();
     setActiveSection();
     uploadImage.mockImplementation(async (_file: File, onProgress?: (progress: number) => void) => {
@@ -363,7 +363,7 @@ describe('PostForm', () => {
     expect(createPost).toHaveBeenCalledWith({
       sectionId: 'section-1',
       content: '',
-      links: [{ url: '/api/v1/uploads/user-1/photo.png' }],
+      images: [{ url: '/api/v1/uploads/user-1/photo.png' }],
     });
     expect(screen.getByText('Uploaded')).toBeInTheDocument();
   });
