@@ -21,6 +21,7 @@
   export let post: Post;
   export let highlightCommentId: string | null = null;
   export let highlightCommentIds: string[] = [];
+  export let showSectionPill: boolean = false;
 
   type ImageItem = {
     id?: string;
@@ -32,6 +33,7 @@
 
   $: userReactions = new Set(post.viewerReactions ?? []);
   $: sectionSlug = getSectionSlugById($sections, post.sectionId) ?? post.sectionId;
+  $: sectionInfo = $sections.find((s) => s.id === post.sectionId) ?? null;
   let copiedLink = false;
   let copyTimeout: ReturnType<typeof setTimeout> | null = null;
   let isEditing = false;
@@ -720,6 +722,16 @@
 <svelte:window on:keydown={handleLightboxKeydown} />
 
 <article class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+  {#if showSectionPill && sectionInfo}
+    <div class="mb-3">
+      <span class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-100 px-3 py-1 text-sm font-semibold text-gray-600">
+        {#if sectionInfo.icon}
+          <span class="text-base leading-none" aria-hidden="true">{sectionInfo.icon}</span>
+        {/if}
+        <span class="truncate">{sectionInfo.name}</span>
+      </span>
+    </div>
+  {/if}
   <div class="flex items-start gap-3">
     {#if post.user?.id}
       <a
