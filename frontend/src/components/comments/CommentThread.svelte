@@ -297,14 +297,6 @@
 </script>
 
 <div class="space-y-4" bind:this={rootEl}>
-  <div id={`comment-form-${postId}`} class="border border-gray-200 rounded-lg p-3 bg-gray-50">
-    <CommentForm
-      {postId}
-      imageContext={imageReplyTarget}
-      onClearImageContext={onClearImageReply}
-    />
-  </div>
-
   {#if thread.isLoading && thread.comments.length === 0}
     <div class="flex items-center gap-2 text-gray-500 text-sm">
       <svg
@@ -744,4 +736,12 @@
       {/if}
     </div>
   {/if}
+
+  <div id={`comment-form-${postId}`} class="border border-gray-200 rounded-lg p-3 bg-gray-50">
+    <CommentForm
+      {postId}
+      imageContext={imageReplyTarget}
+      onClearImageContext={onClearImageReply}
+    />
+  </div>
 </div>
