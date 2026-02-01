@@ -140,6 +140,27 @@ services:
       - tempo
       - alertmanager
 
+  # Vector (Log Forwarder)
+  vector:
+    image: timberio/vector:0.38.0-alpine
+    container_name: clubhouse-vector
+    command: ["-c", "/etc/vector/vector.toml"]
+    volumes:
+      - ./vector/vector.toml:/etc/vector/vector.toml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - postgres_data:/var/lib/postgresql/data:ro
+      - vector_data:/var/lib/vector
+    depends_on:
+      - loki
+      - postgres
+      - redis
+      - prometheus
+      - alertmanager
+      - tempo
+      - grafana
+    networks:
+      - clubhouse
+
   # Backend API
   backend:
     build:
@@ -203,6 +224,7 @@ volumes:
   tempo_data:
   grafana_data:
   uploads_data:
+  vector_data:
 
 networks:
   clubhouse:

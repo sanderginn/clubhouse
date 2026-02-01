@@ -191,7 +191,8 @@ The backup/restore scripts source `.env.production` automatically when present.
 Third-party services in the Docker Compose stack are configured for JSON logging where supported.
 Postgres uses `jsonlog` and writes structured logs under `/var/lib/postgresql/data/log` in the data volume.
 Prometheus, Alertmanager, Loki, Tempo, and Grafana emit JSON logs to stdout/stderr.
-Redis logs to stdout with a consistent level and is ready for JSON conversion in the log pipeline.
+Redis does not support JSON output; a Vector log forwarder wraps Redis logs as JSON before sending to Loki.
+Vector also tails Postgres jsonlog files so Postgres logs reach Loki in JSON form.
 
 Grafana dashboards are provisioned from `grafana/dashboards`.
 The Grafana entrypoint ensures `/usr/share/grafana/plugins-bundled` exists to avoid startup warnings.
