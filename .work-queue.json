@@ -5,7 +5,8 @@
     "description": "Work queue for parallel issue assignment with dependency tracking"
   },
   "completed_issues": [
-    597
+    597,
+    602
   ],
   "issues": [
     {
@@ -116,14 +117,16 @@
     {
       "issue_number": 602,
       "title": "Center search bar in navbar",
-      "status": "available",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
         "frontend",
         "ui"
       ],
-      "priority": 4
+      "priority": 4,
+      "pr_number": 606,
+      "completed_at": "2026-02-01T17:16:47Z"
     },
     {
       "issue_number": 603,
