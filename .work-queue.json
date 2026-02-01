@@ -50,6 +50,7 @@
     560,
     561,
     562,
+    566,
     570,
     574
   ],
@@ -1004,7 +1005,7 @@
     {
       "issue_number": 566,
       "title": "Section-scoped search pill missing container styling",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 11,
@@ -1016,7 +1017,9 @@
       "assigned_to": "agent-1769945968-88363",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769945968-88363",
       "branch": "fix/issue-566-sectionscoped-search-pill-missing-contai",
-      "claimed_at": "2026-02-01T11:39:28Z"
+      "claimed_at": "2026-02-01T11:39:28Z",
+      "pr_number": 585,
+      "completed_at": "2026-02-01T11:59:34Z"
     },
     {
       "issue_number": 567,
