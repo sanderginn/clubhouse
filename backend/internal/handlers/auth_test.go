@@ -332,3 +332,53 @@ func TestRegisterGenericConflictForExistingUser(t *testing.T) {
 		})
 	}
 }
+
+func TestRegisterCreatesAdminNotifications(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	redisClient := testutil.GetTestRedis(t)
+	t.Cleanup(func() { testutil.CleanupRedis(t) })
+
+	adminID := uuid.New()
+	_, err := db.Exec(`
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, 'notifyadmin', 'notifyadmin@example.com', '$2a$12$test', true, now(), now())
+	`, adminID)
+	if err != nil {
+		t.Fatalf("failed to create admin user: %v", err)
+	}
+
+	handler := NewAuthHandler(db, redisClient)
+	handler.rateLimiter = &stubAuthRateLimiter{allowed: true}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", strings.NewReader(`{"username":"NewUser","email":"newuser@example.com","password":"Password12345"}`))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.Register(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d. Body: %s", w.Code, w.Body.String())
+	}
+
+	var response models.RegisterResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	var count int
+	err = db.QueryRow(`
+		SELECT COUNT(*)
+		FROM notifications
+		WHERE user_id = $1
+		  AND type = 'user_registration_pending'
+		  AND related_user_id = $2
+	`, adminID, response.ID).Scan(&count)
+	if err != nil {
+		t.Fatalf("failed to query notifications: %v", err)
+	}
+	if count != 1 {
+		t.Fatalf("expected 1 registration notification, got %d", count)
+	}
+}

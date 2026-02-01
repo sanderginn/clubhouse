@@ -18,6 +18,7 @@ const storeRefs: {
 
 const routeRefs = {
   buildStandaloneThreadHref: vi.fn(),
+  buildAdminHref: vi.fn(),
   pushPath: vi.fn(),
 };
 
@@ -43,6 +44,7 @@ vi.mock('../../../stores', () => {
 
 vi.mock('../../../services/routeNavigation', () => ({
   buildStandaloneThreadHref: (...args: any[]) => routeRefs.buildStandaloneThreadHref(...args),
+  buildAdminHref: (...args: any[]) => routeRefs.buildAdminHref(...args),
   pushPath: (...args: any[]) => routeRefs.pushPath(...args),
 }));
 
@@ -67,6 +69,7 @@ beforeEach(() => {
   storeRefs.markNotificationRead.mockReset();
   storeRefs.markAllNotificationsRead.mockReset();
   routeRefs.buildStandaloneThreadHref.mockReset();
+  routeRefs.buildAdminHref.mockReset();
   routeRefs.pushPath.mockReset();
 });
 
@@ -167,5 +170,35 @@ describe('NotificationMenu', () => {
     await fireEvent.click(markAll);
 
     expect(storeRefs.markAllNotificationsRead).toHaveBeenCalledTimes(1);
+  });
+
+  it('navigates to admin for registration notifications', async () => {
+    storeRefs.notificationStore.set({
+      ...baseState,
+      notifications: [
+        {
+          id: 'notif-4',
+          type: 'user_registration_pending',
+          relatedUser: { id: 'user-1', username: 'newuser' },
+          createdAt: '2026-02-01T00:00:00Z',
+          readAt: null,
+        },
+      ],
+      unreadCount: 1,
+    });
+
+    routeRefs.buildAdminHref.mockReturnValue('/admin');
+
+    render(NotificationMenu);
+
+    const toggle = screen.getByLabelText('Toggle notifications');
+    await fireEvent.click(toggle);
+    await tick();
+
+    const notificationButton = screen.getByText('@newuser requested to join');
+    await fireEvent.click(notificationButton);
+
+    expect(storeRefs.markNotificationRead).toHaveBeenCalledWith('notif-4');
+    expect(routeRefs.pushPath).toHaveBeenCalledWith('/admin');
   });
 });

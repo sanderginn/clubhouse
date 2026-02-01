@@ -130,6 +130,15 @@ func TestApproveUser(t *testing.T) {
 		t.Fatalf("failed to create test user: %v", err)
 	}
 
+	notificationID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO notifications (id, user_id, type, related_user_id, created_at)
+		VALUES ($1, $2, 'user_registration_pending', $3, now())
+	`, notificationID, adminID, userID)
+	if err != nil {
+		t.Fatalf("failed to create registration notification: %v", err)
+	}
+
 	handler := NewAdminHandler(db, nil)
 
 	// Test approve request
@@ -172,6 +181,15 @@ func TestApproveUser(t *testing.T) {
 
 	if auditCount != 1 {
 		t.Errorf("expected 1 audit log entry, but found %d", auditCount)
+	}
+
+	var readAt sql.NullTime
+	err = db.QueryRow("SELECT read_at FROM notifications WHERE id = $1", notificationID).Scan(&readAt)
+	if err != nil {
+		t.Fatalf("failed to query notification: %v", err)
+	}
+	if !readAt.Valid {
+		t.Errorf("expected registration notification to be marked read")
 	}
 }
 
@@ -460,6 +478,15 @@ func TestRejectUser(t *testing.T) {
 		t.Fatalf("failed to create test user: %v", err)
 	}
 
+	notificationID := uuid.New()
+	_, err = db.Exec(`
+		INSERT INTO notifications (id, user_id, type, related_user_id, created_at)
+		VALUES ($1, $2, 'user_registration_pending', $3, now())
+	`, notificationID, adminID, userID)
+	if err != nil {
+		t.Fatalf("failed to create registration notification: %v", err)
+	}
+
 	handler := NewAdminHandler(db, nil)
 
 	// Test reject request
@@ -502,6 +529,15 @@ func TestRejectUser(t *testing.T) {
 
 	if auditCount != 1 {
 		t.Errorf("expected 1 audit log entry, but found %d", auditCount)
+	}
+
+	var readAt sql.NullTime
+	err = db.QueryRow("SELECT read_at FROM notifications WHERE id = $1", notificationID).Scan(&readAt)
+	if err != nil {
+		t.Fatalf("failed to query notification: %v", err)
+	}
+	if !readAt.Valid {
+		t.Errorf("expected registration notification to be marked read")
 	}
 }
 

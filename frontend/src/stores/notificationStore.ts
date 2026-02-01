@@ -1,4 +1,4 @@
-import { get, writable } from 'svelte/store';
+import { derived, get, writable } from 'svelte/store';
 import { api } from '../services/api';
 import { logWarn } from '../lib/observability/logger';
 import { isAuthenticated } from './authStore';
@@ -219,6 +219,12 @@ function createNotificationStore() {
 }
 
 export const notificationStore = createNotificationStore();
+
+export const unreadRegistrationCount = derived(notificationStore, ($store) =>
+  $store.notifications.filter(
+    (notification) => notification.type === 'user_registration_pending' && !notification.readAt
+  ).length
+);
 
 let initialized = false;
 let authUnsub: (() => void) | null = null;
