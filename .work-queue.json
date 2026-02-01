@@ -984,7 +984,7 @@
     {
       "issue_number": 564,
       "title": "Search results should render a unified thread when matches appear in post + comments",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "bugfix",
       "priority": 9,
@@ -992,7 +992,8 @@
         "bug",
         "frontend",
         "ux"
-      ]
+      ],
+      "assigned_to": "564"
     },
     {
       "issue_number": 565,
