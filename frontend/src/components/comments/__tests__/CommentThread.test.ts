@@ -446,6 +446,8 @@ describe('CommentThread', () => {
       expect(replyEl?.className).not.toContain('bg-amber');
       expect(replyEl?.className).not.toContain('ring-amber');
       expect(replyEl?.className).toContain('bg-white');
+      expect(replyEl?.className).toContain('rounded-lg');
+      expect(replyEl?.className).toContain('p-2');
     });
 
     it('highlights comments without profileUserId filter (backward compatibility)', () => {
