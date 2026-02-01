@@ -1129,7 +1129,7 @@
     {
       "issue_number": 572,
       "title": "Profile Comments tab highlight rules for nested replies",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 17,
@@ -1138,7 +1138,10 @@
         "frontend",
         "ux"
       ],
-      "branch": "feat/issue-572-profile-comments-highlight-rules"
+      "branch": "feat/issue-572-profile-comments-tab-highlight-rules-for",
+      "assigned_to": "agent-1769950906-27051",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769950906-27051",
+      "claimed_at": "2026-02-01T13:01:46Z"
     },
     {
       "issue_number": 573,
