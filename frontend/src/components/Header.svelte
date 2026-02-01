@@ -29,33 +29,38 @@
 <svelte:window on:click={closeMenu} />
 
 <header class="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200">
-  <div class="lg:ml-64 lg:w-[calc(100%-16rem)]">
-    <div class="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-      <div class="flex items-center gap-4">
-        <button
-          on:click={toggleSidebar}
-          class="p-2 rounded-lg text-gray-600 hover:bg-gray-100 lg:hidden"
-          aria-label="Toggle sidebar"
-        >
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          </svg>
-        </button>
+  <div class="flex items-center h-16 px-4 sm:px-6">
+    <!-- Left: Logo/app name -->
+    <div class="flex items-center gap-2 sm:gap-4 flex-shrink-0 lg:w-64">
+      <button
+        on:click={toggleSidebar}
+        class="p-2 rounded-lg text-gray-600 hover:bg-gray-100 lg:hidden"
+        aria-label="Toggle sidebar"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 6h16M4 12h16M4 18h16"
+          />
+        </svg>
+      </button>
 
-        <a href="/" class="flex items-center gap-2">
-          <span class="text-2xl">🏠</span>
-          <span class="text-xl font-bold text-gray-900">Clubhouse</span>
-        </a>
-      </div>
+      <a href="/" class="flex items-center gap-2">
+        <span class="text-2xl">🏠</span>
+        <span class="text-xl font-bold text-gray-900">Clubhouse</span>
+      </a>
+    </div>
 
-      <div class="flex items-center gap-4">
-        <NavbarSearch />
-        <NotificationMenu />
+    <!-- Center: Search bar -->
+    <div class="flex-1 flex justify-center max-w-4xl mx-auto">
+      <NavbarSearch />
+    </div>
+
+    <!-- Right: Notifications + user controls -->
+    <div class="flex items-center gap-2 sm:gap-4 flex-shrink-0 lg:w-64 justify-end">
+      <NotificationMenu />
         {#if $isAuthenticated && $currentUser}
           <div class="relative">
             <button
@@ -130,7 +135,6 @@
             {/if}
           </div>
         {/if}
-      </div>
     </div>
   </div>
 </header>
