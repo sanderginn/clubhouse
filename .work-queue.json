@@ -52,6 +52,7 @@
     562,
     563,
     564,
+    565,
     566,
     567,
     568,
@@ -1001,7 +1002,7 @@
     {
       "issue_number": 565,
       "title": "Highlight search query in unified thread results (post body + comments)",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         564
       ],
@@ -1015,7 +1016,9 @@
       "branch": "feat/issue-565-highlight-search-query-in-unified-thread",
       "assigned_to": "agent-1769953797-46377",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769953797-46377",
-      "claimed_at": "2026-02-01T13:49:57Z"
+      "claimed_at": "2026-02-01T13:49:57Z",
+      "pr_number": 594,
+      "completed_at": "2026-02-01T14:02:26Z"
     },
     {
       "issue_number": 566,
