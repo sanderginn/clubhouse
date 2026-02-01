@@ -914,7 +914,7 @@
     {
       "issue_number": 561,
       "title": "Add UI affordance to reply to a specific image",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         519
       ],
@@ -925,7 +925,10 @@
         "frontend",
         "ux"
       ],
-      "branch": "feat/issue-561-reply-to-specific-image-ui"
+      "branch": "feat/issue-561-add-ui-affordance-to-reply-to-a-specific",
+      "assigned_to": "agent-1769945975-88731",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769945975-88731",
+      "claimed_at": "2026-02-01T11:39:35Z"
     },
     {
       "issue_number": 562,
