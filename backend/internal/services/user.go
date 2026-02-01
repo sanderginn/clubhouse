@@ -1181,6 +1181,7 @@ func (s *UserService) GetUserComments(ctx context.Context, userID uuid.UUID, cur
 			u.id, u.username, u.profile_picture_url
 		FROM comments c
 		JOIN users u ON c.user_id = u.id
+		JOIN posts p ON c.post_id = p.id AND p.deleted_at IS NULL
 		WHERE c.user_id = $1 AND c.deleted_at IS NULL
 	`
 

@@ -792,6 +792,79 @@ func TestGetUserCommentsExcludesSoftDeleted(t *testing.T) {
 	}
 }
 
+func TestGetUserCommentsExcludesDeletedPosts(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := uuid.New()
+	testUsername := "commentpostuser"
+	testEmail := "commentpostuser@example.com"
+	testHash := "$2a$12$test"
+
+	userQuery := `
+		INSERT INTO users (id, username, email, password_hash, is_admin, approved_at, created_at)
+		VALUES ($1, $2, $3, $4, false, now(), now())
+	`
+	_, err := db.Exec(userQuery, userID, testUsername, testEmail, testHash)
+	if err != nil {
+		t.Fatalf("failed to create test user: %v", err)
+	}
+
+	sectionID := uuid.New()
+	_, err = db.Exec(`INSERT INTO sections (id, name, type, created_at) VALUES ($1, 'Test', 'general', now())`, sectionID)
+	if err != nil {
+		t.Fatalf("failed to create test section: %v", err)
+	}
+
+	activePostID := uuid.New()
+	_, err = db.Exec(`INSERT INTO posts (id, user_id, section_id, content, created_at) VALUES ($1, $2, $3, 'Active post', now())`, activePostID, userID, sectionID)
+	if err != nil {
+		t.Fatalf("failed to create active post: %v", err)
+	}
+
+	deletedPostID := uuid.New()
+	_, err = db.Exec(`INSERT INTO posts (id, user_id, section_id, content, created_at, deleted_at, deleted_by_user_id) VALUES ($1, $2, $3, 'Deleted post', now(), now(), $2)`, deletedPostID, userID, sectionID)
+	if err != nil {
+		t.Fatalf("failed to create deleted post: %v", err)
+	}
+
+	activeCommentID := uuid.New()
+	_, err = db.Exec(`INSERT INTO comments (id, user_id, post_id, content, created_at) VALUES ($1, $2, $3, 'Active comment', now())`, activeCommentID, userID, activePostID)
+	if err != nil {
+		t.Fatalf("failed to create active comment: %v", err)
+	}
+
+	deletedPostCommentID := uuid.New()
+	_, err = db.Exec(`INSERT INTO comments (id, user_id, post_id, content, created_at) VALUES ($1, $2, $3, 'Deleted post comment', now())`, deletedPostCommentID, userID, deletedPostID)
+	if err != nil {
+		t.Fatalf("failed to create deleted post comment: %v", err)
+	}
+
+	handler := NewUserHandler(db)
+
+	req := httptest.NewRequest("GET", "/api/v1/users/"+userID.String()+"/comments", nil)
+	w := httptest.NewRecorder()
+
+	handler.GetUserComments(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response models.GetThreadResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if len(response.Comments) != 1 {
+		t.Errorf("expected 1 comment (excluding deleted posts), got %d", len(response.Comments))
+	}
+
+	if len(response.Comments) == 1 && response.Comments[0].ID != activeCommentID {
+		t.Errorf("expected active comment ID %s, got %s", activeCommentID, response.Comments[0].ID)
+	}
+}
+
 // TestUpdateMeSuccess tests successfully updating user profile
 func TestUpdateMeSuccess(t *testing.T) {
 	db := testutil.RequireTestDB(t)
