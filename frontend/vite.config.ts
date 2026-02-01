@@ -102,6 +102,12 @@ export default defineConfig({
           });
         },
       },
+      '/otlp': {
+        target: process.env.VITE_OTEL_PROXY_TARGET ?? 'http://localhost:4318',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/otlp/, ''),
+      },
     },
   },
 });
