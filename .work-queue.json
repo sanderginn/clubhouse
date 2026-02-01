@@ -1120,7 +1120,8 @@
       "branch": "feat/issue-571-profile-posts-and-comments-tabs-should-d",
       "assigned_to": "agent-1769950904-27041",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769950904-27041",
-      "claimed_at": "2026-02-01T13:01:44Z"
+      "claimed_at": "2026-02-01T13:01:44Z",
+      "pr_number": 590
     },
     {
       "issue_number": 572,
@@ -1137,7 +1138,8 @@
       "branch": "feat/issue-572-profile-comments-tab-highlight-rules-for",
       "assigned_to": "agent-1769950906-27051",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769950906-27051",
-      "claimed_at": "2026-02-01T13:01:46Z"
+      "claimed_at": "2026-02-01T13:01:46Z",
+      "pr_number": 591
     },
     {
       "issue_number": 573,
@@ -1154,7 +1156,8 @@
       "branch": "feat/issue-573-remove-redundant-open-full-thread-link-a",
       "assigned_to": "agent-1769950908-27105",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769950908-27105",
-      "claimed_at": "2026-02-01T13:01:48Z"
+      "claimed_at": "2026-02-01T13:01:48Z",
+      "pr_number": 592
     },
     {
       "issue_number": 574,
