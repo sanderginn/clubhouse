@@ -306,16 +306,21 @@
   );
 
   function getHighlightClass(commentId: string, commentUserId: string, isNested: boolean): string {
-    if (!highlightIdSet.has(commentId)) {
-      return 'bg-white';
-    }
-    if (profileUserId && commentUserId !== profileUserId) {
-      return 'bg-white';
-    }
+    const isProfileContext = !!profileUserId;
+    const isHighlighted = highlightIdSet.has(commentId) && (!isProfileContext || commentUserId === profileUserId);
+
     if (isNested) {
-      return 'bg-amber-100 ring-2 ring-amber-400 rounded-lg p-2';
+      if (isHighlighted) {
+        return 'bg-amber-100 ring-2 ring-amber-400 rounded-lg p-2';
+      }
+      return isProfileContext ? 'bg-white rounded-lg p-2' : 'bg-white';
     }
-    return 'bg-amber-50 ring-2 ring-amber-300';
+
+    if (isHighlighted) {
+      return 'bg-amber-50 ring-2 ring-amber-300';
+    }
+
+    return 'bg-white';
   }
 </script>
 
