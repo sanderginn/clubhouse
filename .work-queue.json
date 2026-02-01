@@ -104,14 +104,18 @@
     {
       "issue_number": 602,
       "title": "Center search bar in navbar",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "bug",
         "frontend",
         "ui"
       ],
-      "priority": 4
+      "priority": 4,
+      "assigned_to": "agent-1769965665-77633",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769965665-77633",
+      "branch": "fix/issue-602-center-search-bar-in-navbar",
+      "claimed_at": "2026-02-01T17:07:45Z"
     },
     {
       "issue_number": 603,
