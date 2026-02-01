@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher, tick } from 'svelte';
   import { api, type ApiUserSummary } from '../../services/api';
+  import { currentUser } from '../../stores/authStore';
 
   export let value = '';
   export let id = '';
@@ -67,7 +68,8 @@
     try {
       const response = await api.searchUsers(query, 8);
       if (token !== requestToken) return;
-      suggestions = response.users ?? [];
+      const currentUserId = $currentUser?.id;
+      suggestions = (response.users ?? []).filter((user) => user.id !== currentUserId);
       highlightedIndex = 0;
     } catch {
       if (token !== requestToken) return;
