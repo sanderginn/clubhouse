@@ -8,7 +8,7 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 
 let initialized = false;
 
-const DEFAULT_DEV_ENDPOINT = 'http://localhost:4318/v1/traces';
+const DEFAULT_DEV_ENDPOINT = '/otlp/v1/traces';
 
 const buildPropagationUrls = (): RegExp[] => {
   if (typeof window === 'undefined') {
