@@ -145,11 +145,24 @@
     return linkId ? `link-${linkId}` : `${result.type}-${index}`;
   }
 
+  function itemKey(item: SearchResult | ThreadGroup, index: number): string {
+    if (isThreadGroup(item)) {
+      return `thread-${item.post.id}`;
+    }
+    return resultKey(item, index);
+  }
+
   type SectionGroup = {
     id: string | null;
     name: string;
     icon: string | null;
     results: SearchResult[];
+    groupedResults: (SearchResult | ThreadGroup)[];
+  };
+
+  type ThreadGroup = {
+    post: Post;
+    matchingCommentIds: string[];
   };
 
   function resolveSectionId(result: SearchResult, fallbackSectionId: string | null): string | null {
@@ -205,13 +218,93 @@
       if (!group) {
         const name = resolveSectionNameById(sectionId, null, availableSections) ?? 'Unknown section';
         const icon = resolveSectionIconById(sectionId, '📁', availableSections);
-        group = { id: sectionId, name, icon, results: [] };
+        group = { id: sectionId, name, icon, results: [], groupedResults: [] };
         seen.set(key, group);
         groups.push(group);
       }
       group.results.push(result);
     }
+    for (const group of groups) {
+      group.groupedResults = groupResultsByThread(group.results);
+    }
     return groups;
+  }
+
+  function groupResultsByThread(results: SearchResult[]): (SearchResult | ThreadGroup)[] {
+    const postMap = new Map<string, { post: Post | null; matchingCommentIds: string[]; hasPostMatch: boolean; resultIndex: number }>();
+
+    for (let i = 0; i < results.length; i++) {
+      const result = results[i];
+      if (result.type === 'post' && result.post) {
+        const postId = result.post.id;
+        const existing = postMap.get(postId);
+        if (existing) {
+          existing.post = result.post;
+          existing.hasPostMatch = true;
+        } else {
+          postMap.set(postId, { post: result.post, matchingCommentIds: [], hasPostMatch: true, resultIndex: i });
+        }
+      } else if (result.type === 'comment' && result.comment) {
+        const postId = result.comment.postId;
+        const existing = postMap.get(postId);
+        if (existing) {
+          existing.matchingCommentIds.push(result.comment.id);
+          if (!existing.post && result.post) {
+            existing.post = result.post;
+          }
+        } else {
+          postMap.set(postId, {
+            post: result.post ?? null,
+            matchingCommentIds: [result.comment.id],
+            hasPostMatch: false,
+            resultIndex: i,
+          });
+        }
+      }
+    }
+
+    const processed = new Set<string>();
+    const output: (SearchResult | ThreadGroup)[] = [];
+
+    for (let i = 0; i < results.length; i++) {
+      const result = results[i];
+      let postId: string | null = null;
+
+      if (result.type === 'post' && result.post) {
+        postId = result.post.id;
+      } else if (result.type === 'comment' && result.comment) {
+        postId = result.comment.postId;
+      }
+
+      if (!postId || processed.has(postId)) {
+        continue;
+      }
+
+      const group = postMap.get(postId);
+      if (!group) {
+        output.push(result);
+        continue;
+      }
+
+      if (group.post && group.matchingCommentIds.length > 0) {
+        output.push({
+          post: group.post,
+          matchingCommentIds: group.matchingCommentIds,
+        } as ThreadGroup);
+        processed.add(postId);
+      } else if (result.type === 'post' && result.post) {
+        output.push(result);
+        processed.add(postId);
+      } else if (result.type === 'comment') {
+        output.push(result);
+      }
+    }
+
+    return output;
+  }
+
+  function isThreadGroup(item: SearchResult | ThreadGroup): item is ThreadGroup {
+    return 'matchingCommentIds' in item && Array.isArray(item.matchingCommentIds);
   }
 
   const sectionPillClass =
@@ -228,6 +321,7 @@
   $: isGlobalScope = displayScope === 'global';
   $: showParentSectionPill = displayScope === 'global';
   $: sectionGroups = isGlobalScope ? buildSectionGroups($searchResults, $sections) : [];
+  $: groupedResults = groupResultsByThread($searchResults);
 </script>
 
 <section class="space-y-4">
@@ -312,10 +406,15 @@
             <span class="text-xs text-gray-400">{group.results.length} result{group.results.length === 1 ? '' : 's'}</span>
           </div>
           <div class="space-y-4 p-4">
-            {#each group.results as result, index (resultKey(result, index))}
-              {#if result.type === 'post' && result.post}
-                <PostCard post={result.post} />
-              {:else if result.type === 'comment' && result.comment}
+            {#each group.groupedResults as item, index (itemKey(item, index))}
+              {#if isThreadGroup(item)}
+                {@const thread = item}
+                <PostCard post={thread.post} highlightCommentIds={thread.matchingCommentIds} />
+              {:else}
+                {@const result = item}
+                {#if result.type === 'post' && result.post}
+                  <PostCard post={result.post} />
+                {:else if result.type === 'comment' && result.comment}
                 {@const comment = result.comment}
                 {@const parentPost = result.post}
                 <article class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 space-y-4">
@@ -474,27 +573,45 @@
                     </div>
                   </div>
                 </article>
+                {/if}
               {/if}
             {/each}
           </div>
         </div>
       {/each}
     {:else}
-      {#each $searchResults as result, index (resultKey(result, index))}
-        {@const sectionName = resolveSectionName(result, $activeSection?.id ?? null, $activeSection?.name ?? null)}
-        {@const sectionIcon = resolveSectionIcon(result, $activeSection?.id ?? null, $activeSection?.icon ?? null)}
-      {#if result.type === 'post' && result.post}
-        {#if sectionName}
-          <div class="inline-flex items-center gap-2 text-gray-500 min-w-0">
-            <span class={sectionPillClass}>
-              {#if sectionIcon}
-                <span class={sectionPillIconClass} aria-hidden="true">{sectionIcon}</span>
-              {/if}
-              <span class={sectionPillTextClass}>{sectionName}</span>
-            </span>
-          </div>
-        {/if}
-        <PostCard post={result.post} />
+      {#each groupedResults as item, index (itemKey(item, index))}
+        {#if isThreadGroup(item)}
+          {@const thread = item}
+          {@const sectionName = resolveSectionName({ type: 'post', score: 0, post: thread.post }, $activeSection?.id ?? null, $activeSection?.name ?? null)}
+          {@const sectionIcon = resolveSectionIcon({ type: 'post', score: 0, post: thread.post }, $activeSection?.id ?? null, $activeSection?.icon ?? null)}
+          {#if sectionName}
+            <div class="inline-flex items-center gap-2 text-gray-500 min-w-0">
+              <span class={sectionPillClass}>
+                {#if sectionIcon}
+                  <span class={sectionPillIconClass} aria-hidden="true">{sectionIcon}</span>
+                {/if}
+                <span class={sectionPillTextClass}>{sectionName}</span>
+              </span>
+            </div>
+          {/if}
+          <PostCard post={thread.post} highlightCommentIds={thread.matchingCommentIds} />
+        {:else}
+          {@const result = item}
+          {@const sectionName = resolveSectionName(result, $activeSection?.id ?? null, $activeSection?.name ?? null)}
+          {@const sectionIcon = resolveSectionIcon(result, $activeSection?.id ?? null, $activeSection?.icon ?? null)}
+          {#if result.type === 'post' && result.post}
+            {#if sectionName}
+              <div class="inline-flex items-center gap-2 text-gray-500 min-w-0">
+                <span class={sectionPillClass}>
+                  {#if sectionIcon}
+                    <span class={sectionPillIconClass} aria-hidden="true">{sectionIcon}</span>
+                  {/if}
+                  <span class={sectionPillTextClass}>{sectionName}</span>
+                </span>
+              </div>
+            {/if}
+            <PostCard post={result.post} />
       {:else if result.type === 'comment' && result.comment}
         {@const comment = result.comment}
         {@const parentPost = result.post}
@@ -672,7 +789,8 @@
             </div>
           </div>
         </article>
-      {/if}
+          {/if}
+        {/if}
       {/each}
     {/if}
   {/if}
