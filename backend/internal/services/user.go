@@ -1043,10 +1043,12 @@ func (s *UserService) RejectUser(ctx context.Context, userID uuid.UUID, adminUse
 
 	if _, err := tx.ExecContext(ctx, `
 		UPDATE notifications
-		SET read_at = now()
-		WHERE type = 'user_registration_pending'
-		  AND related_user_id = $1
-		  AND read_at IS NULL
+		SET read_at = CASE
+				WHEN type = 'user_registration_pending' THEN COALESCE(read_at, now())
+				ELSE read_at
+			END,
+		    related_user_id = NULL
+		WHERE related_user_id = $1
 	`, userID); err != nil {
 		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to resolve registration notifications: %w", err)
