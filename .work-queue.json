@@ -1146,7 +1146,7 @@
     {
       "issue_number": 573,
       "title": "Remove redundant \"Open full thread\" link and THREAD label in profile comments",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 18,
@@ -1155,7 +1155,10 @@
         "frontend",
         "ux"
       ],
-      "branch": "feat/issue-573-remove-redundant-thread-link-label"
+      "branch": "feat/issue-573-remove-redundant-open-full-thread-link-a",
+      "assigned_to": "agent-1769950908-27105",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769950908-27105",
+      "claimed_at": "2026-02-01T13:01:48Z"
     },
     {
       "issue_number": 574,
