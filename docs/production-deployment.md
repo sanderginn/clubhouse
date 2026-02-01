@@ -188,12 +188,6 @@ The backup/restore scripts source `.env.production` automatically when present.
 - Metrics: `/metrics` scraped by Prometheus
 - Retention: 7 days of traces (`tempo.yml`), 14 days of logs (`loki.yml`), and 30 days of metrics (`--storage.tsdb.retention.time=30d`)
 
-Third-party services in the Docker Compose stack are configured for JSON logging where supported.
-Postgres uses `jsonlog` and writes structured logs under `/var/lib/postgresql/log` in the dedicated `postgres_logs` volume.
-Prometheus, Alertmanager, Loki, Tempo, and Grafana emit JSON logs to stdout/stderr.
-Redis does not support JSON output; a Vector log forwarder wraps Redis logs as JSON before sending to Loki.
-Vector also tails Postgres jsonlog files so Postgres logs reach Loki in JSON form.
-
 Grafana dashboards are provisioned from `grafana/dashboards`.
 The Grafana entrypoint ensures `/usr/share/grafana/plugins-bundled` exists to avoid startup warnings.
 Grafana startup removes any legacy external xychart plugin from the data volume to avoid duplicate registration with the built-in panel.
