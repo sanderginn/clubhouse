@@ -1095,7 +1095,7 @@
                       {#if item}
                         <button
                           type="button"
-                          class="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full border border-blue-200 bg-white/95 px-3 py-1 text-xs text-blue-700 shadow-sm hover:bg-white"
+                          class="absolute bottom-3 right-3 z-10 inline-flex items-center gap-1 rounded-full border border-blue-200 bg-white/95 px-3 py-1 text-xs text-blue-700 shadow-sm hover:bg-white"
                           on:click|stopPropagation={() => startImageReply(index)}
                         >
                           Reply to image
@@ -1105,20 +1105,20 @@
                   {/each}
                 </div>
 
-                <div class="absolute inset-y-0 left-2 hidden sm:flex items-center">
+                <div class="absolute inset-y-0 left-2 hidden sm:flex items-center pointer-events-none">
                   <button
                     type="button"
-                    class="flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-gray-700 shadow hover:bg-white"
+                    class="flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-gray-700 shadow hover:bg-white pointer-events-auto"
                     aria-label="Previous image"
                     on:click={previousImage}
                   >
                     ‹
                   </button>
                 </div>
-                <div class="absolute inset-y-0 right-2 hidden sm:flex items-center">
+                <div class="absolute inset-y-0 right-2 hidden sm:flex items-center pointer-events-none">
                   <button
                     type="button"
-                    class="flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-gray-700 shadow hover:bg-white"
+                    class="flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-gray-700 shadow hover:bg-white pointer-events-auto"
                     aria-label="Next image"
                     on:click={nextImage}
                   >
@@ -1296,7 +1296,7 @@
       on:click={closeImageLightbox}
     ></button>
     <div
-      class="relative z-10 max-h-full max-w-full"
+      class={`relative z-10 max-h-full max-w-full ${imageItems.length > 1 ? 'pb-10' : ''}`}
       role="dialog"
       aria-modal="true"
       aria-label="Full size image"
@@ -1315,20 +1315,20 @@
         ✕
       </button>
       {#if imageItems.length > 1}
-        <div class="absolute inset-y-0 left-2 flex items-center">
+        <div class="absolute inset-y-0 left-2 flex items-center pointer-events-none">
           <button
             type="button"
-            class="flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-gray-700 shadow hover:bg-white"
+            class="flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-gray-700 shadow hover:bg-white pointer-events-auto"
             aria-label="Previous image"
             on:click={previousLightboxImage}
           >
             ‹
           </button>
         </div>
-        <div class="absolute inset-y-0 right-2 flex items-center">
+        <div class="absolute inset-y-0 right-2 flex items-center pointer-events-none">
           <button
             type="button"
-            class="flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-gray-700 shadow hover:bg-white"
+            class="flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-gray-700 shadow hover:bg-white pointer-events-auto"
             aria-label="Next image"
             on:click={nextLightboxImage}
           >
@@ -1348,7 +1348,7 @@
         {/key}
       </div>
       {#if lightboxImageUrl}
-        <div class="mt-3 flex justify-center">
+        <div class="relative z-10 mt-3 flex justify-center">
           <button
             type="button"
             class="inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-xs font-medium text-white hover:bg-blue-700"
@@ -1362,7 +1362,7 @@
         </div>
       {/if}
       {#if imageItems.length > 1}
-        <div class="absolute bottom-3 left-0 right-0 flex items-center justify-center">
+        <div class="absolute bottom-3 left-0 right-0 z-0 flex items-center justify-center">
           <span class="rounded-full bg-black/60 px-2.5 py-1 text-xs text-white">
             {lightboxImageIndex + 1} of {imageItems.length}
           </span>
