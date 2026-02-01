@@ -4,7 +4,9 @@
     "version": "2.0",
     "description": "Work queue for parallel issue assignment with dependency tracking"
   },
-  "completed_issues": [],
+  "completed_issues": [
+    597
+  ],
   "issues": [
     {
       "issue_number": 595,
@@ -32,7 +34,7 @@
     {
       "issue_number": 597,
       "title": "Fix frontend OTLP traces proxy error",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -43,7 +45,9 @@
       "assigned_to": "agent-1769965662-77475",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769965662-77475",
       "branch": "fix/issue-597-fix-frontend-otlp-traces-proxy-error",
-      "claimed_at": "2026-02-01T17:07:42Z"
+      "claimed_at": "2026-02-01T17:07:42Z",
+      "pr_number": 605,
+      "completed_at": "2026-02-01T17:15:56Z"
     },
     {
       "issue_number": 598,
