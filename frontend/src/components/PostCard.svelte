@@ -1301,15 +1301,17 @@
           </button>
         </div>
       {/if}
-      {#key lightboxImageUrl}
-        <img
-          src={lightboxImageUrl}
-          alt={lightboxAltText}
-          class="max-h-[85vh] w-auto max-w-[95vw] rounded-lg object-contain bg-white shadow-lg"
-          style="touch-action: pan-y pinch-zoom;"
-          transition:fade={{ duration: 180 }}
-        />
-      {/key}
+      <div class="relative flex items-center justify-center">
+        {#key lightboxImageUrl}
+          <img
+            src={lightboxImageUrl}
+            alt={lightboxAltText}
+            class="max-h-[85vh] w-auto max-w-[95vw] rounded-lg object-contain bg-white shadow-lg"
+            style="touch-action: pan-y pinch-zoom;"
+            in:fade={{ duration: 180 }}
+          />
+        {/key}
+      </div>
       {#if lightboxImageId}
         <div class="mt-3 flex justify-center">
           <button
