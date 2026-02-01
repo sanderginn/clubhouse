@@ -14,13 +14,14 @@
     601,
     602,
     603,
-    604
+    604,
+    616
   ],
   "issues": [
     {
       "issue_number": 616,
       "title": "Fix \"Reply to image\" button not clickable in carousel and overlapped in lightbox",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -30,7 +31,9 @@
       "assigned_to": "agent-1769978981-15312",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769978981-15312",
       "branch": "fix/issue-616-fix-reply-to-image-button-not-clickable-",
-      "claimed_at": "2026-02-01T20:49:41Z"
+      "claimed_at": "2026-02-01T20:49:41Z",
+      "pr_number": 623,
+      "completed_at": "2026-02-01T20:58:29Z"
     },
     {
       "issue_number": 617,
