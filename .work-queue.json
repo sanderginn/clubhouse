@@ -52,6 +52,7 @@
     562,
     566,
     567,
+    568,
     569,
     570,
     574
@@ -1050,7 +1051,7 @@
     {
       "issue_number": 568,
       "title": "Navbar layout: logo left, search centered, user/notifications right",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "phase": "enhancement",
       "priority": 13,
@@ -1062,7 +1063,9 @@
       "branch": "feat/issue-568-navbar-layout-logo-left-search-centered-",
       "assigned_to": "agent-1769950330-22083",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769950330-22083",
-      "claimed_at": "2026-02-01T12:52:10Z"
+      "claimed_at": "2026-02-01T12:52:10Z",
+      "pr_number": 588,
+      "completed_at": "2026-02-01T13:00:25Z"
     },
     {
       "issue_number": 569,
