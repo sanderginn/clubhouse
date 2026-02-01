@@ -509,7 +509,9 @@
             <p class="text-gray-500 text-sm">No posts yet.</p>
           {:else}
             {#each posts as post (post.id)}
-              <PostCard {post} showSectionPill={true} showSectionLabel={true} />
+              <a href={buildThreadLink(post)} class="block hover:opacity-90 transition-opacity cursor-pointer">
+                <PostCard {post} showSectionPill={true} showSectionLabel={true} />
+              </a>
             {/each}
           {/if}
 
