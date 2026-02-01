@@ -2,7 +2,7 @@
   "metadata": {
     "description": "Archived completed work items",
     "created_at": "2026-01-29T13:07:57Z",
-    "last_updated": "2026-01-30T17:23:49Z"
+    "last_updated": "2026-02-01T14:02:47Z"
   },
   "archived_issues": [
     {
@@ -4417,6 +4417,1136 @@
       "claimed_at": "2026-01-30T10:31:16Z",
       "pr_number": 475,
       "completed_at": "2026-01-30T10:49:57Z"
+    },
+    {
+      "issue_number": 415,
+      "title": "[Critical] Fix duplicate function definitions in post/comment handlers and services",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 0,
+      "labels": [
+        "observability",
+        "backend",
+        "bug"
+      ],
+      "assigned_to": "agent-1769760790-10748",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769760790-10748",
+      "branch": "fix/issue-415-critical-fix-duplicate-function-definiti",
+      "claimed_at": "2026-01-30T08:13:10Z",
+      "completed_at": "2026-01-30T08:14:30Z"
+    },
+    {
+      "issue_number": 417,
+      "title": "[High] Add Redis instrumentation for distributed tracing",
+      "status": "completed",
+      "assigned_to": "agent-1769761926-38276",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769761926-38276",
+      "dependencies": [
+        415
+      ],
+      "phase": "observability",
+      "priority": 1,
+      "labels": [
+        "observability",
+        "backend"
+      ],
+      "branch": "feat/issue-417-high-add-redis-instrumentation-for-distr",
+      "claimed_at": "2026-01-30T08:32:06Z",
+      "pr_number": 460,
+      "completed_at": "2026-01-30T09:42:09Z"
+    },
+    {
+      "issue_number": 418,
+      "title": "[High] Add distributed tracing spans to service layer",
+      "status": "completed",
+      "dependencies": [
+        415
+      ],
+      "phase": "observability",
+      "priority": 1,
+      "labels": [
+        "observability",
+        "backend"
+      ],
+      "assigned_to": "agent-1769794114-89743",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769794114-89743",
+      "branch": "feat/issue-418-high-add-distributed-tracing-spans-to-se",
+      "claimed_at": "2026-01-30T17:28:34Z",
+      "pr_number": 487,
+      "completed_at": "2026-01-30T18:20:30Z"
+    },
+    {
+      "issue_number": 439,
+      "title": "Tempo: Configure service map and trace exploration",
+      "status": "completed",
+      "assigned_to": "agent-1769797253-22758",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769797253-22758",
+      "dependencies": [
+        417,
+        418
+      ],
+      "phase": "observability",
+      "priority": 3,
+      "labels": [
+        "observability",
+        "grafana",
+        "tempo",
+        "tracing"
+      ],
+      "branch": "feat/issue-439-tempo-configure-service-map-and-trace-ex",
+      "claimed_at": "2026-01-30T18:20:53Z",
+      "pr_number": 488,
+      "completed_at": "2026-01-30T18:38:58Z"
+    },
+    {
+      "issue_number": 489,
+      "title": "Fix Loki config: compactor.delete-request-store not configured for retention",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 0,
+      "labels": [
+        "bug",
+        "observability",
+        "loki"
+      ],
+      "assigned_to": "agent-1769800590-47642",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769800590-47642",
+      "branch": "fix/issue-489-fix-loki-config-compactordeleterequestst",
+      "claimed_at": "2026-01-30T19:16:30Z",
+      "pr_number": 499,
+      "completed_at": "2026-01-30T19:20:57Z"
+    },
+    {
+      "issue_number": 490,
+      "title": "Fix Tempo config: deprecated `enabled` fields in metrics_generator",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 0,
+      "labels": [
+        "bug",
+        "observability",
+        "tempo",
+        "tracing"
+      ],
+      "assigned_to": "agent-1769800592-47747",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769800592-47747",
+      "branch": "fix/issue-490-fix-tempo-config-deprecated-enabled-fiel",
+      "claimed_at": "2026-01-30T19:16:32Z",
+      "pr_number": 500,
+      "completed_at": "2026-01-30T19:21:49Z"
+    },
+    {
+      "issue_number": 491,
+      "title": "Link metadata fetcher should skip internal upload URLs",
+      "status": "completed",
+      "dependencies": [
+        489,
+        490
+      ],
+      "phase": "bugfix",
+      "priority": 1,
+      "labels": [
+        "bug",
+        "backend"
+      ],
+      "assigned_to": "agent-1769800933-60229",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769800933-60229",
+      "branch": "fix/issue-491-link-metadata-fetcher-should-skip-intern",
+      "claimed_at": "2026-01-30T19:22:13Z",
+      "pr_number": 501,
+      "completed_at": "2026-01-30T19:30:21Z"
+    },
+    {
+      "issue_number": 492,
+      "title": "Cannot delete image when editing a post",
+      "status": "completed",
+      "dependencies": [
+        489,
+        490
+      ],
+      "phase": "bugfix",
+      "priority": 2,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ],
+      "assigned_to": "agent-1769800938-60497",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769800938-60497",
+      "branch": "fix/issue-492-cannot-delete-image-when-editing-a-post",
+      "claimed_at": "2026-01-30T19:22:18Z",
+      "pr_number": 503,
+      "completed_at": "2026-01-30T19:40:48Z"
+    },
+    {
+      "issue_number": 493,
+      "title": "Hide image URL text on posts with images",
+      "status": "completed",
+      "dependencies": [
+        489,
+        490
+      ],
+      "phase": "enhancement",
+      "priority": 2,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "assigned_to": "agent-1769801667-80663",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769801667-80663",
+      "branch": "feat/issue-493-hide-image-url-text-on-posts-with-images",
+      "claimed_at": "2026-01-30T19:34:27Z",
+      "pr_number": 505,
+      "completed_at": "2026-01-30T20:04:35Z"
+    },
+    {
+      "issue_number": 494,
+      "title": "Make post images clickable to view full size",
+      "status": "completed",
+      "dependencies": [
+        489,
+        490
+      ],
+      "phase": "enhancement",
+      "priority": 2,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "assigned_to": "agent-1769802145-5035",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769802145-5035",
+      "branch": "feat/issue-494-make-post-images-clickable-to-view-full-",
+      "claimed_at": "2026-01-30T19:42:25Z",
+      "pr_number": 508,
+      "completed_at": "2026-01-30T20:58:55Z"
+    },
+    {
+      "issue_number": 495,
+      "title": "Navigation from standalone post back to section does not load feed",
+      "status": "completed",
+      "dependencies": [
+        489,
+        490
+      ],
+      "phase": "bugfix",
+      "priority": 1,
+      "labels": [
+        "bug",
+        "frontend"
+      ],
+      "assigned_to": "agent-1769800936-60365",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769800936-60365",
+      "branch": "fix/issue-495-navigation-from-standalone-post-back-to-",
+      "claimed_at": "2026-01-30T19:22:16Z",
+      "pr_number": 502,
+      "completed_at": "2026-01-30T19:33:59Z"
+    },
+    {
+      "issue_number": 496,
+      "title": "User tagging with @ does not work",
+      "status": "completed",
+      "dependencies": [
+        489,
+        490
+      ],
+      "phase": "bugfix",
+      "priority": 2,
+      "labels": [
+        "bug",
+        "frontend",
+        "backend"
+      ],
+      "assigned_to": "agent-1769800941-60613",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769800941-60613",
+      "branch": "fix/issue-496-user-tagging-with-does-not-work",
+      "claimed_at": "2026-01-30T19:22:21Z",
+      "pr_number": 506,
+      "completed_at": "2026-01-30T20:06:30Z"
+    },
+    {
+      "issue_number": 497,
+      "title": "Redesign post actions: replace triple-dot menu with Edit and Share buttons",
+      "status": "completed",
+      "dependencies": [
+        489,
+        490
+      ],
+      "phase": "enhancement",
+      "priority": 2,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "assigned_to": "agent-1769802151-5286",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769802151-5286",
+      "branch": "feat/issue-497-redesign-post-actions-replace-tripledot-",
+      "claimed_at": "2026-01-30T19:42:31Z",
+      "pr_number": 507,
+      "completed_at": "2026-01-30T19:49:30Z"
+    },
+    {
+      "issue_number": 498,
+      "title": "Search bar renders incorrectly",
+      "status": "completed",
+      "dependencies": [
+        489,
+        490
+      ],
+      "phase": "bugfix",
+      "priority": 2,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ],
+      "assigned_to": "agent-1769801666-80567",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769801666-80567",
+      "branch": "fix/issue-498-search-bar-renders-incorrectly",
+      "claimed_at": "2026-01-30T19:34:26Z",
+      "pr_number": 504,
+      "completed_at": "2026-01-30T19:41:45Z"
+    },
+    {
+      "issue_number": 509,
+      "title": "Add delete button for posts and comments",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 0,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ],
+      "assigned_to": "agent-1769813433-76403",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769813433-76403",
+      "branch": "fix/issue-509-add-delete-button-for-posts-and-comments",
+      "claimed_at": "2026-01-30T22:50:33Z",
+      "pr_number": 534,
+      "completed_at": "2026-01-30T23:14:56Z"
+    },
+    {
+      "issue_number": 510,
+      "title": "Send notifications when a user is mentioned with @",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 0,
+      "labels": [
+        "enhancement",
+        "backend"
+      ],
+      "assigned_to": "agent-1769814931-8643",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769814931-8643",
+      "branch": "feat/issue-510-send-notifications-when-a-user-is-mentio",
+      "claimed_at": "2026-01-30T23:15:31Z",
+      "pr_number": 538,
+      "completed_at": "2026-01-30T23:29:02Z"
+    },
+    {
+      "issue_number": 511,
+      "title": "Add escape mechanism for @ symbol to prevent unwanted mentions",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 1,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "backend"
+      ],
+      "assigned_to": "agent-1769814933-8603",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769814933-8603",
+      "branch": "feat/issue-511-add-escape-mechanism-for-symbol-to-preve",
+      "claimed_at": "2026-01-30T23:15:33Z",
+      "pr_number": 539,
+      "completed_at": "2026-01-30T23:31:57Z"
+    },
+    {
+      "issue_number": 512,
+      "title": "Fix search box: don't clear container until search is executed",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 1,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ],
+      "assigned_to": "agent-1769813435-76423",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769813435-76423",
+      "branch": "fix/issue-512-fix-search-box-dont-clear-container-unti",
+      "claimed_at": "2026-01-30T22:50:35Z",
+      "pr_number": 533,
+      "completed_at": "2026-01-30T23:04:38Z"
+    },
+    {
+      "issue_number": 513,
+      "title": "Fix quirky edit button styling on thread replies",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 2,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ],
+      "assigned_to": "agent-1769813441-76774",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769813441-76774",
+      "branch": "fix/issue-513-fix-quirky-edit-button-styling-on-thread",
+      "claimed_at": "2026-01-30T22:50:41Z",
+      "pr_number": 532,
+      "completed_at": "2026-01-30T23:03:07Z"
+    },
+    {
+      "issue_number": 514,
+      "title": "Improve search box alignment with main container",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 2,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "assigned_to": "agent-1769815947-38679",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769815947-38679",
+      "branch": "feat/issue-514-improve-search-box-alignment-with-main-c",
+      "claimed_at": "2026-01-30T23:32:27Z",
+      "pr_number": 541,
+      "completed_at": "2026-01-30T23:40:48Z"
+    },
+    {
+      "issue_number": 515,
+      "title": "Backend: Support multiple images per post",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 3,
+      "labels": [
+        "enhancement",
+        "backend"
+      ],
+      "assigned_to": "agent-1769815951-38835",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769815951-38835",
+      "branch": "feat/issue-515-backend-support-multiple-images-per-post",
+      "claimed_at": "2026-01-30T23:32:31Z",
+      "pr_number": 543,
+      "completed_at": "2026-01-31T00:05:13Z"
+    },
+    {
+      "issue_number": 516,
+      "title": "Frontend: Upload multiple images in post creation",
+      "status": "completed",
+      "dependencies": [
+        515
+      ],
+      "phase": "feature",
+      "priority": 3,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "assigned_to": "agent-1769817977-95209",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769817977-95209",
+      "branch": "feat/issue-516-frontend-upload-multiple-images-in-post-",
+      "claimed_at": "2026-01-31T00:06:17Z",
+      "pr_number": 545,
+      "completed_at": "2026-01-31T00:20:44Z"
+    },
+    {
+      "issue_number": 517,
+      "title": "Frontend: Display multiple post images as carousel",
+      "status": "completed",
+      "dependencies": [
+        515,
+        516
+      ],
+      "phase": "feature",
+      "priority": 3,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "assigned_to": "agent-1769819286-29872",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769819286-29872",
+      "branch": "feat/issue-517-frontend-display-multiple-post-images-as",
+      "claimed_at": "2026-01-31T00:28:06Z",
+      "pr_number": 550,
+      "completed_at": "2026-01-31T00:46:11Z"
+    },
+    {
+      "issue_number": 518,
+      "title": "Frontend: Add lightbox navigation between multiple images",
+      "status": "completed",
+      "dependencies": [
+        515,
+        517
+      ],
+      "phase": "feature",
+      "priority": 3,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "assigned_to": "agent-1769820401-60632",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769820401-60632",
+      "branch": "feat/issue-518-frontend-add-lightbox-navigation-between",
+      "claimed_at": "2026-01-31T00:46:41Z",
+      "pr_number": 552,
+      "completed_at": "2026-01-31T00:55:07Z"
+    },
+    {
+      "issue_number": 519,
+      "title": "Add reply-to-specific-image functionality",
+      "status": "completed",
+      "dependencies": [
+        515,
+        517
+      ],
+      "phase": "feature",
+      "priority": 3,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "backend",
+        "ux"
+      ],
+      "assigned_to": "agent-1769822264-78476",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769822264-78476",
+      "branch": "feat/issue-519-add-replytospecificimage-functionality",
+      "claimed_at": "2026-01-31T01:17:44Z",
+      "pr_number": 553,
+      "completed_at": "2026-01-31T09:58:25Z"
+    },
+    {
+      "issue_number": 520,
+      "title": "Improve moderation console layout",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 4,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "assigned_to": "agent-1769815953-39030",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769815953-39030",
+      "branch": "feat/issue-520-improve-moderation-console-layout",
+      "claimed_at": "2026-01-30T23:32:33Z",
+      "pr_number": 540,
+      "completed_at": "2026-01-31T00:03:24Z"
+    },
+    {
+      "issue_number": 521,
+      "title": "Standardize \"Back to feed\" navigation text across all pages",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 4,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "assigned_to": "agent-1769817470-76582",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769817470-76582",
+      "branch": "feat/issue-521-standardize-back-to-feed-navigation-text",
+      "claimed_at": "2026-01-30T23:57:50Z",
+      "pr_number": 544,
+      "completed_at": "2026-01-31T00:27:38Z"
+    },
+    {
+      "issue_number": 522,
+      "title": "Unify thread UI in user profile comments section",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 4,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "assigned_to": "agent-1769848750-6499",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769848750-6499",
+      "branch": "feat/issue-522-unify-thread-ui-in-user-profile-comments",
+      "claimed_at": "2026-01-31T08:39:10Z",
+      "pr_number": 554,
+      "completed_at": "2026-01-31T09:12:39Z"
+    },
+    {
+      "issue_number": 523,
+      "title": "Improve post editing image buttons layout",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 4,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "assigned_to": "agent-1769818658-11011",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769818658-11011",
+      "branch": "feat/issue-523-improve-post-editing-image-buttons-layou",
+      "claimed_at": "2026-01-31T00:17:38Z",
+      "pr_number": 546,
+      "completed_at": "2026-01-31T00:27:15Z"
+    },
+    {
+      "issue_number": 524,
+      "title": "Improve replies emoji and counter layout",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 4,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "assigned_to": "agent-1769819288-29966",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769819288-29966",
+      "branch": "feat/issue-524-improve-replies-emoji-and-counter-layout",
+      "claimed_at": "2026-01-31T00:28:08Z",
+      "pr_number": 548,
+      "completed_at": "2026-01-31T00:36:00Z"
+    },
+    {
+      "issue_number": 525,
+      "title": "Reduce padding on highlighted words (@mentions and search matches)",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 4,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "assigned_to": "agent-1769819290-29881",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769819290-29881",
+      "branch": "feat/issue-525-reduce-padding-on-highlighted-words-ment",
+      "claimed_at": "2026-01-31T00:28:10Z",
+      "pr_number": 547,
+      "completed_at": "2026-01-31T00:39:08Z"
+    },
+    {
+      "issue_number": 526,
+      "title": "Fix Grafana xychart plugin registration error on startup",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 5,
+      "labels": [
+        "bug",
+        "observability"
+      ],
+      "assigned_to": "agent-1769814927-8375",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769814927-8375",
+      "branch": "fix/issue-526-fix-grafana-xychart-plugin-registration-",
+      "claimed_at": "2026-01-30T23:15:27Z",
+      "pr_number": 536,
+      "completed_at": "2026-01-30T23:25:32Z"
+    },
+    {
+      "issue_number": 527,
+      "title": "Fix Grafana plugins-bundled directory warning on startup",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 5,
+      "labels": [
+        "bug",
+        "observability"
+      ],
+      "assigned_to": "agent-1769814929-8445",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769814929-8445",
+      "branch": "fix/issue-527-fix-grafana-pluginsbundled-directory-war",
+      "claimed_at": "2026-01-30T23:15:29Z",
+      "pr_number": 535,
+      "completed_at": "2026-01-30T23:20:43Z"
+    },
+    {
+      "issue_number": 528,
+      "title": "Make Alertmanager log level configurable",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 5,
+      "labels": [
+        "enhancement",
+        "observability"
+      ],
+      "assigned_to": "agent-1769819292-30147",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769819292-30147",
+      "branch": "feat/issue-528-make-alertmanager-log-level-configurable",
+      "claimed_at": "2026-01-31T00:28:12Z",
+      "pr_number": 549,
+      "completed_at": "2026-01-31T00:40:19Z"
+    },
+    {
+      "issue_number": 529,
+      "title": "Make frontend Vite proxy log level configurable",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 5,
+      "labels": [
+        "enhancement",
+        "frontend"
+      ],
+      "assigned_to": "agent-1769820058-50954",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769820058-50954",
+      "branch": "feat/issue-529-make-frontend-vite-proxy-log-level-confi",
+      "claimed_at": "2026-01-31T00:40:58Z",
+      "pr_number": 551,
+      "completed_at": "2026-01-31T00:47:44Z"
+    },
+    {
+      "issue_number": 537,
+      "title": "Add notification window in navbar",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "feature",
+      "priority": 2,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "assigned_to": "agent-1769815948-38748",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769815948-38748",
+      "branch": "feat/issue-537-add-notification-window-in-navbar",
+      "claimed_at": "2026-01-30T23:32:28Z",
+      "pr_number": 542,
+      "completed_at": "2026-01-31T00:25:40Z"
+    },
+    {
+      "issue_number": 530,
+      "title": "Fix admin deep-linking: /admin redirects to feed before auth completes",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 1,
+      "labels": [
+        "bug",
+        "frontend"
+      ],
+      "assigned_to": "agent-1769813439-76668",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769813439-76668",
+      "branch": "fix/issue-530-fix-admin-deeplinking-admin-redirects-to",
+      "claimed_at": "2026-01-30T22:50:39Z",
+      "pr_number": 531,
+      "completed_at": "2026-01-30T22:57:10Z"
+    },
+    {
+      "issue_number": 555,
+      "title": "Notifications do not update in real time (WebSocket)",
+      "status": "completed",
+      "dependencies": [
+        537
+      ],
+      "phase": "bugfix",
+      "priority": 0,
+      "labels": [
+        "bug",
+        "frontend",
+        "backend",
+        "ux"
+      ],
+      "branch": "fix/issue-555-notifications-do-not-update-in-real-time",
+      "assigned_to": "agent-1769857117-66085",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769857117-66085",
+      "claimed_at": "2026-01-31T10:58:37Z",
+      "pr_number": 578,
+      "completed_at": "2026-01-31T11:16:23Z"
+    },
+    {
+      "issue_number": 556,
+      "title": "Notification click updates URL but does not navigate",
+      "status": "completed",
+      "dependencies": [
+        537
+      ],
+      "phase": "bugfix",
+      "priority": 1,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ],
+      "branch": "fix/issue-556-notification-click-updates-url-but-does-",
+      "assigned_to": "agent-1769857120-66234",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769857120-66234",
+      "claimed_at": "2026-01-31T10:58:40Z",
+      "pr_number": 575,
+      "completed_at": "2026-01-31T11:08:25Z"
+    },
+    {
+      "issue_number": 557,
+      "title": "Spurious \"User not found\" error logged on login/refresh",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 2,
+      "labels": [
+        "bug",
+        "backend"
+      ],
+      "branch": "fix/issue-557-spurious-user-not-found-error-logged-on-",
+      "assigned_to": "agent-1769857122-66396",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769857122-66396",
+      "claimed_at": "2026-01-31T10:58:42Z",
+      "pr_number": 577,
+      "completed_at": "2026-01-31T11:12:08Z"
+    },
+    {
+      "issue_number": 558,
+      "title": "Edit keyboard shortcut does not save posts or comments",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 3,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ],
+      "branch": "fix/issue-558-edit-keyboard-shortcut-does-not-save-pos",
+      "assigned_to": "agent-1769857124-66243",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769857124-66243",
+      "claimed_at": "2026-01-31T10:58:44Z",
+      "pr_number": 576,
+      "completed_at": "2026-01-31T11:10:09Z"
+    },
+    {
+      "issue_number": 559,
+      "title": "Editing a post with multiple images only allows replacing/removing the first image",
+      "status": "completed",
+      "dependencies": [
+        515,
+        516,
+        517
+      ],
+      "phase": "bugfix",
+      "priority": 4,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ],
+      "branch": "fix/issue-559-editing-a-post-with-multiple-images-only",
+      "assigned_to": "agent-1769857956-98045",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769857956-98045",
+      "claimed_at": "2026-01-31T11:12:36Z",
+      "pr_number": 581,
+      "completed_at": "2026-01-31T11:25:52Z"
+    },
+    {
+      "issue_number": 560,
+      "title": "Carousel renders only first image until lightbox/reply",
+      "status": "completed",
+      "dependencies": [
+        517
+      ],
+      "phase": "bugfix",
+      "priority": 5,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ],
+      "branch": "fix/issue-560-carousel-renders-only-first-image-until-",
+      "assigned_to": "agent-1769857959-98115",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769857959-98115",
+      "claimed_at": "2026-01-31T11:12:39Z",
+      "pr_number": 579,
+      "completed_at": "2026-01-31T11:20:33Z"
+    },
+    {
+      "issue_number": 561,
+      "title": "Add UI affordance to reply to a specific image",
+      "status": "completed",
+      "dependencies": [
+        519
+      ],
+      "phase": "feature",
+      "priority": 6,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "branch": "feat/issue-561-add-ui-affordance-to-reply-to-a-specific",
+      "assigned_to": "agent-1769945975-88731",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769945975-88731",
+      "claimed_at": "2026-02-01T11:39:35Z",
+      "pr_number": 584,
+      "completed_at": "2026-02-01T11:50:48Z"
+    },
+    {
+      "issue_number": 562,
+      "title": "Unescaped @ mentions should render as literal text when user does not exist",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 7,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ],
+      "branch": "fix/issue-562-unescaped-mentions-should-render-as-lite",
+      "assigned_to": "agent-1769857962-99328",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769857962-99328",
+      "claimed_at": "2026-01-31T11:12:42Z",
+      "pr_number": 580,
+      "completed_at": "2026-01-31T11:24:55Z"
+    },
+    {
+      "issue_number": 563,
+      "title": "Exclude current user from @ mention suggestions",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 8,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "branch": "feat/issue-563-exclude-current-user-from-mention-sugges",
+      "assigned_to": "agent-1769950327-21895",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769950327-21895",
+      "claimed_at": "2026-02-01T12:52:07Z",
+      "pr_number": 589,
+      "completed_at": "2026-02-01T13:00:57Z"
+    },
+    {
+      "issue_number": 564,
+      "title": "Search results should render a unified thread when matches appear in post + comments",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 9,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ],
+      "assigned_to": "564",
+      "pr_number": 593,
+      "completed_at": "2026-02-01T13:49:27Z"
+    },
+    {
+      "issue_number": 565,
+      "title": "Highlight search query in unified thread results (post body + comments)",
+      "status": "completed",
+      "dependencies": [
+        564
+      ],
+      "phase": "enhancement",
+      "priority": 10,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "branch": "feat/issue-565-highlight-search-query-in-unified-thread",
+      "assigned_to": "agent-1769953797-46377",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769953797-46377",
+      "claimed_at": "2026-02-01T13:49:57Z",
+      "pr_number": 594,
+      "completed_at": "2026-02-01T14:02:26Z"
+    },
+    {
+      "issue_number": 566,
+      "title": "Section-scoped search pill missing container styling",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 11,
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ],
+      "assigned_to": "agent-1769945968-88363",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769945968-88363",
+      "branch": "fix/issue-566-sectionscoped-search-pill-missing-contai",
+      "claimed_at": "2026-02-01T11:39:28Z",
+      "pr_number": 585,
+      "completed_at": "2026-02-01T11:59:34Z"
+    },
+    {
+      "issue_number": 567,
+      "title": "Lightbox image transitions should not slide vertically",
+      "status": "completed",
+      "dependencies": [
+        518
+      ],
+      "phase": "enhancement",
+      "priority": 12,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "branch": "feat/issue-567-lightbox-image-transitions-should-not-sl",
+      "assigned_to": "agent-1769950329-21912",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769950329-21912",
+      "claimed_at": "2026-02-01T12:52:09Z",
+      "pr_number": 586,
+      "completed_at": "2026-02-01T13:00:19Z"
+    },
+    {
+      "issue_number": 568,
+      "title": "Navbar layout: logo left, search centered, user/notifications right",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 13,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "branch": "feat/issue-568-navbar-layout-logo-left-search-centered-",
+      "assigned_to": "agent-1769950330-22083",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769950330-22083",
+      "claimed_at": "2026-02-01T12:52:10Z",
+      "pr_number": 588,
+      "completed_at": "2026-02-01T13:00:25Z"
+    },
+    {
+      "issue_number": 569,
+      "title": "Thread comment box should appear below existing comments",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 14,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "branch": "feat/issue-569-thread-comment-box-should-appear-below-e",
+      "assigned_to": "agent-1769950331-21811",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769950331-21811",
+      "claimed_at": "2026-02-01T12:52:11Z",
+      "pr_number": 587,
+      "completed_at": "2026-02-01T13:00:24Z"
+    },
+    {
+      "issue_number": 570,
+      "title": "Profile Comments tab should ignore deleted posts",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 15,
+      "labels": [
+        "bug",
+        "frontend",
+        "backend",
+        "ux"
+      ],
+      "branch": "fix/issue-570-profile-comments-tab-should-ignore-delet",
+      "assigned_to": "agent-1769945970-88281",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769945970-88281",
+      "claimed_at": "2026-02-01T11:39:30Z",
+      "pr_number": 582,
+      "completed_at": "2026-02-01T11:54:05Z"
+    },
+    {
+      "issue_number": 571,
+      "title": "Profile Posts and Comments tabs should display section on thread components",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 16,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "branch": "feat/issue-571-profile-posts-and-comments-tabs-should-d",
+      "assigned_to": "agent-1769950904-27041",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769950904-27041",
+      "claimed_at": "2026-02-01T13:01:44Z",
+      "pr_number": 590,
+      "completed_at": "2026-02-01T13:28:44Z"
+    },
+    {
+      "issue_number": 572,
+      "title": "Profile Comments tab highlight rules for nested replies",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 17,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "branch": "feat/issue-572-profile-comments-tab-highlight-rules-for",
+      "assigned_to": "agent-1769950906-27051",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769950906-27051",
+      "claimed_at": "2026-02-01T13:01:46Z",
+      "pr_number": 591,
+      "completed_at": "2026-02-01T13:31:44Z"
+    },
+    {
+      "issue_number": 573,
+      "title": "Remove redundant \"Open full thread\" link and THREAD label in profile comments",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "enhancement",
+      "priority": 18,
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "branch": "feat/issue-573-remove-redundant-open-full-thread-link-a",
+      "assigned_to": "agent-1769950908-27105",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769950908-27105",
+      "claimed_at": "2026-02-01T13:01:48Z",
+      "pr_number": 592,
+      "completed_at": "2026-02-01T13:38:26Z"
+    },
+    {
+      "issue_number": 574,
+      "title": "Frontend OTEL traces endpoint returns 405 due to CORS",
+      "status": "completed",
+      "dependencies": [],
+      "phase": "bugfix",
+      "priority": 19,
+      "labels": [
+        "bug",
+        "observability",
+        "frontend"
+      ],
+      "branch": "fix/issue-574-frontend-otel-traces-endpoint-returns-40",
+      "assigned_to": "agent-1769945972-88519",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769945972-88519",
+      "claimed_at": "2026-02-01T11:39:32Z",
+      "pr_number": 583,
+      "completed_at": "2026-02-01T11:53:28Z"
     }
   ],
   "archived_issue_numbers": [
@@ -4654,6 +5784,63 @@
     438,
     440,
     441,
-    442
+    442,
+    415,
+    417,
+    418,
+    439,
+    489,
+    490,
+    491,
+    492,
+    493,
+    494,
+    495,
+    496,
+    497,
+    498,
+    509,
+    510,
+    511,
+    512,
+    513,
+    514,
+    515,
+    516,
+    517,
+    518,
+    519,
+    520,
+    521,
+    522,
+    523,
+    524,
+    525,
+    526,
+    527,
+    528,
+    529,
+    530,
+    537,
+    555,
+    556,
+    557,
+    558,
+    559,
+    560,
+    561,
+    562,
+    563,
+    564,
+    565,
+    566,
+    567,
+    568,
+    569,
+    570,
+    571,
+    572,
+    573,
+    574
   ]
 }
