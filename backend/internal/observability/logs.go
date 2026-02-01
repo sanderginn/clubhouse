@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"os"
 	"runtime/debug"
 	"strings"
@@ -162,28 +163,103 @@ func LogWarn(ctx context.Context, message string, kvPairs ...string) {
 	emitStderr("WARN", message, attrs)
 }
 
+type stderrError struct {
+	Code       string `json:"code,omitempty"`
+	Message    string `json:"message,omitempty"`
+	Stack      string `json:"stack,omitempty"`
+	StatusCode int64  `json:"status_code,omitempty"`
+}
+
 type stderrLog struct {
-	Timestamp  string         `json:"timestamp"`
-	Severity   string         `json:"severity"`
-	Message    string         `json:"message"`
-	Attributes map[string]any `json:"attributes,omitempty"`
+	Timestamp string         `json:"timestamp"`
+	Level     string         `json:"level"`
+	Message   string         `json:"message"`
+	TraceID   string         `json:"trace_id,omitempty"`
+	SpanID    string         `json:"span_id,omitempty"`
+	UserID    string         `json:"user_id,omitempty"`
+	Error     *stderrError   `json:"error,omitempty"`
+	Fields    map[string]any `json:"fields,omitempty"`
 }
 
 func emitStderr(severity string, message string, attrs []log.KeyValue) {
-	payload := stderrLog{
-		Timestamp:  time.Now().UTC().Format(time.RFC3339Nano),
-		Severity:   severity,
-		Message:    message,
-		Attributes: keyValuesToMap(attrs),
-	}
-
+	payload := buildStderrPayload(severity, message, attrs)
 	data, err := json.Marshal(payload)
 	if err != nil {
-		stderrLogger.Printf("failed to marshal log payload: %v", err)
+		stderrLogger.Print(fallbackLogPayload(err))
 		return
 	}
 
 	stderrLogger.Print(string(data))
+}
+
+func buildStderrPayload(severity string, message string, attrs []log.KeyValue) stderrLog {
+	fields := keyValuesToMap(attrs)
+	payload := stderrLog{
+		Timestamp: time.Now().UTC().Format(time.RFC3339Nano),
+		Level:     strings.ToLower(severity),
+		Message:   message,
+	}
+
+	if traceID, ok := fields["trace_id"].(string); ok && traceID != "" {
+		payload.TraceID = traceID
+		delete(fields, "trace_id")
+	}
+	if spanID, ok := fields["span_id"].(string); ok && spanID != "" {
+		payload.SpanID = spanID
+		delete(fields, "span_id")
+	}
+	if userID, ok := fields["user_id"].(string); ok && userID != "" {
+		payload.UserID = userID
+		delete(fields, "user_id")
+	}
+
+	payload.Error = extractError(fields)
+
+	if len(fields) > 0 {
+		payload.Fields = fields
+	}
+
+	return payload
+}
+
+func extractError(fields map[string]any) *stderrError {
+	if fields == nil {
+		return nil
+	}
+
+	errPayload := &stderrError{}
+	if value, ok := fields["error.code"].(string); ok && value != "" {
+		errPayload.Code = value
+		delete(fields, "error.code")
+	}
+	if value, ok := fields["error.message"].(string); ok && value != "" {
+		errPayload.Message = value
+		delete(fields, "error.message")
+	}
+	if value, ok := fields["error.stack"].(string); ok && value != "" {
+		errPayload.Stack = value
+		delete(fields, "error.stack")
+	}
+	if value, ok := fields["http.status_code"].(int64); ok && value != 0 {
+		errPayload.StatusCode = value
+		delete(fields, "http.status_code")
+	}
+
+	if errPayload.Code == "" && errPayload.Message == "" && errPayload.Stack == "" && errPayload.StatusCode == 0 {
+		return nil
+	}
+
+	return errPayload
+}
+
+func fallbackLogPayload(err error) string {
+	escaped, _ := json.Marshal(err.Error())
+	timestamp := time.Now().UTC().Format(time.RFC3339Nano)
+	return fmt.Sprintf(
+		`{"timestamp":"%s","level":"error","message":"failed to marshal log payload","error":{"message":%s}}`,
+		timestamp,
+		string(escaped),
+	)
 }
 
 func keyValuesToMap(attrs []log.KeyValue) map[string]any {
