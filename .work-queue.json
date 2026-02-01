@@ -104,14 +104,18 @@
     {
       "issue_number": 601,
       "title": "Add \"Posted in:\" label to section pills in user profile",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
         "frontend",
         "ux"
       ],
-      "priority": 3
+      "priority": 3,
+      "assigned_to": "agent-1769965691-82914",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769965691-82914",
+      "branch": "feat/issue-601-add-posted-in-label-to-section-pills-in-",
+      "claimed_at": "2026-02-01T17:08:11Z"
     },
     {
       "issue_number": 602,
