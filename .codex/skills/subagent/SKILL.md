@@ -43,6 +43,13 @@ cd <WORKTREE_PATH>
 - **ALWAYS** use absolute paths within your worktree (e.g., `<WORKTREE_PATH>/backend/...`)
 - If you accidentally create or modify files outside your worktree, you MUST immediately fix this (see "Worktree Contamination Check" below)
 
+**Frontend Setup (if applicable):**
+If the issue involves frontend work, run `npm install` in the frontend directory first to ensure dependencies are ready:
+
+```bash
+cd frontend && npm install && cd ..
+```
+
 **Autonomy:** After entering the worktree, start the task immediately. Do not wait for any further input until the PR is opened.
 
 ## Step 3: Fetch Issue Context
