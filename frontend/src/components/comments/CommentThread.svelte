@@ -19,6 +19,7 @@
   export let highlightCommentId: string | null = null;
   export let highlightCommentIds: string[] = [];
   export let profileUserId: string | null = null;
+  export let highlightQuery: string = '';
   export let imageItems: {
     id?: string;
     url: string;
@@ -489,6 +490,7 @@
               {:else}
                 <LinkifiedText
                   text={comment.content}
+                  highlightQuery={highlightQuery}
                   className="text-gray-800 text-sm whitespace-pre-wrap break-words"
                   linkClassName="text-blue-600 hover:text-blue-800 underline"
                 />
@@ -706,6 +708,7 @@
                         {:else}
                           <LinkifiedText
                             text={reply.content}
+                            highlightQuery={highlightQuery}
                             className="text-gray-800 text-sm whitespace-pre-wrap break-words"
                             linkClassName="text-blue-600 hover:text-blue-800 underline"
                           />

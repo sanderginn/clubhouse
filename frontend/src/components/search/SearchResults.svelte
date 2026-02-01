@@ -409,11 +409,11 @@
             {#each group.groupedResults as item, index (itemKey(item, index))}
               {#if isThreadGroup(item)}
                 {@const thread = item}
-                <PostCard post={thread.post} highlightCommentIds={thread.matchingCommentIds} />
+                <PostCard post={thread.post} highlightCommentIds={thread.matchingCommentIds} highlightQuery={normalizedQuery} />
               {:else}
                 {@const result = item}
                 {#if result.type === 'post' && result.post}
-                  <PostCard post={result.post} />
+                  <PostCard post={result.post} highlightQuery={normalizedQuery} />
                 {:else if result.type === 'comment' && result.comment}
                 {@const comment = result.comment}
                 {@const parentPost = result.post}
@@ -595,7 +595,7 @@
               </span>
             </div>
           {/if}
-          <PostCard post={thread.post} highlightCommentIds={thread.matchingCommentIds} />
+          <PostCard post={thread.post} highlightCommentIds={thread.matchingCommentIds} highlightQuery={normalizedQuery} />
         {:else}
           {@const result = item}
           {@const sectionName = resolveSectionName(result, $activeSection?.id ?? null, $activeSection?.name ?? null)}
@@ -611,7 +611,7 @@
                 </span>
               </div>
             {/if}
-            <PostCard post={result.post} />
+            <PostCard post={result.post} highlightQuery={normalizedQuery} />
       {:else if result.type === 'comment' && result.comment}
         {@const comment = result.comment}
         {@const parentPost = result.post}
