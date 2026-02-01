@@ -8,7 +8,7 @@
     markAllNotificationsRead,
   } from '../../stores';
   import type { Notification } from '../../stores';
-  import { buildStandaloneThreadHref, pushPath } from '../../services/routeNavigation';
+  import { buildAdminHref, buildStandaloneThreadHref, pushPath } from '../../services/routeNavigation';
   import RelativeTime from '../RelativeTime.svelte';
 
   let menuOpen = false;
@@ -18,6 +18,7 @@
     new_comment: 'New comment',
     mention: 'Mention',
     reaction: 'Reaction',
+    user_registration_pending: 'Registration pending',
   };
 
   function toggleMenu() {
@@ -48,6 +49,8 @@
         return `${actor} mentioned you`;
       case 'reaction':
         return `${actor} reacted to your ${notification.relatedCommentId ? 'comment' : 'post'}`;
+      case 'user_registration_pending':
+        return `${actor} requested to join`;
       default:
         return typeLabels[notification.type] ?? 'Notification';
     }
@@ -63,12 +66,17 @@
         return '🔔';
       case 'reaction':
         return '❤️';
+      case 'user_registration_pending':
+        return '🧑‍💼';
       default:
         return '🔔';
     }
   }
 
   function buildNotificationHref(notification: Notification): string | null {
+    if (notification.type === 'user_registration_pending') {
+      return buildAdminHref();
+    }
     if (!notification.relatedPostId) {
       return null;
     }

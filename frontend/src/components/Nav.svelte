@@ -1,5 +1,15 @@
 <script lang="ts">
-  import { sections, activeSection, sectionStore, uiStore, isAdmin, activeView, isAuthenticated, threadRouteStore } from '../stores';
+  import {
+    sections,
+    activeSection,
+    sectionStore,
+    uiStore,
+    isAdmin,
+    activeView,
+    isAuthenticated,
+    threadRouteStore,
+    unreadRegistrationCount,
+  } from '../stores';
   import { buildAdminHref, buildSectionHref, pushPath } from '../services/routeNavigation';
   import type { Section } from '../stores/sectionStore';
   import NotificationSettings from './NotificationSettings.svelte';
@@ -62,6 +72,14 @@
       >
         <span class="text-lg" aria-hidden="true">🛡️</span>
         <span>Moderation</span>
+        {#if $unreadRegistrationCount > 0}
+          <span
+            class="ml-auto rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white"
+            aria-label="Pending registrations"
+          >
+            {$unreadRegistrationCount > 99 ? '99+' : $unreadRegistrationCount}
+          </span>
+        {/if}
       </button>
     </div>
   {/if}

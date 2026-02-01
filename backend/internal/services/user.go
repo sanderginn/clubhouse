@@ -697,6 +697,19 @@ func (s *UserService) ApproveUser(ctx context.Context, userID uuid.UUID, adminUs
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
+	if _, err := tx.ExecContext(ctx, `
+		UPDATE notifications
+		SET read_at = CASE
+				WHEN type = 'user_registration_pending' THEN COALESCE(read_at, now())
+				ELSE read_at
+			END,
+		    related_user_id = NULL
+		WHERE related_user_id = $1
+	`, userID); err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("failed to resolve registration notifications: %w", err)
+	}
+
 	if err := tx.Commit(); err != nil {
 		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
@@ -1026,6 +1039,19 @@ func (s *UserService) RejectUser(ctx context.Context, userID uuid.UUID, adminUse
 	if err := auditService.LogAuditWithMetadata(ctx, "reject_user", adminUserID, userID, metadata); err != nil {
 		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
+	}
+
+	if _, err := tx.ExecContext(ctx, `
+		UPDATE notifications
+		SET read_at = CASE
+				WHEN type = 'user_registration_pending' THEN COALESCE(read_at, now())
+				ELSE read_at
+			END,
+		    related_user_id = NULL
+		WHERE related_user_id = $1
+	`, userID); err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("failed to resolve registration notifications: %w", err)
 	}
 
 	// Hard delete the user

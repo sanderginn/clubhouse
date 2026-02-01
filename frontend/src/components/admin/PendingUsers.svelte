@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import { api } from '../../services/api';
-  import { displayTimezone } from '../../stores';
+  import { displayTimezone, loadNotifications } from '../../stores';
   import { formatInTimezone } from '../../lib/time';
 
   interface PendingUser {
@@ -80,6 +80,7 @@
     try {
       await api.patch(`/admin/users/${userId}/approve`);
       pendingUsers = pendingUsers.filter((user) => user.id !== userId);
+      loadNotifications();
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : 'Failed to approve user.';
     } finally {
@@ -93,6 +94,7 @@
     try {
       await api.delete(`/admin/users/${userId}`);
       pendingUsers = pendingUsers.filter((user) => user.id !== userId);
+      loadNotifications();
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : 'Failed to reject user.';
     } finally {

@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, fireEvent, screen } from '@testing-library/svelte';
-import { sectionStore } from '../../stores';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, fireEvent, screen, cleanup } from '@testing-library/svelte';
+import { authStore, notificationStore, sectionStore } from '../../stores';
 
 const { default: Nav } = await import('../Nav.svelte');
 
@@ -9,6 +9,23 @@ beforeEach(() => {
     { id: 'section-1', name: 'Music', type: 'music', icon: '🎵', slug: 'music' },
     { id: 'section-2', name: 'Books', type: 'book', icon: '📚', slug: 'books' },
   ]);
+  authStore.setUser({
+    id: 'admin-1',
+    username: 'admin',
+    email: 'admin@example.com',
+    isAdmin: true,
+    totpEnabled: false,
+  });
+  notificationStore.setNotifications(
+    [],
+    null,
+    false,
+    0
+  );
+});
+
+afterEach(() => {
+  cleanup();
 });
 
 describe('Nav', () => {
@@ -24,5 +41,32 @@ describe('Nav', () => {
     const call = setActiveSpy.mock.calls[0]?.[0];
     expect(call?.id).toBe('section-2');
     expect(pushStateSpy).toHaveBeenCalledWith(null, '', '/sections/books');
+  });
+
+  it('shows moderation badge for unread registration notifications', () => {
+    notificationStore.setNotifications(
+      [
+        {
+          id: 'notif-1',
+          type: 'user_registration_pending',
+          createdAt: '2026-02-01T00:00:00Z',
+          readAt: null,
+        },
+        {
+          id: 'notif-2',
+          type: 'new_post',
+          createdAt: '2026-02-01T00:00:00Z',
+          readAt: null,
+        },
+      ],
+      null,
+      false,
+      2
+    );
+
+    render(Nav);
+
+    expect(screen.getByLabelText('Pending registrations')).toBeInTheDocument();
+    expect(screen.getByText('1')).toBeInTheDocument();
   });
 });

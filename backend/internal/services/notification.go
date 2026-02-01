@@ -20,11 +20,12 @@ import (
 )
 
 const (
-	notificationTypeNewPost    = "new_post"
-	notificationTypeNewComment = "new_comment"
-	notificationTypeMention    = "mention"
-	notificationTypeReaction   = "reaction"
-	notificationExcerptLimit   = 100
+	notificationTypeNewPost                 = "new_post"
+	notificationTypeNewComment              = "new_comment"
+	notificationTypeMention                 = "mention"
+	notificationTypeReaction                = "reaction"
+	notificationTypeUserRegistrationPending = "user_registration_pending"
+	notificationExcerptLimit                = 100
 )
 
 // NotificationService handles notification creation.
@@ -94,6 +95,53 @@ func (s *NotificationService) CreateNotificationsForNewPost(ctx context.Context,
 	}
 
 	s.sendPushToSection(ctx, notificationTypeNewPost, postID, nil, &authorID, sectionID, authorID)
+
+	return nil
+}
+
+// CreateAdminNotificationsForRegistration notifies all admins about a new registration.
+func (s *NotificationService) CreateAdminNotificationsForRegistration(ctx context.Context, registeredUserID uuid.UUID) error {
+	ctx, span := otel.Tracer("clubhouse.notifications").Start(ctx, "NotificationService.CreateAdminNotificationsForRegistration")
+	span.SetAttributes(attribute.String("registered_user_id", registeredUserID.String()))
+	defer span.End()
+
+	query := `
+		INSERT INTO notifications (user_id, type, related_user_id)
+		SELECT u.id, $1, $2
+		FROM users u
+		WHERE u.is_admin = true
+		  AND u.deleted_at IS NULL
+		  AND u.approved_at IS NOT NULL
+		  AND u.suspended_at IS NULL
+		RETURNING user_id, id
+	`
+
+	rows, err := s.db.QueryContext(ctx, query, notificationTypeUserRegistrationPending, registeredUserID)
+	if err != nil {
+		recordSpanError(span, err)
+		return fmt.Errorf("failed to create registration notifications: %w", err)
+	}
+	defer rows.Close()
+
+	var createdCount int64
+	for rows.Next() {
+		var userID uuid.UUID
+		var notificationID uuid.UUID
+		if err := rows.Scan(&userID, &notificationID); err != nil {
+			recordSpanError(span, err)
+			return fmt.Errorf("failed to scan registration notification: %w", err)
+		}
+		createdCount++
+		s.sendPush(ctx, userID, notificationTypeUserRegistrationPending, nil, nil, &registeredUserID)
+		s.publishRealtimeNotification(ctx, userID, notificationID)
+	}
+	if err := rows.Err(); err != nil {
+		recordSpanError(span, err)
+		return fmt.Errorf("failed to iterate registration notifications: %w", err)
+	}
+	if createdCount > 0 {
+		observability.RecordNotificationsCreated(ctx, notificationTypeUserRegistrationPending, createdCount)
+	}
 
 	return nil
 }
@@ -431,6 +479,9 @@ func buildPushPayload(notificationType string, postID *uuid.UUID, commentID *uui
 	case notificationTypeReaction:
 		payload.Title = "New reaction"
 		payload.Body = "Someone reacted to your post or comment."
+	case notificationTypeUserRegistrationPending:
+		payload.Title = "New registration"
+		payload.Body = "A new user registered and is awaiting approval."
 	}
 
 	return payload

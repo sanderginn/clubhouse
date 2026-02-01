@@ -38,6 +38,10 @@ type authEventLogger interface {
 	LogEvent(ctx context.Context, event *models.AuthEventCreate) error
 }
 
+type authNotificationService interface {
+	CreateAdminNotificationsForRegistration(ctx context.Context, registeredUserID uuid.UUID) error
+}
+
 // AuthHandler handles authentication endpoints
 type AuthHandler struct {
 	userService          authUserService
@@ -48,11 +52,17 @@ type AuthHandler struct {
 	passwordResetService *services.PasswordResetService
 	authEventService     authEventLogger
 	totpService          *services.TOTPService
+	notificationService  authNotificationService
 	db                   *sql.DB
 }
 
 // NewAuthHandler creates a new auth handler
 func NewAuthHandler(db *sql.DB, redis *redis.Client) *AuthHandler {
+	var notificationService *services.NotificationService
+	if db != nil {
+		notificationService = services.NewNotificationService(db, redis, services.NewPushService(db))
+	}
+
 	return &AuthHandler{
 		userService:          services.NewUserService(db),
 		sessionService:       services.NewSessionService(redis),
@@ -62,6 +72,7 @@ func NewAuthHandler(db *sql.DB, redis *redis.Client) *AuthHandler {
 		passwordResetService: services.NewPasswordResetService(redis),
 		authEventService:     services.NewAuthEventService(db),
 		totpService:          services.NewTOTPService(db),
+		notificationService:  notificationService,
 		db:                   db,
 	}
 }
@@ -125,6 +136,18 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	recordAttempt("success")
+
+	if h.notificationService != nil {
+		if err := h.notificationService.CreateAdminNotificationsForRegistration(ctx, user.ID); err != nil {
+			observability.LogError(ctx, observability.ErrorLog{
+				Message:    "failed to notify admins of new registration",
+				Code:       "ADMIN_REGISTRATION_NOTIFY_FAILED",
+				StatusCode: http.StatusInternalServerError,
+				UserID:     user.ID.String(),
+				Err:        err,
+			})
+		}
+	}
 
 	response := models.RegisterResponse{
 		ID:       user.ID,
