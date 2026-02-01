@@ -59,14 +59,18 @@
     {
       "issue_number": 618,
       "title": "Add admin notification for new user registrations",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
         "frontend",
         "backend"
       ],
-      "priority": 3
+      "priority": 3,
+      "assigned_to": "agent-1769979909-38860",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769979909-38860",
+      "branch": "feat/issue-618-add-admin-notification-for-new-user-regi",
+      "claimed_at": "2026-02-01T21:05:09Z"
     },
     {
       "issue_number": 619,
