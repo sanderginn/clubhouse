@@ -977,7 +977,7 @@
         {#if imageItems.length === 1}
           <div
             id={`post-images-${post.id}`}
-            class="mb-3 rounded-lg border border-gray-200 overflow-hidden bg-gray-50"
+            class="relative mb-3 rounded-lg border border-gray-200 overflow-hidden bg-gray-50"
           >
             {#if activeImageFailed}
               <div class="flex items-center justify-center px-4 py-6 text-sm text-gray-500">
@@ -1002,18 +1002,16 @@
                 />
               </button>
             {/if}
-          </div>
-          {#if activeImageItem?.id}
-            <div class="mb-3 flex justify-end">
+            {#if activeImageItem?.id}
               <button
                 type="button"
-                class="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs text-blue-700 hover:bg-blue-100"
-                on:click={() => startImageReply(0)}
+                class="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full border border-blue-200 bg-white/95 px-3 py-1 text-xs text-blue-700 shadow-sm hover:bg-white"
+                on:click|stopPropagation={() => startImageReply(0)}
               >
-                Reply to this image
+                Reply to image
               </button>
-            </div>
-          {/if}
+            {/if}
+          </div>
         {:else}
           <div id={`post-images-${post.id}`} class="mb-3">
             <div class="relative rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
@@ -1037,7 +1035,7 @@
                   style={`transform: translateX(-${activeImageIndex * 100}%);`}
                 >
                   {#each imageItems as item, index}
-                    <div class="w-full flex-shrink-0">
+                    <div class="relative w-full flex-shrink-0">
                       {#if imageLoadFailures.has(index)}
                         <div class="flex items-center justify-center px-4 py-6 text-sm text-gray-500">
                           Image unavailable. Try opening the link directly.
@@ -1059,6 +1057,15 @@
                               markImageFailed(index);
                             }}
                           />
+                        </button>
+                      {/if}
+                      {#if item.id}
+                        <button
+                          type="button"
+                          class="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full border border-blue-200 bg-white/95 px-3 py-1 text-xs text-blue-700 shadow-sm hover:bg-white"
+                          on:click|stopPropagation={() => startImageReply(index)}
+                        >
+                          Reply to image
                         </button>
                       {/if}
                     </div>
@@ -1106,17 +1113,6 @@
                 ></button>
               {/each}
             </div>
-            {#if activeImageItem?.id}
-              <div class="mt-2 flex justify-end">
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs text-blue-700 hover:bg-blue-100"
-                  on:click={() => startImageReply(activeImageIndex)}
-                >
-                  Reply to this image
-                </button>
-              </div>
-            {/if}
           </div>
         {/if}
         {#if activeImageLink && (!isActiveImageInternal || activeImageFailed)}
