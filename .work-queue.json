@@ -635,7 +635,7 @@
     {
       "issue_number": 657,
       "title": "Frontend: Add section links store and API client method",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         656
       ],
@@ -644,7 +644,8 @@
         "frontend"
       ],
       "priority": 7,
-      "phase": 7
+      "phase": 7,
+      "assigned_to": "-h"
     },
     {
       "issue_number": 658,
