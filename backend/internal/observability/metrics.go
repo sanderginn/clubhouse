@@ -48,6 +48,8 @@ type metrics struct {
 	notificationsCreated      metric.Int64Counter
 	notificationsDelivered    metric.Int64Counter
 	notificationsFailed       metric.Int64Counter
+	pushSubscriptionsCreated  metric.Int64Counter
+	pushSubscriptionsDeleted  metric.Int64Counter
 	linkMetadataFetchAttempts metric.Int64Counter
 	linkMetadataFetchSuccess  metric.Int64Counter
 	linkMetadataFetchFailures metric.Int64Counter
@@ -417,6 +419,24 @@ func initMetrics() error {
 			return
 		}
 
+		pushSubscriptionsCreated, err := meter.Int64Counter(
+			"clubhouse.push.subscriptions.created",
+			metric.WithDescription("Number of push subscriptions created"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		pushSubscriptionsDeleted, err := meter.Int64Counter(
+			"clubhouse.push.subscriptions.deleted",
+			metric.WithDescription("Number of push subscriptions deleted"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
 		linkMetadataFetchAttempts, err := meter.Int64Counter(
 			"clubhouse.links.metadata.fetch.attempts",
 			metric.WithDescription("Number of link metadata fetch attempts"),
@@ -712,6 +732,8 @@ func initMetrics() error {
 			notificationsCreated:      notificationsCreated,
 			notificationsDelivered:    notificationsDelivered,
 			notificationsFailed:       notificationsFailed,
+			pushSubscriptionsCreated:  pushSubscriptionsCreated,
+			pushSubscriptionsDeleted:  pushSubscriptionsDeleted,
 			linkMetadataFetchAttempts: linkMetadataFetchAttempts,
 			linkMetadataFetchSuccess:  linkMetadataFetchSuccess,
 			linkMetadataFetchFailures: linkMetadataFetchFailures,
@@ -1220,6 +1242,24 @@ func RecordNotificationDeliveryFailed(ctx context.Context, channel string, error
 		attrs = append(attrs, attribute.String("error_type", errorType))
 	}
 	m.notificationsFailed.Add(ctx, count, metric.WithAttributes(attrs...))
+}
+
+// RecordPushSubscriptionCreated increments the push subscription created counter.
+func RecordPushSubscriptionCreated(ctx context.Context) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.pushSubscriptionsCreated.Add(ctx, 1)
+}
+
+// RecordPushSubscriptionDeleted increments the push subscription deleted counter.
+func RecordPushSubscriptionDeleted(ctx context.Context) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.pushSubscriptionsDeleted.Add(ctx, 1)
 }
 
 // RecordLinkMetadataFetchAttempt increments the link metadata fetch attempt counter.
