@@ -33,6 +33,7 @@
     645,
     646,
     647,
+    651,
     655,
     656
   ],
@@ -538,7 +539,7 @@
     {
       "issue_number": 651,
       "title": "Backend: Add Highlight model and validation for music links",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -549,7 +550,9 @@
       "assigned_to": "agent-1770071294-15083",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770071294-15083",
       "branch": "feat/issue-651-backend-add-highlight-model-and-validati",
-      "claimed_at": "2026-02-02T22:28:14Z"
+      "claimed_at": "2026-02-02T22:28:14Z",
+      "pr_number": 661,
+      "completed_at": "2026-02-02T22:54:27Z"
     },
     {
       "issue_number": 652,
