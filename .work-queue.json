@@ -39,7 +39,8 @@
     656,
     657,
     662,
-    663
+    663,
+    664
   ],
   "issues": [
     {
@@ -722,7 +723,7 @@
     {
       "issue_number": 664,
       "title": "Create cook_logs table migration",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -733,7 +734,9 @@
       "assigned_to": "agent-1770073864-75790",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770073864-75790",
       "branch": "feat/issue-664-create-cooklogs-table-migration",
-      "claimed_at": "2026-02-02T23:11:04Z"
+      "claimed_at": "2026-02-02T23:11:04Z",
+      "pr_number": 691,
+      "completed_at": "2026-02-02T23:18:16Z"
     },
     {
       "issue_number": 665,
