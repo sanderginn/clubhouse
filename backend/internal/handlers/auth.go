@@ -136,6 +136,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	recordAttempt("success")
+	observability.RecordUserRegistered(ctx)
 
 	if h.notificationService != nil {
 		if err := h.notificationService.CreateAdminNotificationsForRegistration(ctx, user.ID); err != nil {

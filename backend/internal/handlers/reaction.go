@@ -98,7 +98,7 @@ func (h *ReactionHandler) AddReactionToPost(w http.ResponseWriter, r *http.Reque
 			Emoji:  reaction.Emoji,
 		})
 	}
-	observability.RecordReactionAdded(publishCtx, "post")
+	observability.RecordReactionAdded(publishCtx, reaction.Emoji)
 	cancel()
 
 	observability.LogInfo(r.Context(), "reaction added",
@@ -220,7 +220,7 @@ func (h *ReactionHandler) RemoveReactionFromPost(w http.ResponseWriter, r *http.
 			Emoji:  emoji,
 		})
 	}
-	observability.RecordReactionRemoved(publishCtx, "post")
+	observability.RecordReactionRemoved(publishCtx, emoji)
 	cancel()
 
 	observability.LogInfo(r.Context(), "reaction removed",
@@ -295,7 +295,7 @@ func (h *ReactionHandler) AddReactionToComment(w http.ResponseWriter, r *http.Re
 			Emoji:     reaction.Emoji,
 		})
 	}
-	observability.RecordReactionAdded(publishCtx, "comment")
+	observability.RecordReactionAdded(publishCtx, reaction.Emoji)
 	cancel()
 
 	observability.LogInfo(r.Context(), "reaction added",
@@ -418,7 +418,7 @@ func (h *ReactionHandler) RemoveReactionFromComment(w http.ResponseWriter, r *ht
 			Emoji:     emoji,
 		})
 	}
-	observability.RecordReactionRemoved(publishCtx, "comment")
+	observability.RecordReactionRemoved(publishCtx, emoji)
 	cancel()
 
 	observability.LogInfo(r.Context(), "reaction removed",
