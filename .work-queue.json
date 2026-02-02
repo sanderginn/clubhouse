@@ -557,7 +557,7 @@
     {
       "issue_number": 652,
       "title": "Backend: Store and retrieve highlights in post service",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         651
       ],
@@ -566,7 +566,11 @@
         "backend"
       ],
       "priority": 2,
-      "phase": 2
+      "phase": 2,
+      "assigned_to": "agent-1770072891-51619",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770072891-51619",
+      "branch": "feat/issue-652-backend-store-and-retrieve-highlights-in",
+      "claimed_at": "2026-02-02T22:54:51Z"
     },
     {
       "issue_number": 653,
