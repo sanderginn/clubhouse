@@ -24,7 +24,8 @@
     628,
     629,
     630,
-    631
+    631,
+    639
   ],
   "issues": [
     {
@@ -434,7 +435,7 @@
     {
       "issue_number": 639,
       "title": "Grafana Traces dashboard: Trace Search panel has invalid TraceQL query",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -445,7 +446,9 @@
       "assigned_to": "agent-1770066789-66660",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770066789-66660",
       "branch": "fix/issue-639-grafana-traces-dashboard-trace-search-pa",
-      "claimed_at": "2026-02-02T21:13:09Z"
+      "claimed_at": "2026-02-02T21:13:09Z",
+      "pr_number": 641,
+      "completed_at": "2026-02-02T21:20:58Z"
     }
   ]
 }
