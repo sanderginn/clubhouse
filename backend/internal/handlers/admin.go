@@ -140,6 +140,7 @@ func (h *AdminHandler) ApproveUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	observability.RecordAdminAction(r.Context(), "approve_user")
+	observability.RecordUserApproved(r.Context())
 
 	observability.LogInfo(r.Context(), "user approved",
 		"user_id", userID.String(),

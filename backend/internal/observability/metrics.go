@@ -40,6 +40,10 @@ type metrics struct {
 	postsRestored             metric.Int64Counter
 	commentsDeleted           metric.Int64Counter
 	commentsRestored          metric.Int64Counter
+	contentDeleted            metric.Int64Counter
+	contentRestored           metric.Int64Counter
+	usersRegistered           metric.Int64Counter
+	usersApproved             metric.Int64Counter
 	notificationsCreated      metric.Int64Counter
 	notificationsDelivered    metric.Int64Counter
 	notificationsFailed       metric.Int64Counter
@@ -256,8 +260,8 @@ func initMetrics() error {
 		}
 
 		postsCreated, err := meter.Int64Counter(
-			"clubhouse.posts.created",
-			metric.WithDescription("Number of posts created"),
+			"clubhouse_posts_created_total",
+			metric.WithDescription("Total number of posts created"),
 		)
 		if err != nil {
 			metricsInitErr = err
@@ -265,8 +269,8 @@ func initMetrics() error {
 		}
 
 		commentsCreated, err := meter.Int64Counter(
-			"clubhouse.comments.created",
-			metric.WithDescription("Number of comments created"),
+			"clubhouse_comments_created_total",
+			metric.WithDescription("Total number of comments created"),
 		)
 		if err != nil {
 			metricsInitErr = err
@@ -274,8 +278,8 @@ func initMetrics() error {
 		}
 
 		reactionsAdded, err := meter.Int64Counter(
-			"clubhouse.reactions.added",
-			metric.WithDescription("Number of reactions added"),
+			"clubhouse_reactions_added_total",
+			metric.WithDescription("Total number of reactions added"),
 		)
 		if err != nil {
 			metricsInitErr = err
@@ -283,8 +287,8 @@ func initMetrics() error {
 		}
 
 		reactionsRemoved, err := meter.Int64Counter(
-			"clubhouse.reactions.removed",
-			metric.WithDescription("Number of reactions removed"),
+			"clubhouse_reactions_removed_total",
+			metric.WithDescription("Total number of reactions removed"),
 		)
 		if err != nil {
 			metricsInitErr = err
@@ -322,6 +326,46 @@ func initMetrics() error {
 			"clubhouse.comments.restored",
 			metric.WithDescription("Number of comments restored"),
 		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		contentDeleted, err := meter.Int64Counter(
+			"clubhouse_content_deleted_total",
+			metric.WithDescription("Total number of content items deleted"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		contentRestored, err := meter.Int64Counter(
+			"clubhouse_content_restored_total",
+			metric.WithDescription("Total number of content items restored"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		usersRegistered, err := meter.Int64Counter(
+			"clubhouse_users_registered_total",
+			metric.WithDescription("Total number of users registered"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		usersApproved, err := meter.Int64Counter(
+			"clubhouse_users_approved_total",
+			metric.WithDescription("Total number of users approved by admins"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
 		if err != nil {
 			metricsInitErr = err
 			return
@@ -578,6 +622,10 @@ func initMetrics() error {
 			postsRestored:             postsRestored,
 			commentsDeleted:           commentsDeleted,
 			commentsRestored:          commentsRestored,
+			contentDeleted:            contentDeleted,
+			contentRestored:           contentRestored,
+			usersRegistered:           usersRegistered,
+			usersApproved:             usersApproved,
 			notificationsCreated:      notificationsCreated,
 			notificationsDelivered:    notificationsDelivered,
 			notificationsFailed:       notificationsFailed,
@@ -819,39 +867,55 @@ func RecordRateLimitLockout(ctx context.Context, reason string) {
 }
 
 // RecordPostCreated increments the post created counter.
-func RecordPostCreated(ctx context.Context) {
+func RecordPostCreated(ctx context.Context, section string) {
 	m := getMetrics()
 	if m == nil {
 		return
 	}
-	m.postsCreated.Add(ctx, 1)
+	section = strings.TrimSpace(section)
+	if section == "" {
+		section = "unknown"
+	}
+	m.postsCreated.Add(ctx, 1, metric.WithAttributes(attribute.String("section", section)))
 }
 
 // RecordCommentCreated increments the comment created counter.
-func RecordCommentCreated(ctx context.Context) {
+func RecordCommentCreated(ctx context.Context, section string) {
 	m := getMetrics()
 	if m == nil {
 		return
 	}
-	m.commentsCreated.Add(ctx, 1)
+	section = strings.TrimSpace(section)
+	if section == "" {
+		section = "unknown"
+	}
+	m.commentsCreated.Add(ctx, 1, metric.WithAttributes(attribute.String("section", section)))
 }
 
 // RecordReactionAdded increments the reaction added counter.
-func RecordReactionAdded(ctx context.Context, target string) {
+func RecordReactionAdded(ctx context.Context, emoji string) {
 	m := getMetrics()
 	if m == nil {
 		return
 	}
-	m.reactionsAdded.Add(ctx, 1, metric.WithAttributes(attribute.String("target", target)))
+	emoji = strings.TrimSpace(emoji)
+	if emoji == "" {
+		return
+	}
+	m.reactionsAdded.Add(ctx, 1, metric.WithAttributes(attribute.String("emoji", emoji)))
 }
 
 // RecordReactionRemoved increments the reaction removed counter.
-func RecordReactionRemoved(ctx context.Context, target string) {
+func RecordReactionRemoved(ctx context.Context, emoji string) {
 	m := getMetrics()
 	if m == nil {
 		return
 	}
-	m.reactionsRemoved.Add(ctx, 1, metric.WithAttributes(attribute.String("target", target)))
+	emoji = strings.TrimSpace(emoji)
+	if emoji == "" {
+		return
+	}
+	m.reactionsRemoved.Add(ctx, 1, metric.WithAttributes(attribute.String("emoji", emoji)))
 }
 
 // RecordPostDeleted increments the post deleted counter.
@@ -861,6 +925,7 @@ func RecordPostDeleted(ctx context.Context) {
 		return
 	}
 	m.postsDeleted.Add(ctx, 1)
+	m.contentDeleted.Add(ctx, 1, metric.WithAttributes(attribute.String("type", "post")))
 }
 
 // RecordPostRestored increments the post restored counter.
@@ -870,6 +935,7 @@ func RecordPostRestored(ctx context.Context) {
 		return
 	}
 	m.postsRestored.Add(ctx, 1)
+	m.contentRestored.Add(ctx, 1, metric.WithAttributes(attribute.String("type", "post")))
 }
 
 // RecordCommentDeleted increments the comment deleted counter.
@@ -879,6 +945,7 @@ func RecordCommentDeleted(ctx context.Context) {
 		return
 	}
 	m.commentsDeleted.Add(ctx, 1)
+	m.contentDeleted.Add(ctx, 1, metric.WithAttributes(attribute.String("type", "comment")))
 }
 
 // RecordCommentRestored increments the comment restored counter.
@@ -888,6 +955,25 @@ func RecordCommentRestored(ctx context.Context) {
 		return
 	}
 	m.commentsRestored.Add(ctx, 1)
+	m.contentRestored.Add(ctx, 1, metric.WithAttributes(attribute.String("type", "comment")))
+}
+
+// RecordUserRegistered increments the user registered counter.
+func RecordUserRegistered(ctx context.Context) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.usersRegistered.Add(ctx, 1)
+}
+
+// RecordUserApproved increments the user approved counter.
+func RecordUserApproved(ctx context.Context) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.usersApproved.Add(ctx, 1)
 }
 
 // RecordNotificationsCreated increments the notification created counter.

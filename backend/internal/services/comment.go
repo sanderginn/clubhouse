@@ -51,10 +51,15 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 	}
 	span.SetAttributes(attribute.String("post_id", postID.String()))
 
-	// Verify post exists and is not deleted, and load section ID for audit metadata.
+	// Verify post exists and is not deleted, and load section context for audit metadata and metrics.
 	var sectionID uuid.UUID
-	err = s.db.QueryRowContext(ctx, "SELECT section_id FROM posts WHERE id = $1 AND deleted_at IS NULL", postID).
-		Scan(&sectionID)
+	var sectionName string
+	err = s.db.QueryRowContext(ctx, `
+		SELECT p.section_id, s.name
+		FROM posts p
+		JOIN sections s ON p.section_id = s.id
+		WHERE p.id = $1 AND p.deleted_at IS NULL
+	`, postID).Scan(&sectionID, &sectionName)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			err = fmt.Errorf("post not found")
@@ -232,7 +237,7 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	observability.RecordCommentCreated(ctx)
+	observability.RecordCommentCreated(ctx, sectionName)
 	return &comment, nil
 }
 

@@ -75,12 +75,12 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 	}
 	span.SetAttributes(attribute.String("section_id", sectionID.String()))
 
-	// Verify section exists
-	var sectionExists bool
-	err = s.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM sections WHERE id = $1)", sectionID).
-		Scan(&sectionExists)
-	if err != nil || !sectionExists {
-		if err == nil {
+	// Verify section exists and load name for metrics
+	var sectionName string
+	err = s.db.QueryRowContext(ctx, "SELECT name FROM sections WHERE id = $1", sectionID).
+		Scan(&sectionName)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
 			err = fmt.Errorf("section not found")
 		}
 		recordSpanError(span, err)
@@ -206,7 +206,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	observability.RecordPostCreated(ctx)
+	observability.RecordPostCreated(ctx, sectionName)
 	return &post, nil
 }
 
