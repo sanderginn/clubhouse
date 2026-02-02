@@ -478,17 +478,17 @@
     {
       "issue_number": 645,
       "title": "Tempo Trace Search panel TraceQL parse errors",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "bug",
         "observability"
       ],
       "priority": 2,
-      "assigned_to": "",
-      "worktree": "",
-      "branch": "fix/issue-645-tempo-trace-search-traceql-parse-errors",
-      "claimed_at": ""
+      "assigned_to": "agent-1770069313-88661",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770069313-88661",
+      "branch": "fix/issue-645-tempo-trace-search-panel-traceql-parse-e",
+      "claimed_at": "2026-02-02T21:55:13Z"
     },
     {
       "issue_number": 646,
