@@ -592,14 +592,18 @@
     {
       "issue_number": 655,
       "title": "Backend: Add SectionLink model for links aggregation",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
         "backend"
       ],
       "priority": 5,
-      "phase": 5
+      "phase": 5,
+      "assigned_to": "agent-1770071302-15262",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770071302-15262",
+      "branch": "feat/issue-655-backend-add-sectionlink-model-for-links-",
+      "claimed_at": "2026-02-02T22:28:22Z"
     },
     {
       "issue_number": 656,
