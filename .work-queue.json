@@ -386,7 +386,7 @@
     {
       "issue_number": 636,
       "title": "Grafana Audit Logs dashboard: panel query fails with pq AND type error",
-      "status": "queued",
+      "status": "available",
       "dependencies": [],
       "labels": [
         "bug",
@@ -398,7 +398,7 @@
     {
       "issue_number": 637,
       "title": "Grafana Admin Operations dashboard: \"Actions by Admin\" panel missing time column",
-      "status": "queued",
+      "status": "available",
       "dependencies": [],
       "labels": [
         "bug",
@@ -410,7 +410,7 @@
     {
       "issue_number": 638,
       "title": "Grafana Frontend Errors dashboard: Sentry datasource missing",
-      "status": "queued",
+      "status": "available",
       "dependencies": [],
       "labels": [
         "bug",
@@ -422,7 +422,7 @@
     {
       "issue_number": 639,
       "title": "Grafana Traces dashboard: Trace Search panel has invalid TraceQL query",
-      "status": "queued",
+      "status": "available",
       "dependencies": [],
       "labels": [
         "bug",
