@@ -1104,14 +1104,18 @@
     {
       "issue_number": 695,
       "title": "Observability: track notification read events (single + mark all)",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
         "backend",
         "observability"
       ],
-      "priority": 3
+      "priority": 3,
+      "assigned_to": "agent-1770075728-3781",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770075728-3781",
+      "branch": "feat/issue-695-observability-track-notification-read-ev",
+      "claimed_at": "2026-02-02T23:42:08Z"
     },
     {
       "issue_number": 696,
