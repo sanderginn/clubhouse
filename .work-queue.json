@@ -26,14 +26,18 @@
     {
       "issue_number": 628,
       "title": "Fix SQL syntax errors in Audit Logs & Admin Operations dashboards",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "bug",
         "observability",
         "grafana"
       ],
-      "priority": 1
+      "priority": 1,
+      "assigned_to": "agent-1770037755-13425",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770037755-13425",
+      "branch": "fix/issue-628-fix-sql-syntax-errors-in-audit-logs-admi",
+      "claimed_at": "2026-02-02T13:09:15Z"
     },
     {
       "issue_number": 629,
