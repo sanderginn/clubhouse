@@ -28,7 +28,8 @@
     636,
     637,
     638,
-    639
+    639,
+    645
   ],
   "issues": [
     {
@@ -478,7 +479,7 @@
     {
       "issue_number": 645,
       "title": "Tempo Trace Search panel TraceQL parse errors",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -488,7 +489,9 @@
       "assigned_to": "agent-1770069313-88661",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770069313-88661",
       "branch": "fix/issue-645-tempo-trace-search-panel-traceql-parse-e",
-      "claimed_at": "2026-02-02T21:55:13Z"
+      "claimed_at": "2026-02-02T21:55:13Z",
+      "pr_number": 648,
+      "completed_at": "2026-02-02T22:00:44Z"
     },
     {
       "issue_number": 646,
