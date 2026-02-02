@@ -89,6 +89,9 @@ func (h *PushHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	observability.RecordPushSubscriptionCreated(r.Context())
+	observability.LogInfo(r.Context(), "push subscription created", "user_id", userID.String())
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -109,6 +112,9 @@ func (h *PushHandler) Unsubscribe(w http.ResponseWriter, r *http.Request) {
 		writeError(r.Context(), w, http.StatusInternalServerError, "UNSUBSCRIBE_FAILED", "Failed to remove push subscription")
 		return
 	}
+
+	observability.RecordPushSubscriptionDeleted(r.Context())
+	observability.LogInfo(r.Context(), "push subscription deleted", "user_id", userID.String())
 
 	w.WriteHeader(http.StatusNoContent)
 }
