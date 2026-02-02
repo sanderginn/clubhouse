@@ -677,14 +677,18 @@
     {
       "issue_number": 662,
       "title": "Create saved_recipes table migration",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
         "recipes"
       ],
       "priority": 1,
-      "phase": "recipes-1"
+      "phase": "recipes-1",
+      "assigned_to": "agent-1770073717-71866",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770073717-71866",
+      "branch": "feat/issue-662-create-savedrecipes-table-migration",
+      "claimed_at": "2026-02-02T23:08:37Z"
     },
     {
       "issue_number": 663,
