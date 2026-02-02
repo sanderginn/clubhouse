@@ -82,6 +82,102 @@ func TestCreatePostWithLinks(t *testing.T) {
 	}
 }
 
+func TestCreatePostWithHighlightsStoresSortedMetadata(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	disableLinkMetadata(t)
+
+	userID := testutil.CreateTestUser(t, db, "highlightuser", "highlightuser@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Music Section", "music")
+
+	service := NewPostService(db)
+	req := &models.CreatePostRequest{
+		SectionID: sectionID,
+		Content:   "Highlights",
+		Links: []models.LinkRequest{
+			{
+				URL: "https://example.com/track",
+				Highlights: []models.Highlight{
+					{Timestamp: 45, Label: "Chorus"},
+					{Timestamp: 10, Label: "Intro"},
+				},
+			},
+		},
+	}
+
+	post, err := service.CreatePost(context.Background(), req, uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("CreatePost failed: %v", err)
+	}
+
+	if len(post.Links) != 1 {
+		t.Fatalf("expected 1 link, got %d", len(post.Links))
+	}
+	if len(post.Links[0].Highlights) != 2 {
+		t.Fatalf("expected 2 highlights, got %d", len(post.Links[0].Highlights))
+	}
+	if post.Links[0].Highlights[0].Timestamp != 10 || post.Links[0].Highlights[1].Timestamp != 45 {
+		t.Errorf("expected highlights sorted by timestamp, got %+v", post.Links[0].Highlights)
+	}
+
+	var metadataBytes []byte
+	if err := db.QueryRow(`SELECT metadata FROM links WHERE post_id = $1`, post.ID).Scan(&metadataBytes); err != nil {
+		t.Fatalf("failed to query link metadata: %v", err)
+	}
+	var metadata map[string]interface{}
+	if err := json.Unmarshal(metadataBytes, &metadata); err != nil {
+		t.Fatalf("failed to unmarshal link metadata: %v", err)
+	}
+	rawHighlights, ok := metadata["highlights"]
+	if !ok {
+		t.Fatalf("expected highlights in metadata")
+	}
+	encoded, err := json.Marshal(rawHighlights)
+	if err != nil {
+		t.Fatalf("failed to marshal highlights: %v", err)
+	}
+	var storedHighlights []models.Highlight
+	if err := json.Unmarshal(encoded, &storedHighlights); err != nil {
+		t.Fatalf("failed to unmarshal highlights: %v", err)
+	}
+	if len(storedHighlights) != 2 || storedHighlights[0].Timestamp != 10 || storedHighlights[1].Timestamp != 45 {
+		t.Errorf("expected stored highlights sorted, got %+v", storedHighlights)
+	}
+}
+
+func TestCreatePostRejectsHighlightsForNonMusicSection(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	disableLinkMetadata(t)
+
+	userID := testutil.CreateTestUser(t, db, "highlightreject", "highlightreject@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "General Section", "general")
+
+	service := NewPostService(db)
+	req := &models.CreatePostRequest{
+		SectionID: sectionID,
+		Content:   "Highlights",
+		Links: []models.LinkRequest{
+			{
+				URL: "https://example.com/track",
+				Highlights: []models.Highlight{
+					{Timestamp: 5, Label: "Intro"},
+				},
+			},
+		},
+	}
+
+	_, err := service.CreatePost(context.Background(), req, uuid.MustParse(userID))
+	if err == nil {
+		t.Fatalf("expected error for highlights in non-music section")
+	}
+	if !strings.Contains(err.Error(), "highlights are not allowed") {
+		t.Fatalf("expected highlights validation error, got %v", err)
+	}
+}
+
 func TestCreatePostWithLinksNoContent(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
@@ -341,6 +437,82 @@ func TestUpdatePostImages(t *testing.T) {
 	}
 	if int(imageCount) != 1 {
 		t.Errorf("expected image_count 1, got %v", imageCount)
+	}
+}
+
+func TestUpdatePostHighlights(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	disableLinkMetadata(t)
+
+	userID := testutil.CreateTestUser(t, db, "updatehighlights", "updatehighlights@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Update Music Section", "music")
+
+	service := NewPostService(db)
+	createReq := &models.CreatePostRequest{
+		SectionID: sectionID,
+		Content:   "Post with link",
+		Links: []models.LinkRequest{
+			{URL: "https://example.com/track"},
+		},
+	}
+
+	post, err := service.CreatePost(context.Background(), createReq, uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("CreatePost failed: %v", err)
+	}
+
+	updateReq := &models.UpdatePostRequest{
+		Content: "Post with link",
+		Links: &[]models.LinkRequest{
+			{
+				URL: "https://example.com/track",
+				Highlights: []models.Highlight{
+					{Timestamp: 30, Label: "Verse"},
+					{Timestamp: 12, Label: "Intro"},
+				},
+			},
+		},
+	}
+
+	updated, err := service.UpdatePost(context.Background(), post.ID, uuid.MustParse(userID), updateReq)
+	if err != nil {
+		t.Fatalf("UpdatePost failed: %v", err)
+	}
+
+	if len(updated.Links) != 1 {
+		t.Fatalf("expected 1 link after update, got %d", len(updated.Links))
+	}
+	if len(updated.Links[0].Highlights) != 2 {
+		t.Fatalf("expected 2 highlights, got %d", len(updated.Links[0].Highlights))
+	}
+	if updated.Links[0].Highlights[0].Timestamp != 12 || updated.Links[0].Highlights[1].Timestamp != 30 {
+		t.Errorf("expected highlights sorted, got %+v", updated.Links[0].Highlights)
+	}
+
+	var metadataBytes []byte
+	if err := db.QueryRow(`SELECT metadata FROM links WHERE post_id = $1`, post.ID).Scan(&metadataBytes); err != nil {
+		t.Fatalf("failed to query link metadata: %v", err)
+	}
+	var metadata map[string]interface{}
+	if err := json.Unmarshal(metadataBytes, &metadata); err != nil {
+		t.Fatalf("failed to unmarshal link metadata: %v", err)
+	}
+	rawHighlights, ok := metadata["highlights"]
+	if !ok {
+		t.Fatalf("expected highlights in metadata")
+	}
+	encoded, err := json.Marshal(rawHighlights)
+	if err != nil {
+		t.Fatalf("failed to marshal highlights: %v", err)
+	}
+	var storedHighlights []models.Highlight
+	if err := json.Unmarshal(encoded, &storedHighlights); err != nil {
+		t.Fatalf("failed to unmarshal highlights: %v", err)
+	}
+	if len(storedHighlights) != 2 || storedHighlights[0].Timestamp != 12 || storedHighlights[1].Timestamp != 30 {
+		t.Errorf("expected stored highlights sorted, got %+v", storedHighlights)
 	}
 }
 

@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -94,6 +96,11 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 			return nil, err
 		}
 	}
+	highlightCount := countLinkHighlights(req.Links)
+	if highlightCount > 0 {
+		span.SetAttributes(attribute.Int("highlight_count", highlightCount))
+		observability.LogDebug(ctx, "post highlights provided", "highlight_count", strconv.Itoa(highlightCount), "section_type", sectionType)
+	}
 
 	// Create post ID
 	postID := uuid.New()
@@ -134,9 +141,15 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 		for i, linkReq := range req.Links {
 			linkID := uuid.New()
 
-			metadataValue := interface{}(nil)
+			var fetchedMetadata models.JSONMap
 			if len(linkMetadata) > i && len(linkMetadata[i]) > 0 {
-				metadataValue = linkMetadata[i]
+				fetchedMetadata = linkMetadata[i]
+			}
+
+			mergedMetadata, sortedHighlights := mergeHighlightsIntoMetadata(linkReq, fetchedMetadata)
+			metadataValue := interface{}(nil)
+			if len(mergedMetadata) > 0 {
+				metadataValue = mergedMetadata
 			}
 
 			// Insert link
@@ -156,7 +169,10 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 			}
 
 			if meta, ok := metadataValue.(models.JSONMap); ok && len(meta) > 0 {
-				link.Metadata = map[string]interface{}(meta)
+				link.Metadata = stripHighlightsFromMetadata(meta)
+			}
+			if len(sortedHighlights) > 0 {
+				link.Highlights = sortedHighlights
 			}
 
 			post.Links = append(post.Links, link)
@@ -271,6 +287,12 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 	}
 
 	if req.Links != nil {
+		highlightCount := countLinkHighlights(*req.Links)
+		if highlightCount > 0 {
+			span.SetAttributes(attribute.Int("highlight_count", highlightCount))
+			observability.LogDebug(ctx, "post highlights updated", "highlight_count", strconv.Itoa(highlightCount), "section_type", sectionType)
+		}
+
 		for _, link := range *req.Links {
 			if err := models.ValidateHighlights(sectionType, link.Highlights); err != nil {
 				recordSpanError(span, err)
@@ -278,13 +300,13 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 			}
 		}
 
-		existingURLs, err := getPostLinkURLs(ctx, s.db, postID)
+		existingLinks, err := s.getPostLinks(ctx, postID)
 		if err != nil {
 			recordSpanError(span, err)
 			return nil, fmt.Errorf("failed to fetch post links: %w", err)
 		}
 
-		linksChanged = !linkRequestsMatchURLs(existingURLs, *req.Links)
+		linksChanged = !linkRequestsMatchExistingLinks(existingLinks, *req.Links)
 		if linksChanged && len(*req.Links) > 0 {
 			linkMetadata = fetchLinkMetadata(ctx, *req.Links)
 		}
@@ -330,9 +352,15 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 			for i, linkReq := range *req.Links {
 				linkID := uuid.New()
 
-				metadataValue := interface{}(nil)
+				var fetchedMetadata models.JSONMap
 				if len(linkMetadata) > i && len(linkMetadata[i]) > 0 {
-					metadataValue = linkMetadata[i]
+					fetchedMetadata = linkMetadata[i]
+				}
+
+				mergedMetadata, _ := mergeHighlightsIntoMetadata(linkReq, fetchedMetadata)
+				metadataValue := interface{}(nil)
+				if len(mergedMetadata) > 0 {
+					metadataValue = mergedMetadata
 				}
 
 				_, err := tx.ExecContext(ctx, `
@@ -481,6 +509,10 @@ func (s *PostService) GetPostByID(ctx context.Context, postID uuid.UUID, userID 
 
 // getPostLinks retrieves all links for a post
 func (s *PostService) getPostLinks(ctx context.Context, postID uuid.UUID) ([]models.Link, error) {
+	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.getPostLinks")
+	span.SetAttributes(attribute.String("post_id", postID.String()))
+	defer span.End()
+
 	query := `
 		SELECT id, url, metadata, created_at
 		FROM links
@@ -495,21 +527,34 @@ func (s *PostService) getPostLinks(ctx context.Context, postID uuid.UUID) ([]mod
 	defer rows.Close()
 
 	var links []models.Link
+	highlightCount := 0
 	for rows.Next() {
 		var link models.Link
 		var metadataJSON sql.NullString
 
 		err := rows.Scan(&link.ID, &link.URL, &metadataJSON, &link.CreatedAt)
 		if err != nil {
+			recordSpanError(span, err)
 			return nil, err
 		}
 
 		// Parse metadata if present
 		if metadataJSON.Valid {
-			err := json.Unmarshal([]byte(metadataJSON.String), &link.Metadata)
-			if err != nil {
-				// If metadata is invalid JSON, just skip it
-				link.Metadata = nil
+			var metadata map[string]interface{}
+			if err := json.Unmarshal([]byte(metadataJSON.String), &metadata); err != nil {
+				observability.LogWarn(ctx, "failed to parse link metadata", "post_id", postID.String(), "link_id", link.ID.String())
+			} else {
+				highlights, err := extractHighlightsFromMetadata(metadata)
+				if err != nil {
+					observability.LogWarn(ctx, "failed to parse link highlights", "post_id", postID.String(), "link_id", link.ID.String())
+				} else if len(highlights) > 0 {
+					link.Highlights = highlights
+					highlightCount += len(highlights)
+					delete(metadata, "highlights")
+				}
+				if len(metadata) > 0 {
+					link.Metadata = metadata
+				}
 			}
 		}
 
@@ -517,9 +562,14 @@ func (s *PostService) getPostLinks(ctx context.Context, postID uuid.UUID) ([]mod
 	}
 
 	if err = rows.Err(); err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 
+	span.SetAttributes(
+		attribute.Int("link_count", len(links)),
+		attribute.Int("highlight_count", highlightCount),
+	)
 	return links, nil
 }
 
@@ -563,32 +613,6 @@ func (s *PostService) getPostImages(ctx context.Context, postID uuid.UUID) ([]mo
 	}
 
 	return images, nil
-}
-
-func getPostLinkURLs(ctx context.Context, queryer interface {
-	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
-}, postID uuid.UUID) ([]string, error) {
-	rows, err := queryer.QueryContext(ctx, `
-		SELECT url
-		FROM links
-		WHERE post_id = $1
-		ORDER BY created_at ASC
-	`, postID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var urls []string
-	for rows.Next() {
-		var url string
-		if err := rows.Scan(&url); err != nil {
-			return nil, err
-		}
-		urls = append(urls, url)
-	}
-
-	return urls, rows.Err()
 }
 
 type postImageEntry struct {
@@ -648,6 +672,95 @@ func optionalTextMatches(value sql.NullString, expected *string) bool {
 		return !value.Valid
 	}
 	return value.Valid && value.String == *expected
+}
+
+func countLinkHighlights(links []models.LinkRequest) int {
+	count := 0
+	for _, link := range links {
+		count += len(link.Highlights)
+	}
+	return count
+}
+
+func mergeHighlightsIntoMetadata(link models.LinkRequest, fetched models.JSONMap) (models.JSONMap, []models.Highlight) {
+	sortedHighlights := sortHighlights(link.Highlights)
+	if len(sortedHighlights) == 0 && len(fetched) == 0 {
+		return nil, sortedHighlights
+	}
+	metadata := make(models.JSONMap)
+	for key, value := range fetched {
+		metadata[key] = value
+	}
+	if len(sortedHighlights) > 0 {
+		metadata["highlights"] = sortedHighlights
+	}
+	return metadata, sortedHighlights
+}
+
+func stripHighlightsFromMetadata(metadata models.JSONMap) map[string]interface{} {
+	if len(metadata) == 0 {
+		return nil
+	}
+	trimmed := make(map[string]interface{}, len(metadata))
+	for key, value := range metadata {
+		if key == "highlights" {
+			continue
+		}
+		trimmed[key] = value
+	}
+	if len(trimmed) == 0 {
+		return nil
+	}
+	return trimmed
+}
+
+func extractHighlightsFromMetadata(metadata map[string]interface{}) ([]models.Highlight, error) {
+	raw, ok := metadata["highlights"]
+	if !ok {
+		return nil, nil
+	}
+	encoded, err := json.Marshal(raw)
+	if err != nil {
+		return nil, err
+	}
+	var highlights []models.Highlight
+	if err := json.Unmarshal(encoded, &highlights); err != nil {
+		return nil, err
+	}
+	return sortHighlights(highlights), nil
+}
+
+func sortHighlights(highlights []models.Highlight) []models.Highlight {
+	if len(highlights) == 0 {
+		return nil
+	}
+	sorted := append([]models.Highlight(nil), highlights...)
+	sort.SliceStable(sorted, func(i, j int) bool {
+		return sorted[i].Timestamp < sorted[j].Timestamp
+	})
+	return sorted
+}
+
+func linkRequestsMatchExistingLinks(existing []models.Link, requested []models.LinkRequest) bool {
+	if len(existing) != len(requested) {
+		return false
+	}
+	for i, link := range requested {
+		if existing[i].URL != link.URL {
+			return false
+		}
+		existingHighlights := sortHighlights(existing[i].Highlights)
+		requestedHighlights := sortHighlights(link.Highlights)
+		if len(existingHighlights) != len(requestedHighlights) {
+			return false
+		}
+		for j := range existingHighlights {
+			if existingHighlights[j] != requestedHighlights[j] {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // getPostReactions retrieves reaction counts and viewer reactions for a post
