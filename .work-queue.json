@@ -670,6 +670,370 @@
       ],
       "priority": 8,
       "phase": 8
+    },
+    {
+      "issue_number": 662,
+      "title": "Create saved_recipes table migration",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "recipes"
+      ],
+      "priority": 1,
+      "phase": "recipes-1"
+    },
+    {
+      "issue_number": 663,
+      "title": "Create recipe_categories table migration",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "recipes"
+      ],
+      "priority": 2,
+      "phase": "recipes-1"
+    },
+    {
+      "issue_number": 664,
+      "title": "Create cook_logs table migration",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "recipes"
+      ],
+      "priority": 3,
+      "phase": "recipes-1"
+    },
+    {
+      "issue_number": 665,
+      "title": "Add SavedRecipe and RecipeCategory Go models",
+      "status": "available",
+      "dependencies": [
+        662,
+        663
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "recipes"
+      ],
+      "priority": 4,
+      "phase": "recipes-1"
+    },
+    {
+      "issue_number": 666,
+      "title": "Add CookLog Go model",
+      "status": "available",
+      "dependencies": [
+        664
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "recipes"
+      ],
+      "priority": 5,
+      "phase": "recipes-1"
+    },
+    {
+      "issue_number": 667,
+      "title": "Add RecipeStats to Post model",
+      "status": "available",
+      "dependencies": [
+        665,
+        666
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "recipes"
+      ],
+      "priority": 6,
+      "phase": "recipes-1"
+    },
+    {
+      "issue_number": 668,
+      "title": "Implement SavedRecipeService",
+      "status": "available",
+      "dependencies": [
+        662,
+        663,
+        665
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "recipes"
+      ],
+      "priority": 7,
+      "phase": "recipes-2"
+    },
+    {
+      "issue_number": 669,
+      "title": "Implement CookLogService",
+      "status": "available",
+      "dependencies": [
+        664,
+        666
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "recipes"
+      ],
+      "priority": 8,
+      "phase": "recipes-2"
+    },
+    {
+      "issue_number": 670,
+      "title": "Extend PostService to include recipe stats",
+      "status": "available",
+      "dependencies": [
+        667,
+        668,
+        669
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "recipes"
+      ],
+      "priority": 9,
+      "phase": "recipes-2"
+    },
+    {
+      "issue_number": 671,
+      "title": "Implement saved recipe HTTP handlers",
+      "status": "available",
+      "dependencies": [
+        668
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "recipes"
+      ],
+      "priority": 10,
+      "phase": "recipes-3"
+    },
+    {
+      "issue_number": 672,
+      "title": "Implement cook log HTTP handlers",
+      "status": "available",
+      "dependencies": [
+        669
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "recipes"
+      ],
+      "priority": 11,
+      "phase": "recipes-3"
+    },
+    {
+      "issue_number": 673,
+      "title": "Add WebSocket events for recipe actions",
+      "status": "available",
+      "dependencies": [
+        671,
+        672
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "recipes"
+      ],
+      "priority": 12,
+      "phase": "recipes-3"
+    },
+    {
+      "issue_number": 675,
+      "title": "Add recipe API methods to frontend api.ts",
+      "status": "available",
+      "dependencies": [
+        671,
+        672
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 13,
+      "phase": "recipes-4"
+    },
+    {
+      "issue_number": 676,
+      "title": "Create recipeStore for frontend state management",
+      "status": "available",
+      "dependencies": [
+        675
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 14,
+      "phase": "recipes-4"
+    },
+    {
+      "issue_number": 678,
+      "title": "Create RecipeSaveButton component",
+      "status": "available",
+      "dependencies": [
+        676
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 15,
+      "phase": "recipes-4"
+    },
+    {
+      "issue_number": 679,
+      "title": "Create CategoryManager component",
+      "status": "available",
+      "dependencies": [
+        676
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 16,
+      "phase": "recipes-4"
+    },
+    {
+      "issue_number": 680,
+      "title": "Create RatingStars component",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 17,
+      "phase": "recipes-5"
+    },
+    {
+      "issue_number": 681,
+      "title": "Create CookButton component",
+      "status": "available",
+      "dependencies": [
+        676,
+        680
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 18,
+      "phase": "recipes-5"
+    },
+    {
+      "issue_number": 683,
+      "title": "Create RecipeStatsBar component",
+      "status": "available",
+      "dependencies": [
+        678,
+        680,
+        681
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 19,
+      "phase": "recipes-6"
+    },
+    {
+      "issue_number": 684,
+      "title": "Integrate RecipeStatsBar into PostCard",
+      "status": "available",
+      "dependencies": [
+        670,
+        683
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 20,
+      "phase": "recipes-6"
+    },
+    {
+      "issue_number": 685,
+      "title": "Create Cookbook component",
+      "status": "available",
+      "dependencies": [
+        676,
+        679,
+        680
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 21,
+      "phase": "recipes-7"
+    },
+    {
+      "issue_number": 686,
+      "title": "Integrate Cookbook into App.svelte for recipe section",
+      "status": "available",
+      "dependencies": [
+        685
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 22,
+      "phase": "recipes-7"
+    },
+    {
+      "issue_number": 687,
+      "title": "[Stretch] Implement recipe content parser for link metadata",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "recipes",
+        "stretch"
+      ],
+      "priority": 23,
+      "phase": "recipes-8"
+    },
+    {
+      "issue_number": 688,
+      "title": "[Stretch] Create RecipeCard component for parsed recipe display",
+      "status": "available",
+      "dependencies": [
+        687
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes",
+        "stretch"
+      ],
+      "priority": 24,
+      "phase": "recipes-8"
     }
   ]
 }
