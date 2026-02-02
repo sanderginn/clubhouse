@@ -115,6 +115,11 @@ Optional frontend environment variables:
 - `VITE_OTEL_SERVICE_NAME`: Service name used in frontend traces (defaults to `clubhouse-frontend`).
 - `VITE_PROXY_LOG_LEVEL`: Vite proxy logging level (`none`/`silent`, `error`, `warn`, `info`, `debug`; defaults to `warn`).
 
+Optional Grafana Sentry datasource variables (for the "Clubhouse - Frontend Errors" dashboard):
+- `GRAFANA_SENTRY_URL`: Base URL for Sentry (defaults to `https://sentry.io`).
+- `GRAFANA_SENTRY_ORG`: Sentry organization slug.
+- `GRAFANA_SENTRY_AUTH_TOKEN`: Sentry API auth token with read access.
+
 ## Architecture
 
 See [DESIGN.md](DESIGN.md) for complete system design.

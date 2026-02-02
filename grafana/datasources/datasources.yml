@@ -63,6 +63,18 @@ datasources:
       lokiSearch:
         datasourceUid: loki
 
+  - name: Sentry
+    type: grafana-sentry-datasource
+    uid: sentry
+    access: proxy
+    url: ${GRAFANA_SENTRY_URL}
+    isDefault: false
+    editable: true
+    jsonData:
+      organization: ${GRAFANA_SENTRY_ORG}
+    secureJsonData:
+      authToken: ${GRAFANA_SENTRY_AUTH_TOKEN}
+
   - name: Alertmanager
     type: alertmanager
     uid: alertmanager

@@ -173,6 +173,9 @@ services:
       GF_SERVER_ROOT_URL: ${GF_SERVER_ROOT_URL}
       GF_SERVER_SERVE_FROM_SUB_PATH: ${GF_SERVER_SERVE_FROM_SUB_PATH:-false}
       GF_PLUGINS_PREINSTALL: ${GF_PLUGINS_PREINSTALL:-}
+      GRAFANA_SENTRY_URL: ${GRAFANA_SENTRY_URL:-https://sentry.io}
+      GRAFANA_SENTRY_ORG: ${GRAFANA_SENTRY_ORG:-}
+      GRAFANA_SENTRY_AUTH_TOKEN: ${GRAFANA_SENTRY_AUTH_TOKEN:-}
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/entrypoint.sh:/etc/grafana/entrypoint.sh:ro

@@ -112,6 +112,9 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: admin
       # Optional plugin preinstall list (e.g. "grafana-piechart-panel")
       GF_PLUGINS_PREINSTALL: ${GF_PLUGINS_PREINSTALL:-}
+      GRAFANA_SENTRY_URL: ${GRAFANA_SENTRY_URL:-https://sentry.io}
+      GRAFANA_SENTRY_ORG: ${GRAFANA_SENTRY_ORG:-}
+      GRAFANA_SENTRY_AUTH_TOKEN: ${GRAFANA_SENTRY_AUTH_TOKEN:-}
       GF_LOG_LEVEL: warn
       GF_LOG_CONSOLE_FORMAT: json
       GF_LOG_FILE_FORMAT: json
