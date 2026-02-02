@@ -2,6 +2,7 @@ package observability
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 	"sync"
 	"time"
@@ -68,13 +69,31 @@ type metrics struct {
 	frontendWebsocketDuration metric.Float64Histogram
 	frontendAssetDuration     metric.Float64Histogram
 	frontendComponentDuration metric.Float64Histogram
+	dbConnectionsOpen         metric.Int64UpDownCounter
+	dbConnectionsInUse        metric.Int64UpDownCounter
+	dbConnectionsIdle         metric.Int64UpDownCounter
+	dbConnectionWaitCount     metric.Int64Counter
+	dbConnectionWaitDuration  metric.Float64Counter
+	dbQueryErrors             metric.Int64Counter
+	dbTransactions            metric.Int64Counter
 }
 
 var (
 	metricsOnce     sync.Once
 	metricsInitErr  error
 	metricsInstance *metrics
+	dbStatsMu       sync.Mutex
+	dbStatsSnapshot dbStatsState
 )
+
+type dbStatsState struct {
+	initialized bool
+	open        int64
+	inUse       int64
+	idle        int64
+	waitCount   int64
+	waitSeconds float64
+}
 
 func initMetrics() error {
 	metricsOnce.Do(func() {
@@ -594,6 +613,70 @@ func initMetrics() error {
 			return
 		}
 
+		dbConnectionsOpen, err := meter.Int64UpDownCounter(
+			"clubhouse_db_connections_open",
+			metric.WithDescription("Number of open database connections"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		dbConnectionsInUse, err := meter.Int64UpDownCounter(
+			"clubhouse_db_connections_in_use",
+			metric.WithDescription("Number of database connections currently in use"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		dbConnectionsIdle, err := meter.Int64UpDownCounter(
+			"clubhouse_db_connections_idle",
+			metric.WithDescription("Number of idle database connections in the pool"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		dbConnectionWaitCount, err := meter.Int64Counter(
+			"clubhouse_db_connection_wait_count",
+			metric.WithDescription("Total number of connections waited for"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		dbConnectionWaitDuration, err := meter.Float64Counter(
+			"clubhouse_db_connection_wait_duration_seconds",
+			metric.WithDescription("Total time blocked waiting for new connections in seconds"),
+			metric.WithUnit("s"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		dbQueryErrors, err := meter.Int64Counter(
+			"clubhouse_db_query_errors_total",
+			metric.WithDescription("Total number of database query errors"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		dbTransactions, err := meter.Int64Counter(
+			"clubhouse_db_transactions_total",
+			metric.WithDescription("Total number of database transactions"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
 		metricsInstance = &metrics{
 			httpRequestCount:          httpRequestCount,
 			httpRequestDuration:       httpRequestDuration,
@@ -650,6 +733,13 @@ func initMetrics() error {
 			frontendWebsocketDuration: frontendWebsocketDuration,
 			frontendAssetDuration:     frontendAssetDuration,
 			frontendComponentDuration: frontendComponentDuration,
+			dbConnectionsOpen:         dbConnectionsOpen,
+			dbConnectionsInUse:        dbConnectionsInUse,
+			dbConnectionsIdle:         dbConnectionsIdle,
+			dbConnectionWaitCount:     dbConnectionWaitCount,
+			dbConnectionWaitDuration:  dbConnectionWaitDuration,
+			dbQueryErrors:             dbQueryErrors,
+			dbTransactions:            dbTransactions,
 		}
 	})
 
@@ -804,6 +894,120 @@ func RecordAuthSessionExpired(ctx context.Context, reason string, count int64) {
 		return
 	}
 	m.authSessionsExpired.Add(ctx, count, metric.WithAttributes(attrs...))
+}
+
+// UpdateDBStats records database connection pool statistics.
+func UpdateDBStats(ctx context.Context, db *sql.DB) {
+	m := getMetrics()
+	if m == nil || db == nil {
+		return
+	}
+
+	stats := db.Stats()
+	dbStatsMu.Lock()
+	defer dbStatsMu.Unlock()
+
+	open := int64(stats.OpenConnections)
+	inUse := int64(stats.InUse)
+	idle := int64(stats.Idle)
+	waitCount := int64(stats.WaitCount)
+	waitSeconds := stats.WaitDuration.Seconds()
+
+	if !dbStatsSnapshot.initialized {
+		m.dbConnectionsOpen.Add(ctx, open)
+		m.dbConnectionsInUse.Add(ctx, inUse)
+		m.dbConnectionsIdle.Add(ctx, idle)
+		if waitCount > 0 {
+			m.dbConnectionWaitCount.Add(ctx, waitCount)
+		}
+		if waitSeconds > 0 {
+			m.dbConnectionWaitDuration.Add(ctx, waitSeconds)
+		}
+		dbStatsSnapshot = dbStatsState{
+			initialized: true,
+			open:        open,
+			inUse:       inUse,
+			idle:        idle,
+			waitCount:   waitCount,
+			waitSeconds: waitSeconds,
+		}
+		return
+	}
+
+	m.dbConnectionsOpen.Add(ctx, open-dbStatsSnapshot.open)
+	m.dbConnectionsInUse.Add(ctx, inUse-dbStatsSnapshot.inUse)
+	m.dbConnectionsIdle.Add(ctx, idle-dbStatsSnapshot.idle)
+
+	waitDelta := waitCount - dbStatsSnapshot.waitCount
+	if waitDelta > 0 {
+		m.dbConnectionWaitCount.Add(ctx, waitDelta)
+	}
+	waitSecondsDelta := waitSeconds - dbStatsSnapshot.waitSeconds
+	if waitSecondsDelta > 0 {
+		m.dbConnectionWaitDuration.Add(ctx, waitSecondsDelta)
+	}
+
+	dbStatsSnapshot.open = open
+	dbStatsSnapshot.inUse = inUse
+	dbStatsSnapshot.idle = idle
+	dbStatsSnapshot.waitCount = waitCount
+	dbStatsSnapshot.waitSeconds = waitSeconds
+}
+
+// StartDBStatsReporter periodically updates database stats until the context is done.
+func StartDBStatsReporter(ctx context.Context, db *sql.DB, interval time.Duration) {
+	if db == nil {
+		return
+	}
+	if interval <= 0 {
+		interval = 15 * time.Second
+	}
+	UpdateDBStats(ctx, db)
+
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			UpdateDBStats(ctx, db)
+		}
+	}
+}
+
+// RecordDBQueryError increments the database query error counter.
+func RecordDBQueryError(ctx context.Context, queryType, errorType string) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+
+	attrs := []attribute.KeyValue{}
+	if strings.TrimSpace(queryType) != "" {
+		attrs = append(attrs, attribute.String("query_type", queryType))
+	}
+	if strings.TrimSpace(errorType) != "" {
+		attrs = append(attrs, attribute.String("error_type", errorType))
+	}
+	if len(attrs) == 0 {
+		m.dbQueryErrors.Add(ctx, 1)
+		return
+	}
+	m.dbQueryErrors.Add(ctx, 1, metric.WithAttributes(attrs...))
+}
+
+// RecordDBTransaction increments the database transaction counter.
+func RecordDBTransaction(ctx context.Context, status string) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	if strings.TrimSpace(status) == "" {
+		return
+	}
+	m.dbTransactions.Add(ctx, 1, metric.WithAttributes(attribute.String("status", status)))
 }
 
 // RecordAuthTOTPVerification increments the TOTP verification counter.

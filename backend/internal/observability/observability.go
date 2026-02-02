@@ -76,6 +76,16 @@ func Init(ctx context.Context) (func(context.Context) error, http.Handler, error
 	mp := sdkmetric.NewMeterProvider(
 		sdkmetric.WithResource(res),
 		sdkmetric.WithReader(exporter),
+		sdkmetric.WithView(sdkmetric.NewView(
+			sdkmetric.Instrument{
+				Name: "db.client.operation.duration",
+			},
+			sdkmetric.Stream{
+				Name:        "clubhouse_db_query_duration_seconds",
+				Description: "Database query duration in seconds",
+				Unit:        "s",
+			},
+		)),
 	)
 	otel.SetMeterProvider(mp)
 
