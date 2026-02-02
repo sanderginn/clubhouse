@@ -24,6 +24,54 @@
   ],
   "issues": [
     {
+      "issue_number": 628,
+      "title": "Fix SQL syntax errors in Audit Logs & Admin Operations dashboards",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "observability",
+        "grafana"
+      ],
+      "priority": 1
+    },
+    {
+      "issue_number": 629,
+      "title": "Add database metrics instrumentation to backend",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "observability"
+      ],
+      "priority": 2
+    },
+    {
+      "issue_number": 630,
+      "title": "Add business metrics instrumentation to backend",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "observability"
+      ],
+      "priority": 3
+    },
+    {
+      "issue_number": 631,
+      "title": "Investigate and fix Loki log shipping from backend",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "backend",
+        "observability"
+      ],
+      "priority": 4
+    },
+    {
       "issue_number": 616,
       "title": "Fix \"Reply to image\" button not clickable in carousel and overlapped in lightbox",
       "status": "completed",
