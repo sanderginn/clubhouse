@@ -79,6 +79,26 @@ describe('PostCard', () => {
     expect(screen.getByText('Example')).toBeInTheDocument();
   });
 
+  it('renders highlights when link includes them', () => {
+    const postWithHighlights: Post = {
+      ...basePost,
+      links: [
+        {
+          url: 'https://example.com',
+          metadata: {
+            url: 'https://example.com',
+            title: 'Example',
+          },
+          highlights: [{ timestamp: 75, label: 'Intro' }],
+        },
+      ],
+    };
+
+    render(PostCard, { post: postWithHighlights });
+    expect(screen.getByText('01:15')).toBeInTheDocument();
+    expect(screen.getByText('Intro')).toBeInTheDocument();
+  });
+
   it('shows a posted in label when section pill label is enabled', () => {
     sectionStore.setSections([
       {

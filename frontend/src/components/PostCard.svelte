@@ -8,6 +8,7 @@
   import EditedBadge from './EditedBadge.svelte';
   import ReactionBar from './reactions/ReactionBar.svelte';
   import RelativeTime from './RelativeTime.svelte';
+  import HighlightDisplay from './posts/HighlightDisplay.svelte';
   import { buildProfileHref, handleProfileNavigation } from '../services/profileNavigation';
   import { buildThreadHref } from '../services/routeNavigation';
   import LinkifiedText from './LinkifiedText.svelte';
@@ -648,7 +649,10 @@
     });
   }
 
-  function buildEditLinksPayload(): { url: string }[] | null | undefined {
+  function buildEditLinksPayload():
+    | { url: string; highlights?: { timestamp: number; label?: string }[] }[]
+    | null
+    | undefined {
     if (editImages.length === 0) {
       return undefined;
     }
@@ -678,16 +682,20 @@
       imageIndexByLinkIndex.set(linkIndex, imageIndex);
     });
 
-    const nextLinks: { url: string }[] = [];
+    const nextLinks: { url: string; highlights?: { timestamp: number; label?: string }[] }[] = [];
     originalLinks.forEach((item, linkIndex) => {
+      const baseLink = {
+        url: item.url,
+        ...(item.highlights && item.highlights.length > 0 ? { highlights: item.highlights } : {}),
+      };
       const imageIndex = imageIndexByLinkIndex.get(linkIndex);
       if (imageIndex === undefined) {
-        nextLinks.push({ url: item.url });
+        nextLinks.push(baseLink);
         return;
       }
       const editState = editImages[imageIndex];
       if (!editState || editState.action === 'keep') {
-        nextLinks.push({ url: item.url });
+        nextLinks.push(baseLink);
         return;
       }
       if (editState.action === 'remove') {
@@ -1254,6 +1262,12 @@
           <span>🔗</span>
           <span class="underline">{primaryLink.url}</span>
         </a>
+      {/if}
+
+      {#if !isEditing && primaryLink?.highlights?.length}
+        <div class="mt-2">
+          <HighlightDisplay highlights={primaryLink.highlights} />
+        </div>
       {/if}
 
       <div class="mt-3 flex flex-wrap items-center gap-2">

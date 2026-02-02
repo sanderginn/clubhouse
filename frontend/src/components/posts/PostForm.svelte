@@ -2,9 +2,10 @@
   import { createEventDispatcher, onDestroy, tick } from 'svelte';
   import { api } from '../../services/api';
   import { activeSection, postStore, currentUser } from '../../stores';
-  import type { Link, LinkMetadata } from '../../stores/postStore';
+  import type { Highlight, Link, LinkMetadata } from '../../stores/postStore';
   import LinkPreview from './LinkPreview.svelte';
   import MentionTextarea from '../mentions/MentionTextarea.svelte';
+  import HighlightEditor from './HighlightEditor.svelte';
 
   const dispatch = createEventDispatcher<{
     submit: void;
@@ -23,6 +24,8 @@
   let linkInputValue = '';
   let linkInputError: string | null = null;
   let linkInputRef: HTMLInputElement | null = null;
+  let highlights: Highlight[] = [];
+  let lastHighlightLink = '';
 
   let fileInput: HTMLInputElement;
   type UploadItem = {
@@ -44,6 +47,16 @@
 
   const URL_REGEX = /https?:\/\/[^\s<>"{}|\\^`[\]]+/gi;
   $: hasLink = Boolean((linkMetadata && linkMetadata.url) || linkUrl.trim());
+  $: isMusicSection = $activeSection?.type === 'music';
+  $: showHighlightEditor = isMusicSection && hasLink;
+  $: activeLinkUrl = (linkMetadata?.url ?? linkUrl).trim();
+  $: if (activeLinkUrl !== lastHighlightLink) {
+    highlights = [];
+    lastHighlightLink = activeLinkUrl;
+  }
+  $: if (!showHighlightEditor && highlights.length > 0) {
+    highlights = [];
+  }
   $: hasUploads = selectedFiles.some((item) => item.status !== 'error');
   $: canSubmit = Boolean($activeSection) && (content.trim().length > 0 || hasLink || hasUploads);
 
@@ -148,6 +161,8 @@
     linkInputValue = '';
     linkInputError = null;
     isLinkInputVisible = false;
+    highlights = [];
+    lastHighlightLink = '';
   }
 
   function isValidUrl(value: string): boolean {
@@ -309,7 +324,15 @@
       }
 
       const images = uploadedUrls.map((url) => ({ url }));
-      const links = linkValue ? [{ url: linkValue }] : [];
+      const includeHighlights = showHighlightEditor && highlights.length > 0;
+      const links = linkValue
+        ? [
+            {
+              url: linkValue,
+              ...(includeHighlights ? { highlights } : {}),
+            },
+          ]
+        : [];
 
       const payload = {
         sectionId: $activeSection.id,
@@ -318,7 +341,7 @@
       } as {
         sectionId: string;
         content: string;
-        links?: { url: string }[];
+        links?: { url: string; highlights?: Highlight[] }[];
         images?: { url: string }[];
         mentionUsernames?: string[];
       };
@@ -336,7 +359,7 @@
         linkMetadata && uploadedUrls.length === 0
           ? {
               ...response.post,
-              links: mergeLinkMetadata(response.post.links, linkMetadata),
+              links: mergeLinkMetadata(response.post.links, linkMetadata, highlights),
             }
           : response.post;
 
@@ -349,6 +372,8 @@
       linkInputValue = '';
       linkInputError = null;
       isLinkInputVisible = false;
+      highlights = [];
+      lastHighlightLink = '';
       selectedFiles.forEach(revokePreviewUrl);
       selectedFiles = [];
       uploadLimitError = null;
@@ -361,9 +386,19 @@
     }
   }
 
-  function mergeLinkMetadata(links: Link[] | undefined, metadata: LinkMetadata): Link[] {
+  function mergeLinkMetadata(
+    links: Link[] | undefined,
+    metadata: LinkMetadata,
+    nextHighlights?: Highlight[]
+  ): Link[] {
     if (!links || links.length === 0) {
-      return [{ url: metadata.url, metadata }];
+      return [
+        {
+          url: metadata.url,
+          metadata,
+          ...(nextHighlights && nextHighlights.length > 0 ? { highlights: nextHighlights } : {}),
+        },
+      ];
     }
     return links.map((link, index) => {
       if (index !== 0) {
@@ -432,6 +467,13 @@
       >
         Dismiss
       </button>
+    </div>
+  {/if}
+
+  {#if showHighlightEditor}
+    <div class="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+      <div class="text-sm font-medium text-gray-700">Highlights</div>
+      <HighlightEditor bind:highlights disabled={isSubmitting} />
     </div>
   {/if}
 
