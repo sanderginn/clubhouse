@@ -1132,14 +1132,18 @@
     {
       "issue_number": 698,
       "title": "Observability: include query type in DB query error metrics",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "bug",
         "backend",
         "observability"
       ],
-      "priority": 6
+      "priority": 6,
+      "assigned_to": "agent-1770075721-3436",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770075721-3436",
+      "branch": "fix/issue-698-observability-include-query-type-in-db-q",
+      "claimed_at": "2026-02-02T23:42:01Z"
     }
   ]
 }
