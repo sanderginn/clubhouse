@@ -37,7 +37,8 @@
     652,
     655,
     656,
-    657
+    657,
+    663
   ],
   "issues": [
     {
@@ -700,7 +701,7 @@
     {
       "issue_number": 663,
       "title": "Create recipe_categories table migration",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -711,7 +712,9 @@
       "assigned_to": "agent-1770073719-71949",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770073719-71949",
       "branch": "feat/issue-663-create-recipecategories-table-migration",
-      "claimed_at": "2026-02-02T23:08:39Z"
+      "claimed_at": "2026-02-02T23:08:39Z",
+      "pr_number": 689,
+      "completed_at": "2026-02-02T23:14:29Z"
     },
     {
       "issue_number": 664,
