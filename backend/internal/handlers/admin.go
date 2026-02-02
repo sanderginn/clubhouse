@@ -291,6 +291,13 @@ func (h *AdminHandler) SuspendUser(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 	}
+	observability.RecordAdminAction(r.Context(), "suspend_user")
+
+	observability.LogInfo(r.Context(), "user suspended",
+		"user_id", userID.String(),
+		"admin_user_id", adminUserID.String(),
+		"reason", req.Reason,
+	)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -340,6 +347,12 @@ func (h *AdminHandler) UnsuspendUser(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	observability.RecordAdminAction(r.Context(), "unsuspend_user")
+
+	observability.LogInfo(r.Context(), "user unsuspended",
+		"user_id", userID.String(),
+		"admin_user_id", adminUserID.String(),
+	)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
