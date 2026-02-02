@@ -67,6 +67,10 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	// Create post
 	post, err := h.postService.CreatePost(r.Context(), &req, userID)
 	if err != nil {
+		if writeHighlightValidationError(r.Context(), w, err) {
+			return
+		}
+
 		// Determine appropriate error code and status
 		switch err.Error() {
 		case "section_id is required":
@@ -170,6 +174,10 @@ func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 
 	post, err := h.postService.UpdatePost(r.Context(), postID, userID, &req)
 	if err != nil {
+		if writeHighlightValidationError(r.Context(), w, err) {
+			return
+		}
+
 		switch err.Error() {
 		case "post not found":
 			writeError(r.Context(), w, http.StatusNotFound, "POST_NOT_FOUND", "Post not found")
