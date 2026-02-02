@@ -29,6 +29,7 @@
     637,
     638,
     639,
+    644,
     645,
     646,
     647,
@@ -466,7 +467,7 @@
     {
       "issue_number": 644,
       "title": "Postgres audit_logs queries failing with syntax error near add_reaction",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -477,7 +478,9 @@
       "assigned_to": "agent-1770071291-14939",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770071291-14939",
       "branch": "fix/issue-644-postgres-auditlogs-queries-failing-with-",
-      "claimed_at": "2026-02-02T22:28:11Z"
+      "claimed_at": "2026-02-02T22:28:11Z",
+      "pr_number": 660,
+      "completed_at": "2026-02-02T22:37:39Z"
     },
     {
       "issue_number": 645,
