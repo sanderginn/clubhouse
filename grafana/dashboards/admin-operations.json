@@ -230,7 +230,7 @@
             "uid": "postgres"
           },
           "editorMode": "code",
-          "format": "time_series",
+          "format": "table",
           "rawQuery": true,
           "rawSql": "SELECT admin_label AS metric, event_count AS \"Actions\"\nFROM (\n  SELECT COALESCE(admin.username, a.admin_user_id::text, 'system') AS admin_label, COUNT(*) AS event_count\n  FROM audit_logs a\n  JOIN users admin ON admin.id = a.admin_user_id AND admin.is_admin = true\n  WHERE $__timeFilter(a.created_at)\n    AND a.admin_user_id IS NOT NULL\n    AND (${admin_user:sqlstring} = '' OR a.admin_user_id::text = ${admin_user:sqlstring})\n  GROUP BY admin_label\n  ORDER BY event_count DESC\n  LIMIT 10\n) ranked\nORDER BY event_count DESC",
           "refId": "A"
