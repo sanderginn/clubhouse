@@ -132,6 +132,8 @@ func (h *NotificationHandler) MarkNotificationRead(w http.ResponseWriter, r *htt
 		return
 	}
 
+	observability.RecordNotificationRead(r.Context(), "single", 1)
+
 	response := models.UpdateNotificationResponse{
 		Notification: *notification,
 	}
@@ -161,11 +163,13 @@ func (h *NotificationHandler) MarkAllNotificationsRead(w http.ResponseWriter, r 
 		return
 	}
 
-	unreadCount, err := h.notificationService.MarkAllNotificationsRead(r.Context(), userID)
+	updatedCount, unreadCount, err := h.notificationService.MarkAllNotificationsRead(r.Context(), userID)
 	if err != nil {
 		writeError(r.Context(), w, http.StatusInternalServerError, "MARK_ALL_NOTIFICATIONS_READ_FAILED", "Failed to mark notifications as read")
 		return
 	}
+
+	observability.RecordNotificationRead(r.Context(), "all", updatedCount)
 
 	response := models.MarkAllNotificationsReadResponse{
 		UnreadCount: unreadCount,
