@@ -533,14 +533,18 @@
     {
       "issue_number": 651,
       "title": "Backend: Add Highlight model and validation for music links",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
         "backend"
       ],
       "priority": 1,
-      "phase": 1
+      "phase": 1,
+      "assigned_to": "agent-1770071294-15083",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770071294-15083",
+      "branch": "feat/issue-651-backend-add-highlight-model-and-validati",
+      "claimed_at": "2026-02-02T22:28:14Z"
     },
     {
       "issue_number": 652,
