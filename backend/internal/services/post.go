@@ -75,16 +75,24 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 	}
 	span.SetAttributes(attribute.String("section_id", sectionID.String()))
 
-	// Verify section exists and load name for metrics
+	// Verify section exists and load name/type for metrics and link validation
 	var sectionName string
-	err = s.db.QueryRowContext(ctx, "SELECT name FROM sections WHERE id = $1", sectionID).
-		Scan(&sectionName)
+	var sectionType string
+	err = s.db.QueryRowContext(ctx, "SELECT name, type FROM sections WHERE id = $1", sectionID).
+		Scan(&sectionName, &sectionType)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			err = fmt.Errorf("section not found")
 		}
 		recordSpanError(span, err)
 		return nil, fmt.Errorf("section not found")
+	}
+
+	for _, link := range req.Links {
+		if err := models.ValidateHighlights(sectionType, link.Highlights); err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
 	}
 
 	// Create post ID
@@ -239,11 +247,13 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 	var ownerID uuid.UUID
 	var previousContent string
 	var sectionID uuid.UUID
+	var sectionType string
 	err := s.db.QueryRowContext(ctx, `
-		SELECT user_id, content, section_id
-		FROM posts
-		WHERE id = $1 AND deleted_at IS NULL
-	`, postID).Scan(&ownerID, &previousContent, &sectionID)
+		SELECT p.user_id, p.content, p.section_id, s.type
+		FROM posts p
+		JOIN sections s ON p.section_id = s.id
+		WHERE p.id = $1 AND p.deleted_at IS NULL
+	`, postID).Scan(&ownerID, &previousContent, &sectionID, &sectionType)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			notFoundErr := errors.New("post not found")
@@ -261,6 +271,13 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 	}
 
 	if req.Links != nil {
+		for _, link := range *req.Links {
+			if err := models.ValidateHighlights(sectionType, link.Highlights); err != nil {
+				recordSpanError(span, err)
+				return nil, err
+			}
+		}
+
 		existingURLs, err := getPostLinkURLs(ctx, s.db, postID)
 		if err != nil {
 			recordSpanError(span, err)

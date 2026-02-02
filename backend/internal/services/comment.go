@@ -54,12 +54,13 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 	// Verify post exists and is not deleted, and load section context for audit metadata and metrics.
 	var sectionID uuid.UUID
 	var sectionName string
+	var sectionType string
 	err = s.db.QueryRowContext(ctx, `
-		SELECT p.section_id, s.name
+		SELECT p.section_id, s.name, s.type
 		FROM posts p
 		JOIN sections s ON p.section_id = s.id
 		WHERE p.id = $1 AND p.deleted_at IS NULL
-	`, postID).Scan(&sectionID, &sectionName)
+	`, postID).Scan(&sectionID, &sectionName, &sectionType)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			err = fmt.Errorf("post not found")
@@ -68,6 +69,13 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 		return nil, fmt.Errorf("post not found")
 	}
 	span.SetAttributes(attribute.String("section_id", sectionID.String()))
+
+	for _, link := range req.Links {
+		if err := models.ValidateHighlights(sectionType, link.Highlights); err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+	}
 
 	// Validate parent comment if provided
 	var parentCommentID *uuid.UUID
@@ -267,12 +275,14 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 	var previousContent string
 	var postID uuid.UUID
 	var sectionID uuid.UUID
+	var sectionType string
 	err := s.db.QueryRowContext(ctx, `
-		SELECT c.user_id, c.content, c.post_id, p.section_id
+		SELECT c.user_id, c.content, c.post_id, p.section_id, s.type
 		FROM comments c
 		JOIN posts p ON c.post_id = p.id
+		JOIN sections s ON p.section_id = s.id
 		WHERE c.id = $1 AND c.deleted_at IS NULL
-	`, commentID).Scan(&ownerID, &previousContent, &postID, &sectionID)
+	`, commentID).Scan(&ownerID, &previousContent, &postID, &sectionID, &sectionType)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			notFoundErr := errors.New("comment not found")
@@ -290,6 +300,13 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 	}
 
 	if req.Links != nil {
+		for _, link := range *req.Links {
+			if err := models.ValidateHighlights(sectionType, link.Highlights); err != nil {
+				recordSpanError(span, err)
+				return nil, err
+			}
+		}
+
 		existingURLs, err := getCommentLinkURLs(ctx, s.db, commentID)
 		if err != nil {
 			recordSpanError(span, err)

@@ -78,7 +78,7 @@ var highlightAllowedSectionTypes = map[string]struct{}{
 	"music": {},
 }
 
-func validateHighlights(sectionType string, highlights []Highlight) error {
+func ValidateHighlights(sectionType string, highlights []Highlight) error {
 	if len(highlights) == 0 {
 		return nil
 	}
