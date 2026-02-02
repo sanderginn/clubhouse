@@ -1,5 +1,6 @@
 import type { Post, CreatePostRequest, LinkMetadata } from '../stores/postStore';
 import type { CreateCommentRequest, Comment } from '../stores/commentStore';
+import type { SectionLink } from '../stores/sectionLinksStore';
 import { mapApiComment, type ApiComment } from '../stores/commentMapper';
 import { mapApiPost, type ApiPost } from '../stores/postMapper';
 import { logError, logWarn } from '../lib/observability/logger';
@@ -28,6 +29,40 @@ interface ApiResponse<T> {
   meta?: {
     cursor?: string;
     hasMore?: boolean;
+  };
+}
+
+interface ApiSectionLink {
+  id: string;
+  url: string;
+  metadata?: LinkMetadata;
+  post_id: string;
+  user_id: string;
+  username: string;
+  created_at: string;
+}
+
+interface ApiSectionLinksResponse {
+  links: ApiSectionLink[];
+  has_more?: boolean;
+  next_cursor?: string | null;
+}
+
+interface SectionLinksResponse {
+  links: SectionLink[];
+  hasMore: boolean;
+  nextCursor: string | null;
+}
+
+function mapApiSectionLink(link: ApiSectionLink): SectionLink {
+  return {
+    id: link.id,
+    url: link.url,
+    metadata: link.metadata,
+    postId: link.post_id,
+    userId: link.user_id,
+    username: link.username,
+    createdAt: link.created_at,
   };
 }
 
@@ -160,7 +195,7 @@ class ApiClient {
       }
 
       propagation.inject(context.active(), headers, {
-        set: (carrier, key, value) => {
+        set: (carrier: Headers, key: string, value: string) => {
           carrier.set(key, value);
         },
       });
@@ -435,6 +470,23 @@ class ApiClient {
     const params = new URLSearchParams({ limit: String(limit) });
     if (cursor) params.set('cursor', cursor);
     return this.get(`/sections/${sectionId}/feed?${params}`);
+  }
+
+  async getSectionLinks(
+    sectionId: string,
+    limit = 20,
+    cursor?: string
+  ): Promise<SectionLinksResponse> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (cursor) params.set('cursor', cursor);
+    const response = await this.get<ApiSectionLinksResponse>(
+      `/sections/${sectionId}/links?${params}`
+    );
+    return {
+      links: (response.links ?? []).map(mapApiSectionLink),
+      hasMore: response.has_more ?? false,
+      nextCursor: response.next_cursor ?? null,
+    };
   }
 
   async deletePost(postId: string): Promise<void> {

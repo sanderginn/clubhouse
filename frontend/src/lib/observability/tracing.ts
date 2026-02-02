@@ -1,7 +1,6 @@
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { resourceFromAttributes } from '@opentelemetry/resources';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
@@ -37,11 +36,11 @@ export function initTracing(): void {
   const exporter = new OTLPTraceExporter({ url: exporterUrl });
   const provider = new WebTracerProvider({
     resource: resourceFromAttributes({
-      [SemanticResourceAttributes.SERVICE_NAME]:
+      'service.name':
         (import.meta.env.VITE_OTEL_SERVICE_NAME as string | undefined) ?? 'clubhouse-frontend',
-      [SemanticResourceAttributes.SERVICE_VERSION]:
+      'service.version':
         (import.meta.env.VITE_APP_VERSION as string | undefined) ?? 'unknown',
-      [SemanticResourceAttributes.DEPLOYMENT_ENVIRONMENT]: import.meta.env.MODE,
+      'deployment.environment': import.meta.env.MODE,
     }),
     spanProcessors: [new BatchSpanProcessor(exporter)],
   });
