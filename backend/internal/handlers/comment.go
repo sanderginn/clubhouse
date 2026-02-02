@@ -69,6 +69,10 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	// Create comment
 	comment, err := h.commentService.CreateComment(r.Context(), &req, userID)
 	if err != nil {
+		if writeHighlightValidationError(r.Context(), w, err) {
+			return
+		}
+
 		// Determine appropriate error code and status
 		switch err.Error() {
 		case "post_id is required":
@@ -178,6 +182,10 @@ func (h *CommentHandler) UpdateComment(w http.ResponseWriter, r *http.Request) {
 
 	comment, err := h.commentService.UpdateComment(r.Context(), commentID, userID, &req)
 	if err != nil {
+		if writeHighlightValidationError(r.Context(), w, err) {
+			return
+		}
+
 		switch err.Error() {
 		case "comment not found":
 			writeError(r.Context(), w, http.StatusNotFound, "COMMENT_NOT_FOUND", "Comment not found")
