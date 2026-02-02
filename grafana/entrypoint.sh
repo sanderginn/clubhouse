@@ -15,14 +15,20 @@ if [ -d /var/lib/grafana/plugins ]; then
   done
 fi
 
-# Ensure the Sentry datasource plugin is available for the frontend errors dashboard.
-if [ -z "$GF_PLUGINS_PREINSTALL" ]; then
-  export GF_PLUGINS_PREINSTALL="grafana-sentry-datasource"
+# Provision Sentry only when fully configured to avoid invalid org slug errors.
+if [ -z "$GRAFANA_SENTRY_URL" ] || [ -z "$GRAFANA_SENTRY_ORG" ] || [ -z "$GRAFANA_SENTRY_AUTH_TOKEN" ]; then
+  rm -f /etc/grafana/provisioning/datasources/sentry.yml
+  rm -f /etc/grafana/provisioning/dashboards/frontend-errors.json
 else
-  case ",$GF_PLUGINS_PREINSTALL," in
-    *,grafana-sentry-datasource,*) ;;
-    *) export GF_PLUGINS_PREINSTALL="$GF_PLUGINS_PREINSTALL,grafana-sentry-datasource" ;;
-  esac
+  # Ensure the Sentry datasource plugin is available for the frontend errors dashboard.
+  if [ -z "$GF_PLUGINS_PREINSTALL" ]; then
+    export GF_PLUGINS_PREINSTALL="grafana-sentry-datasource"
+  else
+    case ",$GF_PLUGINS_PREINSTALL," in
+      *,grafana-sentry-datasource,*) ;;
+      *) export GF_PLUGINS_PREINSTALL="$GF_PLUGINS_PREINSTALL,grafana-sentry-datasource" ;;
+    esac
+  fi
 fi
 
 exec /run.sh "$@"
