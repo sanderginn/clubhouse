@@ -490,7 +490,7 @@
             "uid": "tempo"
           },
           "queryType": "traceql",
-          "query": "{resource.service.name=~\"$service\", span.name=~\"$operation\", status.code=~\"$status\"} | duration > ${min_duration_ms}ms | span[\"$tag_key\"] =~ \"$tag_value\"",
+          "query": "{resource.service.name=~\"$service\" && span.name=~\"$operation\" && status.code=~\"$status\"} | duration > ${min_duration_ms}ms | span[\"$tag_key\"] =~ \"$tag_value\"",
           "limit": 200,
           "refId": "A"
         }
