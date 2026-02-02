@@ -32,10 +32,38 @@ interface ApiResponse<T> {
   };
 }
 
-interface SectionLinksResponse {
-  links: SectionLink[];
+interface ApiSectionLink {
+  id: string;
+  url: string;
+  metadata?: LinkMetadata;
+  post_id: string;
+  user_id: string;
+  username: string;
+  created_at: string;
+}
+
+interface ApiSectionLinksResponse {
+  links: ApiSectionLink[];
   has_more?: boolean;
   next_cursor?: string | null;
+}
+
+interface SectionLinksResponse {
+  links: SectionLink[];
+  hasMore: boolean;
+  nextCursor: string | null;
+}
+
+function mapApiSectionLink(link: ApiSectionLink): SectionLink {
+  return {
+    id: link.id,
+    url: link.url,
+    metadata: link.metadata,
+    postId: link.post_id,
+    userId: link.user_id,
+    username: link.username,
+    createdAt: link.created_at,
+  };
 }
 
 interface LogOptions {
@@ -451,7 +479,14 @@ class ApiClient {
   ): Promise<SectionLinksResponse> {
     const params = new URLSearchParams({ limit: String(limit) });
     if (cursor) params.set('cursor', cursor);
-    return this.get(`/sections/${sectionId}/links?${params}`);
+    const response = await this.get<ApiSectionLinksResponse>(
+      `/sections/${sectionId}/links?${params}`
+    );
+    return {
+      links: (response.links ?? []).map(mapApiSectionLink),
+      hasMore: response.has_more ?? false,
+      nextCursor: response.next_cursor ?? null,
+    };
   }
 
   async deletePost(postId: string): Promise<void> {
