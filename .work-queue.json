@@ -418,14 +418,18 @@
     {
       "issue_number": 638,
       "title": "Grafana Frontend Errors dashboard: Sentry datasource missing",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "bug",
         "observability",
         "grafana"
       ],
-      "priority": 2
+      "priority": 2,
+      "assigned_to": "agent-1770066787-66659",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770066787-66659",
+      "branch": "fix/issue-638-grafana-frontend-errors-dashboard-sentry",
+      "claimed_at": "2026-02-02T21:13:07Z"
     },
     {
       "issue_number": 639,
