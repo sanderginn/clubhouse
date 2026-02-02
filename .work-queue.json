@@ -30,7 +30,8 @@
     638,
     639,
     645,
-    646
+    646,
+    647
   ],
   "issues": [
     {
@@ -515,7 +516,7 @@
     {
       "issue_number": 647,
       "title": "Loki query cancellations from Grafana dashboards",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -525,7 +526,9 @@
       "assigned_to": "agent-1770069321-88875",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770069321-88875",
       "branch": "fix/issue-647-loki-query-cancellations-from-grafana-da",
-      "claimed_at": "2026-02-02T21:55:21Z"
+      "claimed_at": "2026-02-02T21:55:21Z",
+      "pr_number": 650,
+      "completed_at": "2026-02-02T22:04:39Z"
     }
   ]
 }
