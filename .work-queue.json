@@ -22,6 +22,7 @@
     620,
     621,
     628,
+    629,
     630,
     631
   ],
@@ -47,7 +48,7 @@
     {
       "issue_number": 629,
       "title": "Add database metrics instrumentation to backend",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -58,7 +59,9 @@
       "assigned_to": "agent-1770037764-13739",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770037764-13739",
       "branch": "feat/issue-629-add-database-metrics-instrumentation-to-",
-      "claimed_at": "2026-02-02T13:09:24Z"
+      "claimed_at": "2026-02-02T13:09:24Z",
+      "pr_number": 635,
+      "completed_at": "2026-02-02T13:28:40Z"
     },
     {
       "issue_number": 630,
