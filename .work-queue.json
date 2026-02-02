@@ -26,6 +26,7 @@
     630,
     631,
     636,
+    637,
     639
   ],
   "issues": [
@@ -406,7 +407,7 @@
     {
       "issue_number": 637,
       "title": "Grafana Admin Operations dashboard: \"Actions by Admin\" panel missing time column",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -417,7 +418,9 @@
       "assigned_to": "agent-1770066783-66517",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770066783-66517",
       "branch": "fix/issue-637-grafana-admin-operations-dashboard-actio",
-      "claimed_at": "2026-02-02T21:13:03Z"
+      "claimed_at": "2026-02-02T21:13:03Z",
+      "pr_number": 640,
+      "completed_at": "2026-02-02T21:22:36Z"
     },
     {
       "issue_number": 638,
