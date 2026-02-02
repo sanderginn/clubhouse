@@ -578,7 +578,7 @@
     {
       "issue_number": 653,
       "title": "Frontend: Add Highlight types and editor/display components",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         652
       ],
@@ -587,7 +587,11 @@
         "frontend"
       ],
       "priority": 3,
-      "phase": 3
+      "phase": 3,
+      "assigned_to": "agent-1770073721-71958",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770073721-71958",
+      "branch": "feat/issue-653-frontend-add-highlight-types-and-editord",
+      "claimed_at": "2026-02-02T23:08:41Z"
     },
     {
       "issue_number": 654,
