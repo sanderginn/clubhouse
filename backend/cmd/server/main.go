@@ -180,6 +180,7 @@ func main() {
 		listSections: sectionHandler.ListSections,
 		getSection:   sectionHandler.GetSection,
 		getFeed:      postHandler.GetFeed,
+		getLinks:     sectionHandler.GetSectionLinks,
 	})
 	mux.Handle("/api/v1/sections/", sectionRouteHandler)
 

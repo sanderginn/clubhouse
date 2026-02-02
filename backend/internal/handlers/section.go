@@ -95,3 +95,69 @@ func (h *SectionHandler) GetSection(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 }
+
+// GetSectionLinks handles GET /api/v1/sections/{sectionId}/links
+func (h *SectionHandler) GetSectionLinks(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		return
+	}
+
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 6 {
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Section ID is required")
+		return
+	}
+
+	sectionIDStr := pathParts[4]
+	sectionID, err := uuid.Parse(sectionIDStr)
+	if err != nil {
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_SECTION_ID", "Invalid section ID format")
+		return
+	}
+
+	cursor := r.URL.Query().Get("cursor")
+	limitStr := r.URL.Query().Get("limit")
+
+	limit := 15
+	if limitStr != "" {
+		if parsedLimit, err := parseIntParam(limitStr); err == nil && parsedLimit > 0 {
+			limit = parsedLimit
+		}
+	}
+
+	if limit > 50 {
+		limit = 50
+	}
+
+	var cursorPtr *string
+	if cursor != "" {
+		cursorPtr = &cursor
+	}
+
+	links, err := h.sectionService.GetSectionLinks(r.Context(), sectionID, cursorPtr, limit)
+	if err != nil {
+		switch err.Error() {
+		case "section not found":
+			writeError(r.Context(), w, http.StatusNotFound, "SECTION_NOT_FOUND", "Section not found")
+			return
+		case "invalid cursor":
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_CURSOR", "Invalid cursor format")
+			return
+		default:
+			writeError(r.Context(), w, http.StatusInternalServerError, "GET_SECTION_LINKS_FAILED", "Failed to get section links")
+			return
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(links); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode section links response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}

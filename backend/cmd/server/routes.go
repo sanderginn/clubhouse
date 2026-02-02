@@ -70,10 +70,15 @@ type sectionRouteDeps struct {
 	listSections http.HandlerFunc
 	getSection   http.HandlerFunc
 	getFeed      http.HandlerFunc
+	getLinks     http.HandlerFunc
 }
 
 func newSectionRouteHandler(requireAuth authMiddleware, deps sectionRouteDeps) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/links") {
+			requireAuth(http.HandlerFunc(deps.getLinks)).ServeHTTP(w, r)
+			return
+		}
 		if strings.Contains(r.URL.Path, "/feed") {
 			requireAuth(http.HandlerFunc(deps.getFeed)).ServeHTTP(w, r)
 			return
