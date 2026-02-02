@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -29,10 +30,11 @@ type Post struct {
 
 // Link represents metadata for a URL
 type Link struct {
-	ID        uuid.UUID              `json:"id"`
-	URL       string                 `json:"url"`
-	Metadata  map[string]interface{} `json:"metadata,omitempty"`
-	CreatedAt time.Time              `json:"created_at"`
+	ID         uuid.UUID              `json:"id"`
+	URL        string                 `json:"url"`
+	Metadata   map[string]interface{} `json:"metadata,omitempty"`
+	Highlights []Highlight            `json:"highlights,omitempty"`
+	CreatedAt  time.Time              `json:"created_at"`
 }
 
 // PostImage represents an image attached to a post.
@@ -57,7 +59,48 @@ type CreatePostRequest struct {
 
 // LinkRequest represents a link in the request
 type LinkRequest struct {
-	URL string `json:"url"`
+	URL        string      `json:"url"`
+	Highlights []Highlight `json:"highlights,omitempty"`
+}
+
+// Highlight represents a timestamped highlight for a link.
+type Highlight struct {
+	Timestamp int    `json:"timestamp"`
+	Label     string `json:"label,omitempty"`
+}
+
+const (
+	maxHighlightsPerLink    = 20
+	maxHighlightLabelLength = 100
+)
+
+var highlightAllowedSectionTypes = map[string]struct{}{
+	"music": {},
+}
+
+func validateHighlights(sectionType string, highlights []Highlight) error {
+	if len(highlights) == 0 {
+		return nil
+	}
+
+	if _, ok := highlightAllowedSectionTypes[sectionType]; !ok {
+		return fmt.Errorf("highlights are not allowed for section type %q", sectionType)
+	}
+
+	if len(highlights) > maxHighlightsPerLink {
+		return fmt.Errorf("too many highlights")
+	}
+
+	for _, highlight := range highlights {
+		if highlight.Timestamp < 0 {
+			return fmt.Errorf("highlight timestamp must be non-negative")
+		}
+		if len(highlight.Label) > maxHighlightLabelLength {
+			return fmt.Errorf("highlight label must be less than %d characters", maxHighlightLabelLength)
+		}
+	}
+
+	return nil
 }
 
 // PostImageRequest represents an image in the request.
