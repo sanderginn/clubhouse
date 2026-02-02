@@ -21,6 +21,7 @@
     619,
     620,
     621,
+    628,
     630,
     631
   ],
@@ -28,7 +29,7 @@
     {
       "issue_number": 628,
       "title": "Fix SQL syntax errors in Audit Logs & Admin Operations dashboards",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -39,7 +40,9 @@
       "assigned_to": "agent-1770037755-13425",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770037755-13425",
       "branch": "fix/issue-628-fix-sql-syntax-errors-in-audit-logs-admi",
-      "claimed_at": "2026-02-02T13:09:15Z"
+      "claimed_at": "2026-02-02T13:09:15Z",
+      "pr_number": 633,
+      "completed_at": "2026-02-02T13:26:04Z"
     },
     {
       "issue_number": 629,
