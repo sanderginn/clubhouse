@@ -1,9 +1,15 @@
 import { writable, derived } from 'svelte/store';
 
+export interface Highlight {
+  timestamp: number;
+  label?: string;
+}
+
 export interface Link {
   id?: string;
   url: string;
   metadata?: LinkMetadata;
+  highlights?: Highlight[];
 }
 
 export interface LinkMetadata {
