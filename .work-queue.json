@@ -1088,14 +1088,18 @@
     {
       "issue_number": 694,
       "title": "Observability: add push subscription lifecycle metrics/logs",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
         "backend",
         "observability"
       ],
-      "priority": 2
+      "priority": 2,
+      "assigned_to": "agent-1770075725-3637",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770075725-3637",
+      "branch": "feat/issue-694-observability-add-push-subscription-life",
+      "claimed_at": "2026-02-02T23:42:05Z"
     },
     {
       "issue_number": 695,
