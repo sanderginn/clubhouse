@@ -465,18 +465,14 @@
     {
       "issue_number": 644,
       "title": "Postgres audit_logs queries failing with syntax error near add_reaction",
-      "status": "active",
+      "status": "available",
       "dependencies": [],
       "labels": [
         "bug",
         "observability",
         "database"
       ],
-      "priority": 1,
-      "assigned_to": "",
-      "worktree": "",
-      "branch": "",
-      "claimed_at": "2026-02-02T21:38:41Z"
+      "priority": 1
     },
     {
       "issue_number": 645,
@@ -529,6 +525,115 @@
       "claimed_at": "2026-02-02T21:55:21Z",
       "pr_number": 650,
       "completed_at": "2026-02-02T22:04:39Z"
+    },
+    {
+      "issue_number": 651,
+      "title": "Backend: Add Highlight model and validation for music links",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend"
+      ],
+      "priority": 1,
+      "phase": 1
+    },
+    {
+      "issue_number": 652,
+      "title": "Backend: Store and retrieve highlights in post service",
+      "status": "available",
+      "dependencies": [
+        651
+      ],
+      "labels": [
+        "enhancement",
+        "backend"
+      ],
+      "priority": 2,
+      "phase": 2
+    },
+    {
+      "issue_number": 653,
+      "title": "Frontend: Add Highlight types and editor/display components",
+      "status": "available",
+      "dependencies": [
+        652
+      ],
+      "labels": [
+        "enhancement",
+        "frontend"
+      ],
+      "priority": 3,
+      "phase": 3
+    },
+    {
+      "issue_number": 654,
+      "title": "Frontend: Integrate highlights into PostForm and PostCard",
+      "status": "available",
+      "dependencies": [
+        652,
+        653
+      ],
+      "labels": [
+        "enhancement",
+        "frontend"
+      ],
+      "priority": 4,
+      "phase": 4
+    },
+    {
+      "issue_number": 655,
+      "title": "Backend: Add SectionLink model for links aggregation",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend"
+      ],
+      "priority": 5,
+      "phase": 5
+    },
+    {
+      "issue_number": 656,
+      "title": "Backend: Add section links service and handler",
+      "status": "available",
+      "dependencies": [
+        655
+      ],
+      "labels": [
+        "enhancement",
+        "backend"
+      ],
+      "priority": 6,
+      "phase": 6
+    },
+    {
+      "issue_number": 657,
+      "title": "Frontend: Add section links store and API client method",
+      "status": "available",
+      "dependencies": [
+        656
+      ],
+      "labels": [
+        "enhancement",
+        "frontend"
+      ],
+      "priority": 7,
+      "phase": 7
+    },
+    {
+      "issue_number": 658,
+      "title": "Frontend: Add MusicLinksContainer component and integrate into App",
+      "status": "available",
+      "dependencies": [
+        657
+      ],
+      "labels": [
+        "enhancement",
+        "frontend"
+      ],
+      "priority": 8,
+      "phase": 8
     }
   ]
 }
