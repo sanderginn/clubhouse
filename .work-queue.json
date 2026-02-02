@@ -474,6 +474,52 @@
       "worktree": "",
       "branch": "",
       "claimed_at": "2026-02-02T21:38:41Z"
+    },
+    {
+      "issue_number": 645,
+      "title": "Tempo Trace Search panel TraceQL parse errors",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "observability"
+      ],
+      "priority": 2,
+      "assigned_to": "",
+      "worktree": "",
+      "branch": "fix/issue-645-tempo-trace-search-traceql-parse-errors",
+      "claimed_at": ""
+    },
+    {
+      "issue_number": 646,
+      "title": "Grafana Sentry datasource errors when org slug is unset",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "observability",
+        "grafana"
+      ],
+      "priority": 2,
+      "assigned_to": "",
+      "worktree": "",
+      "branch": "fix/issue-646-grafana-sentry-datasource-org-slug",
+      "claimed_at": ""
+    },
+    {
+      "issue_number": 647,
+      "title": "Loki query cancellations from Grafana dashboards",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "observability"
+      ],
+      "priority": 3,
+      "assigned_to": "",
+      "worktree": "",
+      "branch": "fix/issue-647-loki-query-cancellations-grafana-dashboards",
+      "claimed_at": ""
     }
   ]
 }
