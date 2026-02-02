@@ -94,7 +94,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), COUNT(*) AS \"Events\"\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND (${action:sqlstring} = '' OR a.action = ${action:sqlstring})\n  AND (${admin_user:sqlstring} = '' OR a.admin_user_id::text = ${admin_user:sqlstring})\n  AND (${target_user:sqlstring} = '' OR a.target_user_id::text = ${target_user:sqlstring} OR a.related_user_id::text = ${target_user:sqlstring})\nGROUP BY 1\nORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), COUNT(*) AS \"Events\"\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND ('${action}' = '' OR a.action = '${action}')\n  AND ('${admin_user}' = '' OR a.admin_user_id::text = '${admin_user}')\n  AND ('${target_user}' = '' OR a.target_user_id::text = '${target_user}' OR a.related_user_id::text = '${target_user}')\nGROUP BY 1\nORDER BY 1",
           "refId": "A"
         }
       ],
@@ -137,7 +137,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT a.action AS \"Action\", COUNT(*) AS \"Events\"\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND (${action:sqlstring} = '' OR a.action = ${action:sqlstring})\n  AND (${admin_user:sqlstring} = '' OR a.admin_user_id::text = ${admin_user:sqlstring})\n  AND (${target_user:sqlstring} = '' OR a.target_user_id::text = ${target_user:sqlstring} OR a.related_user_id::text = ${target_user:sqlstring})\nGROUP BY a.action\nORDER BY \"Events\" DESC",
+          "rawSql": "SELECT a.action AS \"Action\", COUNT(*) AS \"Events\"\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND ('${action}' = '' OR a.action = '${action}')\n  AND ('${admin_user}' = '' OR a.admin_user_id::text = '${admin_user}')\n  AND ('${target_user}' = '' OR a.target_user_id::text = '${target_user}' OR a.related_user_id::text = '${target_user}')\nGROUP BY a.action\nORDER BY \"Events\" DESC",
           "refId": "A"
         }
       ],
@@ -229,7 +229,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT admin_label AS metric, event_count AS \"Events\"\nFROM (\n  SELECT COALESCE(admin.username, a.admin_user_id::text, 'system') AS admin_label, COUNT(*) AS event_count\n  FROM audit_logs a\n  LEFT JOIN users admin ON admin.id = a.admin_user_id\n  WHERE $__timeFilter(a.created_at)\n    AND (${action:sqlstring} = '' OR a.action = ${action:sqlstring})\n    AND (${admin_user:sqlstring} = '' OR a.admin_user_id::text = ${admin_user:sqlstring})\n    AND (${target_user:sqlstring} = '' OR a.target_user_id::text = ${target_user:sqlstring} OR a.related_user_id::text = ${target_user:sqlstring})\n  GROUP BY admin_label\n  ORDER BY event_count DESC\n  LIMIT 10\n) ranked\nORDER BY event_count DESC",
+          "rawSql": "SELECT admin_label AS metric, event_count AS \"Events\"\nFROM (\n  SELECT COALESCE(admin.username, a.admin_user_id::text, 'system') AS admin_label, COUNT(*) AS event_count\n  FROM audit_logs a\n  LEFT JOIN users admin ON admin.id = a.admin_user_id\n  WHERE $__timeFilter(a.created_at)\n    AND ('${action}' = '' OR a.action = '${action}')\n    AND ('${admin_user}' = '' OR a.admin_user_id::text = '${admin_user}')\n    AND ('${target_user}' = '' OR a.target_user_id::text = '${target_user}' OR a.related_user_id::text = '${target_user}')\n  GROUP BY admin_label\n  ORDER BY event_count DESC\n  LIMIT 10\n) ranked\nORDER BY event_count DESC",
           "refId": "A"
         }
       ],
@@ -261,7 +261,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  a.created_at AS \"Time\",\n  a.action AS \"Action\",\n  COALESCE(admin.username, a.admin_user_id::text, 'system') AS \"Admin\",\n  COALESCE(target.username, a.target_user_id::text, related.username, a.related_user_id::text) AS \"Target User\",\n  a.related_post_id AS \"Post ID\",\n  a.related_comment_id AS \"Comment ID\",\n  a.metadata AS \"Metadata\"\nFROM audit_logs a\nLEFT JOIN users admin ON admin.id = a.admin_user_id\nLEFT JOIN users target ON target.id = a.target_user_id\nLEFT JOIN users related ON related.id = a.related_user_id\nWHERE $__timeFilter(a.created_at)\n  AND (${action:sqlstring} = '' OR a.action = ${action:sqlstring})\n  AND (${admin_user:sqlstring} = '' OR a.admin_user_id::text = ${admin_user:sqlstring})\n  AND (${target_user:sqlstring} = '' OR a.target_user_id::text = ${target_user:sqlstring} OR a.related_user_id::text = ${target_user:sqlstring})\nORDER BY a.created_at DESC\nLIMIT 200",
+          "rawSql": "SELECT\n  a.created_at AS \"Time\",\n  a.action AS \"Action\",\n  COALESCE(admin.username, a.admin_user_id::text, 'system') AS \"Admin\",\n  COALESCE(target.username, a.target_user_id::text, related.username, a.related_user_id::text) AS \"Target User\",\n  a.related_post_id AS \"Post ID\",\n  a.related_comment_id AS \"Comment ID\",\n  a.metadata AS \"Metadata\"\nFROM audit_logs a\nLEFT JOIN users admin ON admin.id = a.admin_user_id\nLEFT JOIN users target ON target.id = a.target_user_id\nLEFT JOIN users related ON related.id = a.related_user_id\nWHERE $__timeFilter(a.created_at)\n  AND ('${action}' = '' OR a.action = '${action}')\n  AND ('${admin_user}' = '' OR a.admin_user_id::text = '${admin_user}')\n  AND ('${target_user}' = '' OR a.target_user_id::text = '${target_user}' OR a.related_user_id::text = '${target_user}')\nORDER BY a.created_at DESC\nLIMIT 200",
           "refId": "A"
         }
       ],
@@ -353,7 +353,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), a.action AS metric, COUNT(*) AS value\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND a.action IN ('approve_user', 'reject_user', 'suspend_user', 'unsuspend_user', 'promote_to_admin', 'register_user', 'update_profile')\n  AND (${action:sqlstring} = '' OR a.action = ${action:sqlstring})\n  AND (${admin_user:sqlstring} = '' OR a.admin_user_id::text = ${admin_user:sqlstring})\n  AND (${target_user:sqlstring} = '' OR a.target_user_id::text = ${target_user:sqlstring} OR a.related_user_id::text = ${target_user:sqlstring})\nGROUP BY 1, 2\nORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), a.action AS metric, COUNT(*) AS value\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND a.action IN ('approve_user', 'reject_user', 'suspend_user', 'unsuspend_user', 'promote_to_admin', 'register_user', 'update_profile')\n  AND ('${action}' = '' OR a.action = '${action}')\n  AND ('${admin_user}' = '' OR a.admin_user_id::text = '${admin_user}')\n  AND ('${target_user}' = '' OR a.target_user_id::text = '${target_user}' OR a.related_user_id::text = '${target_user}')\nGROUP BY 1, 2\nORDER BY 1",
           "refId": "A"
         }
       ],
@@ -445,7 +445,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), a.action AS metric, COUNT(*) AS value\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND a.action IN ('delete_post', 'hard_delete_post', 'restore_post', 'delete_comment', 'hard_delete_comment', 'restore_comment', 'update_post', 'update_comment')\n  AND (${action:sqlstring} = '' OR a.action = ${action:sqlstring})\n  AND (${admin_user:sqlstring} = '' OR a.admin_user_id::text = ${admin_user:sqlstring})\n  AND (${target_user:sqlstring} = '' OR a.target_user_id::text = ${target_user:sqlstring} OR a.related_user_id::text = ${target_user:sqlstring})\nGROUP BY 1, 2\nORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), a.action AS metric, COUNT(*) AS value\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND a.action IN ('delete_post', 'hard_delete_post', 'restore_post', 'delete_comment', 'hard_delete_comment', 'restore_comment', 'update_post', 'update_comment')\n  AND ('${action}' = '' OR a.action = '${action}')\n  AND ('${admin_user}' = '' OR a.admin_user_id::text = '${admin_user}')\n  AND ('${target_user}' = '' OR a.target_user_id::text = '${target_user}' OR a.related_user_id::text = '${target_user}')\nGROUP BY 1, 2\nORDER BY 1",
           "refId": "A"
         }
       ],
@@ -537,7 +537,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), a.action AS metric, COUNT(*) AS value\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND a.action IN ('toggle_link_metadata', 'toggle_mfa_requirement', 'update_section', 'delete_section')\n  AND (${action:sqlstring} = '' OR a.action = ${action:sqlstring})\n  AND (${admin_user:sqlstring} = '' OR a.admin_user_id::text = ${admin_user:sqlstring})\n  AND (${target_user:sqlstring} = '' OR a.target_user_id::text = ${target_user:sqlstring} OR a.related_user_id::text = ${target_user:sqlstring})\nGROUP BY 1, 2\nORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), a.action AS metric, COUNT(*) AS value\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND a.action IN ('toggle_link_metadata', 'toggle_mfa_requirement', 'update_section', 'delete_section')\n  AND ('${action}' = '' OR a.action = '${action}')\n  AND ('${admin_user}' = '' OR a.admin_user_id::text = '${admin_user}')\n  AND ('${target_user}' = '' OR a.target_user_id::text = '${target_user}' OR a.related_user_id::text = '${target_user}')\nGROUP BY 1, 2\nORDER BY 1",
           "refId": "A"
         }
       ],
@@ -629,7 +629,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), a.action AS metric, COUNT(*) AS value\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND a.action IN ('enroll_mfa', 'enable_mfa', 'disable_mfa')\n  AND (${action:sqlstring} = '' OR a.action = ${action:sqlstring})\n  AND (${admin_user:sqlstring} = '' OR a.admin_user_id::text = ${admin_user:sqlstring})\n  AND (${target_user:sqlstring} = '' OR a.target_user_id::text = ${target_user:sqlstring} OR a.related_user_id::text = ${target_user:sqlstring})\nGROUP BY 1, 2\nORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), a.action AS metric, COUNT(*) AS value\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND a.action IN ('enroll_mfa', 'enable_mfa', 'disable_mfa')\n  AND ('${action}' = '' OR a.action = '${action}')\n  AND ('${admin_user}' = '' OR a.admin_user_id::text = '${admin_user}')\n  AND ('${target_user}' = '' OR a.target_user_id::text = '${target_user}' OR a.related_user_id::text = '${target_user}')\nGROUP BY 1, 2\nORDER BY 1",
           "refId": "A"
         }
       ],
@@ -721,7 +721,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT EXTRACT(HOUR FROM a.created_at) AS \"Hour (0-23)\", COUNT(*) AS \"Events\"\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND (${action:sqlstring} = '' OR a.action = ${action:sqlstring})\n  AND (${admin_user:sqlstring} = '' OR a.admin_user_id::text = ${admin_user:sqlstring})\n  AND (${target_user:sqlstring} = '' OR a.target_user_id::text = ${target_user:sqlstring} OR a.related_user_id::text = ${target_user:sqlstring})\nGROUP BY 1\nORDER BY 1",
+          "rawSql": "SELECT EXTRACT(HOUR FROM a.created_at) AS \"Hour (0-23)\", COUNT(*) AS \"Events\"\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND ('${action}' = '' OR a.action = '${action}')\n  AND ('${admin_user}' = '' OR a.admin_user_id::text = '${admin_user}')\n  AND ('${target_user}' = '' OR a.target_user_id::text = '${target_user}' OR a.related_user_id::text = '${target_user}')\nGROUP BY 1\nORDER BY 1",
           "refId": "A"
         }
       ],
@@ -753,7 +753,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  COALESCE(admin.username, a.admin_user_id::text, 'system') AS \"Admin\",\n  COUNT(*) FILTER (WHERE a.created_at >= now() - interval '1 hour') AS \"Last 1h\",\n  COUNT(*) FILTER (WHERE a.created_at >= now() - interval '24 hours') AS \"Last 24h\"\nFROM audit_logs a\nLEFT JOIN users admin ON admin.id = a.admin_user_id\nWHERE (${action:sqlstring} = '' OR a.action = ${action:sqlstring})\n  AND (${admin_user:sqlstring} = '' OR a.admin_user_id::text = ${admin_user:sqlstring})\n  AND (${target_user:sqlstring} = '' OR a.target_user_id::text = ${target_user:sqlstring} OR a.related_user_id::text = ${target_user:sqlstring})\nGROUP BY 1\nORDER BY \"Last 1h\" DESC, \"Last 24h\" DESC\nLIMIT 10",
+          "rawSql": "SELECT\n  COALESCE(admin.username, a.admin_user_id::text, 'system') AS \"Admin\",\n  COUNT(*) FILTER (WHERE a.created_at >= now() - interval '1 hour') AS \"Last 1h\",\n  COUNT(*) FILTER (WHERE a.created_at >= now() - interval '24 hours') AS \"Last 24h\"\nFROM audit_logs a\nLEFT JOIN users admin ON admin.id = a.admin_user_id\nWHERE ('${action}' = '' OR a.action = '${action}')\n  AND ('${admin_user}' = '' OR a.admin_user_id::text = '${admin_user}')\n  AND ('${target_user}' = '' OR a.target_user_id::text = '${target_user}' OR a.related_user_id::text = '${target_user}')\nGROUP BY 1\nORDER BY \"Last 1h\" DESC, \"Last 24h\" DESC\nLIMIT 10",
           "refId": "A"
         }
       ],
@@ -845,7 +845,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  CASE\n    WHEN a.action IN ('delete_post', 'hard_delete_post', 'delete_comment', 'hard_delete_comment') THEN 'deletions'\n    WHEN a.action IN ('restore_post', 'restore_comment') THEN 'restores'\n    ELSE 'other'\n  END AS \"Action Group\",\n  COUNT(*) AS \"Events\"\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND a.action IN ('delete_post', 'hard_delete_post', 'delete_comment', 'hard_delete_comment', 'restore_post', 'restore_comment')\n  AND (${action:sqlstring} = '' OR a.action = ${action:sqlstring})\n  AND (${admin_user:sqlstring} = '' OR a.admin_user_id::text = ${admin_user:sqlstring})\n  AND (${target_user:sqlstring} = '' OR a.target_user_id::text = ${target_user:sqlstring} OR a.related_user_id::text = ${target_user:sqlstring})\nGROUP BY 1\nORDER BY \"Events\" DESC",
+          "rawSql": "SELECT\n  CASE\n    WHEN a.action IN ('delete_post', 'hard_delete_post', 'delete_comment', 'hard_delete_comment') THEN 'deletions'\n    WHEN a.action IN ('restore_post', 'restore_comment') THEN 'restores'\n    ELSE 'other'\n  END AS \"Action Group\",\n  COUNT(*) AS \"Events\"\nFROM audit_logs a\nWHERE $__timeFilter(a.created_at)\n  AND a.action IN ('delete_post', 'hard_delete_post', 'delete_comment', 'hard_delete_comment', 'restore_post', 'restore_comment')\n  AND ('${action}' = '' OR a.action = '${action}')\n  AND ('${admin_user}' = '' OR a.admin_user_id::text = '${admin_user}')\n  AND ('${target_user}' = '' OR a.target_user_id::text = '${target_user}' OR a.related_user_id::text = '${target_user}')\nGROUP BY 1\nORDER BY \"Events\" DESC",
           "refId": "A"
         }
       ],
