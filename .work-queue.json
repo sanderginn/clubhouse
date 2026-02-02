@@ -25,6 +25,7 @@
     629,
     630,
     631,
+    636,
     639
   ],
   "issues": [
@@ -387,7 +388,7 @@
     {
       "issue_number": 636,
       "title": "Grafana Audit Logs dashboard: panel query fails with pq AND type error",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -398,7 +399,9 @@
       "assigned_to": "agent-1770066778-66340",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770066778-66340",
       "branch": "fix/issue-636-grafana-audit-logs-dashboard-panel-query",
-      "claimed_at": "2026-02-02T21:12:58Z"
+      "claimed_at": "2026-02-02T21:12:58Z",
+      "pr_number": 642,
+      "completed_at": "2026-02-02T21:21:50Z"
     },
     {
       "issue_number": 637,
