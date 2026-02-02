@@ -56,6 +56,7 @@ compactor:
 
 limits_config:
   allow_structured_metadata: true
+  query_timeout: 2m
   retention_period: 336h
   volume_enabled: true
 

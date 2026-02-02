@@ -16,6 +16,8 @@ datasources:
     isDefault: false
     editable: true
     access: proxy
+    jsonData:
+      timeout: 120
 
   - name: Tempo
     type: tempo
