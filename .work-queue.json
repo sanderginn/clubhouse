@@ -1068,6 +1068,78 @@
       ],
       "priority": 24,
       "phase": "recipes-8"
+    },
+    {
+      "issue_number": 693,
+      "title": "Observability: emit metrics/logs for admin suspend/unsuspend actions",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "observability"
+      ],
+      "priority": 1
+    },
+    {
+      "issue_number": 694,
+      "title": "Observability: add push subscription lifecycle metrics/logs",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "observability"
+      ],
+      "priority": 2
+    },
+    {
+      "issue_number": 695,
+      "title": "Observability: track notification read events (single + mark all)",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "observability"
+      ],
+      "priority": 3
+    },
+    {
+      "issue_number": 696,
+      "title": "Observability: add CSRF validation outcome metrics",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "observability"
+      ],
+      "priority": 4
+    },
+    {
+      "issue_number": 697,
+      "title": "Observability: record auth failures in RequireAuth/RequireAdmin middleware",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "observability"
+      ],
+      "priority": 5
+    },
+    {
+      "issue_number": 698,
+      "title": "Observability: include query type in DB query error metrics",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "backend",
+        "observability"
+      ],
+      "priority": 6
     }
   ]
 }
