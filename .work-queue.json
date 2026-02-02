@@ -20,7 +20,8 @@
     618,
     619,
     620,
-    621
+    621,
+    630
   ],
   "issues": [
     {
@@ -58,7 +59,7 @@
     {
       "issue_number": 630,
       "title": "Add business metrics instrumentation to backend",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -69,7 +70,9 @@
       "assigned_to": "agent-1770037767-13905",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770037767-13905",
       "branch": "feat/issue-630-add-business-metrics-instrumentation-to-",
-      "claimed_at": "2026-02-02T13:09:27Z"
+      "claimed_at": "2026-02-02T13:09:27Z",
+      "pr_number": 634,
+      "completed_at": "2026-02-02T13:20:08Z"
     },
     {
       "issue_number": 631,
