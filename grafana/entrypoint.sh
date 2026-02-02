@@ -15,4 +15,14 @@ if [ -d /var/lib/grafana/plugins ]; then
   done
 fi
 
+# Ensure the Sentry datasource plugin is available for the frontend errors dashboard.
+if [ -z "$GF_PLUGINS_PREINSTALL" ]; then
+  export GF_PLUGINS_PREINSTALL="grafana-sentry-datasource"
+else
+  case ",$GF_PLUGINS_PREINSTALL," in
+    *,grafana-sentry-datasource,*) ;;
+    *) export GF_PLUGINS_PREINSTALL="$GF_PLUGINS_PREINSTALL,grafana-sentry-datasource" ;;
+  esac
+fi
+
 exec /run.sh "$@"
