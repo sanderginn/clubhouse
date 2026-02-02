@@ -465,14 +465,18 @@
     {
       "issue_number": 644,
       "title": "Postgres audit_logs queries failing with syntax error near add_reaction",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "bug",
         "observability",
         "database"
       ],
-      "priority": 1
+      "priority": 1,
+      "assigned_to": "agent-1770071291-14939",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770071291-14939",
+      "branch": "fix/issue-644-postgres-auditlogs-queries-failing-with-",
+      "claimed_at": "2026-02-02T22:28:11Z"
     },
     {
       "issue_number": 645,
