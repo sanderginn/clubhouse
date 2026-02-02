@@ -1,16 +1,24 @@
 package db
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"database/sql/driver"
 	"errors"
+	"runtime"
+	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/XSAM/otelsql"
 	"github.com/sanderginn/clubhouse/internal/observability"
 	"go.opentelemetry.io/otel/attribute"
 )
+
+var recordDBQueryError = observability.RecordDBQueryError
+
+var goroutineQueryTypes sync.Map
 
 func instrumentAttributesGetter(ctx context.Context, method otelsql.Method, query string, _ []driver.NamedValue) []attribute.KeyValue {
 	attrs := make([]attribute.KeyValue, 0, 2)
@@ -18,6 +26,7 @@ func instrumentAttributesGetter(ctx context.Context, method otelsql.Method, quer
 	queryType := queryTypeFromSQL(query)
 	if queryType != "" {
 		attrs = append(attrs, attribute.String("query_type", queryType))
+		setGoroutineQueryType(queryType)
 	}
 
 	table := tableFromSQL(query)
@@ -40,10 +49,59 @@ func instrumentErrorAttributesGetter(err error) []attribute.KeyValue {
 	if errorType == "" {
 		errorType = "unknown"
 	}
-	observability.RecordDBQueryError(context.Background(), "unknown", errorType)
+	queryType := popGoroutineQueryType()
+	if queryType == "" {
+		queryType = "unknown"
+	}
+	recordDBQueryError(context.Background(), queryType, errorType)
 	return []attribute.KeyValue{
 		attribute.String("error_type", errorType),
 	}
+}
+
+func setGoroutineQueryType(queryType string) {
+	if strings.TrimSpace(queryType) == "" {
+		return
+	}
+	id := currentGoroutineID()
+	if id == 0 {
+		return
+	}
+	goroutineQueryTypes.Store(id, queryType)
+}
+
+func popGoroutineQueryType() string {
+	id := currentGoroutineID()
+	if id == 0 {
+		return ""
+	}
+	value, ok := goroutineQueryTypes.Load(id)
+	if !ok {
+		return ""
+	}
+	goroutineQueryTypes.Delete(id)
+	queryType, ok := value.(string)
+	if !ok {
+		return ""
+	}
+	return queryType
+}
+
+func currentGoroutineID() int64 {
+	var buf [64]byte
+	n := runtime.Stack(buf[:], false)
+	if n == 0 {
+		return 0
+	}
+	fields := bytes.Fields(buf[:n])
+	if len(fields) < 2 {
+		return 0
+	}
+	id, err := strconv.ParseInt(string(fields[1]), 10, 64)
+	if err != nil {
+		return 0
+	}
+	return id
 }
 
 func queryTypeFromSQL(query string) string {
@@ -57,19 +115,24 @@ func queryTypeFromSQL(query string) string {
 	if len(fields) == 0 {
 		return ""
 	}
-	switch fields[0] {
+
+	normalize := func(token string) string {
+		return strings.Trim(token, "(),;")
+	}
+
+	switch normalize(fields[0]) {
 	case "select", "insert", "update", "delete":
-		return fields[0]
+		return normalize(fields[0])
 	case "with":
 		for _, token := range fields[1:] {
-			switch token {
+			switch normalize(token) {
 			case "select", "insert", "update", "delete":
-				return token
+				return normalize(token)
 			}
 		}
 		return "with"
 	default:
-		return fields[0]
+		return normalize(fields[0])
 	}
 }
 
