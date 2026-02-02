@@ -382,6 +382,54 @@
       "claimed_at": "2026-02-01T17:25:19Z",
       "pr_number": 612,
       "completed_at": "2026-02-01T17:57:44Z"
+    },
+    {
+      "issue_number": 636,
+      "title": "Grafana Audit Logs dashboard: panel query fails with pq AND type error",
+      "status": "queued",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "observability",
+        "grafana"
+      ],
+      "priority": 1
+    },
+    {
+      "issue_number": 637,
+      "title": "Grafana Admin Operations dashboard: \"Actions by Admin\" panel missing time column",
+      "status": "queued",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "observability",
+        "grafana"
+      ],
+      "priority": 2
+    },
+    {
+      "issue_number": 638,
+      "title": "Grafana Frontend Errors dashboard: Sentry datasource missing",
+      "status": "queued",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "observability",
+        "grafana"
+      ],
+      "priority": 2
+    },
+    {
+      "issue_number": 639,
+      "title": "Grafana Traces dashboard: Trace Search panel has invalid TraceQL query",
+      "status": "queued",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "observability",
+        "grafana"
+      ],
+      "priority": 2
     }
   ]
 }
