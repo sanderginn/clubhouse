@@ -13,6 +13,10 @@ distributor:
                 endpoint: 0.0.0.0:4318
 
 ingester:
+  lifecycler:
+    ring:
+      kvstore:
+        store: inmemory
   max_block_duration: 5m
 
 compactor:

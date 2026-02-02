@@ -104,7 +104,7 @@ services:
 
   # Grafana (Observability UI)
   grafana:
-    image: grafana/grafana:11.2.0
+    image: grafana/grafana:12.3.2
     container_name: clubhouse-grafana
     entrypoint: ["/bin/sh", "/etc/grafana/entrypoint.sh"]
     environment:
@@ -119,6 +119,7 @@ services:
       - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./grafana/plugins-bundled:/usr/share/grafana/plugins-bundled
       - ./grafana/entrypoint.sh:/etc/grafana/entrypoint.sh:ro
       - ./grafana/datasources:/etc/grafana/provisioning/datasources
       - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
