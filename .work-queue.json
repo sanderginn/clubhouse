@@ -66,14 +66,18 @@
     {
       "issue_number": 631,
       "title": "Investigate and fix Loki log shipping from backend",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "bug",
         "backend",
         "observability"
       ],
-      "priority": 4
+      "priority": 4,
+      "assigned_to": "agent-1770037762-13659",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770037762-13659",
+      "branch": "fix/issue-631-investigate-and-fix-loki-log-shipping-fr",
+      "claimed_at": "2026-02-02T13:09:22Z"
     },
     {
       "issue_number": 616,
