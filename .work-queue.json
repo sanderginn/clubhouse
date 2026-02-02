@@ -716,14 +716,18 @@
     {
       "issue_number": 664,
       "title": "Create cook_logs table migration",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
         "recipes"
       ],
       "priority": 3,
-      "phase": "recipes-1"
+      "phase": "recipes-1",
+      "assigned_to": "agent-1770073864-75790",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770073864-75790",
+      "branch": "feat/issue-664-create-cooklogs-table-migration",
+      "claimed_at": "2026-02-02T23:11:04Z"
     },
     {
       "issue_number": 665,
