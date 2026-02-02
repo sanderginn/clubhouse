@@ -99,7 +99,7 @@
             "uid": "postgres"
           },
           "editorMode": "code",
-          "format": "time_series",
+          "format": "table",
           "rawQuery": true,
           "rawSql": "SELECT $__timeGroupAlias(a.created_at, $__interval), COUNT(*) AS \"Actions\"\nFROM audit_logs a\nJOIN users admin ON admin.id = a.admin_user_id AND admin.is_admin = true\nWHERE $__timeFilter(a.created_at)\n  AND a.admin_user_id IS NOT NULL\n  AND (${admin_user:sqlstring} = '' OR a.admin_user_id::text = ${admin_user:sqlstring})\nGROUP BY 1\nORDER BY 1",
           "refId": "A"
