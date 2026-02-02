@@ -29,7 +29,8 @@
     637,
     638,
     639,
-    645
+    645,
+    646
   ],
   "issues": [
     {
@@ -496,7 +497,7 @@
     {
       "issue_number": 646,
       "title": "Grafana Sentry datasource errors when org slug is unset",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -507,7 +508,9 @@
       "assigned_to": "agent-1770069319-88803",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770069319-88803",
       "branch": "fix/issue-646-grafana-sentry-datasource-errors-when-or",
-      "claimed_at": "2026-02-02T21:55:19Z"
+      "claimed_at": "2026-02-02T21:55:19Z",
+      "pr_number": 649,
+      "completed_at": "2026-02-02T22:02:40Z"
     },
     {
       "issue_number": 647,
