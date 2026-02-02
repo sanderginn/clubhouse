@@ -57,6 +57,7 @@ compactor:
 limits_config:
   allow_structured_metadata: true
   retention_period: 336h
+  volume_enabled: true
 
 ruler:
   alertmanager_url: http://localhost:9093
