@@ -48,6 +48,8 @@ func Init(ctx context.Context) (*sql.DB, error) {
 		otelsql.WithAttributes(attribute.String("db.system", "postgresql")),
 		otelsql.WithMeterProvider(otel.GetMeterProvider()),
 		otelsql.WithTracerProvider(otel.GetTracerProvider()),
+		otelsql.WithInstrumentAttributesGetter(instrumentAttributesGetter),
+		otelsql.WithInstrumentErrorAttributesGetter(instrumentErrorAttributesGetter),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to register otel driver: %w", err)

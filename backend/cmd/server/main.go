@@ -69,6 +69,8 @@ func main() {
 	}
 	defer dbConn.Close()
 
+	go observability.StartDBStatsReporter(ctx, dbConn, 15*time.Second)
+
 	if err := services.InitConfigService(ctx, dbConn); err != nil {
 		observability.LogError(ctx, observability.ErrorLog{
 			Message:    "failed to initialize config service",
