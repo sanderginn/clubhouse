@@ -604,7 +604,7 @@
     {
       "issue_number": 654,
       "title": "Frontend: Integrate highlights into PostForm and PostCard",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         652,
         653
@@ -614,7 +614,11 @@
         "frontend"
       ],
       "priority": 4,
-      "phase": 4
+      "phase": 4,
+      "assigned_to": "agent-1770076124-17315",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770076124-17315",
+      "branch": "feat/issue-654-frontend-integrate-highlights-into-postf",
+      "claimed_at": "2026-02-02T23:48:44Z"
     },
     {
       "issue_number": 655,
