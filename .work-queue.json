@@ -458,6 +458,22 @@
       "claimed_at": "2026-02-02T21:13:09Z",
       "pr_number": 641,
       "completed_at": "2026-02-02T21:20:58Z"
+    },
+    {
+      "issue_number": 644,
+      "title": "Postgres audit_logs queries failing with syntax error near add_reaction",
+      "status": "active",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "observability",
+        "database"
+      ],
+      "priority": 1,
+      "assigned_to": "",
+      "worktree": "",
+      "branch": "",
+      "claimed_at": "2026-02-02T21:38:41Z"
     }
   ]
 }
