@@ -56,6 +56,7 @@
     675,
     676,
     678,
+    679,
     680,
     681,
     687,
@@ -1041,7 +1042,7 @@
     {
       "issue_number": 679,
       "title": "Create CategoryManager component",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         676
       ],
@@ -1055,7 +1056,9 @@
       "assigned_to": "agent-1770107642-48220",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770107642-48220",
       "branch": "feat/issue-679-create-categorymanager-component",
-      "claimed_at": "2026-02-03T08:34:02Z"
+      "claimed_at": "2026-02-03T08:34:02Z",
+      "pr_number": 721,
+      "completed_at": "2026-02-03T08:54:21Z"
     },
     {
       "issue_number": 680,
