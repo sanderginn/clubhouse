@@ -14,6 +14,8 @@
 
   let hoverValue: number | null = null;
   let keyboardValue: number | null = null;
+  let selectedValue = value;
+  let lastExternalValue = value;
 
   const sizeClasses: Record<RatingSize, string> = {
     sm: 'h-4 w-4',
@@ -25,16 +27,19 @@
     return Math.round(input * 2) / 2;
   }
 
-  $: displayValue = readonly ? roundToHalf(value) : value;
+  $: if (value !== lastExternalValue) {
+    lastExternalValue = value;
+    selectedValue = value;
+  }
+  $: displayValue = readonly ? roundToHalf(value) : selectedValue;
   $: activeValue = hoverValue ?? keyboardValue ?? displayValue;
+  $: fillPercents = stars.map((star) => {
+    const fill = Math.max(0, Math.min(1, activeValue - (star - 1)));
+    return fill * 100;
+  });
   $: sizeClass = sizeClasses[size] ?? sizeClasses.md;
   $: ariaValueText = `${displayValue} out of 5`;
   $: labelText = readonly ? `${ariaLabel}: ${ariaValueText}` : ariaLabel;
-
-  function getFillPercent(star: number) {
-    const fill = Math.max(0, Math.min(1, activeValue - (star - 1)));
-    return fill * 100;
-  }
 
   function handleSelect(nextValue: number) {
     if (readonly) {
@@ -43,6 +48,7 @@
 
     const finalValue = nextValue === value ? 0 : nextValue;
     value = finalValue;
+    selectedValue = finalValue;
     onChange?.(finalValue);
     dispatch('change', finalValue);
   }
@@ -53,20 +59,6 @@
     }
 
     hoverValue = star;
-  }
-
-  function handleMouseMove(event: MouseEvent) {
-    if (readonly) {
-      return;
-    }
-
-    const target = event.target as HTMLElement | null;
-    const starElement = target?.closest('[data-star]');
-    const starValue = starElement ? Number(starElement.getAttribute('data-star')) : null;
-
-    if (starValue && !Number.isNaN(starValue)) {
-      handleStarEnter(starValue);
-    }
   }
 
   function handleMouseLeave() {
@@ -127,7 +119,6 @@
   aria-valuetext={readonly ? undefined : ariaValueText}
   tabindex={readonly ? undefined : 0}
   on:keydown={handleKeyDown}
-  on:mousemove={handleMouseMove}
   on:mouseleave={handleMouseLeave}
   on:blur={() => (keyboardValue = null)}
   class:focus-visible={!readonly}
@@ -137,6 +128,7 @@
       class={`relative ${sizeClass} ${readonly ? '' : 'cursor-pointer'} text-gray-300`}
       data-testid={`rating-star-${star}`}
       data-star={star}
+      on:mouseenter={() => handleStarEnter(star)}
       on:click={() => handleSelect(star)}
       aria-hidden="true"
     >
@@ -147,7 +139,7 @@
       </svg>
       <div
         class="absolute inset-0 overflow-hidden text-amber-400"
-        style={`width: ${getFillPercent(star)}%`}
+        style={`width: ${fillPercents[star - 1]}%`}
         data-testid={`rating-star-fill-${star}`}
       >
         <svg viewBox="0 0 20 20" class={`absolute inset-0 ${sizeClass}`} fill="currentColor">
