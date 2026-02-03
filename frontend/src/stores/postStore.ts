@@ -299,3 +299,4 @@ export const isLoadingPosts = derived(postStore, ($postStore) => $postStore.isLo
 export const postsError = derived(postStore, ($postStore) => $postStore.error);
 export const postsPaginationError = derived(postStore, ($postStore) => $postStore.paginationError);
 export const hasMorePosts = derived(postStore, ($postStore) => $postStore.hasMore);
+export const postCursor = derived(postStore, ($postStore) => $postStore.cursor);

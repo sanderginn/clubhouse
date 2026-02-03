@@ -117,8 +117,10 @@ function normalizeEmbedData(rawEmbed: unknown): EmbedData | undefined {
   }
   const type = normalizeString(record.type);
   const provider = normalizeString(record.provider);
-  const width = normalizeNumber(record.width);
-  const height = normalizeNumber(record.height);
+  const width =
+    normalizeNumber(record.width) ?? normalizeNumber(record.embed_width ?? record.embedWidth);
+  const height =
+    normalizeNumber(record.height) ?? normalizeNumber(record.embed_height ?? record.embedHeight);
   return {
     type,
     provider,
@@ -196,11 +198,19 @@ export function normalizeLinkMetadata(
     normalizeString(metadata.imageUrl);
   const author = normalizeString(metadata.author) ?? normalizeString(metadata.artist);
   const duration = normalizeNumber(metadata.duration);
-  const embed = normalizeEmbedData(metadata.embed);
-  const embedUrl =
-    normalizeString(metadata.embedUrl) ??
-    normalizeString(metadata.embed_url) ??
-    embed?.embedUrl;
+  const embedUrl = normalizeString(metadata.embedUrl) ?? normalizeString(metadata.embed_url);
+  const embed =
+    normalizeEmbedData(metadata.embed) ??
+    (embedUrl
+      ? {
+          embedUrl,
+          provider: normalizeString(metadata.embed_provider ?? metadata.embedProvider),
+          type: normalizeString(metadata.embed_type ?? metadata.embedType),
+          width: normalizeNumber(metadata.embed_width ?? metadata.embedWidth),
+          height: normalizeNumber(metadata.embed_height ?? metadata.embedHeight),
+        }
+      : undefined);
+  const resolvedEmbedUrl = embed?.embedUrl ?? embedUrl;
   const type =
     normalizeString(metadata.type) ??
     normalizeString(metadata.og_type) ??
@@ -213,7 +223,7 @@ export function normalizeLinkMetadata(
     !!image ||
     !!author ||
     !!duration ||
-    !!embedUrl ||
+    !!resolvedEmbedUrl ||
     !!embed ||
     !!type;
   if (!hasMetadata) {
@@ -228,7 +238,7 @@ export function normalizeLinkMetadata(
     image,
     author,
     duration,
-    embedUrl,
+    embedUrl: resolvedEmbedUrl,
     embed,
     type,
   };

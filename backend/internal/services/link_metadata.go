@@ -24,6 +24,7 @@ func fetchLinkMetadata(ctx context.Context, links []models.LinkRequest) []models
 		if linkmeta.IsInternalUploadURL(link.URL) {
 			continue
 		}
+		embed, _ := linkmeta.ExtractEmbed(ctx, link.URL)
 		observability.RecordLinkMetadataFetchAttempt(ctx, 1)
 		start := time.Now()
 		meta, err := linkmeta.FetchMetadata(ctx, link.URL)
@@ -40,9 +41,14 @@ func fetchLinkMetadata(ctx context.Context, links []models.LinkRequest) []models
 			} else {
 				observability.LogWarn(ctx, "link metadata fetch empty", "link_url", link.URL, "link_domain", domain, "error_type", errorType)
 			}
-			continue
+			if embed == nil {
+				continue
+			}
+			meta = map[string]interface{}{}
+		} else {
+			observability.RecordLinkMetadataFetchSuccess(ctx, 1)
 		}
-		observability.RecordLinkMetadataFetchSuccess(ctx, 1)
+		meta = linkmeta.ApplyEmbedMetadata(meta, embed)
 		metadata[i] = models.JSONMap(meta)
 	}
 
