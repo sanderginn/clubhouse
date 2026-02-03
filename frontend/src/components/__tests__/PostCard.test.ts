@@ -165,7 +165,7 @@ describe('PostCard', () => {
           metadata: {
             url: 'https://open.spotify.com/track/3n3Ppam7vgaVa1iaRUc9Lp',
             embed: {
-              url: 'https://open.spotify.com/embed/track/3n3Ppam7vgaVa1iaRUc9Lp',
+              embedUrl: 'https://open.spotify.com/embed/track/3n3Ppam7vgaVa1iaRUc9Lp',
               height: 152,
               provider: 'spotify',
             },

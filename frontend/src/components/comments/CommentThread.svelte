@@ -526,7 +526,7 @@
                   <div class="mt-2">
                     {#if link.metadata}
                       {@const embedUrl =
-                        link.metadata.embed?.url ??
+                        link.metadata.embed?.embedUrl ??
                         (isSpotifyEmbedUrl(link.metadata.embedUrl) ? link.metadata.embedUrl : undefined)}
                       {#if embedUrl && isSpotifyEmbedUrl(embedUrl)}
                         <SpotifyEmbed embedUrl={embedUrl} height={link.metadata.embed?.height} />
