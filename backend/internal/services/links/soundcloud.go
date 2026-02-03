@@ -26,14 +26,14 @@ type SoundCloudExtractor struct {
 }
 
 type soundCloudOEmbedResponse struct {
-	Type         string `json:"type"`
-	Version      string `json:"version"`
-	Title        string `json:"title"`
-	AuthorName   string `json:"author_name"`
-	HTML         string `json:"html"`
-	Width        int    `json:"width"`
-	Height       int    `json:"height"`
-	ThumbnailURL string `json:"thumbnail_url"`
+	Type         string          `json:"type"`
+	Version      json.RawMessage `json:"version"`
+	Title        string          `json:"title"`
+	AuthorName   string          `json:"author_name"`
+	HTML         string          `json:"html"`
+	Width        int             `json:"width"`
+	Height       int             `json:"height"`
+	ThumbnailURL string          `json:"thumbnail_url"`
 }
 
 func NewSoundCloudExtractor(client *http.Client) *SoundCloudExtractor {
