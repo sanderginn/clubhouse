@@ -186,7 +186,7 @@
     {
       "issue_number": 753,
       "title": "Allow heart reactions on music timestamps",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         752
       ],
@@ -195,7 +195,11 @@
         "backend",
         "frontend"
       ],
-      "priority": 14
+      "priority": 14,
+      "assigned_to": "agent-1770138019-6604",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770138019-6604",
+      "branch": "feat/issue-753-allow-heart-reactions-on-music-timestamp",
+      "claimed_at": "2026-02-03T17:00:19Z"
     },
     {
       "issue_number": 754,
