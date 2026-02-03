@@ -9,6 +9,7 @@
     744,
     745,
     746,
+    747,
     748,
     749,
     750,
@@ -98,7 +99,7 @@
     {
       "issue_number": 747,
       "title": "Fix \"My Recipes\" not showing ratings in Cookbook",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         746
       ],
@@ -111,7 +112,9 @@
       "assigned_to": "agent-1770140650-66900",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770140650-66900",
       "branch": "fix/issue-747-fix-my-recipes-not-showing-ratings-in-co",
-      "claimed_at": "2026-02-03T17:44:10Z"
+      "claimed_at": "2026-02-03T17:44:10Z",
+      "pr_number": 771,
+      "completed_at": "2026-02-03T17:56:14Z"
     },
     {
       "issue_number": 748,
