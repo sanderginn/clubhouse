@@ -60,6 +60,7 @@
     680,
     681,
     683,
+    684,
     685,
     686,
     687,
@@ -1130,7 +1131,7 @@
     {
       "issue_number": 684,
       "title": "Integrate RecipeStatsBar into PostCard",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         670,
         683
@@ -1145,7 +1146,9 @@
       "assigned_to": "agent-1770111026-96759",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770111026-96759",
       "branch": "feat/issue-684-integrate-recipestatsbar-into-postcard",
-      "claimed_at": "2026-02-03T09:30:26Z"
+      "claimed_at": "2026-02-03T09:30:26Z",
+      "pr_number": 727,
+      "completed_at": "2026-02-03T09:40:35Z"
     },
     {
       "issue_number": 685,
