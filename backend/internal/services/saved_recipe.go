@@ -424,9 +424,37 @@ func (s *SavedRecipeService) UpdateCategory(ctx context.Context, userID, categor
 	)
 	defer span.End()
 
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		recordSpanError(span, err)
+		return err
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	var currentName string
+	if err := tx.QueryRowContext(
+		ctx,
+		"SELECT name FROM recipe_categories WHERE id = $1 AND user_id = $2",
+		categoryID,
+		userID,
+	).Scan(&currentName); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			notFoundErr := errors.New("category not found")
+			recordSpanError(span, notFoundErr)
+			return notFoundErr
+		}
+		recordSpanError(span, err)
+		return err
+	}
+
 	updates := []string{}
 	args := []interface{}{}
 	changes := map[string]interface{}{}
+
+	var normalizedName string
+	renameCategory := false
 
 	if name != nil {
 		normalized, err := normalizeRecipeCategory(*name)
@@ -434,9 +462,13 @@ func (s *SavedRecipeService) UpdateCategory(ctx context.Context, userID, categor
 			recordSpanError(span, err)
 			return err
 		}
-		updates = append(updates, fmt.Sprintf("name = $%d", len(args)+1))
-		args = append(args, normalized)
-		changes["name"] = normalized
+		if normalized != currentName {
+			normalizedName = normalized
+			renameCategory = true
+			updates = append(updates, fmt.Sprintf("name = $%d", len(args)+1))
+			args = append(args, normalized)
+			changes["name"] = normalized
+		}
 	}
 	if position != nil {
 		updates = append(updates, fmt.Sprintf("position = $%d", len(args)+1))
@@ -458,7 +490,7 @@ func (s *SavedRecipeService) UpdateCategory(ctx context.Context, userID, categor
 		len(args),
 	)
 
-	result, err := s.db.ExecContext(ctx, query, args...)
+	result, err := tx.ExecContext(ctx, query, args...)
 	if err != nil {
 		recordSpanError(span, err)
 		return err
@@ -473,6 +505,23 @@ func (s *SavedRecipeService) UpdateCategory(ctx context.Context, userID, categor
 		notFoundErr := errors.New("category not found")
 		recordSpanError(span, notFoundErr)
 		return notFoundErr
+	}
+
+	if renameCategory {
+		updateSaved := `
+			UPDATE saved_recipes
+			SET category = $1
+			WHERE user_id = $2 AND category = $3 AND deleted_at IS NULL
+		`
+		if _, err := tx.ExecContext(ctx, updateSaved, normalizedName, userID, currentName); err != nil {
+			recordSpanError(span, err)
+			return err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
+		return err
 	}
 
 	if err := s.logSavedRecipeAudit(ctx, "update_recipe_category", userID, map[string]interface{}{
