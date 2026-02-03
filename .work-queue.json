@@ -997,7 +997,7 @@
     {
       "issue_number": 680,
       "title": "Create RatingStars component",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -1005,7 +1005,11 @@
         "recipes"
       ],
       "priority": 17,
-      "phase": "recipes-5"
+      "phase": "recipes-5",
+      "assigned_to": "agent-1770079188-98564",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770079188-98564",
+      "branch": "feat/issue-680-create-ratingstars-component",
+      "claimed_at": "2026-02-03T00:39:48Z"
     },
     {
       "issue_number": 681,
