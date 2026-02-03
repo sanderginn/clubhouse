@@ -7,6 +7,7 @@
   "completed_issues": [
     745,
     748,
+    749,
     750,
     754
   ],
@@ -104,7 +105,7 @@
     {
       "issue_number": 749,
       "title": "Allow removing attached link metadata when editing a post",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -115,7 +116,9 @@
       "assigned_to": "agent-1770135375-38290",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770135375-38290",
       "branch": "feat/issue-749-allow-removing-attached-link-metadata-wh",
-      "claimed_at": "2026-02-03T16:16:15Z"
+      "claimed_at": "2026-02-03T16:16:15Z",
+      "pr_number": 764,
+      "completed_at": "2026-02-03T16:39:11Z"
     },
     {
       "issue_number": 750,
