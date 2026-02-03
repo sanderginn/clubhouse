@@ -47,6 +47,7 @@
     665,
     666,
     667,
+    668,
     669,
     693,
     694,
@@ -833,7 +834,7 @@
     {
       "issue_number": 668,
       "title": "Implement SavedRecipeService",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         662,
         663,
@@ -849,7 +850,9 @@
       "assigned_to": "agent-1770078032-65302",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770078032-65302",
       "branch": "feat/issue-668-implement-savedrecipeservice",
-      "claimed_at": "2026-02-03T00:20:32Z"
+      "claimed_at": "2026-02-03T00:20:32Z",
+      "pr_number": 708,
+      "completed_at": "2026-02-03T00:48:26Z"
     },
     {
       "issue_number": 669,
