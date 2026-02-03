@@ -111,3 +111,23 @@ func TestSoundCloudExtractorExtractMissingIframe(t *testing.T) {
 		t.Fatal("expected error when iframe src missing")
 	}
 }
+
+func TestSoundCloudExtractorRejectsNonWhitelistedEmbed(t *testing.T) {
+	const targetURL = "https://soundcloud.com/artist/track"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{
+			"html": "<iframe src=\"https://evil.example.com/embed\"></iframe>"
+		}`)
+	}))
+	defer server.Close()
+
+	extractor := NewSoundCloudExtractor(&http.Client{Timeout: time.Second})
+	extractor.oEmbedURL = server.URL
+
+	_, err := extractor.Extract(context.Background(), targetURL)
+	if err == nil {
+		t.Fatal("expected error for non-whitelisted embed url")
+	}
+}

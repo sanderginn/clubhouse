@@ -97,6 +97,10 @@ func (e *SoundCloudExtractor) Extract(ctx context.Context, rawURL string) (*Embe
 		observability.LogWarn(ctx, "soundcloud oembed missing iframe src", "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10))
 		return nil, errors.New("soundcloud oembed missing iframe src")
 	}
+	if err := validateEmbedURL(embedURL); err != nil {
+		observability.LogWarn(ctx, "soundcloud oembed invalid iframe src", "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "error", err.Error())
+		return nil, err
+	}
 
 	observability.LogDebug(ctx, "soundcloud oembed fetched", "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "status", strconv.Itoa(resp.StatusCode))
 

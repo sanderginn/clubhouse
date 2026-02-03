@@ -17,7 +17,7 @@
     style={`height: ${playerHeight}px;`}
     loading="lazy"
     allow="encrypted-media"
-    sandbox="allow-same-origin allow-scripts allow-popups"
+    sandbox="allow-scripts allow-same-origin allow-presentation"
   ></iframe>
   <a
     href={linkUrl}
