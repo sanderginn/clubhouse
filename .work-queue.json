@@ -59,6 +59,7 @@
     679,
     680,
     681,
+    683,
     685,
     686,
     687,
@@ -1106,7 +1107,7 @@
     {
       "issue_number": 683,
       "title": "Create RecipeStatsBar component",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         678,
         680,
@@ -1122,7 +1123,9 @@
       "assigned_to": "agent-1770108897-69497",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770108897-69497",
       "branch": "feat/issue-683-create-recipestatsbar-component",
-      "claimed_at": "2026-02-03T08:54:57Z"
+      "claimed_at": "2026-02-03T08:54:57Z",
+      "pr_number": 725,
+      "completed_at": "2026-02-03T09:29:53Z"
     },
     {
       "issue_number": 684,
