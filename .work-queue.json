@@ -5,6 +5,7 @@
     "description": "Work queue for parallel issue assignment with dependency tracking"
   },
   "completed_issues": [
+    748,
     750
   ],
   "issues": [
@@ -81,14 +82,16 @@
     {
       "issue_number": 748,
       "title": "Fix section-specific component ordering inconsistency",
-      "status": "available",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
         "frontend",
         "ui"
       ],
-      "priority": 9
+      "priority": 9,
+      "pr_number": 760,
+      "completed_at": "2026-02-03T16:15:30Z"
     },
     {
       "issue_number": 749,
