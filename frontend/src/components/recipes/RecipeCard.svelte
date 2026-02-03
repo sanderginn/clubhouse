@@ -1,3 +1,7 @@
+<script context="module" lang="ts">
+  let nextInstanceId = 0;
+</script>
+
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import { slide } from 'svelte/transition';
@@ -12,6 +16,7 @@
   let checkedIngredients = new Set<number>();
   let copiedIngredients = false;
   let copyTimeout: ReturnType<typeof setTimeout> | null = null;
+  const instanceId = ++nextInstanceId;
 
   const DEFAULT_TITLE = 'Recipe';
 
@@ -213,13 +218,13 @@
               {#each ingredients as ingredient, index}
                 <li class="flex items-start gap-2 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
                   <input
-                    id={`ingredient-${index}`}
+                    id={`ingredient-${instanceId}-${index}`}
                     type="checkbox"
                     class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     checked={checkedIngredients.has(index)}
                     on:change={() => toggleIngredient(index)}
                   />
-                  <label for={`ingredient-${index}`} class="text-sm text-gray-800">
+                  <label for={`ingredient-${instanceId}-${index}`} class="text-sm text-gray-800">
                     {ingredient}
                   </label>
                 </li>
