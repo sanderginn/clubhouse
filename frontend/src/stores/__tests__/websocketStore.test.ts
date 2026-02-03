@@ -45,6 +45,16 @@ const storeRefs = {
   activeSection: writable<{ id: string } | null>(null),
   isAuthenticated: writable(false),
   currentUser: writable<{ id: string } | null>(null),
+  recipeHandlers: {
+    handleRecipeSavedEvent: vi.fn(),
+    handleRecipeUnsavedEvent: vi.fn(),
+    handleCookLogCreatedEvent: vi.fn(),
+    handleCookLogUpdatedEvent: vi.fn(),
+    handleCookLogRemovedEvent: vi.fn(),
+    handleRecipeCategoryCreatedEvent: vi.fn(),
+    handleRecipeCategoryUpdatedEvent: vi.fn(),
+    handleRecipeCategoryDeletedEvent: vi.fn(),
+  },
   postStore: {
     upsertPost: vi.fn(),
     incrementCommentCount: vi.fn(),
@@ -93,6 +103,25 @@ vi.mock('../commentStore', () => ({
   commentStore: storeRefs.commentStore,
 }));
 
+vi.mock('../recipeStore', () => ({
+  handleRecipeSavedEvent: (payload: unknown) =>
+    storeRefs.recipeHandlers.handleRecipeSavedEvent(payload),
+  handleRecipeUnsavedEvent: (payload: unknown) =>
+    storeRefs.recipeHandlers.handleRecipeUnsavedEvent(payload),
+  handleCookLogCreatedEvent: (payload: unknown) =>
+    storeRefs.recipeHandlers.handleCookLogCreatedEvent(payload),
+  handleCookLogUpdatedEvent: (payload: unknown) =>
+    storeRefs.recipeHandlers.handleCookLogUpdatedEvent(payload),
+  handleCookLogRemovedEvent: (payload: unknown) =>
+    storeRefs.recipeHandlers.handleCookLogRemovedEvent(payload),
+  handleRecipeCategoryCreatedEvent: (payload: unknown) =>
+    storeRefs.recipeHandlers.handleRecipeCategoryCreatedEvent(payload),
+  handleRecipeCategoryUpdatedEvent: (payload: unknown) =>
+    storeRefs.recipeHandlers.handleRecipeCategoryUpdatedEvent(payload),
+  handleRecipeCategoryDeletedEvent: (payload: unknown) =>
+    storeRefs.recipeHandlers.handleRecipeCategoryDeletedEvent(payload),
+}));
+
 vi.mock('../../services/api', () => ({
   api: storeRefs.api,
 }));
@@ -120,6 +149,14 @@ beforeEach(() => {
   storeRefs.api.getComment.mockReset();
   storeRefs.mapApiComment.mockReset();
   storeRefs.mapApiPost.mockReset();
+  storeRefs.recipeHandlers.handleRecipeSavedEvent.mockReset();
+  storeRefs.recipeHandlers.handleRecipeUnsavedEvent.mockReset();
+  storeRefs.recipeHandlers.handleCookLogCreatedEvent.mockReset();
+  storeRefs.recipeHandlers.handleCookLogUpdatedEvent.mockReset();
+  storeRefs.recipeHandlers.handleCookLogRemovedEvent.mockReset();
+  storeRefs.recipeHandlers.handleRecipeCategoryCreatedEvent.mockReset();
+  storeRefs.recipeHandlers.handleRecipeCategoryUpdatedEvent.mockReset();
+  storeRefs.recipeHandlers.handleRecipeCategoryDeletedEvent.mockReset();
   storeRefs.commentStore.setState({});
 
   (globalThis as any).WebSocket = MockWebSocket;
@@ -203,6 +240,33 @@ describe('websocketStore', () => {
     });
 
     expect(storeRefs.postStore.upsertPost).toHaveBeenCalledWith({ id: 'post-1' });
+  });
+
+  it('handles recipe realtime events', async () => {
+    storeRefs.isAuthenticated.set(true);
+    const { websocketStore } = await import('../websocketStore');
+
+    websocketStore.init();
+    const socket = MockWebSocket.instances[0];
+    socket.open();
+
+    const payload = { post_id: 'post-9', category: 'Favorites' };
+    socket.emit('message', {
+      data: JSON.stringify({
+        type: 'recipe_saved',
+        data: payload,
+      }),
+    });
+
+    socket.emit('message', {
+      data: JSON.stringify({
+        type: 'cook_log_removed',
+        data: { post_id: 'post-9' },
+      }),
+    });
+
+    expect(storeRefs.recipeHandlers.handleRecipeSavedEvent).toHaveBeenCalledWith(payload);
+    expect(storeRefs.recipeHandlers.handleCookLogRemovedEvent).toHaveBeenCalledWith({ post_id: 'post-9' });
   });
 
   it('handles new_comment and avoids double count when already present', async () => {

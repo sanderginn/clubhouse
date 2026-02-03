@@ -4,6 +4,16 @@ import { isAuthenticated, currentUser } from './authStore';
 import { postStore, type Post } from './postStore';
 import { commentStore, type Comment } from './commentStore';
 import { handleRealtimeNotification } from './notificationStore';
+import {
+  handleCookLogCreatedEvent,
+  handleCookLogRemovedEvent,
+  handleCookLogUpdatedEvent,
+  handleRecipeCategoryCreatedEvent,
+  handleRecipeCategoryDeletedEvent,
+  handleRecipeCategoryUpdatedEvent,
+  handleRecipeSavedEvent,
+  handleRecipeUnsavedEvent,
+} from './recipeStore';
 import { api } from '../services/api';
 import { mapApiComment } from './commentMapper';
 import { mapApiPost, type ApiPost } from './postMapper';
@@ -274,6 +284,38 @@ function connect() {
       }
       case 'notification': {
         handleRealtimeNotification(parsed.data);
+        break;
+      }
+      case 'recipe_saved': {
+        handleRecipeSavedEvent(parsed.data);
+        break;
+      }
+      case 'recipe_unsaved': {
+        handleRecipeUnsavedEvent(parsed.data);
+        break;
+      }
+      case 'cook_log_created': {
+        handleCookLogCreatedEvent(parsed.data);
+        break;
+      }
+      case 'cook_log_updated': {
+        handleCookLogUpdatedEvent(parsed.data);
+        break;
+      }
+      case 'cook_log_removed': {
+        handleCookLogRemovedEvent(parsed.data);
+        break;
+      }
+      case 'recipe_category_created': {
+        handleRecipeCategoryCreatedEvent(parsed.data);
+        break;
+      }
+      case 'recipe_category_updated': {
+        handleRecipeCategoryUpdatedEvent(parsed.data);
+        break;
+      }
+      case 'recipe_category_deleted': {
+        handleRecipeCategoryDeletedEvent(parsed.data);
         break;
       }
       default:
