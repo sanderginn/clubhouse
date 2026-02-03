@@ -63,10 +63,10 @@ func TestSearchServiceGlobal(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"emoji", "count"}))
 
 	commentRows := sqlmock.NewRows([]string{
-		"id", "user_id", "post_id", "section_id", "parent_comment_id", "image_id", "content", "created_at", "updated_at", "deleted_at", "deleted_by_user_id",
+		"id", "user_id", "post_id", "section_id", "parent_comment_id", "image_id", "timestamp_seconds", "content", "created_at", "updated_at", "deleted_at", "deleted_by_user_id",
 		"id", "username", "email", "profile_picture_url", "bio", "is_admin", "created_at",
 	}).AddRow(
-		commentID, userID, postID, sectionID, nil, nil, "comment content", commentCreated, nil, nil, nil,
+		commentID, userID, postID, sectionID, nil, nil, nil, "comment content", commentCreated, nil, nil, nil,
 		userID, "alice", "alice@example.com", nil, nil, false, userCreated,
 	)
 

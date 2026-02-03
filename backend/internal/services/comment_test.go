@@ -43,6 +43,57 @@ func TestCreateComment(t *testing.T) {
 	}
 }
 
+func TestCreateCommentWithTimestamp(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "commenttimestamp", "commenttimestamp@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Music Section", "music")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Post with timestamps")
+
+	service := NewCommentService(db)
+	req := &models.CreateCommentRequest{
+		PostID:           postID,
+		Content:          "Timestamped comment",
+		TimestampSeconds: intPtr(150),
+	}
+
+	comment, err := service.CreateComment(context.Background(), req, uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("CreateComment failed: %v", err)
+	}
+	if comment.TimestampSeconds == nil || *comment.TimestampSeconds != 150 {
+		t.Fatalf("expected timestamp_seconds 150, got %v", comment.TimestampSeconds)
+	}
+	if comment.TimestampDisplay == nil || *comment.TimestampDisplay != "02:30" {
+		t.Fatalf("expected timestamp_display 02:30, got %v", comment.TimestampDisplay)
+	}
+}
+
+func TestCreateCommentTimestampNotAllowed(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "commenttsblocked", "commenttsblocked@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "General Section", "general")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "General post")
+
+	service := NewCommentService(db)
+	req := &models.CreateCommentRequest{
+		PostID:           postID,
+		Content:          "Timestamped comment",
+		TimestampSeconds: intPtr(42),
+	}
+
+	_, err := service.CreateComment(context.Background(), req, uuid.MustParse(userID))
+	if err == nil {
+		t.Fatalf("expected error for timestamp on non-music post")
+	}
+	if err.Error() != "comment timestamps are only allowed for music posts" {
+		t.Fatalf("expected error %q, got %q", "comment timestamps are only allowed for music posts", err.Error())
+	}
+}
+
 func TestCreateCommentWithImageID(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
@@ -295,6 +346,26 @@ func TestValidateCreateCommentInput(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "timestamp negative",
+			req: &models.CreateCommentRequest{
+				PostID:           uuid.New().String(),
+				Content:          "Bad timestamp",
+				TimestampSeconds: intPtr(-1),
+			},
+			wantErr: true,
+			errMsg:  "timestamp must be non-negative",
+		},
+		{
+			name: "timestamp too large",
+			req: &models.CreateCommentRequest{
+				PostID:           uuid.New().String(),
+				Content:          "Bad timestamp",
+				TimestampSeconds: intPtr(maxCommentTimestampSeconds + 1),
+			},
+			wantErr: true,
+			errMsg:  "timestamp exceeds maximum duration",
+		},
 	}
 
 	for _, tt := range tests {
@@ -533,4 +604,8 @@ func TestAdminRestoreCommentCreatesAuditLogWithMetadata(t *testing.T) {
 
 func stringPtr(s string) *string {
 	return &s
+}
+
+func intPtr(value int) *int {
+	return &value
 }

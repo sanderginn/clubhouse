@@ -5,9 +5,11 @@
   import { postStore } from '../../stores/postStore';
   import { mapApiComment } from '../../stores/commentMapper';
   import type { Comment } from '../../stores/commentStore';
+  import { parseHighlightTimestamp } from '../../lib/highlights';
   import MentionTextarea from '../mentions/MentionTextarea.svelte';
 
   export let postId: string;
+  export let allowTimestamp = false;
   export let imageContext:
     | {
         id?: string;
@@ -21,9 +23,13 @@
   const dispatch = createEventDispatcher<{ submit: Comment }>();
 
   let content = '';
+  let timestampInput = '';
+  let timestampError: string | null = null;
   let mentionUsernames: string[] = [];
   let isSubmitting = false;
   let error: string | null = null;
+
+  const maxCommentTimestampSeconds = 21600;
 
   async function handleSubmit() {
     if (!content.trim()) {
@@ -32,12 +38,30 @@
 
     isSubmitting = true;
     error = null;
+    timestampError = null;
+
+    let timestampSeconds: number | undefined;
+    if (allowTimestamp && timestampInput.trim()) {
+      const parsed = parseHighlightTimestamp(timestampInput);
+      if (parsed === null) {
+        timestampError = 'Enter a timestamp in mm:ss or hh:mm:ss format.';
+        isSubmitting = false;
+        return;
+      }
+      if (parsed > maxCommentTimestampSeconds) {
+        timestampError = 'Timestamp is too long.';
+        isSubmitting = false;
+        return;
+      }
+      timestampSeconds = parsed;
+    }
 
     try {
       const response = await api.createComment({
         postId,
         imageId: imageContext?.id,
         content: content.trim(),
+        timestampSeconds,
         mentionUsernames,
       });
       const comment = mapApiComment(response.comment);
@@ -47,6 +71,7 @@
         postStore.incrementCommentCount(postId, 1);
       }
       content = '';
+      timestampInput = '';
       mentionUsernames = [];
       onClearImageContext?.();
       dispatch('submit', comment);
@@ -98,6 +123,26 @@
     disabled={isSubmitting}
     className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:bg-gray-100"
   />
+  {#if allowTimestamp}
+    <div class="space-y-1">
+      <label class="text-xs font-medium text-gray-600" for="comment-timestamp">
+        Timestamp (mm:ss or hh:mm:ss)
+      </label>
+      <input
+        id="comment-timestamp"
+        type="text"
+        bind:value={timestampInput}
+        placeholder="02:30"
+        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:border-primary focus:ring-2 focus:ring-primary/30"
+        aria-invalid={timestampError ? 'true' : 'false'}
+        disabled={isSubmitting}
+      />
+      {#if timestampError}
+        <p class="text-xs text-red-600">{timestampError}</p>
+      {/if}
+      <p class="text-xs text-gray-500">Optional. Use this to reference a specific moment in the track.</p>
+    </div>
+  {/if}
   <p class="text-xs text-gray-500">Tip: Use \@ to write a literal @.</p>
 
   {#if error}

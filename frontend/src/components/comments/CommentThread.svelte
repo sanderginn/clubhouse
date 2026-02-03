@@ -14,6 +14,7 @@
   import RelativeTime from '../RelativeTime.svelte';
   import { logError } from '../../lib/observability/logger';
   import { recordComponentRender } from '../../lib/observability/performance';
+  import { formatHighlightTimestamp } from '../../lib/highlights';
   import SpotifyEmbed from '../../lib/components/embeds/SpotifyEmbed.svelte';
   import YouTubeEmbed from '../../lib/components/embeds/YouTubeEmbed.svelte';
 
@@ -39,6 +40,8 @@
     | null = null;
   export let onClearImageReply: (() => void) | null = null;
   export let onImageReferenceClick: ((imageIndex: number) => void) | null = null;
+  export let sectionType: string | null = null;
+  export let onTimestampSeek: ((timestamp: number) => Promise<boolean> | boolean) | null = null;
 
   const emptyThread: CommentThreadState = {
     comments: [],
@@ -62,6 +65,8 @@
   let deletingCommentIds = new Set<string>();
   let deleteCommentErrors: Record<string, string | null> = {};
   let lastHighlightId: string | null = null;
+
+  $: isMusicPost = sectionType === 'music';
 
   const renderStart = typeof performance !== 'undefined' ? performance.now() : null;
 
@@ -97,6 +102,19 @@
 
   function handleImageReferenceClick(index: number) {
     onImageReferenceClick?.(index);
+  }
+
+  function getTimestampDisplay(comment: { timestampSeconds?: number; timestampDisplay?: string }): string | null {
+    if (comment.timestampDisplay) return comment.timestampDisplay;
+    if (typeof comment.timestampSeconds === 'number') {
+      return formatHighlightTimestamp(comment.timestampSeconds);
+    }
+    return null;
+  }
+
+  async function handleTimestampClick(seconds: number | undefined) {
+    if (seconds == null || !onTimestampSeek) return;
+    await onTimestampSeek(seconds);
   }
 
   async function toggleCommentReaction(commentId: string, emoji: string) {
@@ -364,9 +382,10 @@
   {:else}
     <div class="space-y-4">
       {#each thread.comments as comment (comment.id)}
+        {@const commentTimestampDisplay = getTimestampDisplay(comment)}
         <article
           id={`comment-${comment.id}`}
-          class={`border border-gray-200 rounded-lg p-3 ${getHighlightClass(comment.id, comment.userId, false)}`}
+          class={`border rounded-lg p-3 ${comment.timestampSeconds != null ? 'border-blue-200 bg-blue-50/40' : 'border-gray-200'} ${getHighlightClass(comment.id, comment.userId, false)}`}
         >
           <div class="flex items-start gap-3">
             {#if comment.user?.id}
@@ -424,6 +443,22 @@
                 <span class="text-gray-400 text-xs">·</span>
                 <RelativeTime dateString={comment.createdAt} className="text-gray-500 text-xs" />
                 <EditedBadge createdAt={comment.createdAt} updatedAt={comment.updatedAt} />
+                {#if commentTimestampDisplay}
+                  {#if onTimestampSeek && typeof comment.timestampSeconds === 'number'}
+                    <button
+                      type="button"
+                      class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                      on:click={() => handleTimestampClick(comment.timestampSeconds)}
+                      aria-label={`Seek to ${commentTimestampDisplay}`}
+                    >
+                      {commentTimestampDisplay}
+                    </button>
+                  {:else}
+                    <span class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                      {commentTimestampDisplay}
+                    </span>
+                  {/if}
+                {/if}
                 {#if $currentUser?.id === comment.userId || $isAdmin}
                   <div class="ml-auto flex items-center gap-2">
                     {#if $currentUser?.id === comment.userId}
@@ -614,6 +649,7 @@
                   <ReplyForm
                     {postId}
                     parentCommentId={comment.id}
+                    allowTimestamp={isMusicPost}
                     on:cancel={() => closeReply(comment.id)}
                     on:submit={() => closeReply(comment.id)}
                   />
@@ -623,6 +659,7 @@
               {#if comment.replies?.length}
                 <div class="mt-4 space-y-3 border-l border-gray-200 pl-4">
                   {#each comment.replies as reply (reply.id)}
+                    {@const replyTimestampDisplay = getTimestampDisplay(reply)}
                     <div
                       id={`comment-${reply.id}`}
                       class={`flex items-start gap-2 ${getHighlightClass(reply.id, reply.userId, true)}`}
@@ -682,6 +719,22 @@
                           <span class="text-gray-400 text-xs">·</span>
                           <RelativeTime dateString={reply.createdAt} className="text-gray-500 text-xs" />
                           <EditedBadge createdAt={reply.createdAt} updatedAt={reply.updatedAt} />
+                          {#if replyTimestampDisplay}
+                            {#if onTimestampSeek && typeof reply.timestampSeconds === 'number'}
+                              <button
+                                type="button"
+                                class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                                on:click={() => handleTimestampClick(reply.timestampSeconds)}
+                                aria-label={`Seek to ${replyTimestampDisplay}`}
+                              >
+                                {replyTimestampDisplay}
+                              </button>
+                            {:else}
+                              <span class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                                {replyTimestampDisplay}
+                              </span>
+                            {/if}
+                          {/if}
                           {#if $currentUser?.id === reply.userId || $isAdmin}
                             <div class="ml-auto flex items-center gap-2">
                               {#if $currentUser?.id === reply.userId}
@@ -815,6 +868,7 @@
       {postId}
       imageContext={imageReplyTarget}
       onClearImageContext={onClearImageReply}
+      allowTimestamp={isMusicPost}
     />
   </div>
 </div>

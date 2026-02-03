@@ -473,11 +473,11 @@ func TestUpdateCommentSuccess(t *testing.T) {
 	mock.ExpectCommit()
 
 	rows := mock.NewRows([]string{
-		"id", "user_id", "post_id", "section_id", "parent_comment_id", "image_id", "content",
+		"id", "user_id", "post_id", "section_id", "parent_comment_id", "image_id", "timestamp_seconds", "content",
 		"created_at", "updated_at", "deleted_at", "deleted_by_user_id",
 		"id", "username", "email", "profile_picture_url", "bio", "is_admin", "created_at",
 	}).AddRow(
-		commentID, userID, postID, sectionID, nil, nil, "Updated comment",
+		commentID, userID, postID, sectionID, nil, nil, nil, "Updated comment",
 		now, updatedAt, nil, nil,
 		userID, "testuser", "test@example.com", nil, nil, false, now,
 	)

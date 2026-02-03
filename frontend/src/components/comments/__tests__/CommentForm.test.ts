@@ -97,4 +97,44 @@ describe('CommentForm', () => {
 
     expect(screen.getByText('boom')).toBeInTheDocument();
   });
+
+  it('submits timestamp when enabled', async () => {
+    mapApiComment.mockReturnValue({
+      id: 'comment-2',
+      postId: 'post-1',
+      userId: 'user-1',
+      content: 'Nice',
+      createdAt: 'now',
+    });
+    createComment.mockResolvedValue({ comment: { id: 'comment-2' } });
+
+    const { container } = render(CommentForm, { postId: 'post-1', allowTimestamp: true });
+    const textarea = screen.getByLabelText('Add a comment');
+    const timestampInput = screen.getByLabelText('Timestamp (mm:ss or hh:mm:ss)');
+
+    await fireEvent.input(textarea, { target: { value: 'Nice' } });
+    await fireEvent.input(timestampInput, { target: { value: '02:30' } });
+    const form = container.querySelector('form');
+    if (!form) throw new Error('form not found');
+    await fireEvent.submit(form);
+
+    expect(createComment).toHaveBeenCalled();
+    const payload = createComment.mock.calls[0][0];
+    expect(payload.timestampSeconds).toBe(150);
+  });
+
+  it('shows timestamp validation error', async () => {
+    const { container } = render(CommentForm, { postId: 'post-1', allowTimestamp: true });
+    const textarea = screen.getByLabelText('Add a comment');
+    const timestampInput = screen.getByLabelText('Timestamp (mm:ss or hh:mm:ss)');
+
+    await fireEvent.input(textarea, { target: { value: 'Nice' } });
+    await fireEvent.input(timestampInput, { target: { value: '2:3' } });
+    const form = container.querySelector('form');
+    if (!form) throw new Error('form not found');
+    await fireEvent.submit(form);
+
+    expect(createComment).not.toHaveBeenCalled();
+    expect(screen.getByText('Enter a timestamp in mm:ss or hh:mm:ss format.')).toBeInTheDocument();
+  });
 });

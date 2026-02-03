@@ -21,9 +21,48 @@ type CommentService struct {
 	db *sql.DB
 }
 
+const maxCommentTimestampSeconds = 21600
+
 // NewCommentService creates a new comment service
 func NewCommentService(db *sql.DB) *CommentService {
 	return &CommentService{db: db}
+}
+
+func formatCommentTimestamp(seconds int) string {
+	if seconds < 0 {
+		seconds = 0
+	}
+	hours := seconds / 3600
+	minutes := (seconds % 3600) / 60
+	remaining := seconds % 60
+	if hours > 0 {
+		return fmt.Sprintf("%d:%02d:%02d", hours, minutes, remaining)
+	}
+	return fmt.Sprintf("%02d:%02d", minutes, remaining)
+}
+
+func applyCommentTimestampDisplay(comment *models.Comment) {
+	if comment == nil || comment.TimestampSeconds == nil {
+		return
+	}
+	display := formatCommentTimestamp(*comment.TimestampSeconds)
+	comment.TimestampDisplay = &display
+}
+
+func validateCommentTimestamp(sectionType string, timestampSeconds *int) error {
+	if timestampSeconds == nil {
+		return nil
+	}
+	if sectionType != "music" {
+		return fmt.Errorf("comment timestamps are only allowed for music posts")
+	}
+	if *timestampSeconds < 0 {
+		return fmt.Errorf("timestamp must be non-negative")
+	}
+	if *timestampSeconds > maxCommentTimestampSeconds {
+		return fmt.Errorf("timestamp exceeds maximum duration")
+	}
+	return nil
 }
 
 // CreateComment creates a new comment with optional links
@@ -35,6 +74,14 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 		attribute.Bool("has_links", len(req.Links) > 0),
 		attribute.Bool("has_image_id", req.ImageID != nil && strings.TrimSpace(*req.ImageID) != ""),
 	)
+	if req.TimestampSeconds != nil {
+		span.SetAttributes(
+			attribute.Bool("has_timestamp", true),
+			attribute.Int("timestamp_seconds", *req.TimestampSeconds),
+		)
+	} else {
+		span.SetAttributes(attribute.Bool("has_timestamp", false))
+	}
 	defer span.End()
 
 	// Validate input
@@ -75,6 +122,11 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 			recordSpanError(span, err)
 			return nil, err
 		}
+	}
+
+	if err := validateCommentTimestamp(sectionType, req.TimestampSeconds); err != nil {
+		recordSpanError(span, err)
+		return nil, err
 	}
 
 	// Validate parent comment if provided
@@ -153,18 +205,24 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 
 	// Insert comment
 	query := `
-		INSERT INTO comments (id, user_id, post_id, parent_comment_id, image_id, content, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, now())
-		RETURNING id, user_id, post_id, parent_comment_id, image_id, content, created_at
+		INSERT INTO comments (id, user_id, post_id, parent_comment_id, image_id, timestamp_seconds, content, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, now())
+		RETURNING id, user_id, post_id, parent_comment_id, image_id, timestamp_seconds, content, created_at
 	`
 
 	var comment models.Comment
-	err = tx.QueryRowContext(ctx, query, commentID, userID, postID, parentCommentID, imageID, req.Content).
-		Scan(&comment.ID, &comment.UserID, &comment.PostID, &comment.ParentCommentID, &comment.ImageID, &comment.Content, &comment.CreatedAt)
+	var timestampSeconds sql.NullInt32
+	err = tx.QueryRowContext(ctx, query, commentID, userID, postID, parentCommentID, imageID, req.TimestampSeconds, req.Content).
+		Scan(&comment.ID, &comment.UserID, &comment.PostID, &comment.ParentCommentID, &comment.ImageID, &timestampSeconds, &comment.Content, &comment.CreatedAt)
 
 	if err != nil {
 		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create comment: %w", err)
+	}
+	if timestampSeconds.Valid {
+		value := int(timestampSeconds.Int32)
+		comment.TimestampSeconds = &value
+		applyCommentTimestampDisplay(&comment)
 	}
 
 	// Insert links if provided
@@ -218,6 +276,9 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 	}
 	if len(req.Links) > 0 {
 		metadata["link_count"] = len(req.Links)
+	}
+	if req.TimestampSeconds != nil {
+		metadata["timestamp_seconds"] = *req.TimestampSeconds
 	}
 
 	auditService := NewAuditService(tx)
@@ -403,7 +464,7 @@ func (s *CommentService) GetCommentByID(ctx context.Context, commentID uuid.UUID
 
 	query := `
 		SELECT
-			c.id, c.user_id, c.post_id, p.section_id, c.parent_comment_id, c.image_id, c.content,
+			c.id, c.user_id, c.post_id, p.section_id, c.parent_comment_id, c.image_id, c.timestamp_seconds, c.content,
 			c.created_at, c.updated_at, c.deleted_at, c.deleted_by_user_id,
 			u.id, u.username, COALESCE(u.email, '') as email, u.profile_picture_url, u.bio, u.is_admin, u.created_at
 		FROM comments c
@@ -417,8 +478,9 @@ func (s *CommentService) GetCommentByID(ctx context.Context, commentID uuid.UUID
 
 	var sectionID uuid.UUID
 	var imageID sql.NullString
+	var timestampSeconds sql.NullInt32
 	err := s.db.QueryRowContext(ctx, query, commentID).Scan(
-		&comment.ID, &comment.UserID, &comment.PostID, &sectionID, &comment.ParentCommentID, &imageID, &comment.Content,
+		&comment.ID, &comment.UserID, &comment.PostID, &sectionID, &comment.ParentCommentID, &imageID, &timestampSeconds, &comment.Content,
 		&comment.CreatedAt, &comment.UpdatedAt, &comment.DeletedAt, &comment.DeletedByUserID,
 		&user.ID, &user.Username, &user.Email, &user.ProfilePictureURL, &user.Bio, &user.IsAdmin, &user.CreatedAt,
 	)
@@ -438,6 +500,11 @@ func (s *CommentService) GetCommentByID(ctx context.Context, commentID uuid.UUID
 	if imageID.Valid {
 		parsedID, _ := uuid.Parse(imageID.String)
 		comment.ImageID = &parsedID
+	}
+	if timestampSeconds.Valid {
+		value := int(timestampSeconds.Int32)
+		comment.TimestampSeconds = &value
+		applyCommentTimestampDisplay(&comment)
 	}
 
 	// Fetch links for this comment
@@ -620,6 +687,15 @@ func validateCreateCommentInput(req *models.CreateCommentRequest) error {
 		return fmt.Errorf("content must be less than 5000 characters")
 	}
 
+	if req.TimestampSeconds != nil {
+		if *req.TimestampSeconds < 0 {
+			return fmt.Errorf("timestamp must be non-negative")
+		}
+		if *req.TimestampSeconds > maxCommentTimestampSeconds {
+			return fmt.Errorf("timestamp exceeds maximum duration")
+		}
+	}
+
 	// Validate links if provided
 	for _, link := range req.Links {
 		if strings.TrimSpace(link.URL) == "" {
@@ -664,7 +740,7 @@ func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID
 	// Build query for top-level comments
 	query := `
 		SELECT
-			c.id, c.user_id, c.post_id, c.parent_comment_id, c.image_id, c.content,
+			c.id, c.user_id, c.post_id, c.parent_comment_id, c.image_id, c.timestamp_seconds, c.content,
 			c.created_at, c.updated_at, c.deleted_at, c.deleted_by_user_id,
 			u.id, u.username, COALESCE(u.email, '') as email, u.profile_picture_url, u.bio, u.is_admin, u.created_at
 		FROM comments c
@@ -719,9 +795,10 @@ func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID
 		var deletedByUserID sql.NullString
 		var updatedAt sql.NullTime
 		var imageID sql.NullString
+		var timestampSeconds sql.NullInt32
 
 		err := rows.Scan(
-			&c.ID, &c.UserID, &c.PostID, &parentID, &imageID, &c.Content,
+			&c.ID, &c.UserID, &c.PostID, &parentID, &imageID, &timestampSeconds, &c.Content,
 			&c.CreatedAt, &updatedAt, &deletedAt, &deletedByUserID,
 			&user.ID, &user.Username, &user.Email, &user.ProfilePictureURL, &user.Bio, &user.IsAdmin, &user.CreatedAt,
 		)
@@ -737,6 +814,11 @@ func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID
 		if imageID.Valid {
 			pid, _ := uuid.Parse(imageID.String)
 			c.ImageID = &pid
+		}
+		if timestampSeconds.Valid {
+			value := int(timestampSeconds.Int32)
+			c.TimestampSeconds = &value
+			applyCommentTimestampDisplay(&c)
 		}
 		if deletedAt.Valid {
 			c.DeletedAt = &deletedAt.Time
@@ -803,7 +885,7 @@ func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID
 func (s *CommentService) getCommentReplies(ctx context.Context, parentCommentID uuid.UUID, userID uuid.UUID) ([]models.Comment, error) {
 	query := `
 		SELECT
-			c.id, c.user_id, c.post_id, c.parent_comment_id, c.image_id, c.content,
+			c.id, c.user_id, c.post_id, c.parent_comment_id, c.image_id, c.timestamp_seconds, c.content,
 			c.created_at, c.updated_at, c.deleted_at, c.deleted_by_user_id,
 			u.id, u.username, COALESCE(u.email, '') as email, u.profile_picture_url, u.bio, u.is_admin, u.created_at
 		FROM comments c
@@ -827,9 +909,10 @@ func (s *CommentService) getCommentReplies(ctx context.Context, parentCommentID 
 		var deletedByUserID sql.NullString
 		var updatedAt sql.NullTime
 		var imageID sql.NullString
+		var timestampSeconds sql.NullInt32
 
 		err := rows.Scan(
-			&c.ID, &c.UserID, &c.PostID, &parentID, &imageID, &c.Content,
+			&c.ID, &c.UserID, &c.PostID, &parentID, &imageID, &timestampSeconds, &c.Content,
 			&c.CreatedAt, &updatedAt, &deletedAt, &deletedByUserID,
 			&user.ID, &user.Username, &user.Email, &user.ProfilePictureURL, &user.Bio, &user.IsAdmin, &user.CreatedAt,
 		)
@@ -844,6 +927,11 @@ func (s *CommentService) getCommentReplies(ctx context.Context, parentCommentID 
 		if imageID.Valid {
 			pid, _ := uuid.Parse(imageID.String)
 			c.ImageID = &pid
+		}
+		if timestampSeconds.Valid {
+			value := int(timestampSeconds.Int32)
+			c.TimestampSeconds = &value
+			applyCommentTimestampDisplay(&c)
 		}
 		if deletedAt.Valid {
 			c.DeletedAt = &deletedAt.Time
