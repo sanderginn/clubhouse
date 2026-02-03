@@ -20,6 +20,7 @@ func TestSoundCloudExtractorCanExtract(t *testing.T) {
 		{name: "track", url: "https://soundcloud.com/artist/track", want: true},
 		{name: "playlist", url: "https://soundcloud.com/artist/sets/playlist", want: true},
 		{name: "subdomain", url: "https://m.soundcloud.com/artist/track", want: true},
+		{name: "malicious suffix", url: "https://soundcloud.com.evil.com/artist/track", want: false},
 		{name: "youtube", url: "https://youtube.com/watch?v=abc", want: false},
 		{name: "invalid", url: "://bad-url", want: false},
 	}

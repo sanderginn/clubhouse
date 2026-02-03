@@ -49,7 +49,7 @@ func (e *SoundCloudExtractor) CanExtract(rawURL string) bool {
 		return false
 	}
 	host := strings.ToLower(parsed.Hostname())
-	return strings.Contains(host, "soundcloud.com")
+	return host == "soundcloud.com" || strings.HasSuffix(host, ".soundcloud.com")
 }
 
 func (e *SoundCloudExtractor) Extract(ctx context.Context, rawURL string) (*EmbedData, error) {
