@@ -21,8 +21,17 @@ export interface LinkMetadata {
   author?: string;
   duration?: number;
   embedUrl?: string;
+  embed?: EmbedData;
   type?: string;
   recipe?: RecipeMetadata;
+}
+
+export interface EmbedData {
+  type?: string;
+  provider?: string;
+  embedUrl: string;
+  width?: number;
+  height?: number;
 }
 
 export interface RecipeNutritionInfo {

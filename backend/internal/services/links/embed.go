@@ -25,3 +25,9 @@ type EmbedExtractor interface {
 	CanExtract(url string) bool
 	Extract(ctx context.Context, url string) (*EmbedData, error)
 }
+
+// HTMLEmbedExtractor can parse embeds using already-fetched HTML.
+type HTMLEmbedExtractor interface {
+	EmbedExtractor
+	ExtractFromHTML(ctx context.Context, url string, body []byte, metaTags map[string]string) (*EmbedData, error)
+}

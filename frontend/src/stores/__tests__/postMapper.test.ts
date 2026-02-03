@@ -157,4 +157,36 @@ describe('mapApiPost', () => {
     expect(post.links?.[0].metadata?.embedUrl).toBe('https://example.com/embed');
     expect(post.links?.[0].metadata?.duration).toBe(180);
   });
+
+  it('normalizes embed objects', () => {
+    const post = mapApiPost({
+      id: 'post-7',
+      user_id: 'user-7',
+      section_id: 'section-7',
+      content: 'hello',
+      created_at: '2025-01-01T00:00:00Z',
+      links: [
+        {
+          id: 'link-7',
+          url: 'https://artist.bandcamp.com/album/test',
+          metadata: {
+            embed: {
+              type: 'iframe',
+              provider: 'bandcamp',
+              embed_url: 'https://bandcamp.com/EmbeddedPlayer/album=123',
+              height: 470,
+            },
+          },
+        },
+      ],
+    });
+
+    expect(post.links?.[0].metadata?.embed?.embedUrl).toBe(
+      'https://bandcamp.com/EmbeddedPlayer/album=123'
+    );
+    expect(post.links?.[0].metadata?.embed?.height).toBe(470);
+    expect(post.links?.[0].metadata?.embedUrl).toBe(
+      'https://bandcamp.com/EmbeddedPlayer/album=123'
+    );
+  });
 });

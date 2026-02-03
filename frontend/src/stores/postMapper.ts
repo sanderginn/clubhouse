@@ -1,4 +1,12 @@
-import type { Post, Link, LinkMetadata, PostImage, Highlight, RecipeStats } from './postStore';
+import type {
+  Post,
+  Link,
+  LinkMetadata,
+  PostImage,
+  Highlight,
+  RecipeStats,
+  EmbedData,
+} from './postStore';
 
 export interface ApiUser {
   id: string;
@@ -95,6 +103,31 @@ function normalizeRecipeStats(rawStats: unknown): RecipeStats | undefined {
   };
 }
 
+function normalizeEmbedData(rawEmbed: unknown): EmbedData | undefined {
+  if (!rawEmbed || typeof rawEmbed !== 'object' || Array.isArray(rawEmbed)) {
+    return undefined;
+  }
+  const record = rawEmbed as Record<string, unknown>;
+  const embedUrl =
+    normalizeString(record.embedUrl) ??
+    normalizeString(record.embed_url) ??
+    normalizeString(record.url);
+  if (!embedUrl) {
+    return undefined;
+  }
+  const type = normalizeString(record.type);
+  const provider = normalizeString(record.provider);
+  const width = normalizeNumber(record.width);
+  const height = normalizeNumber(record.height);
+  return {
+    type,
+    provider,
+    embedUrl,
+    width,
+    height,
+  };
+}
+
 function normalizeHighlights(rawHighlights: unknown): Highlight[] | undefined {
   if (!Array.isArray(rawHighlights)) {
     return undefined;
@@ -163,8 +196,11 @@ export function normalizeLinkMetadata(
     normalizeString(metadata.imageUrl);
   const author = normalizeString(metadata.author) ?? normalizeString(metadata.artist);
   const duration = normalizeNumber(metadata.duration);
+  const embed = normalizeEmbedData(metadata.embed);
   const embedUrl =
-    normalizeString(metadata.embedUrl) ?? normalizeString(metadata.embed_url);
+    normalizeString(metadata.embedUrl) ??
+    normalizeString(metadata.embed_url) ??
+    embed?.embedUrl;
   const type =
     normalizeString(metadata.type) ??
     normalizeString(metadata.og_type) ??
@@ -178,6 +214,7 @@ export function normalizeLinkMetadata(
     !!author ||
     !!duration ||
     !!embedUrl ||
+    !!embed ||
     !!type;
   if (!hasMetadata) {
     return undefined;
@@ -192,6 +229,7 @@ export function normalizeLinkMetadata(
     author,
     duration,
     embedUrl,
+    embed,
     type,
   };
 }
