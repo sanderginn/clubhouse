@@ -908,7 +908,7 @@
     {
       "issue_number": 672,
       "title": "Implement cook log HTTP handlers",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         669
       ],
@@ -918,7 +918,11 @@
         "recipes"
       ],
       "priority": 11,
-      "phase": "recipes-3"
+      "phase": "recipes-3",
+      "assigned_to": "agent-1770079535-8527",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770079535-8527",
+      "branch": "feat/issue-672-implement-cook-log-http-handlers",
+      "claimed_at": "2026-02-03T00:45:35Z"
     },
     {
       "issue_number": 673,
