@@ -3,12 +3,14 @@
   import {
     activeSection,
     posts,
+    filteredPosts,
     isLoadingPosts,
     postsError,
     postsPaginationError,
     hasMorePosts,
     postStore,
     threadRouteStore,
+    musicLengthFilter,
   } from '../stores';
   import { loadFeed, loadMorePosts } from '../stores/feedStore';
   import { loadThreadTargetPost } from '../stores/threadRouteStore';
@@ -23,6 +25,11 @@
   $: if ($activeSection?.id) {
     loadFeed($activeSection.id);
   }
+
+  $: displayPosts = $filteredPosts;
+  $: hasFilteredResults = displayPosts.length > 0;
+  $: filterLabel =
+    $musicLengthFilter === 'tracks' ? 'tracks' : $musicLengthFilter === 'sets' ? 'sets/mixes' : '';
 
   async function handleLoadMore() {
     if (isLoadingMore || !$hasMorePosts) return;
@@ -164,15 +171,23 @@
       <p class="text-gray-500">No posts yet. Be the first to share something!</p>
     </div>
   {:else}
-    {#each $posts as post (post.id)}
-      {@const isTarget = $threadRouteStore.postId === post.id}
-      <div
-        id={`post-${post.id}`}
-        class={`scroll-mt-24 ${isTarget ? 'ring-2 ring-blue-200 rounded-lg' : ''}`}
-      >
-        <PostCard {post} />
+    {#if !hasFilteredResults}
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
+        <p class="text-gray-500">
+          No {filterLabel} posts yet. Try switching the length filter.
+        </p>
       </div>
-    {/each}
+    {:else}
+      {#each displayPosts as post (post.id)}
+        {@const isTarget = $threadRouteStore.postId === post.id}
+        <div
+          id={`post-${post.id}`}
+          class={`scroll-mt-24 ${isTarget ? 'ring-2 ring-blue-200 rounded-lg' : ''}`}
+        >
+          <PostCard {post} />
+        </div>
+      {/each}
+    {/if}
 
     <div bind:this={sentinel} class="h-4"></div>
 

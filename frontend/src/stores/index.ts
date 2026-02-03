@@ -7,6 +7,7 @@ export * from './commentStore';
 export * from './commentFeedStore';
 export * from './sectionLinksStore';
 export * from './sectionLinksFeedStore';
+export * from './musicFilterStore';
 export * from './websocketStore';
 export * from './searchStore';
 export * from './pwaStore';
