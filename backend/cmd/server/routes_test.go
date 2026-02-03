@@ -34,6 +34,15 @@ func TestPostRouteHandlerDeletePost(t *testing.T) {
 		removeReactionFromPost: func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("removeReactionFromPost should not be called")
 		},
+		saveRecipe: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("saveRecipe should not be called")
+		},
+		unsaveRecipe: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("unsaveRecipe should not be called")
+		},
+		getPostSaves: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPostSaves should not be called")
+		},
 		logCook: func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("logCook should not be called")
 		},
@@ -108,6 +117,15 @@ func TestPostRouteHandlerUpdatePost(t *testing.T) {
 		getReactions: func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("getReactions should not be called")
 		},
+		saveRecipe: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("saveRecipe should not be called")
+		},
+		unsaveRecipe: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("unsaveRecipe should not be called")
+		},
+		getPostSaves: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPostSaves should not be called")
+		},
 		logCook: func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("logCook should not be called")
 		},
@@ -169,6 +187,15 @@ func TestPostRouteHandlerMethodNotAllowed(t *testing.T) {
 		},
 		removeReactionFromPost: func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("removeReactionFromPost should not be called")
+		},
+		saveRecipe: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("saveRecipe should not be called")
+		},
+		unsaveRecipe: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("unsaveRecipe should not be called")
+		},
+		getPostSaves: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPostSaves should not be called")
 		},
 		logCook: func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("logCook should not be called")
@@ -238,6 +265,15 @@ func TestPostRouteHandlerDeletePostReactionsMissingEmoji(t *testing.T) {
 		removeReactionFromPost: func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("removeReactionFromPost should not be called")
 		},
+		saveRecipe: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("saveRecipe should not be called")
+		},
+		unsaveRecipe: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("unsaveRecipe should not be called")
+		},
+		getPostSaves: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPostSaves should not be called")
+		},
 		logCook: func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("logCook should not be called")
 		},
@@ -306,6 +342,15 @@ func TestPostRouteHandlerDeletePostCommentsPath(t *testing.T) {
 		removeReactionFromPost: func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("removeReactionFromPost should not be called")
 		},
+		saveRecipe: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("saveRecipe should not be called")
+		},
+		unsaveRecipe: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("unsaveRecipe should not be called")
+		},
+		getPostSaves: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPostSaves should not be called")
+		},
 		logCook: func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("logCook should not be called")
 		},
@@ -373,6 +418,15 @@ func TestPostRouteHandlerGetThreadRequiresAuth(t *testing.T) {
 		removeReactionFromPost: func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("removeReactionFromPost should not be called")
 		},
+		saveRecipe: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("saveRecipe should not be called")
+		},
+		unsaveRecipe: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("unsaveRecipe should not be called")
+		},
+		getPostSaves: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPostSaves should not be called")
+		},
 		logCook: func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("logCook should not be called")
 		},
@@ -438,6 +492,15 @@ func TestPostRouteHandlerCookLogUsesCSRF(t *testing.T) {
 		},
 		removeReactionFromPost: func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("removeReactionFromPost should not be called")
+		},
+		saveRecipe: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("saveRecipe should not be called")
+		},
+		unsaveRecipe: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("unsaveRecipe should not be called")
+		},
+		getPostSaves: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPostSaves should not be called")
 		},
 		logCook: func(w http.ResponseWriter, r *http.Request) {
 			logCalled = true
@@ -505,6 +568,15 @@ func TestPostRouteHandlerGetCookLogsRequiresAuth(t *testing.T) {
 		},
 		removeReactionFromPost: func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("removeReactionFromPost should not be called")
+		},
+		saveRecipe: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("saveRecipe should not be called")
+		},
+		unsaveRecipe: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("unsaveRecipe should not be called")
+		},
+		getPostSaves: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPostSaves should not be called")
 		},
 		logCook: func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("logCook should not be called")

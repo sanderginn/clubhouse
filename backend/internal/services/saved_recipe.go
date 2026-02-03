@@ -253,17 +253,28 @@ func (s *SavedRecipeService) GetPostSaves(ctx context.Context, postID uuid.UUID,
 			FROM saved_recipes
 			WHERE post_id = $1 AND user_id = $2 AND deleted_at IS NULL
 			ORDER BY created_at ASC
-			LIMIT 1
 		`
-		var viewerCategory string
-		if err := s.db.QueryRowContext(ctx, viewerQuery, postID, *viewerID).Scan(&viewerCategory); err != nil {
-			if !errors.Is(err, sql.ErrNoRows) {
+		rows, err := s.db.QueryContext(ctx, viewerQuery, postID, *viewerID)
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var viewerCategory string
+			if err := rows.Scan(&viewerCategory); err != nil {
 				recordSpanError(span, err)
 				return nil, err
 			}
-		} else {
+			info.ViewerCategories = append(info.ViewerCategories, viewerCategory)
+		}
+		if err := rows.Err(); err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+		if len(info.ViewerCategories) > 0 {
 			info.ViewerSaved = true
-			info.ViewerCategory = &viewerCategory
 		}
 	}
 
