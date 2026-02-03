@@ -71,7 +71,8 @@
     696,
     697,
     698,
-    728
+    728,
+    732
   ],
   "issues": [
     {
@@ -1419,7 +1420,7 @@
     {
       "issue_number": 732,
       "title": "Add Bandcamp embed support (backend + frontend)",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         728
       ],
@@ -1432,7 +1433,9 @@
       "assigned_to": "agent-1770120958-39877",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770120958-39877",
       "branch": "feat/issue-732-add-bandcamp-embed-support-backend-front",
-      "claimed_at": "2026-02-03T12:15:58Z"
+      "claimed_at": "2026-02-03T12:15:58Z",
+      "pr_number": 737,
+      "completed_at": "2026-02-03T12:41:05Z"
     },
     {
       "issue_number": 733,
