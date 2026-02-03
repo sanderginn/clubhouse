@@ -25,6 +25,7 @@
   import SoundCloudEmbed from '../lib/components/embeds/SoundCloudEmbed.svelte';
   import SpotifyEmbed from '../lib/components/embeds/SpotifyEmbed.svelte';
   import YouTubeEmbed from '../lib/components/embeds/YouTubeEmbed.svelte';
+  import type { EmbedController } from '../lib/embeds/controller';
 
   export let post: Post;
   export let highlightCommentId: string | null = null;
@@ -70,6 +71,7 @@
   let lightboxImageIndex = 0;
   let isDeleting = false;
   let deleteError: string | null = null;
+  let embedController: EmbedController | null = null;
   let imageReplyTarget:
     | {
         id?: string;
@@ -388,6 +390,27 @@
     return value.includes('open.spotify.com/embed/');
   }
 
+  function getSeekUnavailableMessage(provider: string | undefined): string {
+    if (!provider) return 'Seeking not supported for this embed.';
+    if (provider === 'spotify' || provider === 'bandcamp') return 'Seeking not supported for this embed.';
+    if (provider === 'youtube' || provider === 'soundcloud') return 'Player is still loading.';
+    return 'Seeking not supported for this embed.';
+  }
+
+  async function handleHighlightSeek(timestamp: number): Promise<boolean> {
+    if (!embedController || !embedController.supportsSeeking) return false;
+    try {
+      await embedController.seekTo(timestamp);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  const handleEmbedReady = (controller: EmbedController) => {
+    embedController = controller;
+  };
+
   $: postImages = (post.images ?? []).slice().sort((a, b) => a.position - b.position);
   $: hasPostImages = postImages.length > 0;
   $: imageLinks = (post.links ?? []).filter((item) => Boolean(getImageLinkUrl(item)));
@@ -425,6 +448,21 @@
     spotifyEmbed?.embedUrl ??
     (isSpotifyEmbedUrl(metadata?.embedUrl) ? metadata?.embedUrl : undefined);
   $: spotifyEmbedHeight = spotifyEmbed?.height;
+  $: highlightEmbedProvider = soundCloudEmbed
+    ? 'soundcloud'
+    : metadata?.embed?.provider === 'youtube'
+      ? 'youtube'
+      : spotifyEmbedUrl
+        ? 'spotify'
+        : bandcampEmbed
+          ? 'bandcamp'
+          : metadata?.embed?.provider;
+  $: highlightSeekMessage = getSeekUnavailableMessage(highlightEmbedProvider);
+  $: {
+    if (embedController && (!highlightEmbedProvider || embedController.provider !== highlightEmbedProvider)) {
+      embedController = null;
+    }
+  }
   $: primaryImageUrl = imageItems.length > 0 ? imageItems[0].url : undefined;
   $: isInternalUploadLink =
     !hasPostImages && imageItems.length > 0 && imageItems[0].link
@@ -1204,6 +1242,7 @@
             embedUrl={soundCloudEmbed.embedUrl}
             height={soundCloudEmbed.height}
             title={metadata?.title}
+            onReady={handleEmbedReady}
           />
         {:else if primaryLink && bandcampEmbed}
           <BandcampEmbed embed={bandcampEmbed} linkUrl={primaryLink.url} title={metadata?.title} />
@@ -1219,6 +1258,7 @@
             <YouTubeEmbed
               embedUrl={metadata.embed.embedUrl}
               title={metadata.title || 'YouTube video'}
+              onReady={handleEmbedReady}
             />
           </div>
         {:else if primaryLink && metadata && !primaryLinkIsImage}
@@ -1276,6 +1316,7 @@
             embedUrl={soundCloudEmbed.embedUrl}
             height={soundCloudEmbed.height}
             title={metadata?.title}
+            onReady={handleEmbedReady}
           />
         {:else if bandcampEmbed}
           <BandcampEmbed embed={bandcampEmbed} linkUrl={primaryLink.url} title={metadata?.title} />
@@ -1293,6 +1334,7 @@
             <YouTubeEmbed
               embedUrl={metadata.embed.embedUrl}
               title={metadata.title || 'YouTube video'}
+              onReady={handleEmbedReady}
             />
           </div>
         {:else}
@@ -1352,7 +1394,11 @@
 
       {#if !isEditing && primaryLink?.highlights?.length}
         <div class="mt-2">
-          <HighlightDisplay highlights={primaryLink.highlights} />
+          <HighlightDisplay
+            highlights={primaryLink.highlights}
+            onSeek={highlightEmbedProvider ? handleHighlightSeek : undefined}
+            unsupportedMessage={highlightSeekMessage}
+          />
         </div>
       {/if}
 

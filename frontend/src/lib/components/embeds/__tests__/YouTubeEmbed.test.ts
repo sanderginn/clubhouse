@@ -10,7 +10,9 @@ describe('YouTubeEmbed', () => {
 
     const iframe = screen.getByTestId('youtube-embed-frame');
     expect(iframe).toBeInTheDocument();
-    expect(iframe).toHaveAttribute('src', embedUrl);
+    const src = iframe.getAttribute('src') ?? '';
+    expect(src).toContain(embedUrl);
+    expect(src).toContain('enablejsapi=1');
     expect(iframe).toHaveAttribute('allowfullscreen');
   });
 });
