@@ -35,7 +35,7 @@
     {
       "issue_number": 744,
       "title": "Fix recipe stats not updating after save until page reload",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [
         742
       ],
@@ -44,11 +44,7 @@
         "frontend",
         "recipes"
       ],
-      "priority": 5,
-      "assigned_to": "agent-1770137702-94792",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770137702-94792",
-      "branch": "fix/issue-744-fix-recipe-stats-not-updating-after-save",
-      "claimed_at": "2026-02-03T16:55:02Z"
+      "priority": 5
     },
     {
       "issue_number": 745,
@@ -149,7 +145,7 @@
     {
       "issue_number": 751,
       "title": "Add button to trigger recipe parser when adding link to recipe post",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [
         749
       ],
@@ -158,11 +154,7 @@
         "frontend",
         "recipes"
       ],
-      "priority": 12,
-      "assigned_to": "agent-1770136799-79225",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770136799-79225",
-      "branch": "feat/issue-751-add-button-to-trigger-recipe-parser-when",
-      "claimed_at": "2026-02-03T16:39:59Z"
+      "priority": 12
     },
     {
       "issue_number": 752,
@@ -186,7 +178,7 @@
     {
       "issue_number": 753,
       "title": "Allow heart reactions on music timestamps",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [
         752
       ],
@@ -195,11 +187,7 @@
         "backend",
         "frontend"
       ],
-      "priority": 14,
-      "assigned_to": "agent-1770137062-83665",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770137062-83665",
-      "branch": "feat/issue-753-allow-heart-reactions-on-music-timestamp",
-      "claimed_at": "2026-02-03T16:44:22Z"
+      "priority": 14
     },
     {
       "issue_number": 754,
@@ -217,7 +205,7 @@
     {
       "issue_number": 755,
       "title": "Allow comments on music posts with timestamp references",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [
         752
       ],
@@ -226,11 +214,7 @@
         "backend",
         "frontend"
       ],
-      "priority": 16,
-      "assigned_to": "agent-1770137065-83842",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770137065-83842",
-      "branch": "feat/issue-755-allow-comments-on-music-posts-with-times",
-      "claimed_at": "2026-02-03T16:44:25Z"
+      "priority": 16
     }
   ]
 }
