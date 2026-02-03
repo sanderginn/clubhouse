@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/observability"
@@ -18,12 +19,18 @@ import (
 // SavedRecipeHandler handles saved recipe endpoints.
 type SavedRecipeHandler struct {
 	savedRecipeService *services.SavedRecipeService
+	postService        *services.PostService
+	userService        *services.UserService
+	redis              *redis.Client
 }
 
 // NewSavedRecipeHandler creates a new saved recipe handler.
-func NewSavedRecipeHandler(db *sql.DB) *SavedRecipeHandler {
+func NewSavedRecipeHandler(db *sql.DB, redisClient *redis.Client) *SavedRecipeHandler {
 	return &SavedRecipeHandler{
 		savedRecipeService: services.NewSavedRecipeService(db),
+		postService:        services.NewPostService(db),
+		userService:        services.NewUserService(db),
+		redis:              redisClient,
 	}
 }
 
@@ -74,6 +81,30 @@ func (h *SavedRecipeHandler) SaveRecipe(w http.ResponseWriter, r *http.Request) 
 	response := models.CreateSavedRecipeResponse{
 		SavedRecipes: savedRecipes,
 	}
+
+	categories := uniqueRecipeCategories(savedRecipes)
+	publishCtx, cancel := publishContext()
+	username := ""
+	if user, err := h.userService.GetUserByID(publishCtx, userID); err == nil {
+		username = user.Username
+	} else {
+		observability.LogWarn(publishCtx, "failed to load user for recipe_saved event",
+			"user_id", userID.String(),
+			"post_id", postID.String(),
+			"error", err.Error(),
+		)
+	}
+	eventData := recipeSavedEventData{
+		PostID:     postID,
+		UserID:     userID,
+		Username:   username,
+		Categories: categories,
+	}
+	_ = publishEvent(publishCtx, h.redis, formatChannel(postPrefix, postID), "recipe_saved", eventData)
+	if sectionID, err := h.postService.GetSectionIDByPostID(publishCtx, postID); err == nil {
+		_ = publishEvent(publishCtx, h.redis, formatChannel(sectionPrefix, sectionID), "recipe_saved", eventData)
+	}
+	cancel()
 
 	observability.LogInfo(r.Context(), "recipe saved",
 		"user_id", userID.String(),
@@ -135,6 +166,17 @@ func (h *SavedRecipeHandler) UnsaveRecipe(w http.ResponseWriter, r *http.Request
 		"user_id", userID.String(),
 		"post_id", postID.String(),
 	)
+
+	publishCtx, cancel := publishContext()
+	eventData := recipeUnsavedEventData{
+		PostID: postID,
+		UserID: userID,
+	}
+	_ = publishEvent(publishCtx, h.redis, formatChannel(postPrefix, postID), "recipe_unsaved", eventData)
+	if sectionID, err := h.postService.GetSectionIDByPostID(publishCtx, postID); err == nil {
+		_ = publishEvent(publishCtx, h.redis, formatChannel(sectionPrefix, sectionID), "recipe_unsaved", eventData)
+	}
+	cancel()
 
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -248,6 +290,24 @@ func (h *SavedRecipeHandler) ListRecipeCategories(w http.ResponseWriter, r *http
 			Err:        err,
 		})
 	}
+}
+
+func uniqueRecipeCategories(savedRecipes []models.SavedRecipe) []string {
+	if len(savedRecipes) == 0 {
+		return nil
+	}
+
+	seen := make(map[string]struct{}, len(savedRecipes))
+	categories := make([]string, 0, len(savedRecipes))
+	for _, savedRecipe := range savedRecipes {
+		category := savedRecipe.Category
+		if _, ok := seen[category]; ok {
+			continue
+		}
+		seen[category] = struct{}{}
+		categories = append(categories, category)
+	}
+	return categories
 }
 
 // CreateRecipeCategory handles POST /api/v1/me/recipe-categories

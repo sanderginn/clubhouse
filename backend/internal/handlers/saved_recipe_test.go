@@ -31,7 +31,7 @@ func TestSaveRecipeHandlerSuccess(t *testing.T) {
 		t.Fatalf("CreateCategory Weeknight Dinners failed: %v", err)
 	}
 
-	handler := NewSavedRecipeHandler(db)
+	handler := NewSavedRecipeHandler(db, nil)
 
 	body := bytes.NewBufferString(`{"categories":["Favorites","Weeknight Dinners"]}`)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/posts/"+postID+"/save", body)
@@ -58,6 +58,122 @@ func TestSaveRecipeHandlerSuccess(t *testing.T) {
 	sort.Strings(gotCategories)
 	if gotCategories[0] != "Favorites" || gotCategories[1] != "Weeknight Dinners" {
 		t.Fatalf("unexpected categories: %v", gotCategories)
+	}
+}
+
+func TestSaveRecipePublishesSectionEvent(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+	testutil.CleanupRedis(t)
+
+	redisClient := testutil.GetTestRedis(t)
+
+	userID := testutil.CreateTestUser(t, db, "saverecipeevent", "saverecipeevent@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Recipes", "recipe")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Recipe post")
+
+	service := services.NewSavedRecipeService(db)
+	if _, err := service.CreateCategory(reqContext(), uuid.MustParse(userID), "Favorites"); err != nil {
+		t.Fatalf("CreateCategory Favorites failed: %v", err)
+	}
+
+	channel := formatChannel(sectionPrefix, sectionID)
+	pubsub := subscribeTestChannel(t, redisClient, channel)
+
+	handler := NewSavedRecipeHandler(db, redisClient)
+
+	body := bytes.NewBufferString(`{"categories":["Favorites"]}`)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/posts/"+postID+"/save", body)
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(createTestUserContext(req.Context(), uuid.MustParse(userID), "saverecipeevent", false))
+	rr := httptest.NewRecorder()
+
+	handler.SaveRecipe(rr, req)
+
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d. Body: %s", rr.Code, rr.Body.String())
+	}
+
+	event := receiveEvent(t, pubsub)
+	if event.Type != "recipe_saved" {
+		t.Fatalf("expected recipe_saved event, got %s", event.Type)
+	}
+
+	dataBytes, err := json.Marshal(event.Data)
+	if err != nil {
+		t.Fatalf("failed to marshal event data: %v", err)
+	}
+
+	var payload recipeSavedEventData
+	if err := json.Unmarshal(dataBytes, &payload); err != nil {
+		t.Fatalf("failed to unmarshal recipe saved payload: %v", err)
+	}
+
+	if payload.PostID.String() != postID {
+		t.Fatalf("expected post_id %s, got %s", postID, payload.PostID.String())
+	}
+	if payload.UserID.String() != userID {
+		t.Fatalf("expected user_id %s, got %s", userID, payload.UserID.String())
+	}
+	if payload.Username != "saverecipeevent" {
+		t.Fatalf("expected username saverecipeevent, got %s", payload.Username)
+	}
+	if len(payload.Categories) != 1 || payload.Categories[0] != "Favorites" {
+		t.Fatalf("expected categories [Favorites], got %v", payload.Categories)
+	}
+}
+
+func TestUnsaveRecipePublishesSectionEvent(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+	testutil.CleanupRedis(t)
+
+	redisClient := testutil.GetTestRedis(t)
+
+	userID := testutil.CreateTestUser(t, db, "unsaverecipeevent", "unsaverecipeevent@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Recipes", "recipe")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Recipe post")
+
+	service := services.NewSavedRecipeService(db)
+	if _, err := service.SaveRecipe(reqContext(), uuid.MustParse(userID), uuid.MustParse(postID), nil); err != nil {
+		t.Fatalf("SaveRecipe failed: %v", err)
+	}
+
+	channel := formatChannel(sectionPrefix, sectionID)
+	pubsub := subscribeTestChannel(t, redisClient, channel)
+
+	handler := NewSavedRecipeHandler(db, redisClient)
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/posts/"+postID+"/save", nil)
+	req = req.WithContext(createTestUserContext(req.Context(), uuid.MustParse(userID), "unsaverecipeevent", false))
+	rr := httptest.NewRecorder()
+
+	handler.UnsaveRecipe(rr, req)
+
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("expected status 204, got %d. Body: %s", rr.Code, rr.Body.String())
+	}
+
+	event := receiveEvent(t, pubsub)
+	if event.Type != "recipe_unsaved" {
+		t.Fatalf("expected recipe_unsaved event, got %s", event.Type)
+	}
+
+	dataBytes, err := json.Marshal(event.Data)
+	if err != nil {
+		t.Fatalf("failed to marshal event data: %v", err)
+	}
+
+	var payload recipeUnsavedEventData
+	if err := json.Unmarshal(dataBytes, &payload); err != nil {
+		t.Fatalf("failed to unmarshal recipe unsaved payload: %v", err)
+	}
+
+	if payload.PostID.String() != postID {
+		t.Fatalf("expected post_id %s, got %s", postID, payload.PostID.String())
+	}
+	if payload.UserID.String() != userID {
+		t.Fatalf("expected user_id %s, got %s", userID, payload.UserID.String())
 	}
 }
 
@@ -89,7 +205,7 @@ func TestUnsaveRecipeHandlerNoContent(t *testing.T) {
 		t.Fatalf("SaveRecipe failed: %v", err)
 	}
 
-	handler := NewSavedRecipeHandler(db)
+	handler := NewSavedRecipeHandler(db, nil)
 	req := httptest.NewRequest(http.MethodDelete, "/api/v1/posts/"+postID+"/save", nil)
 	req = req.WithContext(createTestUserContext(req.Context(), uuid.MustParse(userID), "unsavehandleruser", false))
 	rr := httptest.NewRecorder()
@@ -118,7 +234,7 @@ func TestGetPostSavesHandler(t *testing.T) {
 		t.Fatalf("SaveRecipe userB failed: %v", err)
 	}
 
-	handler := NewSavedRecipeHandler(db)
+	handler := NewSavedRecipeHandler(db, nil)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/posts/"+postID+"/saves", nil)
 	req = req.WithContext(createTestUserContext(req.Context(), uuid.MustParse(userA), "saveinfoa", false))
 	rr := httptest.NewRecorder()
@@ -161,7 +277,7 @@ func TestListSavedRecipesHandler(t *testing.T) {
 		t.Fatalf("SaveRecipe failed: %v", err)
 	}
 
-	handler := NewSavedRecipeHandler(db)
+	handler := NewSavedRecipeHandler(db, nil)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/me/saved-recipes", nil)
 	req = req.WithContext(createTestUserContext(req.Context(), uuid.MustParse(userID), "listsaveduser", false))
 	rr := httptest.NewRecorder()
@@ -186,7 +302,7 @@ func TestRecipeCategoryCRUDHandlers(t *testing.T) {
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	userID := testutil.CreateTestUser(t, db, "categoryhandleruser", "categoryhandler@test.com", false, true)
-	handler := NewSavedRecipeHandler(db)
+	handler := NewSavedRecipeHandler(db, nil)
 
 	createBody := bytes.NewBufferString(`{"name":"Desserts"}`)
 	createReq := httptest.NewRequest(http.MethodPost, "/api/v1/me/recipe-categories", createBody)
@@ -247,7 +363,7 @@ func TestUpdateRecipeCategoryHandlerNoUpdates(t *testing.T) {
 		t.Fatalf("CreateCategory failed: %v", err)
 	}
 
-	handler := NewSavedRecipeHandler(db)
+	handler := NewSavedRecipeHandler(db, nil)
 	req := httptest.NewRequest(http.MethodPatch, "/api/v1/me/recipe-categories/"+category.ID.String(), bytes.NewBufferString(`{}`))
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(createTestUserContext(req.Context(), uuid.MustParse(userID), "noupdatesuser", false))

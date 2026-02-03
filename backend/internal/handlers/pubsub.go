@@ -51,6 +51,30 @@ type reactionEventData struct {
 	Emoji     string     `json:"emoji"`
 }
 
+type recipeSavedEventData struct {
+	PostID     uuid.UUID `json:"post_id"`
+	UserID     uuid.UUID `json:"user_id"`
+	Username   string    `json:"username"`
+	Categories []string  `json:"categories"`
+}
+
+type recipeUnsavedEventData struct {
+	PostID uuid.UUID `json:"post_id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+type recipeCookedEventData struct {
+	PostID   uuid.UUID `json:"post_id"`
+	UserID   uuid.UUID `json:"user_id"`
+	Username string    `json:"username"`
+	Rating   int       `json:"rating"`
+}
+
+type recipeCookRemovedEventData struct {
+	PostID uuid.UUID `json:"post_id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
 func publishEvent(ctx context.Context, redisClient *redis.Client, channel string, eventType string, data any) error {
 	if redisClient == nil {
 		return nil
