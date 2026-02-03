@@ -1104,7 +1104,7 @@
     {
       "issue_number": 683,
       "title": "Create RecipeStatsBar component",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         678,
         680,
@@ -1116,7 +1116,11 @@
         "recipes"
       ],
       "priority": 19,
-      "phase": "recipes-6"
+      "phase": "recipes-6",
+      "assigned_to": "agent-1770108897-69497",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770108897-69497",
+      "branch": "feat/issue-683-create-recipestatsbar-component",
+      "claimed_at": "2026-02-03T08:54:57Z"
     },
     {
       "issue_number": 684,
