@@ -1010,7 +1010,7 @@ func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *
 		argIndex++
 	}
 
-	query += fmt.Sprintf(" GROUP BY p.id, u.id ORDER BY p.created_at DESC LIMIT $%d", argIndex)
+	query += fmt.Sprintf(" GROUP BY p.id, u.id, s.type ORDER BY p.created_at DESC LIMIT $%d", argIndex)
 	args = append(args, limit+1) // Fetch one extra to determine if hasMore
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
