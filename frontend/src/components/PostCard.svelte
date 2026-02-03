@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import { fade } from 'svelte/transition';
-  import type { Link, Post } from '../stores/postStore';
+  import type { Link, LinkMetadata, Post } from '../stores/postStore';
   import { postStore, currentUser, isAdmin } from '../stores';
   import { api } from '../services/api';
   import CommentThread from './comments/CommentThread.svelte';
@@ -13,6 +13,7 @@
   import { buildThreadHref } from '../services/routeNavigation';
   import LinkifiedText from './LinkifiedText.svelte';
   import MentionTextarea from './mentions/MentionTextarea.svelte';
+  import LinkPreview from './posts/LinkPreview.svelte';
   import { getImageLinkUrl, isInternalUploadUrl, stripInternalUploadUrls } from '../services/linkUtils';
   import { sections } from '../stores/sectionStore';
   import { getSectionSlugById } from '../services/sectionSlug';
@@ -57,6 +58,14 @@
   let editMentionUsernames: string[] = [];
   let editError: string | null = null;
   let isSaving = false;
+  let editLinkAction: 'keep' | 'remove' | 'replace' = 'keep';
+  let editLinkMetadata: LinkMetadata | null = null;
+  let editLinkUrl = '';
+  let editLinkInputValue = '';
+  let editLinkInputError: string | null = null;
+  let editLinkPreviewError: string | null = null;
+  let isEditLinkInputVisible = false;
+  let isEditLinkLoading = false;
   type EditImageState = {
     action: 'keep' | 'remove' | 'replace';
     uploadUrl: string | null;
@@ -286,11 +295,100 @@
     lastEditPreviewUrls = [];
   }
 
+  function resetEditLinkState() {
+    const currentLink = primaryLink && !primaryLinkIsImage ? primaryLink : null;
+    editLinkAction = 'keep';
+    editLinkMetadata = (currentLink?.metadata as LinkMetadata) ?? null;
+    editLinkUrl = currentLink?.url ?? '';
+    editLinkInputValue = currentLink?.url ?? '';
+    editLinkInputError = null;
+    editLinkPreviewError = null;
+    isEditLinkInputVisible = false;
+    isEditLinkLoading = false;
+  }
+
+  function removeEditLinkPreview() {
+    editLinkAction = 'remove';
+    editLinkMetadata = null;
+    editLinkInputValue = editLinkUrl;
+    editLinkInputError = null;
+    editLinkPreviewError = null;
+    isEditLinkInputVisible = false;
+  }
+
+  function isValidUrl(value: string): boolean {
+    try {
+      const parsed = new URL(value);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }
+
+  function openEditLinkInput() {
+    if (isSaving || isEditLinkLoading) {
+      return;
+    }
+    isEditLinkInputVisible = true;
+    editLinkInputError = null;
+    editLinkPreviewError = null;
+  }
+
+  function closeEditLinkInput() {
+    isEditLinkInputVisible = false;
+    editLinkInputError = null;
+    editLinkPreviewError = null;
+    editLinkInputValue = editLinkUrl;
+  }
+
+  async function submitEditLinkInput() {
+    let value = editLinkInputValue.trim();
+    if (!value) {
+      editLinkInputError = 'Enter a link URL.';
+      return;
+    }
+
+    if (!/^https?:\/\//i.test(value)) {
+      value = `https://${value}`;
+    }
+
+    if (!isValidUrl(value)) {
+      editLinkInputError = 'Enter a valid http(s) URL.';
+      return;
+    }
+
+    editLinkInputError = null;
+    editLinkPreviewError = null;
+    isEditLinkLoading = true;
+
+    try {
+      const response = await api.previewLink(value);
+      editLinkMetadata = response.metadata;
+      editLinkUrl = value;
+      editLinkInputValue = value;
+      editLinkAction = 'replace';
+      isEditLinkInputVisible = false;
+    } catch (err) {
+      editLinkPreviewError = err instanceof Error ? err.message : 'Failed to load preview';
+      editLinkMetadata = null;
+    } finally {
+      isEditLinkLoading = false;
+    }
+  }
+
+  function handleEditLinkInputKeydown(event: KeyboardEvent) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      submitEditLinkInput();
+    }
+  }
+
   function startEdit() {
     editContent = post.content;
     editMentionUsernames = [];
     editError = null;
     resetEditImages();
+    resetEditLinkState();
     isEditing = true;
   }
 
@@ -300,6 +398,7 @@
     editMentionUsernames = [];
     editError = null;
     resetEditImages();
+    resetEditLinkState();
   }
 
   async function saveEdit() {
@@ -320,6 +419,7 @@
       const response = await api.updatePost(post.id, {
         content: trimmed,
         links: linksPayload,
+        removeLinkMetadata: editLinkAction === 'remove',
         mentionUsernames: editMentionUsernames,
       });
       postStore.upsertPost(response.post);
@@ -685,37 +785,55 @@
     | { url: string; highlights?: { timestamp: number; label?: string }[] }[]
     | null
     | undefined {
-    if (editImages.length === 0) {
-      return undefined;
-    }
-
     const originalLinks = post.links ?? [];
-    if (originalLinks.length === 0) {
+    const hasImageChanges = editImages.some((item) => item.action !== 'keep');
+    const hasLinkChanges = editLinkAction !== 'keep';
+    const replacementUrl = editLinkUrl.trim();
+
+    if (!hasImageChanges && !hasLinkChanges) {
       return undefined;
     }
 
+    if (!hasImageChanges && editLinkAction === 'remove') {
+      return undefined;
+    }
+
+    if (editLinkAction === 'replace' && !replacementUrl) {
+      return undefined;
+    }
+
+    if (originalLinks.length === 0 && editLinkAction !== 'replace') {
+      return undefined;
+    }
+
+    const imageIndexByLinkIndex = new Map<number, number>();
     const imageLinkIndices = originalLinks.reduce<number[]>((indices, item, index) => {
       if (getImageLinkUrl(item)) {
         indices.push(index);
       }
       return indices;
     }, []);
-    if (imageLinkIndices.length === 0) {
+    if (hasImageChanges && imageLinkIndices.length === 0) {
       return undefined;
     }
-
-    const hasChanges = editImages.some((item) => item.action !== 'keep');
-    if (!hasChanges) {
-      return undefined;
-    }
-
-    const imageIndexByLinkIndex = new Map<number, number>();
     imageLinkIndices.forEach((linkIndex, imageIndex) => {
       imageIndexByLinkIndex.set(linkIndex, imageIndex);
     });
 
+    const primaryNonImageIndex = originalLinks.findIndex((item) => !getImageLinkUrl(item));
     const nextLinks: { url: string; highlights?: { timestamp: number; label?: string }[] }[] = [];
     originalLinks.forEach((item, linkIndex) => {
+      const isPrimaryNonImage = linkIndex === primaryNonImageIndex;
+      if (isPrimaryNonImage) {
+        if (editLinkAction === 'remove') {
+          return;
+        }
+        if (editLinkAction === 'replace' && replacementUrl) {
+          nextLinks.push({ url: replacementUrl });
+          return;
+        }
+      }
+
       const baseLink = {
         url: item.url,
         ...(item.highlights && item.highlights.length > 0 ? { highlights: item.highlights } : {}),
@@ -739,6 +857,10 @@
       }
       nextLinks.push({ url: item.url });
     });
+
+    if (editLinkAction === 'replace' && primaryNonImageIndex === -1 && replacementUrl) {
+      nextLinks.unshift({ url: replacementUrl });
+    }
 
     return nextLinks;
   }
@@ -1016,6 +1138,86 @@
             ariaLabel="Edit post content"
             className="w-full rounded-lg border border-gray-300 p-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
+          {#if editLinkMetadata}
+            <LinkPreview metadata={editLinkMetadata} onRemove={removeEditLinkPreview} />
+          {:else if isEditLinkLoading}
+            <div class="flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+              <svg class="w-5 h-5 text-gray-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              <span class="text-sm text-gray-500">Loading link preview...</span>
+            </div>
+          {:else if editLinkPreviewError}
+            <div class="flex items-center justify-between p-3 bg-red-50 border border-red-200 rounded-lg">
+              <span class="text-sm text-red-600">{editLinkPreviewError}</span>
+              <button
+                type="button"
+                on:click={() => (editLinkPreviewError = null)}
+                class="text-sm text-red-600 hover:text-red-800 font-medium"
+              >
+                Dismiss
+              </button>
+            </div>
+          {/if}
+          {#if editLinkAction === 'remove'}
+            <div class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+              Link preview will be removed when you save.
+            </div>
+          {/if}
+          {#if !editLinkMetadata && !isEditLinkInputVisible}
+            <button
+              type="button"
+              class="w-full sm:w-auto px-2.5 py-1.5 rounded-md border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              on:click={openEditLinkInput}
+              disabled={isSaving || isEditLinkLoading}
+            >
+              Add link preview
+            </button>
+          {/if}
+          {#if isEditLinkInputVisible}
+            <div class="space-y-2">
+              <div class="flex flex-col sm:flex-row gap-2">
+                <div class="flex-1">
+                  <label for={`edit-post-link-${post.id}`} class="sr-only">Link URL</label>
+                  <input
+                    id={`edit-post-link-${post.id}`}
+                    type="url"
+                    bind:value={editLinkInputValue}
+                    on:keydown={handleEditLinkInputKeydown}
+                    placeholder="Paste a link (https://...)"
+                    disabled={isSaving || isEditLinkLoading}
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:bg-gray-100"
+                  />
+                </div>
+                <button
+                  type="button"
+                  on:click={submitEditLinkInput}
+                  disabled={isSaving || isEditLinkLoading}
+                  class="px-3 py-2 bg-primary text-white font-medium rounded-lg hover:bg-secondary transition-colors disabled:opacity-50"
+                >
+                  Add link
+                </button>
+                <button
+                  type="button"
+                  on:click={closeEditLinkInput}
+                  disabled={isSaving || isEditLinkLoading}
+                  class="px-3 py-2 border border-gray-200 text-gray-600 font-medium rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+              {#if editLinkInputError}
+                <p class="text-xs text-red-600">{editLinkInputError}</p>
+              {:else}
+                <p class="text-xs text-gray-500">We’ll fetch a preview after you add the link.</p>
+              {/if}
+            </div>
+          {/if}
           {#if editError}
             <div class="text-sm text-red-600">{editError}</div>
           {/if}

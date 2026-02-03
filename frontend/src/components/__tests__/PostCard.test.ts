@@ -376,6 +376,48 @@ describe('PostCard', () => {
         { url: 'https://example.com/article' },
         { url: 'https://example.com/extra' },
       ],
+      removeLinkMetadata: false,
+      mentionUsernames: [],
+    });
+  });
+
+  it('removes link preview when editing', async () => {
+    authStore.setUser({
+      id: 'user-1',
+      username: 'Sander',
+      email: 'sander@example.com',
+      isAdmin: false,
+      totpEnabled: false,
+    });
+
+    const postWithLink: Post = {
+      ...basePost,
+      links: [
+        {
+          url: 'https://example.com',
+          metadata: {
+            url: 'https://example.com',
+            title: 'Example',
+            description: 'Desc',
+          },
+        },
+      ],
+    };
+
+    apiUpdatePost.mockResolvedValue({
+      post: { ...postWithLink, links: [] },
+    });
+
+    render(PostCard, { post: postWithLink });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    await fireEvent.click(screen.getByLabelText('Remove link'));
+    await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(apiUpdatePost).toHaveBeenCalledWith('post-1', {
+      content: 'Hello world',
+      links: undefined,
+      removeLinkMetadata: true,
       mentionUsernames: [],
     });
   });
@@ -422,6 +464,7 @@ describe('PostCard', () => {
         { url: 'https://example.com/article' },
         { url: 'https://cdn.example.com/uploads/new.png' },
       ],
+      removeLinkMetadata: false,
       mentionUsernames: [],
     });
   });
@@ -451,6 +494,7 @@ describe('PostCard', () => {
     expect(apiUpdatePost).toHaveBeenCalledWith('post-1', {
       content: 'Hello world',
       links: undefined,
+      removeLinkMetadata: false,
       mentionUsernames: [],
     });
   });
