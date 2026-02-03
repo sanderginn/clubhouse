@@ -75,7 +75,8 @@
     729,
     730,
     731,
-    732
+    732,
+    733
   ],
   "issues": [
     {
@@ -1449,7 +1450,7 @@
     {
       "issue_number": 733,
       "title": "Security: Add CSP headers and embed URL validation",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         729,
         730,
@@ -1466,7 +1467,9 @@
       "assigned_to": "agent-1770127552-37381",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770127552-37381",
       "branch": "feat/issue-733-security-add-csp-headers-and-embed-url-v",
-      "claimed_at": "2026-02-03T14:05:52Z"
+      "claimed_at": "2026-02-03T14:05:52Z",
+      "pr_number": 739,
+      "completed_at": "2026-02-03T14:25:27Z"
     }
   ]
 }
