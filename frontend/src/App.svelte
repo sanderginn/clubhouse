@@ -342,17 +342,18 @@
             <h1 class="text-2xl font-bold text-gray-900">{$activeSection.name}</h1>
           </div>
 
+          <!-- Section-specific components should render above PostForm for consistency. -->
           {#if $activeSection.type === 'recipe'}
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
               <Cookbook />
             </div>
           {/if}
 
+          <MusicLinksContainer />
+
           <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <PostForm />
           </div>
-
-          <MusicLinksContainer />
 
           {#if $isSearching || $searchError || $lastSearchQuery.trim().length > 0}
             <SearchResults />
