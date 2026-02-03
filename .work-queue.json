@@ -45,6 +45,7 @@
     664,
     665,
     666,
+    667,
     693,
     694,
     695,
@@ -806,7 +807,7 @@
     {
       "issue_number": 667,
       "title": "Add RecipeStats to Post model",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         665,
         666
@@ -821,7 +822,9 @@
       "assigned_to": "agent-1770078663-83670",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770078663-83670",
       "branch": "feat/issue-667-add-recipestats-to-post-model",
-      "claimed_at": "2026-02-03T00:31:03Z"
+      "claimed_at": "2026-02-03T00:31:03Z",
+      "pr_number": 709,
+      "completed_at": "2026-02-03T00:36:28Z"
     },
     {
       "issue_number": 668,
