@@ -50,6 +50,7 @@ type metrics struct {
 	notificationsFailed       metric.Int64Counter
 	pushSubscriptionsCreated  metric.Int64Counter
 	pushSubscriptionsDeleted  metric.Int64Counter
+	notificationsRead         metric.Int64Counter
 	linkMetadataFetchAttempts metric.Int64Counter
 	linkMetadataFetchSuccess  metric.Int64Counter
 	linkMetadataFetchFailures metric.Int64Counter
@@ -437,6 +438,15 @@ func initMetrics() error {
 			return
 		}
 
+		notificationsRead, err := meter.Int64Counter(
+			"clubhouse.notifications.read",
+			metric.WithDescription("Number of notifications marked as read"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
 		linkMetadataFetchAttempts, err := meter.Int64Counter(
 			"clubhouse.links.metadata.fetch.attempts",
 			metric.WithDescription("Number of link metadata fetch attempts"),
@@ -734,6 +744,7 @@ func initMetrics() error {
 			notificationsFailed:       notificationsFailed,
 			pushSubscriptionsCreated:  pushSubscriptionsCreated,
 			pushSubscriptionsDeleted:  pushSubscriptionsDeleted,
+			notificationsRead:         notificationsRead,
 			linkMetadataFetchAttempts: linkMetadataFetchAttempts,
 			linkMetadataFetchSuccess:  linkMetadataFetchSuccess,
 			linkMetadataFetchFailures: linkMetadataFetchFailures,
@@ -1260,6 +1271,22 @@ func RecordPushSubscriptionDeleted(ctx context.Context) {
 		return
 	}
 	m.pushSubscriptionsDeleted.Add(ctx, 1)
+}
+
+// RecordNotificationRead increments the notification read counter.
+func RecordNotificationRead(ctx context.Context, action string, count int64) {
+	if count <= 0 {
+		return
+	}
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	attrs := []attribute.KeyValue{}
+	if strings.TrimSpace(action) != "" {
+		attrs = append(attrs, attribute.String("action", action))
+	}
+	m.notificationsRead.Add(ctx, count, metric.WithAttributes(attrs...))
 }
 
 // RecordLinkMetadataFetchAttempt increments the link metadata fetch attempt counter.

@@ -759,8 +759,8 @@ func (s *NotificationService) MarkNotificationRead(ctx context.Context, userID u
 	return notification, nil
 }
 
-// MarkAllNotificationsRead sets read_at for all unread notifications and returns the unread count.
-func (s *NotificationService) MarkAllNotificationsRead(ctx context.Context, userID uuid.UUID) (int, error) {
+// MarkAllNotificationsRead sets read_at for all unread notifications and returns the updated and unread counts.
+func (s *NotificationService) MarkAllNotificationsRead(ctx context.Context, userID uuid.UUID) (int64, int, error) {
 	ctx, span := otel.Tracer("clubhouse.notifications").Start(ctx, "NotificationService.MarkAllNotificationsRead")
 	span.SetAttributes(attribute.String("user_id", userID.String()))
 	defer span.End()
@@ -768,7 +768,7 @@ func (s *NotificationService) MarkAllNotificationsRead(ctx context.Context, user
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		recordSpanError(span, err)
-		return 0, fmt.Errorf("failed to begin transaction: %w", err)
+		return 0, 0, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
 		_ = tx.Rollback()
@@ -781,13 +781,13 @@ func (s *NotificationService) MarkAllNotificationsRead(ctx context.Context, user
 	`, userID)
 	if err != nil {
 		recordSpanError(span, err)
-		return 0, fmt.Errorf("failed to mark notifications read: %w", err)
+		return 0, 0, fmt.Errorf("failed to mark notifications read: %w", err)
 	}
 
 	updatedCount, err := result.RowsAffected()
 	if err != nil {
 		recordSpanError(span, err)
-		return 0, fmt.Errorf("failed to count updated notifications: %w", err)
+		return 0, 0, fmt.Errorf("failed to count updated notifications: %w", err)
 	}
 
 	audit := NewAuditService(tx)
@@ -801,21 +801,21 @@ func (s *NotificationService) MarkAllNotificationsRead(ctx context.Context, user
 		},
 	); err != nil {
 		recordSpanError(span, err)
-		return 0, err
+		return 0, 0, err
 	}
 
 	if err := tx.Commit(); err != nil {
 		recordSpanError(span, err)
-		return 0, fmt.Errorf("failed to commit notification read updates: %w", err)
+		return 0, 0, fmt.Errorf("failed to commit notification read updates: %w", err)
 	}
 
 	unreadCount, err := s.getUnreadCount(ctx, userID)
 	if err != nil {
 		recordSpanError(span, err)
-		return 0, err
+		return 0, 0, err
 	}
 
-	return unreadCount, nil
+	return updatedCount, unreadCount, nil
 }
 
 type notificationScanner interface {
