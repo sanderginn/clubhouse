@@ -6,6 +6,7 @@ export * from './feedStore';
 export * from './commentStore';
 export * from './commentFeedStore';
 export * from './sectionLinksStore';
+export * from './sectionLinksFeedStore';
 export * from './websocketStore';
 export * from './searchStore';
 export * from './pwaStore';

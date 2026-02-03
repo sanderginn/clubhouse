@@ -77,3 +77,22 @@ test('create post with highlights', async ({ page }) => {
   await expect(page.getByText('01:15')).toBeVisible();
   await expect(page.getByText('Intro')).toBeVisible();
 });
+
+test('music link appears in the recent links container', async ({ page }) => {
+  await login(page);
+  const nav = page.getByRole('navigation', { name: 'Main navigation' });
+  const sectionButton = nav.getByRole('button', { name: sectionName });
+  await expect(sectionButton).toBeVisible();
+  await sectionButton.click();
+
+  const linkUrl = `https://example.com/music-${Date.now()}`;
+  await page.getByRole('button', { name: 'Add link' }).click();
+  const linkInput = page.getByLabel('Link URL');
+  await linkInput.fill(linkUrl);
+  await linkInput.press('Enter');
+
+  await page.getByRole('button', { name: 'Post' }).click();
+
+  await expect(page.getByRole('button', { name: /Recent Music Links/i })).toBeVisible();
+  await expect(page.locator(`a[href=\"${linkUrl}\"]`)).toBeVisible();
+});

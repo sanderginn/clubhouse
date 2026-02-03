@@ -2,6 +2,7 @@
   import { createEventDispatcher, onDestroy, tick } from 'svelte';
   import { api } from '../../services/api';
   import { activeSection, postStore, currentUser } from '../../stores';
+  import { loadSectionLinks } from '../../stores/sectionLinksFeedStore';
   import type { Highlight, Link, LinkMetadata } from '../../stores/postStore';
   import LinkPreview from './LinkPreview.svelte';
   import MentionTextarea from '../mentions/MentionTextarea.svelte';
@@ -364,6 +365,9 @@
           : response.post;
 
       postStore.addPost(createdPost);
+      if (isMusicSection && links.length > 0) {
+        loadSectionLinks($activeSection.id);
+      }
 
       content = '';
       mentionUsernames = [];
