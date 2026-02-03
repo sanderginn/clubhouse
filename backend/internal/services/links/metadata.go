@@ -140,6 +140,12 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 		if provider == "" && siteName != "" {
 			provider = siteName
 		}
+		if recipe := parseRecipeIfPresent(body, u.Hostname()); recipe != nil {
+			if recipe.Image != "" {
+				recipe.Image = resolveURL(u, recipe.Image)
+			}
+			metadata["recipe"] = recipe
+		}
 	}
 
 	if _, ok := metadata["image"]; !ok && !isHTML && looksLikeImageURL(u) {
