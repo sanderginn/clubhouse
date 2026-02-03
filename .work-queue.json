@@ -1141,7 +1141,7 @@
     {
       "issue_number": 685,
       "title": "Create Cookbook component",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         676,
         679,
@@ -1153,7 +1153,11 @@
         "recipes"
       ],
       "priority": 21,
-      "phase": "recipes-7"
+      "phase": "recipes-7",
+      "assigned_to": "agent-1770108902-69668",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770108902-69668",
+      "branch": "feat/issue-685-create-cookbook-component",
+      "claimed_at": "2026-02-03T08:55:02Z"
     },
     {
       "issue_number": 686,
