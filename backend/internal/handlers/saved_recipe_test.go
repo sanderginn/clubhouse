@@ -23,6 +23,14 @@ func TestSaveRecipeHandlerSuccess(t *testing.T) {
 	sectionID := testutil.CreateTestSection(t, db, "Recipes", "recipe")
 	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Recipe post")
 
+	service := services.NewSavedRecipeService(db)
+	if _, err := service.CreateCategory(reqContext(), uuid.MustParse(userID), "Favorites"); err != nil {
+		t.Fatalf("CreateCategory Favorites failed: %v", err)
+	}
+	if _, err := service.CreateCategory(reqContext(), uuid.MustParse(userID), "Weeknight Dinners"); err != nil {
+		t.Fatalf("CreateCategory Weeknight Dinners failed: %v", err)
+	}
+
 	handler := NewSavedRecipeHandler(db)
 
 	body := bytes.NewBufferString(`{"categories":["Favorites","Weeknight Dinners"]}`)
@@ -74,6 +82,9 @@ func TestUnsaveRecipeHandlerNoContent(t *testing.T) {
 	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Recipe post")
 
 	service := services.NewSavedRecipeService(db)
+	if _, err := service.CreateCategory(reqContext(), uuid.MustParse(userID), "Favorites"); err != nil {
+		t.Fatalf("CreateCategory failed: %v", err)
+	}
 	if _, err := service.SaveRecipe(reqContext(), uuid.MustParse(userID), uuid.MustParse(postID), []string{"Favorites"}); err != nil {
 		t.Fatalf("SaveRecipe failed: %v", err)
 	}
@@ -143,6 +154,9 @@ func TestListSavedRecipesHandler(t *testing.T) {
 	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Recipe post")
 
 	service := services.NewSavedRecipeService(db)
+	if _, err := service.CreateCategory(reqContext(), uuid.MustParse(userID), "Favorites"); err != nil {
+		t.Fatalf("CreateCategory failed: %v", err)
+	}
 	if _, err := service.SaveRecipe(reqContext(), uuid.MustParse(userID), uuid.MustParse(postID), []string{"Favorites"}); err != nil {
 		t.Fatalf("SaveRecipe failed: %v", err)
 	}
