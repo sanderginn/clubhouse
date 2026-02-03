@@ -1474,13 +1474,17 @@
     {
       "issue_number": 740,
       "title": "Fix SoundCloud oEmbed JSON decode error (version field type mismatch)",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "bug",
         "backend"
       ],
-      "priority": 1
+      "priority": 1,
+      "assigned_to": "agent-1770130758-64697",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770130758-64697",
+      "branch": "fix/issue-740-fix-soundcloud-oembed-json-decode-error-",
+      "claimed_at": "2026-02-03T14:59:18Z"
     },
     {
       "issue_number": 741,
