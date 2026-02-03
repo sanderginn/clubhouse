@@ -36,6 +36,7 @@
     651,
     652,
     653,
+    654,
     655,
     656,
     657,
@@ -609,7 +610,7 @@
     {
       "issue_number": 654,
       "title": "Frontend: Integrate highlights into PostForm and PostCard",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         652,
         653
@@ -623,7 +624,9 @@
       "assigned_to": "agent-1770076124-17315",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770076124-17315",
       "branch": "feat/issue-654-frontend-integrate-highlights-into-postf",
-      "claimed_at": "2026-02-02T23:48:44Z"
+      "claimed_at": "2026-02-02T23:48:44Z",
+      "pr_number": 703,
+      "completed_at": "2026-02-03T00:19:47Z"
     },
     {
       "issue_number": 655,
