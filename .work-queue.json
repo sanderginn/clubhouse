@@ -1037,7 +1037,7 @@
     {
       "issue_number": 679,
       "title": "Create CategoryManager component",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         676
       ],
@@ -1047,7 +1047,11 @@
         "recipes"
       ],
       "priority": 16,
-      "phase": "recipes-4"
+      "phase": "recipes-4",
+      "assigned_to": "agent-1770107642-48220",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770107642-48220",
+      "branch": "feat/issue-679-create-categorymanager-component",
+      "claimed_at": "2026-02-03T08:34:02Z"
     },
     {
       "issue_number": 680,
