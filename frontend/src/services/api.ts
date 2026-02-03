@@ -576,6 +576,10 @@ class ApiClient {
     return this.post('/links/preview', { url });
   }
 
+  async parseRecipe(url: string): Promise<{ metadata: LinkMetadata }> {
+    return this.post('/links/parse-recipe', { url });
+  }
+
   async createComment(data: CreateCommentRequest): Promise<{ comment: ApiComment }> {
     return this.post('/comments', {
       post_id: data.postId,

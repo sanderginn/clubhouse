@@ -7,6 +7,7 @@
   import LinkPreview from './LinkPreview.svelte';
   import MentionTextarea from '../mentions/MentionTextarea.svelte';
   import HighlightEditor from './HighlightEditor.svelte';
+  import RecipeCard from '../recipes/RecipeCard.svelte';
 
   const dispatch = createEventDispatcher<{
     submit: void;
@@ -45,10 +46,13 @@
 
   let selectedFiles: UploadItem[] = [];
   let uploadLimitError: string | null = null;
+  let isParsingRecipe = false;
+  let parseRecipeError: string | null = null;
 
   const URL_REGEX = /https?:\/\/[^\s<>"{}|\\^`[\]]+/gi;
   $: hasLink = Boolean((linkMetadata && linkMetadata.url) || linkUrl.trim());
   $: isMusicSection = $activeSection?.type === 'music';
+  $: isRecipeSection = $activeSection?.type === 'recipe';
   $: showHighlightEditor = isMusicSection && hasLink;
   $: linkInputValueNormalized = linkUrl.trim();
   $: if (linkInputValueNormalized !== lastHighlightLinkInput) {
@@ -155,10 +159,34 @@
     }
   }
 
+  async function parseRecipe() {
+    if (!linkMetadata?.url || isParsingRecipe) {
+      return;
+    }
+
+    isParsingRecipe = true;
+    parseRecipeError = null;
+
+    try {
+      const response = await api.parseRecipe(linkMetadata.url);
+      linkMetadata = {
+        ...linkMetadata,
+        ...response.metadata,
+        recipe: response.metadata.recipe ?? linkMetadata.recipe,
+      };
+    } catch (err) {
+      parseRecipeError = err instanceof Error ? err.message : 'Failed to parse recipe';
+    } finally {
+      isParsingRecipe = false;
+    }
+  }
+
   function removeLink() {
     linkUrl = '';
     linkMetadata = null;
     previewError = null;
+    parseRecipeError = null;
+    isParsingRecipe = false;
     linkInputValue = '';
     linkInputError = null;
     isLinkInputVisible = false;
@@ -448,7 +476,52 @@
   </div>
 
   {#if linkMetadata}
-    <LinkPreview metadata={linkMetadata} onRemove={removeLink} />
+    {#if isRecipeSection}
+      <LinkPreview metadata={linkMetadata} onRemove={removeLink}>
+        <div slot="footer" class="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+            on:click={parseRecipe}
+            disabled={isParsingRecipe}
+          >
+            {#if isParsingRecipe}
+              <svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                />
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              Parsing...
+            {:else}
+              {linkMetadata.recipe ? 'Re-parse recipe' : 'Parse recipe'}
+            {/if}
+          </button>
+          {#if parseRecipeError}
+            <span class="text-xs text-red-600">{parseRecipeError}</span>
+          {/if}
+        </div>
+      </LinkPreview>
+      {#if linkMetadata.recipe}
+        <RecipeCard
+          recipe={linkMetadata.recipe}
+          sourceUrl={linkMetadata.url}
+          fallbackImage={linkMetadata.image}
+          fallbackTitle={linkMetadata.title}
+        />
+      {/if}
+    {:else}
+      <LinkPreview metadata={linkMetadata} onRemove={removeLink} />
+    {/if}
   {:else if isLoadingPreview}
     <div class="flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
       <svg class="w-5 h-5 text-gray-400 animate-spin" fill="none" viewBox="0 0 24 24">
