@@ -248,6 +248,15 @@ function extractRecipeCategory(payload: unknown): ApiRecipeCategory | null {
   return null;
 }
 
+function extractCategoryId(payload: unknown): string | null {
+  if (!payload || typeof payload !== 'object') {
+    return null;
+  }
+  const record = payload as Record<string, unknown>;
+  const categoryId = record.category_id ?? record.categoryId ?? record.id;
+  return typeof categoryId === 'string' && categoryId.length > 0 ? categoryId : null;
+}
+
 const initialState: RecipeState = {
   savedRecipes: new Map(),
   categories: [],
@@ -554,13 +563,18 @@ export function handleRecipeCategoryUpdatedEvent(payload: unknown): void {
   if (!category) {
     return;
   }
-  recipeStore.applyCategory(mapApiRecipeCategory(category));
+  const current = get(recipeStore).categories.find((item) => item.id === category.id);
+  const mapped = mapApiRecipeCategory(category);
+  recipeStore.applyCategory(mapped);
+  if (current && current.name !== mapped.name) {
+    recipeStore.updateSavedRecipeCategory(current.name, mapped.name);
+  }
 }
 
 export function handleRecipeCategoryDeletedEvent(payload: unknown): void {
   const category = extractRecipeCategory(payload);
-  const categoryId = category?.id ?? (payload as Record<string, unknown> | null)?.id;
-  if (typeof categoryId !== 'string') {
+  const categoryId = category?.id ?? extractCategoryId(payload);
+  if (!categoryId) {
     return;
   }
   const categoryName = category?.name ?? extractCategoryName(payload) ?? undefined;

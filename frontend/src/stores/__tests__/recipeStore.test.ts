@@ -34,6 +34,8 @@ const {
   savedRecipesByCategory,
   sortedCategories,
   handleRecipeSavedEvent,
+  handleRecipeCategoryUpdatedEvent,
+  handleRecipeCategoryDeletedEvent,
   handleCookLogRemovedEvent,
 } = await import('../recipeStore');
 
@@ -242,5 +244,56 @@ describe('recipeStore', () => {
     const state = get(recipeStore);
     const favorites = state.savedRecipes.get('Favorites') ?? [];
     expect(favorites).toHaveLength(1);
+  });
+
+  it('realtime category updates migrate saved recipe map keys', () => {
+    recipeStore.setCategories([
+      { id: 'cat-10', userId: 'user-1', name: 'Favorites', position: 1, createdAt: 'now' },
+    ]);
+    recipeStore.applySavedRecipes([
+      {
+        id: 'save-20',
+        userId: 'user-1',
+        postId: 'post-20',
+        category: 'Favorites',
+        createdAt: '2024-01-01T00:00:00Z',
+      },
+    ]);
+
+    handleRecipeCategoryUpdatedEvent({
+      category: {
+        id: 'cat-10',
+        user_id: 'user-1',
+        name: 'Top Picks',
+        position: 1,
+        created_at: '2024-01-01T00:00:00Z',
+      },
+    });
+
+    const state = get(recipeStore);
+    expect(state.savedRecipes.get('Favorites')).toBeUndefined();
+    const renamed = state.savedRecipes.get('Top Picks') ?? [];
+    expect(renamed).toHaveLength(1);
+  });
+
+  it('realtime category delete supports category_id', () => {
+    recipeStore.setCategories([
+      { id: 'cat-11', userId: 'user-1', name: 'Weeknight', position: 2, createdAt: 'now' },
+    ]);
+    recipeStore.applySavedRecipes([
+      {
+        id: 'save-21',
+        userId: 'user-1',
+        postId: 'post-21',
+        category: 'Weeknight',
+        createdAt: '2024-01-01T00:00:00Z',
+      },
+    ]);
+
+    handleRecipeCategoryDeletedEvent({ category_id: 'cat-11', category_name: 'Weeknight' });
+
+    const state = get(recipeStore);
+    const uncategorized = state.savedRecipes.get('Uncategorized') ?? [];
+    expect(uncategorized).toHaveLength(1);
   });
 });
