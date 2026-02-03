@@ -54,6 +54,7 @@
     672,
     673,
     675,
+    676,
     680,
     687,
     688,
@@ -996,7 +997,7 @@
     {
       "issue_number": 676,
       "title": "Create recipeStore for frontend state management",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         675
       ],
@@ -1010,7 +1011,9 @@
       "assigned_to": "agent-1770106286-23254",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770106286-23254",
       "branch": "feat/issue-676-create-recipestore-for-frontend-state-ma",
-      "claimed_at": "2026-02-03T08:11:26Z"
+      "claimed_at": "2026-02-03T08:11:26Z",
+      "pr_number": 720,
+      "completed_at": "2026-02-03T08:33:27Z"
     },
     {
       "issue_number": 678,
