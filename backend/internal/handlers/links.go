@@ -64,8 +64,7 @@ func (h *LinkHandler) PreviewLink(w http.ResponseWriter, r *http.Request) {
 		observability.RecordLinkMetadataFetchFailure(r.Context(), 1, domain, errorType)
 		observability.LogWarn(r.Context(), "link metadata fetch failed", "link_url", trimmedURL, "link_domain", domain, "error_type", errorType, "error", err.Error())
 		if embed == nil {
-			writeError(r.Context(), w, http.StatusBadGateway, "LINK_METADATA_FETCH_FAILED", "Failed to fetch link metadata")
-			return
+			metadata = map[string]interface{}{}
 		}
 	}
 	if len(metadata) == 0 {

@@ -16,9 +16,12 @@ import (
 )
 
 const (
-	fetchTimeout = 5 * time.Second
-	maxBodyBytes = 2 << 20 // 2MB
-	maxRedirects = 5
+	fetchTimeout     = 5 * time.Second
+	maxBodyBytes     = 2 << 20 // 2MB
+	maxRedirects     = 5
+	maxFetchRetries  = 2
+	retryBackoffBase = 75 * time.Millisecond
+	retryBackoffMax  = 300 * time.Millisecond
 )
 
 // Fetcher retrieves metadata for links.
@@ -93,12 +96,6 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
-	if err != nil {
-		return nil, fmt.Errorf("build request: %w", err)
-	}
-	req.Header.Set("User-Agent", "ClubhouseMetadataFetcher/1.0")
-
 	client := f.client
 	if client == nil {
 		client = &http.Client{Timeout: fetchTimeout}
@@ -106,7 +103,7 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	clientCopy := *client
 	clientCopy.CheckRedirect = f.redirectValidator(ctx, client.CheckRedirect)
 
-	resp, err := clientCopy.Do(req)
+	resp, err := f.doRequestWithRetry(ctx, &clientCopy, u)
 	if err != nil {
 		return nil, fmt.Errorf("fetch url: %w", err)
 	}
@@ -209,12 +206,6 @@ func (f *Fetcher) fetchHTML(ctx context.Context, rawURL string) ([]byte, map[str
 		return nil, nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
-	if err != nil {
-		return nil, nil, fmt.Errorf("build request: %w", err)
-	}
-	req.Header.Set("User-Agent", "ClubhouseMetadataFetcher/1.0")
-
 	client := f.client
 	if client == nil {
 		client = &http.Client{Timeout: fetchTimeout}
@@ -222,7 +213,7 @@ func (f *Fetcher) fetchHTML(ctx context.Context, rawURL string) ([]byte, map[str
 	clientCopy := *client
 	clientCopy.CheckRedirect = f.redirectValidator(ctx, client.CheckRedirect)
 
-	resp, err := clientCopy.Do(req)
+	resp, err := f.doRequestWithRetry(ctx, &clientCopy, u)
 	if err != nil {
 		return nil, nil, fmt.Errorf("fetch url: %w", err)
 	}
@@ -242,6 +233,96 @@ func (f *Fetcher) fetchHTML(ctx context.Context, rawURL string) ([]byte, map[str
 	}
 	metaTags, _ := extractHTMLMeta(body)
 	return body, metaTags, nil
+}
+
+func (f *Fetcher) doRequestWithRetry(ctx context.Context, client *http.Client, u *url.URL) (*http.Response, error) {
+	if client == nil {
+		client = &http.Client{Timeout: fetchTimeout}
+	}
+	var resp *http.Response
+	var err error
+	for attempt := 0; attempt <= maxFetchRetries; attempt++ {
+		req, reqErr := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
+		if reqErr != nil {
+			return nil, fmt.Errorf("build request: %w", reqErr)
+		}
+		applyRequestHeaders(req, u)
+
+		resp, err = client.Do(req)
+		if !shouldRetryFetch(ctx, err, resp) || attempt == maxFetchRetries {
+			return resp, err
+		}
+		if resp != nil && resp.Body != nil {
+			if _, copyErr := io.Copy(io.Discard, resp.Body); copyErr != nil {
+				return nil, copyErr
+			}
+			resp.Body.Close()
+		}
+		backoff := retryBackoff(attempt)
+		timer := time.NewTimer(backoff)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return nil, ctx.Err()
+		case <-timer.C:
+		}
+	}
+	return resp, err
+}
+
+func applyRequestHeaders(req *http.Request, u *url.URL) {
+	if req == nil || u == nil {
+		return
+	}
+	if isBandcampHost(u.Hostname()) {
+		req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+		req.Header.Set("Accept", "text/html,application/xhtml+xml")
+		req.Header.Set("Accept-Language", "en-US,en;q=0.9")
+		return
+	}
+	req.Header.Set("User-Agent", "ClubhouseMetadataFetcher/1.0")
+}
+
+func isBandcampHost(host string) bool {
+	normalized := strings.ToLower(strings.TrimSpace(host))
+	return normalized == "bandcamp.com" || strings.HasSuffix(normalized, ".bandcamp.com")
+}
+
+func shouldRetryFetch(ctx context.Context, err error, resp *http.Response) bool {
+	if ctx == nil {
+		return false
+	}
+	if ctx.Err() != nil {
+		return false
+	}
+	if err != nil {
+		var netErr net.Error
+		if errors.As(err, &netErr) && netErr.Timeout() {
+			return true
+		}
+		return false
+	}
+	if resp == nil {
+		return false
+	}
+	switch resp.StatusCode {
+	case http.StatusRequestTimeout, http.StatusTooManyRequests, http.StatusInternalServerError,
+		http.StatusBadGateway, http.StatusServiceUnavailable, http.StatusGatewayTimeout:
+		return true
+	default:
+		return false
+	}
+}
+
+func retryBackoff(attempt int) time.Duration {
+	if attempt < 0 {
+		attempt = 0
+	}
+	backoff := retryBackoffBase * time.Duration(1<<attempt)
+	if backoff > retryBackoffMax {
+		return retryBackoffMax
+	}
+	return backoff
 }
 
 func (f *Fetcher) redirectValidator(ctx context.Context, existing func(req *http.Request, via []*http.Request) error) func(req *http.Request, via []*http.Request) error {

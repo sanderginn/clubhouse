@@ -209,3 +209,47 @@ func TestPreviewLinkURLTooLong(t *testing.T) {
 		t.Fatalf("expected error code URL_TOO_LONG, got %s", errResp.Code)
 	}
 }
+
+func TestPreviewLinkFetchFailureFallsBack(t *testing.T) {
+	previousTransport := http.DefaultTransport
+	http.DefaultTransport = roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusForbidden,
+			Status:     "403 Forbidden",
+			Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
+			Body:       io.NopCloser(strings.NewReader("forbidden")),
+			Request:    r,
+		}, nil
+	})
+	defer func() {
+		http.DefaultTransport = previousTransport
+	}()
+
+	handler := NewLinkHandler()
+	body, _ := json.Marshal(models.LinkPreviewRequest{URL: "http://93.184.216.34/test"})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/links/preview", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	session := &services.Session{
+		UserID:   uuid.New(),
+		Username: "tester",
+		IsAdmin:  false,
+	}
+	ctx := context.WithValue(req.Context(), middleware.UserContextKey, session)
+	req = req.WithContext(ctx)
+
+	recorder := httptest.NewRecorder()
+	handler.PreviewLink(recorder, req)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", recorder.Code)
+	}
+
+	var response models.LinkPreviewResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("failed to parse response: %v", err)
+	}
+	if response.Metadata["url"] != "http://93.184.216.34/test" {
+		t.Fatalf("expected url metadata, got %v", response.Metadata["url"])
+	}
+}
