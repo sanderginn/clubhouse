@@ -41,18 +41,14 @@
     {
       "issue_number": 745,
       "title": "Fix \"I cooked this\" rating stars not displaying during selection",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [],
       "labels": [
         "bug",
         "frontend",
         "recipes"
       ],
-      "priority": 6,
-      "assigned_to": "agent-1770134867-27215",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770134867-27215",
-      "branch": "fix/issue-745-fix-i-cooked-this-rating-stars-not-displ",
-      "claimed_at": "2026-02-03T16:07:47Z"
+      "priority": 6
     },
     {
       "issue_number": 746,
@@ -85,34 +81,26 @@
     {
       "issue_number": 748,
       "title": "Fix section-specific component ordering inconsistency",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [],
       "labels": [
         "bug",
         "frontend",
         "ui"
       ],
-      "priority": 9,
-      "assigned_to": "agent-1770134869-27321",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770134869-27321",
-      "branch": "fix/issue-748-fix-sectionspecific-component-ordering-i",
-      "claimed_at": "2026-02-03T16:07:49Z"
+      "priority": 9
     },
     {
       "issue_number": 749,
       "title": "Allow removing attached link metadata when editing a post",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [],
       "labels": [
         "enhancement",
         "frontend",
         "backend"
       ],
-      "priority": 10,
-      "assigned_to": "agent-1770134871-27330",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770134871-27330",
-      "branch": "feat/issue-749-allow-removing-attached-link-metadata-wh",
-      "claimed_at": "2026-02-03T16:07:51Z"
+      "priority": 10
     },
     {
       "issue_number": 750,
@@ -149,7 +137,7 @@
     {
       "issue_number": 752,
       "title": "Add timestamp click-to-seek functionality for music embeds",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [
         750
       ],
@@ -157,11 +145,7 @@
         "enhancement",
         "frontend"
       ],
-      "priority": 13,
-      "assigned_to": "agent-1770134873-27592",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770134873-27592",
-      "branch": "feat/issue-752-add-timestamp-clicktoseek-functionality-",
-      "claimed_at": "2026-02-03T16:07:53Z"
+      "priority": 13
     },
     {
       "issue_number": 753,
@@ -180,17 +164,13 @@
     {
       "issue_number": 754,
       "title": "Add track/set length filter to music section",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [],
       "labels": [
         "enhancement",
         "frontend"
       ],
-      "priority": 15,
-      "assigned_to": "agent-1770134876-27634",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770134876-27634",
-      "branch": "feat/issue-754-add-trackset-length-filter-to-music-sect",
-      "claimed_at": "2026-02-03T16:07:56Z"
+      "priority": 15
     },
     {
       "issue_number": 755,
