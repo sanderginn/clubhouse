@@ -101,14 +101,18 @@
     {
       "issue_number": 749,
       "title": "Allow removing attached link metadata when editing a post",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
         "frontend",
         "backend"
       ],
-      "priority": 10
+      "priority": 10,
+      "assigned_to": "agent-1770134871-27330",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770134871-27330",
+      "branch": "feat/issue-749-allow-removing-attached-link-metadata-wh",
+      "claimed_at": "2026-02-03T16:07:51Z"
     },
     {
       "issue_number": 750,
