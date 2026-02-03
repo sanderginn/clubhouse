@@ -77,7 +77,8 @@
     731,
     732,
     733,
-    740
+    740,
+    743
   ],
   "issues": [
     {
@@ -1521,7 +1522,7 @@
     {
       "issue_number": 743,
       "title": "Fix search bar alignment (still not centered after PRs #606 and #625)",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -1532,7 +1533,9 @@
       "assigned_to": "agent-1770130763-64953",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770130763-64953",
       "branch": "fix/issue-743-fix-search-bar-alignment-still-not-cente",
-      "claimed_at": "2026-02-03T14:59:23Z"
+      "claimed_at": "2026-02-03T14:59:23Z",
+      "pr_number": 757,
+      "completed_at": "2026-02-03T15:10:16Z"
     },
     {
       "issue_number": 744,
