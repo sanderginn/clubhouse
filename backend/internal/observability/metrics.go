@@ -60,6 +60,7 @@ type metrics struct {
 	searchDuration            metric.Float64Histogram
 	cacheHits                 metric.Int64Counter
 	cacheMisses               metric.Int64Counter
+	csrfValidationFailures    metric.Int64Counter
 	uploadAttempts            metric.Int64Counter
 	uploadSize                metric.Float64Histogram
 	adminActions              metric.Int64Counter
@@ -530,6 +531,15 @@ func initMetrics() error {
 			return
 		}
 
+		csrfValidationFailures, err := meter.Int64Counter(
+			"clubhouse.csrf.validation.failures",
+			metric.WithDescription("CSRF validation failures by reason"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
 		uploadAttempts, err := meter.Int64Counter(
 			"clubhouse.uploads.attempts",
 			metric.WithDescription("Number of upload attempts"),
@@ -754,6 +764,7 @@ func initMetrics() error {
 			searchDuration:            searchDuration,
 			cacheHits:                 cacheHits,
 			cacheMisses:               cacheMisses,
+			csrfValidationFailures:    csrfValidationFailures,
 			uploadAttempts:            uploadAttempts,
 			uploadSize:                uploadSize,
 			adminActions:              adminActions,
@@ -1400,6 +1411,18 @@ func RecordCacheMiss(ctx context.Context, cacheType string) {
 		return
 	}
 	m.cacheMisses.Add(ctx, 1, metric.WithAttributes(attrs...))
+}
+
+// RecordCSRFValidationFailure records a CSRF validation failure by reason.
+func RecordCSRFValidationFailure(ctx context.Context, reason string) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	if strings.TrimSpace(reason) == "" {
+		return
+	}
+	m.csrfValidationFailures.Add(ctx, 1, metric.WithAttributes(attribute.String("reason", reason)))
 }
 
 // RecordUploadAttempt records an upload attempt.

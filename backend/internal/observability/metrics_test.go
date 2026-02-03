@@ -76,6 +76,46 @@ func TestRecordNotificationReadMetrics(t *testing.T) {
 	}
 }
 
+func TestRecordCSRFValidationFailureMetrics(t *testing.T) {
+	ctx := context.Background()
+	reader := sdkmetric.NewManualReader()
+	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
+	previousProvider := otel.GetMeterProvider()
+	otel.SetMeterProvider(provider)
+	t.Cleanup(func() {
+		otel.SetMeterProvider(previousProvider)
+	})
+
+	resetMetricsForTest()
+	if err := initMetrics(); err != nil {
+		t.Fatalf("failed to init metrics: %v", err)
+	}
+
+	RecordCSRFValidationFailure(ctx, "missing")
+	RecordCSRFValidationFailure(ctx, "mismatch")
+	RecordCSRFValidationFailure(ctx, "expired")
+
+	var metrics metricdata.ResourceMetrics
+	if err := reader.Collect(ctx, &metrics); err != nil {
+		t.Fatalf("failed to collect metrics: %v", err)
+	}
+
+	missing := findCounterValue(t, metrics, "clubhouse.csrf.validation.failures", attribute.String("reason", "missing"))
+	if missing != 1 {
+		t.Fatalf("expected missing reason count 1, got %d", missing)
+	}
+
+	mismatch := findCounterValue(t, metrics, "clubhouse.csrf.validation.failures", attribute.String("reason", "mismatch"))
+	if mismatch != 1 {
+		t.Fatalf("expected mismatch reason count 1, got %d", mismatch)
+	}
+
+	expired := findCounterValue(t, metrics, "clubhouse.csrf.validation.failures", attribute.String("reason", "expired"))
+	if expired != 1 {
+		t.Fatalf("expected expired reason count 1, got %d", expired)
+	}
+}
+
 func findInt64SumMetric(t *testing.T, metrics metricdata.ResourceMetrics, name string) int64 {
 	t.Helper()
 
