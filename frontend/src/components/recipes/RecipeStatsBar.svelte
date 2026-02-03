@@ -44,8 +44,8 @@
         ? normalizedRating.toFixed(0)
         : normalizedRating.toFixed(1);
 
-  $: saveKey = `${normalizedSaveCount}`;
-  $: cookKey = `${normalizedCookCount}:${normalizedRating ?? 'none'}`;
+  $: saveKey = `${postId}:${normalizedSaveCount}`;
+  $: cookKey = `${postId}:${normalizedCookCount}:${normalizedRating ?? 'none'}`;
 
   function getInitial(username?: string | null) {
     const trimmed = username?.trim();
