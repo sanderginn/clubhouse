@@ -1304,6 +1304,8 @@
               title={metadata.title || 'YouTube video'}
             />
           </div>
+        {:else if spotifyEmbedUrl}
+          <SpotifyEmbed embedUrl={spotifyEmbedUrl} height={spotifyEmbedHeight} />
         {:else}
           <a
             href={primaryLink.url}

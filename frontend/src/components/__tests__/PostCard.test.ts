@@ -279,47 +279,205 @@ describe('PostCard', () => {
     const image = screen.getByRole('img', { name: 'Uploaded image' });
     await fireEvent.error(image);
 
-    expect(screen.getByText('/api/v1/uploads/user-1/photo.png')).toBeInTheDocument();
+    const link = screen.getByRole('link', {
+      name: /\/api\/v1\/uploads\/user-1\/photo\.png/,
+    });
+    expect(link).toHaveAttribute('href', '/api/v1/uploads/user-1/photo.png');
   });
 
-  it('renders edit form when edit button clicked', async () => {
-    const postWithLink: Post = {
-      ...basePost,
-      userId: 'user-1',
-    };
-
-    authStore.setUser({ id: 'user-1', username: 'Sander', email: 'sander@test.com' });
-    render(PostCard, { post: postWithLink });
-
-    const editButton = screen.getByRole('button', { name: 'Edit' });
-    await fireEvent.click(editButton);
-
-    expect(screen.getByRole('textbox', { name: 'Edit post content' })).toBeInTheDocument();
+  it('shows avatar fallback when no profile image', () => {
+    render(PostCard, { post: basePost });
+    expect(screen.getByText('S')).toBeInTheDocument();
   });
 
-  it('submits edit form', async () => {
-    const postWithLink: Post = {
+  it('links to the author profile', () => {
+    render(PostCard, { post: basePost });
+    const link = screen.getByRole('link', { name: 'Sander' });
+    expect(link).toHaveAttribute('href', '/users/user-1');
+  });
+
+  it('shows edit action for own post', async () => {
+    authStore.setUser({
+      id: 'user-1',
+      username: 'Sander',
+      email: 'sander@example.com',
+      isAdmin: false,
+      totpEnabled: false,
+    });
+
+    render(PostCard, { post: basePost });
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Share' })).toBeInTheDocument();
+  });
+
+  it('hides edit action for other users', () => {
+    authStore.setUser({
+      id: 'user-2',
+      username: 'Other',
+      email: 'other@example.com',
+      isAdmin: false,
+      totpEnabled: false,
+    });
+
+    render(PostCard, { post: basePost });
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Share' })).toBeInTheDocument();
+  });
+
+  it('shows delete action for admins on others posts', () => {
+    authStore.setUser({
+      id: 'admin-1',
+      username: 'Admin',
+      email: 'admin@example.com',
+      isAdmin: true,
+      totpEnabled: false,
+    });
+
+    render(PostCard, { post: basePost });
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
+  });
+
+  it('removes only the selected image link when editing', async () => {
+    authStore.setUser({
+      id: 'user-1',
+      username: 'Sander',
+      email: 'sander@example.com',
+      isAdmin: false,
+      totpEnabled: false,
+    });
+
+    const postWithImages: Post = {
       ...basePost,
-      userId: 'user-1',
+      links: [
+        { url: 'https://cdn.example.com/uploads/first.png' },
+        { url: 'https://example.com/article' },
+        { url: 'https://cdn.example.com/uploads/second.png' },
+        { url: 'https://example.com/extra' },
+      ],
     };
 
-    authStore.setUser({ id: 'user-1', username: 'Sander', email: 'sander@test.com' });
-    render(PostCard, { post: postWithLink });
+    apiUpdatePost.mockResolvedValue({
+      post: { ...postWithImages, content: postWithImages.content },
+    });
 
-    const editButton = screen.getByRole('button', { name: 'Edit' });
-    await fireEvent.click(editButton);
+    render(PostCard, { post: postWithImages });
 
-    const textarea = screen.getByRole('textbox', { name: 'Edit post content' });
-    await fireEvent.input(textarea, { target: { value: 'Updated content' } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Remove image 2' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-    const saveButton = screen.getByRole('button', { name: 'Save' });
-    await fireEvent.click(saveButton);
+    expect(apiUpdatePost).toHaveBeenCalledWith('post-1', {
+      content: 'Hello world',
+      links: [
+        { url: 'https://cdn.example.com/uploads/first.png' },
+        { url: 'https://example.com/article' },
+        { url: 'https://example.com/extra' },
+      ],
+      mentionUsernames: [],
+    });
+  });
 
+  it('replaces only the selected image link when editing', async () => {
+    authStore.setUser({
+      id: 'user-1',
+      username: 'Sander',
+      email: 'sander@example.com',
+      isAdmin: false,
+      totpEnabled: false,
+    });
+
+    const postWithImages: Post = {
+      ...basePost,
+      links: [
+        { url: 'https://cdn.example.com/uploads/first.png' },
+        { url: 'https://example.com/article' },
+        { url: 'https://cdn.example.com/uploads/second.png' },
+      ],
+    };
+
+    apiUploadImage.mockResolvedValue({ url: 'https://cdn.example.com/uploads/new.png' });
+    apiUpdatePost.mockResolvedValue({
+      post: { ...postWithImages, content: postWithImages.content },
+    });
+
+    render(PostCard, { post: postWithImages });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+
+    const hiddenInput = screen.getByLabelText('Upload replacement for image 2') as HTMLInputElement;
+    const file = new File(['image-bytes'], 'new.png', { type: 'image/png' });
+    await fireEvent.change(hiddenInput, { target: { files: [file] } });
     await tick();
+    await Promise.resolve();
 
-    expect(apiUpdatePost).toHaveBeenCalledWith(
-      'post-1',
-      expect.objectContaining({ content: 'Updated content' })
-    );
+    await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(apiUpdatePost).toHaveBeenCalledWith('post-1', {
+      content: 'Hello world',
+      links: [
+        { url: 'https://cdn.example.com/uploads/first.png' },
+        { url: 'https://example.com/article' },
+        { url: 'https://cdn.example.com/uploads/new.png' },
+      ],
+      mentionUsernames: [],
+    });
+  });
+
+  it('saves edits with cmd+enter', async () => {
+    authStore.setUser({
+      id: 'user-1',
+      username: 'Sander',
+      email: 'sander@example.com',
+      isAdmin: false,
+      totpEnabled: false,
+    });
+
+    apiUpdatePost.mockResolvedValue({ post: { ...basePost } });
+
+    render(PostCard, { post: basePost });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+
+    const textareas = screen.getAllByRole('textbox');
+    const textarea = textareas.find((area) => area.getAttribute('rows') === '4');
+    if (!textarea) {
+      throw new Error('Edit textarea not found');
+    }
+    await fireEvent.keyDown(textarea, { key: 'Enter', metaKey: true });
+
+    expect(apiUpdatePost).toHaveBeenCalledWith('post-1', {
+      content: 'Hello world',
+      links: undefined,
+      mentionUsernames: [],
+    });
+  });
+
+  it('ignores cmd+enter when edit content is empty', async () => {
+    authStore.setUser({
+      id: 'user-1',
+      username: 'Sander',
+      email: 'sander@example.com',
+      isAdmin: false,
+      totpEnabled: false,
+    });
+
+    apiUpdatePost.mockResolvedValue({ post: { ...basePost } });
+
+    render(PostCard, { post: basePost });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+
+    const textareas = screen.getAllByRole('textbox');
+    const textarea = textareas.find((area) => area.getAttribute('rows') === '4');
+    if (!textarea) {
+      throw new Error('Edit textarea not found');
+    }
+    await fireEvent.input(textarea, { target: { value: '   ' } });
+    await fireEvent.keyDown(textarea, { key: 'Enter', metaKey: true });
+
+    expect(apiUpdatePost).not.toHaveBeenCalled();
   });
 });
