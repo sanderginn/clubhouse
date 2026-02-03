@@ -96,7 +96,7 @@
     {
       "issue_number": 747,
       "title": "Fix \"My Recipes\" not showing ratings in Cookbook",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         746
       ],
@@ -105,7 +105,11 @@
         "frontend",
         "recipes"
       ],
-      "priority": 8
+      "priority": 8,
+      "assigned_to": "agent-1770140650-66900",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770140650-66900",
+      "branch": "fix/issue-747-fix-my-recipes-not-showing-ratings-in-co",
+      "claimed_at": "2026-02-03T17:44:10Z"
     },
     {
       "issue_number": 748,
