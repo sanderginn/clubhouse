@@ -93,12 +93,6 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 		return nil, err
 	}
 
-	metadata := make(map[string]interface{})
-	embed, embedErr := ExtractEmbed(ctx, rawURL)
-	if embedErr == nil && embed != nil {
-		metadata["embed"] = embed
-	}
-
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("build request: %w", err)
@@ -114,17 +108,11 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 
 	resp, err := clientCopy.Do(req)
 	if err != nil {
-		if len(metadata) > 0 {
-			return metadata, nil
-		}
 		return nil, fmt.Errorf("fetch url: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
-		if len(metadata) > 0 {
-			return metadata, nil
-		}
 		return nil, fmt.Errorf("unexpected status: %s", resp.Status)
 	}
 
@@ -133,12 +121,10 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	isHTML := strings.Contains(contentTypeLower, "text/html")
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBodyBytes))
 	if err != nil {
-		if len(metadata) > 0 {
-			return metadata, nil
-		}
 		return nil, fmt.Errorf("read response: %w", err)
 	}
 
+	metadata := make(map[string]interface{})
 	provider := detectProvider(u.Hostname())
 
 	// Treat SVGs as images here; frontend renders via <img> to avoid inline SVG execution.
