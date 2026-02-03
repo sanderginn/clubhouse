@@ -7,6 +7,7 @@ import { afterEach } from 'vitest';
 const createPost = vi.hoisted(() => vi.fn());
 const previewLink = vi.hoisted(() => vi.fn());
 const uploadImage = vi.hoisted(() => vi.fn());
+const loadSectionLinks = vi.hoisted(() => vi.fn());
 
 vi.mock('../../../services/api', () => ({
   api: {
@@ -14,6 +15,10 @@ vi.mock('../../../services/api', () => ({
     previewLink,
     uploadImage,
   },
+}));
+
+vi.mock('../../../stores/sectionLinksFeedStore', () => ({
+  loadSectionLinks,
 }));
 
 const { default: PostForm } = await import('../PostForm.svelte');
@@ -42,6 +47,7 @@ beforeEach(() => {
   createPost.mockReset();
   previewLink.mockReset();
   uploadImage.mockReset();
+  loadSectionLinks.mockReset();
   authStore.setUser(null);
   sectionStore.setActiveSection(null);
   postStore.reset();

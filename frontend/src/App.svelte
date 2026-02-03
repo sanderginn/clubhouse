@@ -3,6 +3,7 @@
   import { onMount, onDestroy } from 'svelte';
   import './styles/globals.css';
   import { Layout, PostForm, SectionFeed, SearchResults, InstallPrompt } from './components';
+  import MusicLinksContainer from './components/MusicLinksContainer.svelte';
   import ThreadView from './components/ThreadView.svelte';
   import UserProfile from './components/UserProfile.svelte';
   import { Login, Register, AdminPanel, PasswordReset, Settings } from './routes';
@@ -343,6 +344,8 @@
           <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <PostForm />
           </div>
+
+          <MusicLinksContainer />
 
           {#if $isSearching || $searchError || $lastSearchQuery.trim().length > 0}
             <SearchResults />
