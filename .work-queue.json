@@ -40,6 +40,7 @@
     655,
     656,
     657,
+    658,
     662,
     663,
     664,
@@ -692,7 +693,7 @@
     {
       "issue_number": 658,
       "title": "Frontend: Add MusicLinksContainer component and integrate into App",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         657
       ],
@@ -705,7 +706,9 @@
       "assigned_to": "agent-1770078034-65395",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770078034-65395",
       "branch": "feat/issue-658-frontend-add-musiclinkscontainer-compone",
-      "claimed_at": "2026-02-03T00:20:34Z"
+      "claimed_at": "2026-02-03T00:20:34Z",
+      "pr_number": 710,
+      "completed_at": "2026-02-03T00:39:11Z"
     },
     {
       "issue_number": 662,
