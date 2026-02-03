@@ -78,7 +78,8 @@
     732,
     733,
     740,
-    743
+    743,
+    750
   ],
   "issues": [
     {
@@ -1634,7 +1635,7 @@
     {
       "issue_number": 750,
       "title": "Support hh:mm:ss timestamp format for music links (allow times over 1 hour)",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -1645,7 +1646,9 @@
       "assigned_to": "agent-1770131463-83689",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770131463-83689",
       "branch": "feat/issue-750-support-hhmmss-timestamp-format-for-musi",
-      "claimed_at": "2026-02-03T15:11:03Z"
+      "claimed_at": "2026-02-03T15:11:03Z",
+      "pr_number": 759,
+      "completed_at": "2026-02-03T15:28:18Z"
     },
     {
       "issue_number": 751,
