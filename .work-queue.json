@@ -49,6 +49,7 @@
     694,
     695,
     696,
+    697,
     698
   ],
   "issues": [
@@ -1178,7 +1179,7 @@
     {
       "issue_number": 697,
       "title": "Observability: record auth failures in RequireAuth/RequireAdmin middleware",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -1189,7 +1190,9 @@
       "assigned_to": "agent-1770078028-65163",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770078028-65163",
       "branch": "feat/issue-697-observability-record-auth-failures-in-re",
-      "claimed_at": "2026-02-03T00:20:28Z"
+      "claimed_at": "2026-02-03T00:20:28Z",
+      "pr_number": 707,
+      "completed_at": "2026-02-03T00:30:32Z"
     },
     {
       "issue_number": 698,
