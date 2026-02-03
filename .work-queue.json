@@ -8,6 +8,7 @@
     742,
     744,
     745,
+    746,
     748,
     749,
     750,
@@ -75,7 +76,7 @@
     {
       "issue_number": 746,
       "title": "Fix \"My Recipes\" metadata card not rendering properly",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         744
       ],
@@ -88,7 +89,9 @@
       "assigned_to": "agent-1770139816-49681",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770139816-49681",
       "branch": "fix/issue-746-fix-my-recipes-metadata-card-not-renderi",
-      "claimed_at": "2026-02-03T17:30:16Z"
+      "claimed_at": "2026-02-03T17:30:16Z",
+      "pr_number": 770,
+      "completed_at": "2026-02-03T17:43:43Z"
     },
     {
       "issue_number": 747,
