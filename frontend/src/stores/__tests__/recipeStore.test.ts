@@ -12,6 +12,7 @@ const apiCreateCategory = vi.hoisted(() => vi.fn());
 const apiUpdateCategory = vi.hoisted(() => vi.fn());
 const apiDeleteCategory = vi.hoisted(() => vi.fn());
 const apiGetCookLogs = vi.hoisted(() => vi.fn());
+const apiGetPostSaves = vi.hoisted(() => vi.fn());
 
 vi.mock('../../services/api', () => ({
   api: {
@@ -26,6 +27,7 @@ vi.mock('../../services/api', () => ({
     updateRecipeCategory: apiUpdateCategory,
     deleteRecipeCategory: apiDeleteCategory,
     getMyCookLogs: apiGetCookLogs,
+    getPostSaves: apiGetPostSaves,
   },
 }));
 
@@ -38,9 +40,11 @@ const {
   handleRecipeCategoryDeletedEvent,
   handleCookLogRemovedEvent,
 } = await import('../recipeStore');
+const { postStore } = await import('../postStore');
 
 beforeEach(() => {
   recipeStore.reset();
+  postStore.reset();
   apiSaveRecipe.mockReset();
   apiUnsaveRecipe.mockReset();
   apiLogCook.mockReset();
@@ -52,6 +56,7 @@ beforeEach(() => {
   apiUpdateCategory.mockReset();
   apiDeleteCategory.mockReset();
   apiGetCookLogs.mockReset();
+  apiGetPostSaves.mockReset();
 });
 
 describe('recipeStore', () => {
@@ -102,12 +107,30 @@ describe('recipeStore', () => {
       ],
     });
 
+    postStore.setPosts(
+      [
+        {
+          id: 'post-2',
+          userId: 'user-1',
+          sectionId: 'section-1',
+          content: 'Recipe 2',
+          createdAt: '2024-01-02T00:00:00Z',
+          recipeStats: { saveCount: 0, cookCount: 0, averageRating: null },
+        },
+      ],
+      null,
+      false
+    );
+
     await recipeStore.saveRecipe('post-2', ['Favorites']);
     const state = get(recipeStore);
     const favorites = state.savedRecipes.get('Favorites') ?? [];
+    const postState = get(postStore);
+    const post = postState.posts.find((item) => item.id === 'post-2');
 
     expect(favorites).toHaveLength(1);
     expect(favorites[0].postId).toBe('post-2');
+    expect(post?.recipeStats?.saveCount).toBe(1);
   });
 
   it('unsaveRecipe removes saved recipes from category', async () => {
@@ -123,10 +146,28 @@ describe('recipeStore', () => {
       },
     ]);
 
+    postStore.setPosts(
+      [
+        {
+          id: 'post-3',
+          userId: 'user-1',
+          sectionId: 'section-1',
+          content: 'Recipe 3',
+          createdAt: '2024-01-01T00:00:00Z',
+          recipeStats: { saveCount: 2, cookCount: 0, averageRating: null },
+        },
+      ],
+      null,
+      false
+    );
+
     await recipeStore.unsaveRecipe('post-3', 'Favorites');
     const state = get(recipeStore);
+    const postState = get(postStore);
+    const post = postState.posts.find((item) => item.id === 'post-3');
 
     expect(state.savedRecipes.get('Favorites')).toBeUndefined();
+    expect(post?.recipeStats?.saveCount).toBe(1);
   });
 
   it('updateCategory renames saved recipe categories', async () => {
@@ -228,8 +269,25 @@ describe('recipeStore', () => {
     expect(map).toBeInstanceOf(Map);
   });
 
-  it('realtime handlers apply events', () => {
-    handleRecipeSavedEvent({
+  it('realtime handlers apply events', async () => {
+    apiGetPostSaves.mockResolvedValue({ save_count: 3, users: [], viewer_saved: false });
+    postStore.setPosts(
+      [
+        {
+          id: 'post-10',
+          userId: 'user-1',
+          sectionId: 'section-1',
+          content: 'Recipe 10',
+          createdAt: '2024-01-01T00:00:00Z',
+          recipeStats: { saveCount: 0, cookCount: 0, averageRating: null },
+        },
+      ],
+      null,
+      false
+    );
+
+    await handleRecipeSavedEvent({
+      post_id: 'post-10',
       saved_recipe: {
         id: 'save-10',
         user_id: 'user-1',
@@ -243,7 +301,11 @@ describe('recipeStore', () => {
 
     const state = get(recipeStore);
     const favorites = state.savedRecipes.get('Favorites') ?? [];
+    const postState = get(postStore);
+    const post = postState.posts.find((item) => item.id === 'post-10');
+
     expect(favorites).toHaveLength(1);
+    expect(post?.recipeStats?.saveCount).toBe(3);
   });
 
   it('realtime category updates migrate saved recipe map keys', () => {
