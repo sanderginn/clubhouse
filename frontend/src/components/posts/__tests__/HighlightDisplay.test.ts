@@ -26,6 +26,14 @@ describe('HighlightDisplay', () => {
     expect(queryByText('Intro')).not.toBeInTheDocument();
   });
 
+  it('renders hour timestamps when needed', () => {
+    const { getByText } = render(HighlightDisplay, {
+      highlights: [{ timestamp: 3930 }],
+    });
+
+    expect(getByText('1:05:30')).toBeInTheDocument();
+  });
+
   it('renders nothing when highlights are empty', () => {
     const { queryByLabelText } = render(HighlightDisplay, {
       highlights: [],

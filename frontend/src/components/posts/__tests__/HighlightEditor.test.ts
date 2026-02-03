@@ -13,7 +13,7 @@ describe('HighlightEditor', () => {
       highlights: [],
     });
 
-    const timestampInput = getByLabelText('Timestamp (mm:ss)');
+    const timestampInput = getByLabelText('Timestamp (mm:ss or hh:mm:ss)');
     const labelInput = getByLabelText('Label (optional)');
 
     await fireEvent.input(timestampInput, { target: { value: '01:30' } });
@@ -22,6 +22,18 @@ describe('HighlightEditor', () => {
 
     expect(getByText('01:30')).toBeInTheDocument();
     expect(getByText('Intro')).toBeInTheDocument();
+  });
+
+  it('adds a highlight from hh:mm:ss input', async () => {
+    const { getByLabelText, getByText } = render(HighlightEditor, {
+      highlights: [],
+    });
+
+    const timestampInput = getByLabelText('Timestamp (mm:ss or hh:mm:ss)');
+    await fireEvent.input(timestampInput, { target: { value: '1:30:45' } });
+    await fireEvent.click(getByText('Add highlight'));
+
+    expect(getByText('1:30:45')).toBeInTheDocument();
   });
 
   it('removes a highlight', async () => {
