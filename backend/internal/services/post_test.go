@@ -266,6 +266,166 @@ func TestCreatePostWithImages(t *testing.T) {
 	}
 }
 
+func TestGetPostByIDIncludesRecipeStats(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	viewerID := testutil.CreateTestUser(t, db, "recipestatsviewer", "recipestatsviewer@test.com", false, true)
+	otherID := testutil.CreateTestUser(t, db, "recipestatsother", "recipestatsother@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Recipes", "recipe")
+	postID := testutil.CreateTestPost(t, db, viewerID, sectionID, "Recipe content")
+
+	_, err := db.ExecContext(context.Background(), `
+		INSERT INTO saved_recipes (id, user_id, post_id, category, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(viewerID), uuid.MustParse(postID), "Dinner")
+	if err != nil {
+		t.Fatalf("failed to insert saved recipe: %v", err)
+	}
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO saved_recipes (id, user_id, post_id, category, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(viewerID), uuid.MustParse(postID), "Favorites")
+	if err != nil {
+		t.Fatalf("failed to insert saved recipe: %v", err)
+	}
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO saved_recipes (id, user_id, post_id, category, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(otherID), uuid.MustParse(postID), "Dessert")
+	if err != nil {
+		t.Fatalf("failed to insert saved recipe: %v", err)
+	}
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO cook_logs (id, user_id, post_id, rating, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(viewerID), uuid.MustParse(postID), 4)
+	if err != nil {
+		t.Fatalf("failed to insert cook log: %v", err)
+	}
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO cook_logs (id, user_id, post_id, rating, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(otherID), uuid.MustParse(postID), 5)
+	if err != nil {
+		t.Fatalf("failed to insert cook log: %v", err)
+	}
+
+	service := NewPostService(db)
+	post, err := service.GetPostByID(context.Background(), uuid.MustParse(postID), uuid.MustParse(viewerID))
+	if err != nil {
+		t.Fatalf("GetPostByID failed: %v", err)
+	}
+
+	if post.RecipeStats == nil {
+		t.Fatalf("expected recipe stats to be populated")
+	}
+	if post.RecipeStats.SaveCount != 3 {
+		t.Fatalf("expected save count 3, got %d", post.RecipeStats.SaveCount)
+	}
+	if post.RecipeStats.CookCount != 2 {
+		t.Fatalf("expected cook count 2, got %d", post.RecipeStats.CookCount)
+	}
+	if post.RecipeStats.AvgRating == nil || *post.RecipeStats.AvgRating != 4.5 {
+		t.Fatalf("expected avg rating 4.5, got %v", post.RecipeStats.AvgRating)
+	}
+	if !post.RecipeStats.ViewerSaved {
+		t.Fatalf("expected viewer_saved true")
+	}
+	if !post.RecipeStats.ViewerCooked {
+		t.Fatalf("expected viewer_cooked true")
+	}
+	if len(post.RecipeStats.ViewerCategories) != 2 {
+		t.Fatalf("expected 2 viewer categories, got %d", len(post.RecipeStats.ViewerCategories))
+	}
+	if post.RecipeStats.ViewerCategories[0] != "Dinner" || post.RecipeStats.ViewerCategories[1] != "Favorites" {
+		t.Fatalf("expected viewer categories [Dinner Favorites], got %v", post.RecipeStats.ViewerCategories)
+	}
+}
+
+func TestGetPostByIDNonRecipeOmitsRecipeStats(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "nonrecipeuser", "nonrecipeuser@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "General", "general")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "General content")
+
+	service := NewPostService(db)
+	post, err := service.GetPostByID(context.Background(), uuid.MustParse(postID), uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("GetPostByID failed: %v", err)
+	}
+
+	if post.RecipeStats != nil {
+		t.Fatalf("expected recipe stats to be omitted for non-recipe posts")
+	}
+}
+
+func TestGetFeedIncludesRecipeStatsForRecipeSection(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	viewerID := testutil.CreateTestUser(t, db, "feedrecipeviewer", "feedrecipeviewer@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Recipes", "recipe")
+	postIDWithStats := testutil.CreateTestPost(t, db, viewerID, sectionID, "Recipe with stats")
+	postIDNoStats := testutil.CreateTestPost(t, db, viewerID, sectionID, "Recipe without stats")
+
+	_, err := db.ExecContext(context.Background(), `
+		INSERT INTO saved_recipes (id, user_id, post_id, category, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(viewerID), uuid.MustParse(postIDWithStats), "Quick")
+	if err != nil {
+		t.Fatalf("failed to insert saved recipe: %v", err)
+	}
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO cook_logs (id, user_id, post_id, rating, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(viewerID), uuid.MustParse(postIDWithStats), 5)
+	if err != nil {
+		t.Fatalf("failed to insert cook log: %v", err)
+	}
+
+	service := NewPostService(db)
+	feed, err := service.GetFeed(context.Background(), uuid.MustParse(sectionID), nil, 10, uuid.MustParse(viewerID))
+	if err != nil {
+		t.Fatalf("GetFeed failed: %v", err)
+	}
+
+	postByID := make(map[string]*models.Post)
+	for _, post := range feed.Posts {
+		postByID[post.ID.String()] = post
+	}
+
+	recipeWithStats := postByID[postIDWithStats]
+	if recipeWithStats == nil || recipeWithStats.RecipeStats == nil {
+		t.Fatalf("expected recipe stats for post with stats")
+	}
+	if recipeWithStats.RecipeStats.SaveCount != 1 {
+		t.Fatalf("expected save count 1, got %d", recipeWithStats.RecipeStats.SaveCount)
+	}
+	if recipeWithStats.RecipeStats.CookCount != 1 {
+		t.Fatalf("expected cook count 1, got %d", recipeWithStats.RecipeStats.CookCount)
+	}
+	if recipeWithStats.RecipeStats.AvgRating == nil || *recipeWithStats.RecipeStats.AvgRating != 5 {
+		t.Fatalf("expected avg rating 5, got %v", recipeWithStats.RecipeStats.AvgRating)
+	}
+	if len(recipeWithStats.RecipeStats.ViewerCategories) != 1 || recipeWithStats.RecipeStats.ViewerCategories[0] != "Quick" {
+		t.Fatalf("expected viewer categories [Quick], got %v", recipeWithStats.RecipeStats.ViewerCategories)
+	}
+
+	recipeNoStats := postByID[postIDNoStats]
+	if recipeNoStats == nil || recipeNoStats.RecipeStats == nil {
+		t.Fatalf("expected recipe stats for post without stats")
+	}
+	if recipeNoStats.RecipeStats.SaveCount != 0 || recipeNoStats.RecipeStats.CookCount != 0 {
+		t.Fatalf("expected zero stats for post without stats, got %+v", recipeNoStats.RecipeStats)
+	}
+	if recipeNoStats.RecipeStats.AvgRating != nil {
+		t.Fatalf("expected nil avg rating for post without stats, got %v", recipeNoStats.RecipeStats.AvgRating)
+	}
+}
+
 func TestCreatePostRequiresContentOrLinks(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })

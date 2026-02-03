@@ -35,12 +35,12 @@ func TestGetPostSuccess(t *testing.T) {
 		"id", "user_id", "section_id", "content",
 		"created_at", "updated_at", "deleted_at", "deleted_by_user_id",
 		"id", "username", "email", "profile_picture_url", "bio", "is_admin", "created_at",
-		"comment_count",
+		"comment_count", "type",
 	}).AddRow(
 		postID, userID, sectionID, "Test post content",
 		now, nil, nil, nil,
 		userID, "testuser", "test@example.com", nil, nil, false, now,
-		5,
+		5, "general",
 	)
 
 	mock.ExpectQuery("SELECT").WithArgs(postID).WillReturnRows(rows)
@@ -301,6 +301,9 @@ func TestGetFeedSuccess(t *testing.T) {
 	now := time.Now()
 	earlier := now.Add(-time.Hour)
 
+	mock.ExpectQuery("SELECT type FROM sections").WithArgs(sectionID).
+		WillReturnRows(sqlmock.NewRows([]string{"type"}).AddRow("general"))
+
 	// Mock the posts query (returns 2 posts + 1 extra to determine hasMore)
 	rows := mock.NewRows([]string{
 		"id", "user_id", "section_id", "content",
@@ -382,6 +385,9 @@ func TestGetFeedWithCursor(t *testing.T) {
 	postID := uuid.New()
 	userID := uuid.New()
 	now := time.Now()
+
+	mock.ExpectQuery("SELECT type FROM sections").WithArgs(sectionID).
+		WillReturnRows(sqlmock.NewRows([]string{"type"}).AddRow("general"))
 
 	// Mock the posts query
 	rows := mock.NewRows([]string{
@@ -789,12 +795,12 @@ func TestUpdatePostSuccess(t *testing.T) {
 		"id", "user_id", "section_id", "content",
 		"created_at", "updated_at", "deleted_at", "deleted_by_user_id",
 		"id", "username", "email", "profile_picture_url", "bio", "is_admin", "created_at",
-		"comment_count",
+		"comment_count", "type",
 	}).AddRow(
 		postID, userID, sectionID, "Updated content",
 		now, updatedAt, nil, nil,
 		userID, "testuser", "test@example.com", nil, nil, false, now,
-		0,
+		0, "general",
 	)
 	mock.ExpectQuery("SELECT").WithArgs(postID).WillReturnRows(rows)
 
