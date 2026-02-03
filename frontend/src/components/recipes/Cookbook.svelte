@@ -97,6 +97,9 @@
     title: string;
     image: string | null;
     author: string | null;
+    summary: string | null;
+    source: string | null;
+    cookTime: string | null;
     averageRating: number | null;
     cookCount: number;
     saveCount: number;
@@ -123,14 +126,17 @@
       cookInfo?: { avgRating?: number | null; cookCount?: number | null };
       cook_info?: { avg_rating?: number | null; cook_count?: number | null };
     };
+    const recipeStats = post.recipeStats ?? post.recipe_stats ?? null;
 
     const avgRating =
       withCookInfo.cookInfo?.avgRating ??
       withCookInfo.cook_info?.avg_rating ??
+      recipeStats?.averageRating ??
       null;
     const cookCount =
       withCookInfo.cookInfo?.cookCount ??
       withCookInfo.cook_info?.cook_count ??
+      recipeStats?.cookCount ??
       0;
 
     return {
@@ -145,7 +151,9 @@
       save_info?: { save_count?: number | null };
     };
 
-    const saveCount = withSaveInfo.saveInfo?.saveCount ?? withSaveInfo.save_info?.save_count ?? 0;
+    const recipeStats = post.recipeStats ?? post.recipe_stats ?? null;
+    const saveCount =
+      withSaveInfo.saveInfo?.saveCount ?? withSaveInfo.save_info?.save_count ?? recipeStats?.saveCount ?? 0;
     return normalizeNumber(saveCount, 0);
   }
 
@@ -180,6 +188,29 @@
     return metadata?.recipe?.author ?? post.user?.username ?? null;
   }
 
+  function buildRecipeSummary(link: Link | null): string | null {
+    const metadata = link?.metadata;
+    return metadata?.recipe?.description ?? metadata?.description ?? null;
+  }
+
+  function buildRecipeSource(link: Link | null): string | null {
+    const metadata = link?.metadata;
+    const url = metadata?.url ?? link?.url;
+    if (!url) {
+      return null;
+    }
+    try {
+      return new URL(url).hostname.replace(/^www\./, '');
+    } catch {
+      return null;
+    }
+  }
+
+  function buildRecipeCookTime(link: Link | null): string | null {
+    const metadata = link?.metadata;
+    return metadata?.recipe?.cook_time ?? metadata?.recipe?.total_time ?? null;
+  }
+
   function buildSavedRecipeItems(recipes: SavedRecipe[]): RecipeListItem[] {
     return recipes.map((saved) => {
       const post = saved.post;
@@ -190,6 +221,9 @@
         title: post ? buildRecipeTitle(post, link) : 'Recipe',
         image: post ? buildRecipeImage(link) : null,
         author: post ? buildRecipeAuthor(post, link) : null,
+        summary: post ? buildRecipeSummary(link) : null,
+        source: post ? buildRecipeSource(link) : null,
+        cookTime: post ? buildRecipeCookTime(link) : null,
         averageRating: cookStats.avgRating,
         cookCount: cookStats.cookCount,
         saveCount: post ? extractSaveCount(post) : 0,
@@ -211,6 +245,9 @@
           title: buildRecipeTitle(post, link),
           image: buildRecipeImage(link),
           author: buildRecipeAuthor(post, link),
+          summary: buildRecipeSummary(link),
+          source: buildRecipeSource(link),
+          cookTime: buildRecipeCookTime(link),
           averageRating: cookStats.avgRating,
           cookCount: cookStats.cookCount,
           saveCount: extractSaveCount(post),
@@ -373,6 +410,19 @@
                     </div>
                     <div class="min-w-0 flex-1">
                       <h4 class="text-sm font-semibold text-gray-900">{recipe.title}</h4>
+                      {#if recipe.summary}
+                        <p class="mt-1 text-xs text-gray-500">{recipe.summary}</p>
+                      {/if}
+                      {#if recipe.source || recipe.cookTime}
+                        <div class="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-gray-500">
+                          {#if recipe.source}
+                            <span class="rounded-full bg-gray-100 px-2 py-0.5">{recipe.source}</span>
+                          {/if}
+                          {#if recipe.cookTime}
+                            <span class="rounded-full bg-gray-100 px-2 py-0.5">{recipe.cookTime}</span>
+                          {/if}
+                        </div>
+                      {/if}
                       {#if recipe.author}
                         <p class="mt-0.5 text-xs text-gray-500">by {recipe.author}</p>
                       {/if}
@@ -437,7 +487,20 @@
                   </div>
                   <div class="min-w-0 flex-1">
                     <h4 class="text-sm font-semibold text-gray-900">{recipe.title}</h4>
+                    {#if recipe.summary}
+                      <p class="mt-1 text-xs text-gray-500">{recipe.summary}</p>
+                    {/if}
                     <p class="mt-0.5 text-xs text-gray-500">{recipe.author ?? 'Unknown author'}</p>
+                    {#if recipe.source || recipe.cookTime}
+                      <div class="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-gray-500">
+                        {#if recipe.source}
+                          <span class="rounded-full bg-gray-100 px-2 py-0.5">{recipe.source}</span>
+                        {/if}
+                        {#if recipe.cookTime}
+                          <span class="rounded-full bg-gray-100 px-2 py-0.5">{recipe.cookTime}</span>
+                        {/if}
+                      </div>
+                    {/if}
                     <div class="mt-1 flex flex-wrap items-center gap-3 text-xs text-gray-500">
                       <div class="flex items-center gap-2">
                         {#if recipe.averageRating !== null}

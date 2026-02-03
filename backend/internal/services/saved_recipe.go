@@ -289,8 +289,7 @@ func (s *SavedRecipeService) GetUserSavedRecipes(ctx context.Context, userID uui
 
 	query := `
 		SELECT
-			sr.id, sr.user_id, sr.post_id, sr.category, sr.created_at, sr.deleted_at,
-			p.id, p.user_id, p.section_id, p.content, p.created_at, p.deleted_at
+			sr.id, sr.user_id, sr.post_id, sr.category, sr.created_at, sr.deleted_at
 		FROM saved_recipes sr
 		JOIN posts p ON sr.post_id = p.id
 		WHERE sr.user_id = $1 AND sr.deleted_at IS NULL AND p.deleted_at IS NULL
@@ -307,21 +306,22 @@ func (s *SavedRecipeService) GetUserSavedRecipes(ctx context.Context, userID uui
 	categories := []models.SavedRecipeCategory{}
 	categoryIndex := map[string]int{}
 
+	postIDs := make(map[uuid.UUID]struct{})
 	for rows.Next() {
 		var savedRecipe models.SavedRecipe
-		var post models.Post
 		if err := rows.Scan(
 			&savedRecipe.ID, &savedRecipe.UserID, &savedRecipe.PostID, &savedRecipe.Category,
 			&savedRecipe.CreatedAt, &savedRecipe.DeletedAt,
-			&post.ID, &post.UserID, &post.SectionID, &post.Content, &post.CreatedAt, &post.DeletedAt,
 		); err != nil {
 			recordSpanError(span, err)
 			return nil, err
 		}
 
+		postIDs[savedRecipe.PostID] = struct{}{}
+
 		savedWithPost := models.SavedRecipeWithPost{
 			SavedRecipe: savedRecipe,
-			Post:        &post,
+			Post:        nil,
 		}
 
 		idx, ok := categoryIndex[savedRecipe.Category]
@@ -340,6 +340,32 @@ func (s *SavedRecipeService) GetUserSavedRecipes(ctx context.Context, userID uui
 	if err := rows.Err(); err != nil {
 		recordSpanError(span, err)
 		return nil, err
+	}
+
+	span.SetAttributes(attribute.Int("saved_post_count", len(postIDs)))
+
+	if len(postIDs) == 0 {
+		return categories, nil
+	}
+
+	postService := NewPostService(s.db)
+	postsByID := make(map[uuid.UUID]*models.Post, len(postIDs))
+	for postID := range postIDs {
+		post, err := postService.GetPostByID(ctx, postID, userID)
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+		postsByID[postID] = post
+	}
+
+	for categoryIndex := range categories {
+		for recipeIndex := range categories[categoryIndex].Recipes {
+			postID := categories[categoryIndex].Recipes[recipeIndex].PostID
+			if post, ok := postsByID[postID]; ok {
+				categories[categoryIndex].Recipes[recipeIndex].Post = post
+			}
+		}
 	}
 
 	return categories, nil
