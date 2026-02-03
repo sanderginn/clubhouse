@@ -6,6 +6,7 @@ import { afterEach } from 'vitest';
 
 const createPost = vi.hoisted(() => vi.fn());
 const previewLink = vi.hoisted(() => vi.fn());
+const parseRecipe = vi.hoisted(() => vi.fn());
 const uploadImage = vi.hoisted(() => vi.fn());
 const loadSectionLinks = vi.hoisted(() => vi.fn());
 
@@ -13,6 +14,7 @@ vi.mock('../../../services/api', () => ({
   api: {
     createPost,
     previewLink,
+    parseRecipe,
     uploadImage,
   },
 }));
@@ -33,19 +35,20 @@ function setAuthenticated() {
   });
 }
 
-function setActiveSection(type: 'music' | 'general' = 'music') {
+function setActiveSection(type: 'music' | 'general' | 'recipe' = 'music') {
   sectionStore.setActiveSection({
     id: 'section-1',
-    name: type === 'music' ? 'Music' : 'General',
+    name: type === 'music' ? 'Music' : type === 'recipe' ? 'Recipes' : 'General',
     type,
-    icon: type === 'music' ? '🎵' : '💬',
-    slug: type === 'music' ? 'music' : 'general',
+    icon: type === 'music' ? '🎵' : type === 'recipe' ? '🍲' : '💬',
+    slug: type === 'music' ? 'music' : type === 'recipe' ? 'recipes' : 'general',
   });
 }
 
 beforeEach(() => {
   createPost.mockReset();
   previewLink.mockReset();
+  parseRecipe.mockReset();
   uploadImage.mockReset();
   loadSectionLinks.mockReset();
   authStore.setUser(null);
@@ -181,6 +184,39 @@ describe('PostForm', () => {
     await fireEvent.click(removeButton);
 
     expect(screen.queryByText('Example')).not.toBeInTheDocument();
+  });
+
+  it('parses recipe metadata on demand in recipe section', async () => {
+    setAuthenticated();
+    setActiveSection('recipe');
+    previewLink.mockResolvedValue({
+      metadata: {
+        url: 'https://example.com',
+        title: 'Example',
+      },
+    });
+    parseRecipe.mockResolvedValue({
+      metadata: {
+        url: 'https://example.com',
+        recipe: {
+          name: 'Test Recipe',
+          ingredients: ['1 cup flour'],
+        },
+      },
+    });
+
+    render(PostForm);
+
+    const textarea = screen.getByLabelText('Post content');
+    await fireEvent.input(textarea, { target: { value: 'Check https://example.com' } });
+    await tick();
+
+    const parseButton = screen.getByRole('button', { name: /parse recipe/i });
+    await fireEvent.click(parseButton);
+    await tick();
+
+    expect(parseRecipe).toHaveBeenCalledWith('https://example.com');
+    expect(screen.getByTestId('recipe-title')).toHaveTextContent('Test Recipe');
   });
 
   it('adds a link via the inline input', async () => {

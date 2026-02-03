@@ -80,6 +80,115 @@ func TestPreviewLinkSuccess(t *testing.T) {
 	}
 }
 
+func TestParseRecipeSuccess(t *testing.T) {
+	htmlBody := `<!doctype html><html><head>
+      <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"Recipe","name":"Test Recipe","recipeIngredient":["1 cup flour"],"recipeInstructions":["Mix"]}
+      </script>
+      </head><body></body></html>`
+
+	previousTransport := http.DefaultTransport
+	http.DefaultTransport = roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		if r.URL.Hostname() != "93.184.216.34" {
+			return nil, errors.New("unexpected host")
+		}
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Status:     "200 OK",
+			Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
+			Body:       io.NopCloser(strings.NewReader(htmlBody)),
+			Request:    r,
+		}, nil
+	})
+	defer func() {
+		http.DefaultTransport = previousTransport
+	}()
+
+	handler := NewLinkHandler()
+	body, _ := json.Marshal(models.LinkPreviewRequest{URL: "http://93.184.216.34/recipe"})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/links/parse-recipe", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	session := &services.Session{
+		UserID:   uuid.New(),
+		Username: "tester",
+		IsAdmin:  false,
+	}
+	ctx := context.WithValue(req.Context(), middleware.UserContextKey, session)
+	req = req.WithContext(ctx)
+
+	recorder := httptest.NewRecorder()
+	handler.ParseRecipe(recorder, req)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", recorder.Code)
+	}
+
+	var response models.LinkPreviewResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("failed to parse response: %v", err)
+	}
+
+	recipe, ok := response.Metadata["recipe"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected recipe metadata, got %T", response.Metadata["recipe"])
+	}
+	if recipe["name"] != "Test Recipe" {
+		t.Fatalf("expected recipe name, got %v", recipe["name"])
+	}
+}
+
+func TestParseRecipeNotFound(t *testing.T) {
+	htmlBody := `<!doctype html><html><head>
+      <meta property="og:title" content="No Recipe" />
+      </head><body></body></html>`
+
+	previousTransport := http.DefaultTransport
+	http.DefaultTransport = roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		if r.URL.Hostname() != "93.184.216.34" {
+			return nil, errors.New("unexpected host")
+		}
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Status:     "200 OK",
+			Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
+			Body:       io.NopCloser(strings.NewReader(htmlBody)),
+			Request:    r,
+		}, nil
+	})
+	defer func() {
+		http.DefaultTransport = previousTransport
+	}()
+
+	handler := NewLinkHandler()
+	body, _ := json.Marshal(models.LinkPreviewRequest{URL: "http://93.184.216.34/recipe"})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/links/parse-recipe", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	session := &services.Session{
+		UserID:   uuid.New(),
+		Username: "tester",
+		IsAdmin:  false,
+	}
+	ctx := context.WithValue(req.Context(), middleware.UserContextKey, session)
+	req = req.WithContext(ctx)
+
+	recorder := httptest.NewRecorder()
+	handler.ParseRecipe(recorder, req)
+
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status 422, got %d", recorder.Code)
+	}
+
+	var errResp models.ErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &errResp); err != nil {
+		t.Fatalf("failed to parse error response: %v", err)
+	}
+	if errResp.Code != "RECIPE_NOT_FOUND" {
+		t.Fatalf("expected error code RECIPE_NOT_FOUND, got %s", errResp.Code)
+	}
+}
+
 func TestPreviewLinkDisabled(t *testing.T) {
 	configService := services.GetConfigService()
 	disabled := false

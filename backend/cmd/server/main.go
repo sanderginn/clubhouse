@@ -348,6 +348,7 @@ func main() {
 
 	// Link preview route (protected with CSRF - POST only, prevents SSRF)
 	mux.Handle("/api/v1/links/preview", requireAuthCSRF(http.HandlerFunc(linkHandler.PreviewLink)))
+	mux.Handle("/api/v1/links/parse-recipe", requireAuthCSRF(http.HandlerFunc(linkHandler.ParseRecipe)))
 	mux.Handle("/api/v1/metrics/vitals", requireAuth(http.HandlerFunc(frontendMetricsHandler.RecordFrontendMetrics)))
 
 	// Notification routes (protected)
