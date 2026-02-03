@@ -5,6 +5,7 @@
     "description": "Work queue for parallel issue assignment with dependency tracking"
   },
   "completed_issues": [
+    745,
     748,
     750,
     754
@@ -43,7 +44,7 @@
     {
       "issue_number": 745,
       "title": "Fix \"I cooked this\" rating stars not displaying during selection",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -54,7 +55,9 @@
       "assigned_to": "agent-1770135357-38121",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770135357-38121",
       "branch": "fix/issue-745-fix-i-cooked-this-rating-stars-not-displ",
-      "claimed_at": "2026-02-03T16:15:57Z"
+      "claimed_at": "2026-02-03T16:15:57Z",
+      "pr_number": 763,
+      "completed_at": "2026-02-03T16:26:24Z"
     },
     {
       "issue_number": 746,
