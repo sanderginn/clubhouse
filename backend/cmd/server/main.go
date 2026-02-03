@@ -147,6 +147,7 @@ func main() {
 	commentHandler := handlers.NewCommentHandler(dbConn, redisConn, pushService)
 	adminHandler := handlers.NewAdminHandler(dbConn, redisConn)
 	reactionHandler := handlers.NewReactionHandler(dbConn, redisConn, pushService)
+	cookLogHandler := handlers.NewCookLogHandler(dbConn)
 	userHandler := handlers.NewUserHandler(dbConn)
 	sectionHandler := handlers.NewSectionHandler(dbConn)
 	searchHandler := handlers.NewSearchHandler(dbConn)
@@ -288,6 +289,10 @@ func main() {
 		addReactionToPost:      reactionHandler.AddReactionToPost,
 		removeReactionFromPost: reactionHandler.RemoveReactionFromPost,
 		getReactions:           reactionHandler.GetPostReactions,
+		logCook:                cookLogHandler.LogCook,
+		updateCookLog:          cookLogHandler.UpdateCookLog,
+		removeCookLog:          cookLogHandler.RemoveCookLog,
+		getCookLogs:            cookLogHandler.GetPostCookLogs,
 		getPost:                postHandler.GetPost,
 		updatePost:             postHandler.UpdatePost,
 		deletePost:             postHandler.DeletePost,
@@ -308,6 +313,9 @@ func main() {
 
 	// Search routes (protected)
 	mux.Handle("/api/v1/search", requireAuth(http.HandlerFunc(searchHandler.Search)))
+
+	// Cook log routes (protected)
+	mux.Handle("/api/v1/me/cook-logs", requireAuth(http.HandlerFunc(cookLogHandler.GetMyCookLogs)))
 
 	// Link preview route (protected with CSRF - POST only, prevents SSRF)
 	mux.Handle("/api/v1/links/preview", requireAuthCSRF(http.HandlerFunc(linkHandler.PreviewLink)))

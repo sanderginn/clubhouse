@@ -77,4 +77,5 @@ type GetPostCookInfoResponse struct {
 // ListCookLogsResponse represents the response for listing cook logs.
 type ListCookLogsResponse struct {
 	CookLogs []CookLogWithPost `json:"cook_logs"`
+	Meta     PageMeta          `json:"meta"`
 }
