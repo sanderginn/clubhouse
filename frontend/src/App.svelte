@@ -6,6 +6,7 @@
   import MusicLinksContainer from './components/MusicLinksContainer.svelte';
   import ThreadView from './components/ThreadView.svelte';
   import UserProfile from './components/UserProfile.svelte';
+  import Cookbook from './components/recipes/Cookbook.svelte';
   import { Login, Register, AdminPanel, PasswordReset, Settings } from './routes';
   import {
     authStore,
@@ -340,6 +341,12 @@
             <span class="text-3xl">{$activeSection.icon}</span>
             <h1 class="text-2xl font-bold text-gray-900">{$activeSection.name}</h1>
           </div>
+
+          {#if $activeSection.type === 'recipe'}
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <Cookbook />
+            </div>
+          {/if}
 
           <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <PostForm />
