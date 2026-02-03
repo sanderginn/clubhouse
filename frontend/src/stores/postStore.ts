@@ -22,6 +22,29 @@ export interface LinkMetadata {
   duration?: number;
   embedUrl?: string;
   type?: string;
+  recipe?: RecipeMetadata;
+}
+
+export interface RecipeNutritionInfo {
+  calories?: string;
+  servings?: string;
+}
+
+export interface RecipeMetadata {
+  name?: string;
+  description?: string;
+  image?: string;
+  ingredients?: string[];
+  instructions?: string[];
+  prep_time?: string;
+  cook_time?: string;
+  total_time?: string;
+  yield?: string;
+  author?: string;
+  date_published?: string;
+  cuisine?: string;
+  category?: string;
+  nutrition?: RecipeNutritionInfo;
 }
 
 export interface PostImage {

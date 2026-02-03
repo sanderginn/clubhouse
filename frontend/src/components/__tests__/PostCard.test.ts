@@ -79,6 +79,34 @@ describe('PostCard', () => {
     expect(screen.getByText('Example')).toBeInTheDocument();
   });
 
+  it('renders recipe card when recipe metadata present', () => {
+    const postWithRecipe: Post = {
+      ...basePost,
+      links: [
+        {
+          url: 'https://example.com/recipe',
+          metadata: {
+            url: 'https://example.com/recipe',
+            title: 'Example Recipe',
+            image: 'https://example.com/recipe.jpg',
+            recipe: {
+              name: 'Tomato Soup',
+              prep_time: '10m',
+              cook_time: '20m',
+              yield: '2',
+              ingredients: ['Tomatoes', 'Salt'],
+              instructions: ['Simmer', 'Serve'],
+            },
+          },
+        },
+      ],
+    };
+
+    render(PostCard, { post: postWithRecipe });
+    expect(screen.getByText('Tomato Soup')).toBeInTheDocument();
+    expect(screen.getByText('View Recipe')).toBeInTheDocument();
+  });
+
   it('renders highlights when link includes them', () => {
     const postWithHighlights: Post = {
       ...basePost,
