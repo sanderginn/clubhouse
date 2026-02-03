@@ -79,6 +79,35 @@ describe('PostCard', () => {
     expect(screen.getByText('Example')).toBeInTheDocument();
   });
 
+  it('renders soundcloud embed when embed metadata present', () => {
+    const postWithEmbed: Post = {
+      ...basePost,
+      links: [
+        {
+          url: 'https://soundcloud.com/artist/track',
+          metadata: {
+            url: 'https://soundcloud.com/artist/track',
+            provider: 'soundcloud',
+            title: 'Track Title',
+            embed: {
+              provider: 'soundcloud',
+              embedUrl: 'https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1',
+              height: 166,
+            },
+          },
+        },
+      ],
+    };
+
+    render(PostCard, { post: postWithEmbed });
+    const iframe = screen.getByTestId('soundcloud-embed');
+    expect(iframe).toHaveAttribute(
+      'src',
+      'https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1'
+    );
+    expect(iframe).toHaveAttribute('height', '166');
+  });
+
   it('renders recipe card when recipe metadata present', () => {
     const postWithRecipe: Post = {
       ...basePost,

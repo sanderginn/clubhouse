@@ -4,6 +4,7 @@ import "context"
 
 var embedExtractors = []EmbedExtractor{
 	BandcampExtractor{},
+	NewSoundCloudExtractor(nil),
 }
 
 func extractEmbed(

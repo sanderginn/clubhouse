@@ -189,4 +189,35 @@ describe('mapApiPost', () => {
       'https://bandcamp.com/EmbeddedPlayer/album=123'
     );
   });
+
+  it('normalizes soundcloud embed metadata', () => {
+    const post = mapApiPost({
+      id: 'post-7',
+      user_id: 'user-7',
+      section_id: 'section-7',
+      content: 'hello',
+      created_at: '2025-01-01T00:00:00Z',
+      links: [
+        {
+          id: 'link-7',
+          url: 'https://soundcloud.com/artist/track',
+          metadata: {
+            provider: 'soundcloud',
+            embed: {
+              provider: 'soundcloud',
+              embed_url: 'https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1',
+              height: 166,
+            },
+          },
+        },
+      ],
+    });
+
+    const metadata = post.links?.[0].metadata;
+    expect(metadata?.embedUrl).toBe(
+      'https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1'
+    );
+    expect(metadata?.embed?.provider).toBe('soundcloud');
+    expect(metadata?.embed?.height).toBe(166);
+  });
 });
