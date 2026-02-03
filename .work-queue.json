@@ -1670,7 +1670,7 @@
     {
       "issue_number": 752,
       "title": "Add timestamp click-to-seek functionality for music embeds",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         750
       ],
@@ -1678,7 +1678,11 @@
         "enhancement",
         "frontend"
       ],
-      "priority": 13
+      "priority": 13,
+      "assigned_to": "agent-1770132735-3646",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770132735-3646",
+      "branch": "feat/issue-752-add-timestamp-clicktoseek-functionality-",
+      "claimed_at": "2026-02-03T15:32:15Z"
     },
     {
       "issue_number": 753,
