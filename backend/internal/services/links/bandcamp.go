@@ -46,6 +46,9 @@ func (e BandcampExtractor) ExtractFromHTML(
 		return nil, err
 	}
 	embedURL, height := buildBandcampEmbedURL(content)
+	if err := validateEmbedURL(embedURL); err != nil {
+		return nil, err
+	}
 	return &EmbedData{
 		Type:     "iframe",
 		Provider: "bandcamp",

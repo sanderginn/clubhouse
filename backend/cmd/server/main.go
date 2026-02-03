@@ -445,6 +445,7 @@ func main() {
 	// Apply middleware
 	handler := middleware.ChainMiddleware(mux,
 		middleware.RequestID,
+		middleware.CSPMiddleware,
 		middleware.Observability,
 	)
 

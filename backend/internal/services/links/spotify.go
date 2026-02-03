@@ -41,6 +41,9 @@ func (SpotifyExtractor) Extract(ctx context.Context, rawURL string) (*EmbedData,
 	}
 
 	embedURL := fmt.Sprintf("https://open.spotify.com/embed/%s/%s", content.Type, content.ID)
+	if err := validateEmbedURL(embedURL); err != nil {
+		return nil, err
+	}
 	return &EmbedData{
 		Type:     "iframe",
 		Provider: "spotify",

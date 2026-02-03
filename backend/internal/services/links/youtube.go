@@ -26,10 +26,15 @@ func (YouTubeExtractor) Extract(_ context.Context, rawURL string) (*EmbedData, e
 		return nil, err
 	}
 
+	embedURL := fmt.Sprintf("%s%s", youtubeEmbedBaseURL, videoID)
+	if err := validateEmbedURL(embedURL); err != nil {
+		return nil, err
+	}
+
 	return &EmbedData{
 		Type:     "iframe",
 		Provider: "youtube",
-		EmbedURL: fmt.Sprintf("%s%s", youtubeEmbedBaseURL, videoID),
+		EmbedURL: embedURL,
 	}, nil
 }
 

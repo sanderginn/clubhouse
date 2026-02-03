@@ -16,6 +16,7 @@
     height={resolvedHeight}
     class="w-full"
     loading="lazy"
+    sandbox="allow-scripts allow-same-origin allow-presentation"
     allow="autoplay"
     style="border: 0;"
     data-testid="soundcloud-embed"

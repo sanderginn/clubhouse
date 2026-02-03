@@ -8,6 +8,7 @@
     class="absolute inset-0 h-full w-full"
     src={embedUrl}
     title={title}
+    sandbox="allow-scripts allow-same-origin allow-presentation"
     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
     allowfullscreen
     referrerpolicy="strict-origin-when-cross-origin"
