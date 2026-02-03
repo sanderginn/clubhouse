@@ -223,10 +223,9 @@
           <p class="text-sm font-semibold text-gray-700">Rating</p>
           <div class="mt-2">
             <RatingStars
-              value={ratingValue}
-              onChange={(value) => {
-                ratingValue = value;
-                if (value > 0) {
+              bind:value={ratingValue}
+              on:change={(event) => {
+                if (event.detail > 0) {
                   formError = '';
                 }
               }}
