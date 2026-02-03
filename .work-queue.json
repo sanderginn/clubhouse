@@ -6,6 +6,7 @@
   },
   "completed_issues": [
     742,
+    744,
     745,
     748,
     749,
@@ -36,7 +37,7 @@
     {
       "issue_number": 744,
       "title": "Fix recipe stats not updating after save until page reload",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         742
       ],
@@ -49,7 +50,9 @@
       "assigned_to": "agent-1770138014-6305",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770138014-6305",
       "branch": "fix/issue-744-fix-recipe-stats-not-updating-after-save",
-      "claimed_at": "2026-02-03T17:00:14Z"
+      "claimed_at": "2026-02-03T17:00:14Z",
+      "pr_number": 767,
+      "completed_at": "2026-02-03T17:29:39Z"
     },
     {
       "issue_number": 745,
