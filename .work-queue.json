@@ -1018,7 +1018,7 @@
     {
       "issue_number": 678,
       "title": "Create RecipeSaveButton component",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         676
       ],
@@ -1028,7 +1028,11 @@
         "recipes"
       ],
       "priority": 15,
-      "phase": "recipes-4"
+      "phase": "recipes-4",
+      "assigned_to": "agent-1770107639-48166",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770107639-48166",
+      "branch": "feat/issue-678-create-recipesavebutton-component",
+      "claimed_at": "2026-02-03T08:33:59Z"
     },
     {
       "issue_number": 679,
