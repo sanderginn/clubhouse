@@ -495,7 +495,11 @@ class ApiClient {
 
   async updatePost(
     postId: string,
-    data: { content: string; links?: { url: string }[] | null; mentionUsernames?: string[] }
+    data: {
+      content: string;
+      links?: { url: string; highlights?: { timestamp: number; label?: string }[] }[] | null;
+      mentionUsernames?: string[];
+    }
   ): Promise<{ post: Post }> {
     const response = await this.patch<{ post: ApiPost }>(`/posts/${postId}`, {
       content: data.content,

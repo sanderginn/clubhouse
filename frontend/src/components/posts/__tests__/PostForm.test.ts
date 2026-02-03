@@ -28,13 +28,13 @@ function setAuthenticated() {
   });
 }
 
-function setActiveSection() {
+function setActiveSection(type: 'music' | 'general' = 'music') {
   sectionStore.setActiveSection({
     id: 'section-1',
-    name: 'Music',
-    type: 'music',
-    icon: '🎵',
-    slug: 'music',
+    name: type === 'music' ? 'Music' : 'General',
+    type,
+    icon: type === 'music' ? '🎵' : '💬',
+    slug: type === 'music' ? 'music' : 'general',
   });
 }
 
@@ -235,6 +235,111 @@ describe('PostForm', () => {
       links: [{ url: 'https://example.com' }],
       mentionUsernames: [],
     });
+  });
+
+  it('shows highlight editor only for music sections with a link', async () => {
+    setAuthenticated();
+    setActiveSection('general');
+    previewLink.mockResolvedValue({
+      metadata: {
+        url: 'https://example.com',
+        title: 'Example',
+      },
+    });
+
+    render(PostForm);
+
+    const addLinkButton = screen.getByLabelText('Add link');
+    await fireEvent.click(addLinkButton);
+
+    const linkInput = screen.getByLabelText('Link URL');
+    await fireEvent.input(linkInput, { target: { value: 'example.com' } });
+    await fireEvent.keyDown(linkInput, { key: 'Enter' });
+    await tick();
+
+    expect(screen.queryByLabelText('Timestamp (mm:ss)')).not.toBeInTheDocument();
+
+    setActiveSection();
+    await tick();
+
+    expect(screen.getByLabelText('Timestamp (mm:ss)')).toBeInTheDocument();
+  });
+
+  it('includes highlights in link payload when added', async () => {
+    setAuthenticated();
+    setActiveSection();
+    previewLink.mockResolvedValue({
+      metadata: {
+        url: 'https://example.com',
+        title: 'Example',
+      },
+    });
+    createPost.mockResolvedValue({
+      post: { id: 'post-1', userId: 'user-1', sectionId: 'section-1', content: '', createdAt: 'now' },
+    });
+
+    const { container } = render(PostForm);
+    const addLinkButton = screen.getByLabelText('Add link');
+    await fireEvent.click(addLinkButton);
+
+    const linkInput = screen.getByLabelText('Link URL');
+    await fireEvent.input(linkInput, { target: { value: 'example.com' } });
+    await fireEvent.keyDown(linkInput, { key: 'Enter' });
+    await tick();
+
+    const timestampInput = screen.getByLabelText('Timestamp (mm:ss)');
+    const labelInput = screen.getByLabelText('Label (optional)');
+    await fireEvent.input(timestampInput, { target: { value: '01:30' } });
+    await fireEvent.input(labelInput, { target: { value: 'Intro' } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Add highlight' }));
+
+    const form = container.querySelector('form');
+    if (!form) throw new Error('form not found');
+    await fireEvent.submit(form);
+    await tick();
+
+    expect(createPost).toHaveBeenCalledWith({
+      sectionId: 'section-1',
+      content: '',
+      links: [{ url: 'https://example.com', highlights: [{ timestamp: 90, label: 'Intro' }] }],
+      mentionUsernames: [],
+    });
+  });
+
+  it('preserves highlights when link metadata normalizes the url', async () => {
+    setAuthenticated();
+    setActiveSection();
+
+    let resolvePreview: ((value: { metadata: { url: string; title: string } }) => void) | null =
+      null;
+    previewLink.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePreview = resolve;
+        })
+    );
+
+    render(PostForm);
+
+    const addLinkButton = screen.getByLabelText('Add link');
+    await fireEvent.click(addLinkButton);
+
+    const linkInput = screen.getByLabelText('Link URL');
+    await fireEvent.input(linkInput, { target: { value: 'example.com' } });
+    await fireEvent.keyDown(linkInput, { key: 'Enter' });
+    await tick();
+
+    const timestampInput = screen.getByLabelText('Timestamp (mm:ss)');
+    await fireEvent.input(timestampInput, { target: { value: '00:30' } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Add highlight' }));
+
+    if (!resolvePreview) {
+      throw new Error('preview resolver not set');
+    }
+    resolvePreview({ metadata: { url: 'https://example.com/', title: 'Example' } });
+    await tick();
+
+    expect(screen.getByText('00:30')).toBeInTheDocument();
   });
 
   it('handles file attachments', async () => {

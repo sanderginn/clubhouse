@@ -49,3 +49,31 @@ test('create text-only post', async ({ page }) => {
 
   await expect(page.getByText(content)).toBeVisible();
 });
+
+test('create post with highlights', async ({ page }) => {
+  await login(page);
+  const nav = page.getByRole('navigation', { name: 'Main navigation' });
+  const sectionButton = nav.getByRole('button', { name: sectionName });
+  await expect(sectionButton).toBeVisible();
+  await sectionButton.click();
+
+  const content = `E2E highlight post ${Date.now()}`;
+  await page.getByLabel('Post content').fill(content);
+
+  await page.getByRole('button', { name: 'Add link' }).click();
+  const linkInput = page.getByLabel('Link URL');
+  await linkInput.fill('https://example.com');
+  await linkInput.press('Enter');
+
+  const timestampInput = page.getByLabel('Timestamp (mm:ss)');
+  await expect(timestampInput).toBeVisible();
+  await timestampInput.fill('01:15');
+  await page.getByLabel('Label (optional)').fill('Intro');
+  await page.getByRole('button', { name: 'Add highlight' }).click();
+
+  await page.getByRole('button', { name: 'Post' }).click();
+
+  await expect(page.getByText(content)).toBeVisible();
+  await expect(page.getByText('01:15')).toBeVisible();
+  await expect(page.getByText('Intro')).toBeVisible();
+});

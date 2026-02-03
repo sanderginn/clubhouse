@@ -1,4 +1,4 @@
-import type { Post, Link, LinkMetadata, PostImage } from './postStore';
+import type { Post, Link, LinkMetadata, PostImage, Highlight } from './postStore';
 
 export interface ApiUser {
   id: string;
@@ -10,6 +10,7 @@ export interface ApiLink {
   id?: string;
   url: string;
   metadata?: Record<string, unknown> | string | null;
+  highlights?: unknown;
 }
 
 export interface ApiPostImage {
@@ -57,6 +58,34 @@ function normalizeNumber(value: unknown): number | undefined {
     return Number.isFinite(parsed) ? parsed : undefined;
   }
   return undefined;
+}
+
+function normalizeHighlights(rawHighlights: unknown): Highlight[] | undefined {
+  if (!Array.isArray(rawHighlights)) {
+    return undefined;
+  }
+
+  const normalized = rawHighlights
+    .map((item) => {
+      if (!item || typeof item !== 'object') {
+        return null;
+      }
+      const record = item as { timestamp?: unknown; label?: unknown };
+      if (typeof record.timestamp !== 'number' || !Number.isFinite(record.timestamp)) {
+        return null;
+      }
+      const label =
+        typeof record.label === 'string' && record.label.trim().length > 0
+          ? record.label
+          : undefined;
+      return {
+        timestamp: record.timestamp,
+        ...(label ? { label } : {}),
+      } as Highlight;
+    })
+    .filter(Boolean) as Highlight[];
+
+  return normalized.length > 0 ? normalized : undefined;
 }
 
 export function normalizeLinkMetadata(
@@ -151,6 +180,7 @@ export function mapApiPost(apiPost: ApiPost): Post {
       id: link.id,
       url: link.url,
       metadata: normalizeLinkMetadata(link.metadata, link.url),
+      highlights: normalizeHighlights(link.highlights),
     })),
     images,
     user: apiPost.user

@@ -55,7 +55,7 @@ export interface Post {
 export interface CreatePostRequest {
   sectionId: string;
   content: string;
-  links?: { url: string }[];
+  links?: { url: string; highlights?: Highlight[] }[];
   images?: { url: string; caption?: string; altText?: string }[];
   mentionUsernames?: string[];
 }
