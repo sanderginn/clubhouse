@@ -1,4 +1,4 @@
-import type { Post, Link, LinkMetadata, PostImage, Highlight } from './postStore';
+import type { Post, Link, LinkMetadata, PostImage, Highlight, RecipeStats } from './postStore';
 
 export interface ApiUser {
   id: string;
@@ -33,8 +33,21 @@ export interface ApiPost {
   comment_count?: number;
   reaction_counts?: Record<string, number>;
   viewer_reactions?: string[];
+  recipe_stats?: ApiRecipeStats | null;
+  recipeStats?: ApiRecipeStats | null;
   created_at: string;
   updated_at?: string;
+}
+
+export interface ApiRecipeStats {
+  save_count?: number | null;
+  cook_count?: number | null;
+  avg_rating?: number | null;
+  average_rating?: number | null;
+  saveCount?: number | null;
+  cookCount?: number | null;
+  avgRating?: number | null;
+  averageRating?: number | null;
 }
 
 function normalizeString(value: unknown): string | undefined {
@@ -58,6 +71,28 @@ function normalizeNumber(value: unknown): number | undefined {
     return Number.isFinite(parsed) ? parsed : undefined;
   }
   return undefined;
+}
+
+function normalizeRecipeStats(rawStats: unknown): RecipeStats | undefined {
+  if (!rawStats || typeof rawStats !== 'object') {
+    return undefined;
+  }
+  const record = rawStats as Record<string, unknown>;
+  const saveCount = normalizeNumber(record.save_count ?? record.saveCount) ?? 0;
+  const cookCount = normalizeNumber(record.cook_count ?? record.cookCount) ?? 0;
+  const averageRating =
+    normalizeNumber(
+      record.avg_rating ??
+        record.avgRating ??
+        record.average_rating ??
+        record.averageRating
+    ) ?? null;
+
+  return {
+    saveCount,
+    cookCount,
+    averageRating,
+  };
 }
 
 function normalizeHighlights(rawHighlights: unknown): Highlight[] | undefined {
@@ -193,6 +228,7 @@ export function mapApiPost(apiPost: ApiPost): Post {
     commentCount: apiPost.comment_count,
     reactionCounts: apiPost.reaction_counts ?? undefined,
     viewerReactions: apiPost.viewer_reactions,
+    recipeStats: normalizeRecipeStats(apiPost.recipe_stats ?? apiPost.recipeStats),
     createdAt: apiPost.created_at,
     updatedAt: apiPost.updated_at,
   };

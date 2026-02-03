@@ -56,6 +56,12 @@ export interface PostImage {
   createdAt?: string;
 }
 
+export interface RecipeStats {
+  saveCount: number;
+  cookCount: number;
+  averageRating: number | null;
+}
+
 export interface Post {
   id: string;
   userId: string;
@@ -71,6 +77,8 @@ export interface Post {
   reactionCounts?: Record<string, number>;
   viewerReactions?: string[];
   commentCount?: number;
+  recipeStats?: RecipeStats;
+  recipe_stats?: RecipeStats;
   createdAt: string;
   updatedAt?: string;
 }

@@ -20,6 +20,7 @@
   import { recordComponentRender } from '../lib/observability/performance';
   import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
   import RecipeCard from './recipes/RecipeCard.svelte';
+  import RecipeStatsBar from './recipes/RecipeStatsBar.svelte';
 
   export let post: Post;
   export let highlightCommentId: string | null = null;
@@ -40,6 +41,7 @@
   $: userReactions = new Set(post.viewerReactions ?? []);
   $: sectionSlug = getSectionSlugById($sections, post.sectionId) ?? post.sectionId;
   $: sectionInfo = $sections.find((s) => s.id === post.sectionId) ?? null;
+  $: recipeStats = post.recipeStats ?? post.recipe_stats ?? null;
   let copiedLink = false;
   let copyTimeout: ReturnType<typeof setTimeout> | null = null;
   let isEditing = false;
@@ -1299,6 +1301,18 @@
           postId={post.id}
         />
       </div>
+
+      {#if sectionInfo?.type === 'recipe'}
+        <div class="mt-3">
+          <RecipeStatsBar
+            postId={post.id}
+            saveCount={recipeStats?.saveCount ?? 0}
+            cookCount={recipeStats?.cookCount ?? 0}
+            averageRating={recipeStats?.averageRating ?? null}
+            showEmpty
+          />
+        </div>
+      {/if}
 
       <div class="mt-4 border-t border-gray-200 pt-4">
         <CommentThread
