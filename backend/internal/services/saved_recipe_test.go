@@ -164,8 +164,8 @@ func TestGetPostSavesIncludesViewer(t *testing.T) {
 	if !info.ViewerSaved {
 		t.Fatalf("expected viewer_saved true")
 	}
-	if info.ViewerCategory == nil || *info.ViewerCategory != defaultRecipeCategory {
-		t.Fatalf("expected viewer category %q, got %v", defaultRecipeCategory, info.ViewerCategory)
+	if len(info.ViewerCategories) != 1 || info.ViewerCategories[0] != defaultRecipeCategory {
+		t.Fatalf("expected viewer category %q, got %v", defaultRecipeCategory, info.ViewerCategories)
 	}
 }
 

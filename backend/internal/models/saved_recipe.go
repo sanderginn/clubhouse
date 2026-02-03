@@ -25,10 +25,10 @@ type RecipeCategory struct {
 
 // PostSaveInfo represents save tooltip data for a post.
 type PostSaveInfo struct {
-	SaveCount      int            `json:"save_count"`
-	Users          []ReactionUser `json:"users"`
-	ViewerSaved    bool           `json:"viewer_saved"`
-	ViewerCategory *string        `json:"viewer_category,omitempty"`
+	SaveCount        int            `json:"save_count"`
+	Users            []ReactionUser `json:"users"`
+	ViewerSaved      bool           `json:"viewer_saved"`
+	ViewerCategories []string       `json:"viewer_categories,omitempty"`
 }
 
 type SavedRecipeCategory struct {
@@ -43,13 +43,12 @@ type SavedRecipeWithPost struct {
 
 // CreateSavedRecipeRequest represents the request body for saving a recipe.
 type CreateSavedRecipeRequest struct {
-	PostID   string  `json:"post_id"`
-	Category *string `json:"category,omitempty"`
+	Categories []string `json:"categories,omitempty"`
 }
 
 // CreateSavedRecipeResponse represents the response for saving a recipe.
 type CreateSavedRecipeResponse struct {
-	SavedRecipe SavedRecipe `json:"saved_recipe"`
+	SavedRecipes []SavedRecipe `json:"saved_recipes"`
 }
 
 // DeleteSavedRecipeResponse represents the response for removing a saved recipe.
@@ -65,7 +64,7 @@ type ListSavedRecipesResponse struct {
 
 // GetPostSaveInfoResponse represents the response for post save tooltip data.
 type GetPostSaveInfoResponse struct {
-	SaveInfo PostSaveInfo `json:"save_info"`
+	PostSaveInfo
 }
 
 // CreateRecipeCategoryRequest represents the request body for creating a recipe category.
