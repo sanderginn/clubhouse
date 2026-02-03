@@ -224,6 +224,48 @@ function createPostStore() {
           };
         }),
       })),
+    updateRecipeSaveCount: (postId: string, delta: number) =>
+      update((state) => ({
+        ...state,
+        posts: state.posts.map((post) => {
+          if (post.id !== postId) {
+            return post;
+          }
+          const currentStats = post.recipeStats ?? post.recipe_stats ?? {
+            saveCount: 0,
+            cookCount: 0,
+            averageRating: null,
+          };
+          const nextSaveCount = Math.max(0, currentStats.saveCount + delta);
+          const nextStats = { ...currentStats, saveCount: nextSaveCount };
+          return {
+            ...post,
+            recipeStats: nextStats,
+            recipe_stats: nextStats,
+          };
+        }),
+      })),
+    setRecipeSaveCount: (postId: string, saveCount: number) =>
+      update((state) => ({
+        ...state,
+        posts: state.posts.map((post) => {
+          if (post.id !== postId) {
+            return post;
+          }
+          const currentStats = post.recipeStats ?? post.recipe_stats ?? {
+            saveCount: 0,
+            cookCount: 0,
+            averageRating: null,
+          };
+          const nextSaveCount = Math.max(0, Number.isFinite(saveCount) ? saveCount : 0);
+          const nextStats = { ...currentStats, saveCount: nextSaveCount };
+          return {
+            ...post,
+            recipeStats: nextStats,
+            recipe_stats: nextStats,
+          };
+        }),
+      })),
     toggleReaction: (postId: string, emoji: string) =>
       update((state) => ({
         ...state,

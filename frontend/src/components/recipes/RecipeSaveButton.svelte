@@ -9,6 +9,7 @@
     type SavedRecipe as StoreSavedRecipe,
     type RecipeCategory as StoreRecipeCategory,
   } from '../../stores/recipeStore';
+  import { postStore } from '../../stores/postStore';
   import { currentUser } from '../../stores/authStore';
 
   export let postId: string;
@@ -203,6 +204,14 @@
     for (const category of toRemove) {
       recipeStore.applyUnsave(postId, category);
     }
+
+    const wasSaved = previous.size > 0;
+    const willBeSaved = next.size > 0;
+    if (!wasSaved && willBeSaved) {
+      postStore.updateRecipeSaveCount(postId, 1);
+    } else if (wasSaved && !willBeSaved) {
+      postStore.updateRecipeSaveCount(postId, -1);
+    }
   }
 
   function revertOptimisticChange(previous: Set<string>, next: Set<string>) {
@@ -215,6 +224,14 @@
 
     for (const category of removed) {
       recipeStore.applySavedRecipes([buildOptimisticRecipe(category)]);
+    }
+
+    const wasSaved = previous.size > 0;
+    const willBeSaved = next.size > 0;
+    if (!wasSaved && willBeSaved) {
+      postStore.updateRecipeSaveCount(postId, -1);
+    } else if (wasSaved && !willBeSaved) {
+      postStore.updateRecipeSaveCount(postId, 1);
     }
   }
 

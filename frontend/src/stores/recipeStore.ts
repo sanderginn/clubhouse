@@ -8,7 +8,7 @@ import {
   type CookLogWithPost as ApiCookLogWithPost,
 } from '../services/api';
 import { mapApiPost, type ApiPost } from './postMapper';
-import type { Post } from './postStore';
+import { postStore, type Post } from './postStore';
 
 const DEFAULT_RECIPE_CATEGORY = 'Uncategorized';
 
@@ -107,6 +107,19 @@ function addSavedRecipeToMap(
   const filtered = existing.filter((item) => item.id !== savedRecipe.id && item.postId !== savedRecipe.postId);
   next.set(savedRecipe.category, [...filtered, savedRecipe]);
   return next;
+}
+
+function getSavedCategoriesForPost(
+  map: Map<string, SavedRecipe[]>,
+  postId: string
+): Set<string> {
+  const categories = new Set<string>();
+  for (const [category, recipes] of map.entries()) {
+    if (recipes.some((recipe) => recipe.postId === postId)) {
+      categories.add(category);
+    }
+  }
+  return categories;
 }
 
 function removeSavedRecipeFromMap(
@@ -257,6 +270,15 @@ function extractCategoryId(payload: unknown): string | null {
   return typeof categoryId === 'string' && categoryId.length > 0 ? categoryId : null;
 }
 
+async function refreshPostSaveCount(postId: string): Promise<void> {
+  try {
+    const response = await api.getPostSaves(postId);
+    postStore.setRecipeSaveCount(postId, response.save_count);
+  } catch {
+    // Ignore transient failures; the next event or refresh will reconcile.
+  }
+}
+
 const initialState: RecipeState = {
   savedRecipes: new Map(),
   categories: [],
@@ -383,17 +405,37 @@ function createRecipeStore() {
       }),
     saveRecipe: async (postId: string, categories: string[]): Promise<void> => {
       try {
+        const existing = getSavedCategoriesForPost(get(recipeStore).savedRecipes, postId);
+        const normalized = categories
+          .map((category) => category.trim())
+          .filter((category) => category.length > 0);
+        const unique = Array.from(new Set(normalized));
+        const wasSaved = existing.size > 0;
+        const willBeSaved = wasSaved || unique.length > 0;
         const response = await api.saveRecipe(postId, categories);
         const savedRecipes = (response.saved_recipes ?? []).map(mapApiSavedRecipe);
         recipeStore.applySavedRecipes(savedRecipes);
+        if (!wasSaved && willBeSaved) {
+          postStore.updateRecipeSaveCount(postId, 1);
+        }
       } catch (error) {
         recipeStore.setError(error instanceof Error ? error.message : 'Failed to save recipe');
       }
     },
     unsaveRecipe: async (postId: string, category?: string): Promise<void> => {
       try {
+        const existing = getSavedCategoriesForPost(get(recipeStore).savedRecipes, postId);
+        const wasSaved = existing.size > 0;
+        const remaining =
+          category === undefined
+            ? 0
+            : existing.size - (existing.has(category) ? 1 : 0);
+        const willBeSaved = remaining > 0;
         await api.unsaveRecipe(postId, category);
         recipeStore.applyUnsave(postId, category);
+        if (wasSaved && !willBeSaved) {
+          postStore.updateRecipeSaveCount(postId, -1);
+        }
       } catch (error) {
         recipeStore.setError(error instanceof Error ? error.message : 'Failed to unsave recipe');
       }
@@ -509,21 +551,25 @@ export const sortedCategories = derived(recipeStore, ($store) =>
   })
 );
 
-export function handleRecipeSavedEvent(payload: unknown): void {
+export async function handleRecipeSavedEvent(payload: unknown): Promise<void> {
   const recipes = extractSavedRecipes(payload).map(mapApiSavedRecipe);
-  if (recipes.length === 0) {
-    return;
+  if (recipes.length > 0) {
+    recipeStore.applySavedRecipes(recipes);
   }
-  recipeStore.applySavedRecipes(recipes);
+  const postId = extractPostId(payload);
+  if (postId) {
+    await refreshPostSaveCount(postId);
+  }
 }
 
-export function handleRecipeUnsavedEvent(payload: unknown): void {
+export async function handleRecipeUnsavedEvent(payload: unknown): Promise<void> {
   const postId = extractPostId(payload);
   if (!postId) {
     return;
   }
   const category = extractCategoryName(payload) ?? undefined;
   recipeStore.applyUnsave(postId, category);
+  await refreshPostSaveCount(postId);
 }
 
 export function handleCookLogCreatedEvent(payload: unknown): void {
