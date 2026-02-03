@@ -227,8 +227,8 @@ func TestCategoryCRUDWithAudit(t *testing.T) {
 	if metadata["category_id"] != category.ID.String() {
 		t.Errorf("expected category_id %s, got %v", category.ID.String(), metadata["category_id"])
 	}
-	if metadata["category_name"] != "Desserts" {
-		t.Errorf("expected category_name Desserts, got %v", metadata["category_name"])
+	if metadata["category_name"] != "Quick Desserts" {
+		t.Errorf("expected category_name Quick Desserts, got %v", metadata["category_name"])
 	}
 }
 
