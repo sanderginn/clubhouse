@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/XSAM/otelsql"
 	"github.com/sanderginn/clubhouse/internal/observability"
@@ -18,7 +19,22 @@ import (
 
 var recordDBQueryError = observability.RecordDBQueryError
 
-var goroutineQueryTypes sync.Map
+const (
+	goroutineQueryTypeTTL        = 2 * time.Minute
+	goroutineQueryTypeMaxEntries = 1024
+)
+
+type goroutineQueryEntry struct {
+	queryType string
+	updatedAt time.Time
+}
+
+var goroutineQueryTypes = struct {
+	mu sync.Mutex
+	m  map[int64]goroutineQueryEntry
+}{
+	m: make(map[int64]goroutineQueryEntry),
+}
 
 func instrumentAttributesGetter(ctx context.Context, method otelsql.Method, query string, _ []driver.NamedValue) []attribute.KeyValue {
 	attrs := make([]attribute.KeyValue, 0, 2)
@@ -67,7 +83,16 @@ func setGoroutineQueryType(queryType string) {
 	if id == 0 {
 		return
 	}
-	goroutineQueryTypes.Store(id, queryType)
+
+	now := time.Now()
+	goroutineQueryTypes.mu.Lock()
+	defer goroutineQueryTypes.mu.Unlock()
+
+	goroutineQueryTypes.m[id] = goroutineQueryEntry{
+		queryType: queryType,
+		updatedAt: now,
+	}
+	cleanupGoroutineQueryTypesLocked(now)
 }
 
 func popGoroutineQueryType() string {
@@ -75,16 +100,15 @@ func popGoroutineQueryType() string {
 	if id == 0 {
 		return ""
 	}
-	value, ok := goroutineQueryTypes.Load(id)
+	goroutineQueryTypes.mu.Lock()
+	defer goroutineQueryTypes.mu.Unlock()
+
+	entry, ok := goroutineQueryTypes.m[id]
 	if !ok {
 		return ""
 	}
-	goroutineQueryTypes.Delete(id)
-	queryType, ok := value.(string)
-	if !ok {
-		return ""
-	}
-	return queryType
+	delete(goroutineQueryTypes.m, id)
+	return entry.queryType
 }
 
 func currentGoroutineID() int64 {
@@ -102,6 +126,33 @@ func currentGoroutineID() int64 {
 		return 0
 	}
 	return id
+}
+
+func cleanupGoroutineQueryTypesLocked(now time.Time) {
+	if len(goroutineQueryTypes.m) == 0 {
+		return
+	}
+
+	for id, entry := range goroutineQueryTypes.m {
+		if now.Sub(entry.updatedAt) > goroutineQueryTypeTTL {
+			delete(goroutineQueryTypes.m, id)
+		}
+	}
+
+	for len(goroutineQueryTypes.m) > goroutineQueryTypeMaxEntries {
+		oldestID := int64(0)
+		oldestTime := now
+		for id, entry := range goroutineQueryTypes.m {
+			if entry.updatedAt.Before(oldestTime) || oldestID == 0 {
+				oldestID = id
+				oldestTime = entry.updatedAt
+			}
+		}
+		if oldestID == 0 {
+			break
+		}
+		delete(goroutineQueryTypes.m, oldestID)
+	}
 }
 
 func queryTypeFromSQL(query string) string {
