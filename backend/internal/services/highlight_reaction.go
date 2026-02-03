@@ -24,7 +24,7 @@ func NewHighlightReactionService(db *sql.DB) *HighlightReactionService {
 	return &HighlightReactionService{db: db}
 }
 
-func (s *HighlightReactionService) AddReaction(ctx context.Context, postID uuid.UUID, highlightID string, userID uuid.UUID) (*models.HighlightReactionResponse, error) {
+func (s *HighlightReactionService) AddReaction(ctx context.Context, postID uuid.UUID, highlightID string, userID uuid.UUID) (*models.HighlightReactionResponse, bool, error) {
 	ctx, span := otel.Tracer("clubhouse.highlight_reactions").Start(ctx, "HighlightReactionService.AddReaction")
 	span.SetAttributes(
 		attribute.String("post_id", postID.String()),
@@ -35,38 +35,47 @@ func (s *HighlightReactionService) AddReaction(ctx context.Context, postID uuid.
 	linkID, highlight, err := s.resolveHighlight(ctx, postID, highlightID)
 	if err != nil {
 		recordSpanError(span, err)
-		return nil, err
+		return nil, false, err
 	}
 
-	_, err = s.db.ExecContext(ctx, `
+	result, err := s.db.ExecContext(ctx, `
 		INSERT INTO highlight_reactions (id, user_id, link_id, highlight_id, created_at)
 		VALUES (gen_random_uuid(), $1, $2, $3, now())
 		ON CONFLICT (user_id, highlight_id) DO NOTHING
 	`, userID, linkID, highlightID)
 	if err != nil {
 		recordSpanError(span, err)
-		return nil, fmt.Errorf("failed to create highlight reaction: %w", err)
+		return nil, false, fmt.Errorf("failed to create highlight reaction: %w", err)
 	}
 
 	state, err := s.getReactionState(ctx, highlightID, userID)
 	if err != nil {
 		recordSpanError(span, err)
-		return nil, err
+		return nil, false, err
 	}
 
-	if err := s.logHighlightReactionAudit(ctx, "add_highlight_reaction", userID, map[string]interface{}{
-		"post_id":      postID.String(),
-		"link_id":      linkID.String(),
-		"highlight_id": highlightID,
-		"timestamp":    highlight.Timestamp,
-		"label":        highlight.Label,
-		"emoji":        highlightReactionEmoji,
-	}); err != nil {
-		recordSpanError(span, err)
-		return nil, err
+	created := false
+	if result != nil {
+		if rows, err := result.RowsAffected(); err == nil && rows > 0 {
+			created = true
+		}
 	}
 
-	return state, nil
+	if created {
+		if err := s.logHighlightReactionAudit(ctx, "add_highlight_reaction", userID, map[string]interface{}{
+			"post_id":      postID.String(),
+			"link_id":      linkID.String(),
+			"highlight_id": highlightID,
+			"timestamp":    highlight.Timestamp,
+			"label":        highlight.Label,
+			"emoji":        highlightReactionEmoji,
+		}); err != nil {
+			recordSpanError(span, err)
+			return nil, false, err
+		}
+	}
+
+	return state, created, nil
 }
 
 func (s *HighlightReactionService) RemoveReaction(ctx context.Context, postID uuid.UUID, highlightID string, userID uuid.UUID) (*models.HighlightReactionResponse, error) {

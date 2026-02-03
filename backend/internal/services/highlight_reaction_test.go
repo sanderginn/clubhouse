@@ -40,7 +40,7 @@ func TestAddHighlightReactionCreatesAuditLog(t *testing.T) {
 	}
 
 	service := NewHighlightReactionService(db)
-	response, err := service.AddReaction(context.Background(), uuid.MustParse(postID), highlightID, uuid.MustParse(userID))
+	response, created, err := service.AddReaction(context.Background(), uuid.MustParse(postID), highlightID, uuid.MustParse(userID))
 	if err != nil {
 		t.Fatalf("AddReaction failed: %v", err)
 	}
@@ -49,6 +49,17 @@ func TestAddHighlightReactionCreatesAuditLog(t *testing.T) {
 	}
 	if !response.ViewerReacted {
 		t.Fatalf("expected viewer reacted true")
+	}
+	if !created {
+		t.Fatalf("expected created to be true")
+	}
+
+	_, created, err = service.AddReaction(context.Background(), uuid.MustParse(postID), highlightID, uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("AddReaction retry failed: %v", err)
+	}
+	if created {
+		t.Fatalf("expected created false on retry")
 	}
 
 	var auditCount int
@@ -94,7 +105,7 @@ func TestRemoveHighlightReactionCreatesAuditLog(t *testing.T) {
 	}
 
 	service := NewHighlightReactionService(db)
-	_, err = service.AddReaction(context.Background(), uuid.MustParse(postID), highlightID, uuid.MustParse(userID))
+	_, _, err = service.AddReaction(context.Background(), uuid.MustParse(postID), highlightID, uuid.MustParse(userID))
 	if err != nil {
 		t.Fatalf("AddReaction failed: %v", err)
 	}

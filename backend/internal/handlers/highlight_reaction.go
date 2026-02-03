@@ -48,7 +48,7 @@ func (h *HighlightReactionHandler) AddHighlightReaction(w http.ResponseWriter, r
 		return
 	}
 
-	response, err := h.service.AddReaction(r.Context(), postID, highlightID, userID)
+	response, created, err := h.service.AddReaction(r.Context(), postID, highlightID, userID)
 	if err != nil {
 		switch err.Error() {
 		case "invalid highlight id":
@@ -61,26 +61,28 @@ func (h *HighlightReactionHandler) AddHighlightReaction(w http.ResponseWriter, r
 		return
 	}
 
-	publishCtx, cancel := publishContext()
-	linkID, _, decodeErr := models.DecodeHighlightID(highlightID)
-	if decodeErr == nil {
-		_ = publishEvent(publishCtx, h.redis, formatChannel(postPrefix, postID), "highlight_reaction_added", highlightReactionEventData{
-			PostID:      postID,
-			LinkID:      linkID,
-			HighlightID: highlightID,
-			UserID:      userID,
-		})
-		if sectionID, err := h.postService.GetSectionIDByPostID(publishCtx, postID); err == nil {
-			_ = publishEvent(publishCtx, h.redis, formatChannel(sectionPrefix, sectionID), "highlight_reaction_added", highlightReactionEventData{
+	if created {
+		publishCtx, cancel := publishContext()
+		linkID, _, decodeErr := models.DecodeHighlightID(highlightID)
+		if decodeErr == nil {
+			_ = publishEvent(publishCtx, h.redis, formatChannel(postPrefix, postID), "highlight_reaction_added", highlightReactionEventData{
 				PostID:      postID,
 				LinkID:      linkID,
 				HighlightID: highlightID,
 				UserID:      userID,
 			})
+			if sectionID, err := h.postService.GetSectionIDByPostID(publishCtx, postID); err == nil {
+				_ = publishEvent(publishCtx, h.redis, formatChannel(sectionPrefix, sectionID), "highlight_reaction_added", highlightReactionEventData{
+					PostID:      postID,
+					LinkID:      linkID,
+					HighlightID: highlightID,
+					UserID:      userID,
+				})
+			}
 		}
+		observability.RecordReactionAdded(publishCtx, "❤️")
+		cancel()
 	}
-	observability.RecordReactionAdded(publishCtx, "❤️")
-	cancel()
 
 	observability.LogInfo(r.Context(), "highlight reaction added",
 		"post_id", postID.String(),

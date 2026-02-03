@@ -2,7 +2,7 @@
 CREATE TABLE highlight_reactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id),
-  link_id UUID NOT NULL REFERENCES links(id),
+  link_id UUID NOT NULL REFERENCES links(id) ON DELETE CASCADE,
   highlight_id TEXT NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT now(),
 
