@@ -6,7 +6,8 @@
   },
   "completed_issues": [
     748,
-    750
+    750,
+    754
   ],
   "issues": [
     {
@@ -175,13 +176,15 @@
     {
       "issue_number": 754,
       "title": "Add track/set length filter to music section",
-      "status": "available",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
         "frontend"
       ],
-      "priority": 15
+      "priority": 15,
+      "pr_number": 761,
+      "completed_at": "2026-02-03T16:21:16Z"
     },
     {
       "issue_number": 755,
