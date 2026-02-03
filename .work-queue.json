@@ -847,7 +847,7 @@
     {
       "issue_number": 669,
       "title": "Implement CookLogService",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         664,
         666
@@ -858,7 +858,11 @@
         "recipes"
       ],
       "priority": 8,
-      "phase": "recipes-2"
+      "phase": "recipes-2",
+      "assigned_to": "agent-1770078671-84848",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770078671-84848",
+      "branch": "feat/issue-669-implement-cooklogservice",
+      "claimed_at": "2026-02-03T00:31:11Z"
     },
     {
       "issue_number": 670,
