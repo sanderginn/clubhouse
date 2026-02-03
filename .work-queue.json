@@ -10,6 +10,7 @@
     748,
     749,
     750,
+    751,
     752,
     754
   ],
@@ -149,7 +150,7 @@
     {
       "issue_number": 751,
       "title": "Add button to trigger recipe parser when adding link to recipe post",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         749
       ],
@@ -162,7 +163,9 @@
       "assigned_to": "agent-1770138016-6456",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770138016-6456",
       "branch": "feat/issue-751-add-button-to-trigger-recipe-parser-when",
-      "claimed_at": "2026-02-03T17:00:16Z"
+      "claimed_at": "2026-02-03T17:00:16Z",
+      "pr_number": 766,
+      "completed_at": "2026-02-03T17:10:45Z"
     },
     {
       "issue_number": 752,
