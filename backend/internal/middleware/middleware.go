@@ -121,6 +121,7 @@ func RequireAuth(redis *redis.Client, db *sql.DB) Middleware {
 			// Get session cookie
 			cookie, err := r.Cookie("session_id")
 			if err != nil {
+				observability.RecordAuthFailure(r.Context(), "missing_session")
 				writeAuthError(r.Context(), w, http.StatusUnauthorized, "NO_SESSION", "Authentication required")
 				return
 			}
@@ -131,6 +132,7 @@ func RequireAuth(redis *redis.Client, db *sql.DB) Middleware {
 			// Validate session
 			session, err := sessionService.GetSession(r.Context(), sessionID)
 			if err != nil {
+				observability.RecordAuthFailure(r.Context(), "invalid_session")
 				writeAuthError(r.Context(), w, http.StatusUnauthorized, "INVALID_SESSION", "Session not found or expired")
 				return
 			}
@@ -139,6 +141,7 @@ func RequireAuth(redis *redis.Client, db *sql.DB) Middleware {
 				suspended, err := userService.IsUserSuspended(r.Context(), session.UserID)
 				if err != nil {
 					_ = sessionService.DeleteSession(r.Context(), sessionID)
+					observability.RecordAuthFailure(r.Context(), "invalid_session")
 					writeAuthError(r.Context(), w, http.StatusUnauthorized, "INVALID_SESSION", "Session not found or expired")
 					return
 				}
@@ -152,6 +155,7 @@ func RequireAuth(redis *redis.Client, db *sql.DB) Middleware {
 							Err:        err,
 						})
 					}
+					observability.RecordAuthFailure(r.Context(), "suspended")
 					writeAuthError(r.Context(), w, http.StatusForbidden, "USER_SUSPENDED", "User account suspended")
 					return
 				}
@@ -183,6 +187,7 @@ func RequireAdmin(redis *redis.Client, db *sql.DB) Middleware {
 			// First, validate authentication
 			cookie, err := r.Cookie("session_id")
 			if err != nil {
+				observability.RecordAuthFailure(r.Context(), "missing_session")
 				writeAuthError(r.Context(), w, http.StatusUnauthorized, "NO_SESSION", "Authentication required")
 				return
 			}
@@ -193,6 +198,7 @@ func RequireAdmin(redis *redis.Client, db *sql.DB) Middleware {
 			// Validate session
 			session, err := sessionService.GetSession(r.Context(), sessionID)
 			if err != nil {
+				observability.RecordAuthFailure(r.Context(), "invalid_session")
 				writeAuthError(r.Context(), w, http.StatusUnauthorized, "INVALID_SESSION", "Session not found or expired")
 				return
 			}
@@ -201,6 +207,7 @@ func RequireAdmin(redis *redis.Client, db *sql.DB) Middleware {
 				suspended, err := userService.IsUserSuspended(r.Context(), session.UserID)
 				if err != nil {
 					_ = sessionService.DeleteSession(r.Context(), sessionID)
+					observability.RecordAuthFailure(r.Context(), "invalid_session")
 					writeAuthError(r.Context(), w, http.StatusUnauthorized, "INVALID_SESSION", "Session not found or expired")
 					return
 				}
@@ -214,6 +221,7 @@ func RequireAdmin(redis *redis.Client, db *sql.DB) Middleware {
 							Err:        err,
 						})
 					}
+					observability.RecordAuthFailure(r.Context(), "suspended")
 					writeAuthError(r.Context(), w, http.StatusForbidden, "USER_SUSPENDED", "User account suspended")
 					return
 				}
