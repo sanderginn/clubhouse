@@ -140,7 +140,15 @@ function normalizeHighlights(rawHighlights: unknown): Highlight[] | undefined {
       if (!item || typeof item !== 'object') {
         return null;
       }
-      const record = item as { timestamp?: unknown; label?: unknown };
+      const record = item as {
+        id?: unknown;
+        timestamp?: unknown;
+        label?: unknown;
+        heart_count?: unknown;
+        heartCount?: unknown;
+        viewer_reacted?: unknown;
+        viewerReacted?: unknown;
+      };
       if (typeof record.timestamp !== 'number' || !Number.isFinite(record.timestamp)) {
         return null;
       }
@@ -148,9 +156,21 @@ function normalizeHighlights(rawHighlights: unknown): Highlight[] | undefined {
         typeof record.label === 'string' && record.label.trim().length > 0
           ? record.label
           : undefined;
+      const id = typeof record.id === 'string' && record.id.trim().length > 0 ? record.id : undefined;
+      const heartCount =
+        normalizeNumber(record.heart_count ?? record.heartCount) ?? undefined;
+      const viewerReacted =
+        typeof record.viewer_reacted === 'boolean'
+          ? record.viewer_reacted
+          : typeof record.viewerReacted === 'boolean'
+            ? record.viewerReacted
+            : undefined;
       return {
         timestamp: record.timestamp,
         ...(label ? { label } : {}),
+        ...(id ? { id } : {}),
+        ...(typeof heartCount === 'number' ? { heartCount } : {}),
+        ...(typeof viewerReacted === 'boolean' ? { viewerReacted } : {}),
       } as Highlight;
     })
     .filter(Boolean) as Highlight[];

@@ -111,6 +111,35 @@ describe('postStore', () => {
     expect(state.posts[0].reactionCounts?.['🔥']).toBeUndefined();
   });
 
+  it('updateHighlightReaction updates counts and viewer state', () => {
+    postStore.setPosts(
+      [
+        {
+          ...basePost,
+          links: [
+            {
+              id: 'link-1',
+              url: 'https://example.com',
+              highlights: [{ id: 'highlight-1', timestamp: 5, heartCount: 0, viewerReacted: false }],
+            },
+          ],
+        },
+      ],
+      null,
+      true
+    );
+
+    postStore.updateHighlightReaction('post-1', 'link-1', 'highlight-1', 1, true);
+    let state = get(postStore);
+    expect(state.posts[0].links?.[0].highlights?.[0].heartCount).toBe(1);
+    expect(state.posts[0].links?.[0].highlights?.[0].viewerReacted).toBe(true);
+
+    postStore.updateHighlightReaction('post-1', 'link-1', 'highlight-1', -1, false);
+    state = get(postStore);
+    expect(state.posts[0].links?.[0].highlights?.[0].heartCount).toBe(0);
+    expect(state.posts[0].links?.[0].highlights?.[0].viewerReacted).toBe(false);
+  });
+
   it('reset restores defaults', () => {
     postStore.setPosts([basePost], 'cursor-1', false);
     postStore.reset();

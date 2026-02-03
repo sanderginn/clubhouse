@@ -296,7 +296,7 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 
 	if req.Links != nil || req.RemoveLinkMetadata {
 		var err error
-		existingLinks, err = s.getPostLinks(ctx, postID)
+		existingLinks, err = s.getPostLinks(ctx, postID, uuid.Nil)
 		if err != nil {
 			recordSpanError(span, err)
 			return nil, fmt.Errorf("failed to fetch post links: %w", err)
@@ -524,7 +524,7 @@ func (s *PostService) GetPostByID(ctx context.Context, postID uuid.UUID, userID 
 	post.User = &user
 
 	// Fetch links for this post
-	links, err := s.getPostLinks(ctx, postID)
+	links, err := s.getPostLinks(ctx, postID, userID)
 	if err != nil {
 		recordSpanError(span, err)
 		return nil, err
@@ -565,7 +565,7 @@ func (s *PostService) GetPostByID(ctx context.Context, postID uuid.UUID, userID 
 }
 
 // getPostLinks retrieves all links for a post
-func (s *PostService) getPostLinks(ctx context.Context, postID uuid.UUID) ([]models.Link, error) {
+func (s *PostService) getPostLinks(ctx context.Context, postID uuid.UUID, viewerID uuid.UUID) ([]models.Link, error) {
 	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.getPostLinks")
 	span.SetAttributes(attribute.String("post_id", postID.String()))
 	defer span.End()
@@ -623,11 +623,122 @@ func (s *PostService) getPostLinks(ctx context.Context, postID uuid.UUID) ([]mod
 		return nil, err
 	}
 
+	if highlightCount > 0 {
+		if err := s.populateHighlightReactions(ctx, links, viewerID); err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+	}
+
 	span.SetAttributes(
 		attribute.Int("link_count", len(links)),
 		attribute.Int("highlight_count", highlightCount),
 	)
 	return links, nil
+}
+
+func (s *PostService) populateHighlightReactions(ctx context.Context, links []models.Link, viewerID uuid.UUID) error {
+	if len(links) == 0 {
+		return nil
+	}
+	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.populateHighlightReactions")
+	defer span.End()
+
+	linkIDs := make([]uuid.UUID, 0, len(links))
+	highlightTotal := 0
+	for i := range links {
+		if len(links[i].Highlights) == 0 {
+			continue
+		}
+		linkIDs = append(linkIDs, links[i].ID)
+		for j := range links[i].Highlights {
+			highlightTotal++
+			highlightID, err := models.EncodeHighlightID(links[i].ID, links[i].Highlights[j])
+			if err != nil {
+				observability.LogWarn(ctx, "failed to encode highlight id", "link_id", links[i].ID.String())
+				continue
+			}
+			links[i].Highlights[j].ID = highlightID
+		}
+	}
+
+	if len(linkIDs) == 0 {
+		return nil
+	}
+
+	counts := make(map[string]int)
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT highlight_id, COUNT(*)
+		FROM highlight_reactions
+		WHERE link_id = ANY($1)
+		GROUP BY highlight_id
+	`, pq.Array(linkIDs))
+	if err != nil {
+		recordSpanError(span, err)
+		return err
+	}
+	for rows.Next() {
+		var highlightID string
+		var count int
+		if err := rows.Scan(&highlightID, &count); err != nil {
+			_ = rows.Close()
+			recordSpanError(span, err)
+			return err
+		}
+		counts[highlightID] = count
+	}
+	if err := rows.Err(); err != nil {
+		_ = rows.Close()
+		recordSpanError(span, err)
+		return err
+	}
+	_ = rows.Close()
+
+	viewerReactions := make(map[string]struct{})
+	if viewerID != uuid.Nil {
+		viewerRows, err := s.db.QueryContext(ctx, `
+			SELECT highlight_id
+			FROM highlight_reactions
+			WHERE user_id = $1 AND link_id = ANY($2)
+		`, viewerID, pq.Array(linkIDs))
+		if err != nil {
+			recordSpanError(span, err)
+			return err
+		}
+		for viewerRows.Next() {
+			var highlightID string
+			if err := viewerRows.Scan(&highlightID); err != nil {
+				_ = viewerRows.Close()
+				recordSpanError(span, err)
+				return err
+			}
+			viewerReactions[highlightID] = struct{}{}
+		}
+		if err := viewerRows.Err(); err != nil {
+			_ = viewerRows.Close()
+			recordSpanError(span, err)
+			return err
+		}
+		_ = viewerRows.Close()
+	}
+
+	for i := range links {
+		for j := range links[i].Highlights {
+			highlightID := links[i].Highlights[j].ID
+			if highlightID == "" {
+				continue
+			}
+			if count, ok := counts[highlightID]; ok {
+				links[i].Highlights[j].HeartCount = count
+			}
+			if _, ok := viewerReactions[highlightID]; ok {
+				links[i].Highlights[j].ViewerReacted = true
+			}
+		}
+	}
+
+	span.SetAttributes(attribute.Int("highlight_count", highlightTotal))
+	return nil
 }
 
 // getPostImages retrieves all images for a post in order.
@@ -740,7 +851,7 @@ func countLinkHighlights(links []models.LinkRequest) int {
 }
 
 func mergeHighlightsIntoMetadata(link models.LinkRequest, fetched models.JSONMap) (models.JSONMap, []models.Highlight) {
-	sortedHighlights := sortHighlights(link.Highlights)
+	sortedHighlights := sortHighlights(sanitizeHighlights(link.Highlights))
 	if len(sortedHighlights) == 0 && len(fetched) == 0 {
 		return nil, sortedHighlights
 	}
@@ -787,6 +898,20 @@ func extractHighlightsFromMetadata(metadata map[string]interface{}) ([]models.Hi
 	return sortHighlights(highlights), nil
 }
 
+func sanitizeHighlights(highlights []models.Highlight) []models.Highlight {
+	if len(highlights) == 0 {
+		return nil
+	}
+	sanitized := make([]models.Highlight, 0, len(highlights))
+	for _, highlight := range highlights {
+		sanitized = append(sanitized, models.Highlight{
+			Timestamp: highlight.Timestamp,
+			Label:     highlight.Label,
+		})
+	}
+	return sanitized
+}
+
 func sortHighlights(highlights []models.Highlight) []models.Highlight {
 	if len(highlights) == 0 {
 		return nil
@@ -806,8 +931,8 @@ func linkRequestsMatchExistingLinks(existing []models.Link, requested []models.L
 		if existing[i].URL != link.URL {
 			return false
 		}
-		existingHighlights := sortHighlights(existing[i].Highlights)
-		requestedHighlights := sortHighlights(link.Highlights)
+		existingHighlights := sortHighlights(sanitizeHighlights(existing[i].Highlights))
+		requestedHighlights := sortHighlights(sanitizeHighlights(link.Highlights))
 		if len(existingHighlights) != len(requestedHighlights) {
 			return false
 		}
@@ -1103,7 +1228,7 @@ func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *
 		post.User = &user
 
 		// Fetch links for this post
-		links, err := s.getPostLinks(ctx, post.ID)
+		links, err := s.getPostLinks(ctx, post.ID, userID)
 		if err != nil {
 			recordSpanError(span, err)
 			return nil, err
@@ -1360,7 +1485,7 @@ func (s *PostService) RestorePost(ctx context.Context, postID uuid.UUID, userID 
 	post.User = &user
 
 	// Fetch links for this post
-	links, err := s.getPostLinks(ctx, postID)
+	links, err := s.getPostLinks(ctx, postID, userID)
 	if err != nil {
 		recordSpanError(span, err)
 		return nil, err
@@ -1459,7 +1584,7 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, targetUserID uuid.UU
 		post.User = &user
 
 		// Fetch links for this post
-		links, err := s.getPostLinks(ctx, post.ID)
+		links, err := s.getPostLinks(ctx, post.ID, viewerID)
 		if err != nil {
 			recordSpanError(span, err)
 			return nil, err

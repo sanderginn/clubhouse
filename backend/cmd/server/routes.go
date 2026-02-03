@@ -10,21 +10,23 @@ import (
 type authMiddleware = middleware.Middleware
 
 type postRouteDeps struct {
-	getThread              http.HandlerFunc
-	restorePost            http.HandlerFunc
-	addReactionToPost      http.HandlerFunc
-	removeReactionFromPost http.HandlerFunc
-	getReactions           http.HandlerFunc
-	saveRecipe             http.HandlerFunc
-	unsaveRecipe           http.HandlerFunc
-	getPostSaves           http.HandlerFunc
-	logCook                http.HandlerFunc
-	updateCookLog          http.HandlerFunc
-	removeCookLog          http.HandlerFunc
-	getCookLogs            http.HandlerFunc
-	getPost                http.HandlerFunc
-	updatePost             http.HandlerFunc
-	deletePost             http.HandlerFunc
+	getThread               http.HandlerFunc
+	restorePost             http.HandlerFunc
+	addHighlightReaction    http.HandlerFunc
+	removeHighlightReaction http.HandlerFunc
+	addReactionToPost       http.HandlerFunc
+	removeReactionFromPost  http.HandlerFunc
+	getReactions            http.HandlerFunc
+	saveRecipe              http.HandlerFunc
+	unsaveRecipe            http.HandlerFunc
+	getPostSaves            http.HandlerFunc
+	logCook                 http.HandlerFunc
+	updateCookLog           http.HandlerFunc
+	removeCookLog           http.HandlerFunc
+	getCookLogs             http.HandlerFunc
+	getPost                 http.HandlerFunc
+	updatePost              http.HandlerFunc
+	deletePost              http.HandlerFunc
 }
 
 func newPostRouteHandler(requireAuth authMiddleware, requireAuthCSRF authMiddleware, deps postRouteDeps) http.Handler {
@@ -37,6 +39,16 @@ func newPostRouteHandler(requireAuth authMiddleware, requireAuthCSRF authMiddlew
 		if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/restore") {
 			// POST /api/v1/posts/{id}/restore
 			requireAuthCSRF(http.HandlerFunc(deps.restorePost)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodPost && isHighlightReactionPath(r.URL.Path) {
+			// POST /api/v1/posts/{id}/highlights/{highlightId}/reactions
+			requireAuthCSRF(http.HandlerFunc(deps.addHighlightReaction)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodDelete && isHighlightReactionPath(r.URL.Path) {
+			// DELETE /api/v1/posts/{id}/highlights/{highlightId}/reactions
+			requireAuthCSRF(http.HandlerFunc(deps.removeHighlightReaction)).ServeHTTP(w, r)
 			return
 		}
 		if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/reactions") {
@@ -142,6 +154,11 @@ func isPostIDPath(path string) bool {
 		return false
 	}
 	return parts[1] == "api" && parts[2] == "v1" && parts[3] == "posts" && parts[4] != ""
+}
+
+func isHighlightReactionPath(path string) bool {
+	trimmed := strings.TrimSuffix(path, "/")
+	return strings.Contains(trimmed, "/highlights/") && strings.HasSuffix(trimmed, "/reactions")
 }
 
 func isCommentIDPath(path string) bool {

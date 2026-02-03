@@ -147,6 +147,7 @@ func main() {
 	commentHandler := handlers.NewCommentHandler(dbConn, redisConn, pushService)
 	adminHandler := handlers.NewAdminHandler(dbConn, redisConn)
 	reactionHandler := handlers.NewReactionHandler(dbConn, redisConn, pushService)
+	highlightReactionHandler := handlers.NewHighlightReactionHandler(dbConn, redisConn)
 	cookLogHandler := handlers.NewCookLogHandler(dbConn, redisConn)
 	userHandler := handlers.NewUserHandler(dbConn)
 	sectionHandler := handlers.NewSectionHandler(dbConn)
@@ -285,21 +286,23 @@ func main() {
 
 	// Post routes - route to appropriate handler
 	postRouteHandler := newPostRouteHandler(requireAuth, requireAuthCSRF, postRouteDeps{
-		getThread:              commentHandler.GetThread,
-		restorePost:            postHandler.RestorePost,
-		addReactionToPost:      reactionHandler.AddReactionToPost,
-		removeReactionFromPost: reactionHandler.RemoveReactionFromPost,
-		getReactions:           reactionHandler.GetPostReactions,
-		saveRecipe:             savedRecipeHandler.SaveRecipe,
-		unsaveRecipe:           savedRecipeHandler.UnsaveRecipe,
-		getPostSaves:           savedRecipeHandler.GetPostSaves,
-		logCook:                cookLogHandler.LogCook,
-		updateCookLog:          cookLogHandler.UpdateCookLog,
-		removeCookLog:          cookLogHandler.RemoveCookLog,
-		getCookLogs:            cookLogHandler.GetPostCookLogs,
-		getPost:                postHandler.GetPost,
-		updatePost:             postHandler.UpdatePost,
-		deletePost:             postHandler.DeletePost,
+		getThread:               commentHandler.GetThread,
+		restorePost:             postHandler.RestorePost,
+		addHighlightReaction:    highlightReactionHandler.AddHighlightReaction,
+		removeHighlightReaction: highlightReactionHandler.RemoveHighlightReaction,
+		addReactionToPost:       reactionHandler.AddReactionToPost,
+		removeReactionFromPost:  reactionHandler.RemoveReactionFromPost,
+		getReactions:            reactionHandler.GetPostReactions,
+		saveRecipe:              savedRecipeHandler.SaveRecipe,
+		unsaveRecipe:            savedRecipeHandler.UnsaveRecipe,
+		getPostSaves:            savedRecipeHandler.GetPostSaves,
+		logCook:                 cookLogHandler.LogCook,
+		updateCookLog:           cookLogHandler.UpdateCookLog,
+		removeCookLog:           cookLogHandler.RemoveCookLog,
+		getCookLogs:             cookLogHandler.GetPostCookLogs,
+		getPost:                 postHandler.GetPost,
+		updatePost:              postHandler.UpdatePost,
+		deletePost:              postHandler.DeletePost,
 	})
 	mux.Handle("/api/v1/posts/", postRouteHandler)
 

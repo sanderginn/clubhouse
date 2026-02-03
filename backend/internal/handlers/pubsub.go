@@ -51,6 +51,13 @@ type reactionEventData struct {
 	Emoji     string     `json:"emoji"`
 }
 
+type highlightReactionEventData struct {
+	PostID      uuid.UUID `json:"post_id"`
+	LinkID      uuid.UUID `json:"link_id"`
+	HighlightID string    `json:"highlight_id"`
+	UserID      uuid.UUID `json:"user_id"`
+}
+
 type recipeSavedEventData struct {
 	PostID     uuid.UUID `json:"post_id"`
 	UserID     uuid.UUID `json:"user_id"`
