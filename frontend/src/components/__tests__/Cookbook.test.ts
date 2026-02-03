@@ -102,6 +102,35 @@ const savedRecipes = new Map<string, SavedRecipe[]>([
   ],
 ]);
 
+const multiCategorySavedRecipes = new Map<string, SavedRecipe[]>([
+  [
+    'Favorites',
+    [
+      {
+        id: 'saved-1',
+        userId: 'user-1',
+        postId: 'post-1',
+        category: 'Favorites',
+        createdAt: '2025-01-02T00:00:00Z',
+        post: postOne,
+      },
+    ],
+  ],
+  [
+    'Weeknight',
+    [
+      {
+        id: 'saved-2',
+        userId: 'user-2',
+        postId: 'post-2',
+        category: 'Weeknight',
+        createdAt: '2025-01-04T00:00:00Z',
+        post: postTwo,
+      },
+    ],
+  ],
+]);
+
 beforeEach(() => {
   postStore.reset();
   recipeStore.reset();
@@ -158,5 +187,24 @@ describe('Cookbook', () => {
 
     expect(screen.getByText('Create your first category')).toBeInTheDocument();
     expect(screen.getByText('No recipes saved here yet')).toBeInTheDocument();
+  });
+
+  it('shows all saved recipes when All recipes is selected', async () => {
+    recipeStore.setCategories([
+      ...categories,
+      { id: 'cat-2', userId: 'user-1', name: 'Weeknight', position: 2, createdAt: '2025-01-02T00:00:00Z' },
+    ]);
+    recipeStore.setSavedRecipes(new Map(multiCategorySavedRecipes));
+
+    render(Cookbook);
+
+    expect(screen.getAllByTestId(/my-recipe-item-/)).toHaveLength(2);
+
+    await fireEvent.click(screen.getByTestId('cookbook-category-Favorites'));
+    expect(screen.getAllByTestId(/my-recipe-item-/)).toHaveLength(1);
+    expect(screen.getByTestId('my-recipe-item-post-1')).toBeInTheDocument();
+
+    await fireEvent.click(screen.getByTestId('cookbook-category-__all__'));
+    expect(screen.getAllByTestId(/my-recipe-item-/)).toHaveLength(2);
   });
 });
