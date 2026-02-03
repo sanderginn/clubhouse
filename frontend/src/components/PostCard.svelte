@@ -22,6 +22,7 @@
   import RecipeCard from './recipes/RecipeCard.svelte';
   import RecipeStatsBar from './recipes/RecipeStatsBar.svelte';
   import BandcampEmbed from '../lib/components/embeds/BandcampEmbed.svelte';
+  import SoundCloudEmbed from '../lib/components/embeds/SoundCloudEmbed.svelte';
 
   export let post: Post;
   export let highlightCommentId: string | null = null;
@@ -37,6 +38,10 @@
     title: string;
     altText?: string;
     link?: Link;
+  };
+  type SoundCloudEmbedData = {
+    embedUrl: string;
+    height?: number;
   };
 
   $: userReactions = new Set(post.viewerReactions ?? []);
@@ -402,6 +407,10 @@
     (metadata.embed.provider ?? '').toLowerCase() === 'bandcamp' &&
     metadata.embed.embedUrl
       ? metadata.embed
+      : undefined;
+  $: soundCloudEmbed =
+    metadata?.embed?.provider === 'soundcloud' && metadata.embed.embedUrl
+      ? ({ ...metadata.embed, embedUrl: metadata.embed.embedUrl } as SoundCloudEmbedData)
       : undefined;
   $: primaryImageUrl = imageItems.length > 0 ? imageItems[0].url : undefined;
   $: isInternalUploadLink =
@@ -1177,7 +1186,13 @@
             <span class="underline">{activeImageLink.url}</span>
           </a>
         {/if}
-        {#if primaryLink && bandcampEmbed}
+        {#if primaryLink && soundCloudEmbed}
+          <SoundCloudEmbed
+            embedUrl={soundCloudEmbed.embedUrl}
+            height={soundCloudEmbed.height}
+            title={metadata?.title}
+          />
+        {:else if primaryLink && bandcampEmbed}
           <BandcampEmbed embed={bandcampEmbed} linkUrl={primaryLink.url} title={metadata?.title} />
         {:else if primaryLink && metadata?.recipe}
           <RecipeCard
@@ -1230,7 +1245,13 @@
           </a>
         {/if}
       {:else if !isEditing && primaryLink && metadata}
-        {#if bandcampEmbed}
+        {#if soundCloudEmbed}
+          <SoundCloudEmbed
+            embedUrl={soundCloudEmbed.embedUrl}
+            height={soundCloudEmbed.height}
+            title={metadata?.title}
+          />
+        {:else if bandcampEmbed}
           <BandcampEmbed embed={bandcampEmbed} linkUrl={primaryLink.url} title={metadata?.title} />
         {:else if metadata.recipe}
           <RecipeCard
