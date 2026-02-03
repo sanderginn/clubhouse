@@ -559,12 +559,14 @@ class ApiClient {
     data: {
       content: string;
       links?: { url: string; highlights?: { timestamp: number; label?: string }[] }[] | null;
+      removeLinkMetadata?: boolean;
       mentionUsernames?: string[];
     }
   ): Promise<{ post: Post }> {
     const response = await this.patch<{ post: ApiPost }>(`/posts/${postId}`, {
       content: data.content,
       links: data.links ?? undefined,
+      remove_link_metadata: data.removeLinkMetadata ?? undefined,
       mention_usernames: data.mentionUsernames ?? [],
     });
     return { post: mapApiPost(response.post) };

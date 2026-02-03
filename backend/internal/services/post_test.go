@@ -628,6 +628,56 @@ func TestUpdatePostCreatesAuditLogWithMetadata(t *testing.T) {
 	}
 }
 
+func TestUpdatePostRemovesLinkMetadata(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "updatelinkremove", "updatelinkremove@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Update Link Section", "general")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Original content")
+
+	linkID := uuid.New()
+	metadata := models.JSONMap{
+		"title": "Example",
+		"type":  "article",
+	}
+	_, err := db.Exec(`
+		INSERT INTO links (id, post_id, url, metadata, created_at)
+		VALUES ($1, $2, $3, $4, now())
+	`, linkID, postID, "https://example.com", metadata)
+	if err != nil {
+		t.Fatalf("failed to insert link metadata: %v", err)
+	}
+
+	service := NewPostService(db)
+	req := &models.UpdatePostRequest{
+		Content:            "Updated content",
+		RemoveLinkMetadata: true,
+	}
+
+	_, err = service.UpdatePost(context.Background(), uuid.MustParse(postID), uuid.MustParse(userID), req)
+	if err != nil {
+		t.Fatalf("UpdatePost failed: %v", err)
+	}
+
+	var linkCount int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM links WHERE post_id = $1`, postID).Scan(&linkCount); err != nil {
+		t.Fatalf("failed to query links: %v", err)
+	}
+	if linkCount != 0 {
+		t.Fatalf("expected links to be removed, found %d", linkCount)
+	}
+
+	var action string
+	if err := db.QueryRow(`
+		SELECT action
+		FROM audit_logs
+		WHERE admin_user_id = $1 AND action = 'remove_link_metadata'
+	`, userID).Scan(&action); err != nil {
+		t.Fatalf("expected removal audit log: %v", err)
+	}
+}
+
 func TestUpdatePostImages(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })

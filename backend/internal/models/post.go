@@ -125,6 +125,8 @@ type UpdatePostRequest struct {
 	Content string              `json:"content"`
 	Links   *[]LinkRequest      `json:"links,omitempty"`
 	Images  *[]PostImageRequest `json:"images,omitempty"`
+	// RemoveLinkMetadata removes the primary link preview from the post.
+	RemoveLinkMetadata bool `json:"remove_link_metadata,omitempty"`
 	// MentionUsernames contains explicitly selected mentions from the client.
 	MentionUsernames []string `json:"mention_usernames,omitempty"`
 }

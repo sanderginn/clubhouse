@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -25,6 +26,8 @@ type PostService struct {
 }
 
 const maxPostImages = 10
+
+var imageLinkPattern = regexp.MustCompile(`(?i)\.(jpg|jpeg|png|gif|webp|bmp|svg|avif|tif|tiff)(?:$|[?#&])`)
 
 // NewPostService creates a new post service
 func NewPostService(db *sql.DB) *PostService {
@@ -253,13 +256,17 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 		attribute.Bool("has_links", req.Links != nil && len(*req.Links) > 0),
 		attribute.Bool("has_images", req.Images != nil && len(*req.Images) > 0),
 		attribute.Int("image_count", imageCount(req.Images)),
+		attribute.Bool("remove_link_metadata", req.RemoveLinkMetadata),
 	)
 
 	trimmedContent := strings.TrimSpace(req.Content)
 	var linkMetadata []models.JSONMap
 	linksChanged := false
+	linkMetadataRemoved := false
 	imagesChanged := false
 	var normalizedImages []models.PostImageRequest
+	var existingLinks []models.Link
+	var removedLink *models.Link
 
 	var ownerID uuid.UUID
 	var previousContent string
@@ -287,6 +294,25 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 		return nil, unauthorizedErr
 	}
 
+	if req.Links != nil || req.RemoveLinkMetadata {
+		var err error
+		existingLinks, err = s.getPostLinks(ctx, postID)
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, fmt.Errorf("failed to fetch post links: %w", err)
+		}
+	}
+
+	if req.RemoveLinkMetadata {
+		removedLink = findPrimaryNonImageLink(existingLinks)
+		if removedLink != nil {
+			linkMetadataRemoved = true
+			if req.Links == nil {
+				linksChanged = true
+			}
+		}
+	}
+
 	if req.Links != nil {
 		highlightCount := countLinkHighlights(*req.Links)
 		if highlightCount > 0 {
@@ -299,12 +325,6 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 				recordSpanError(span, err)
 				return nil, err
 			}
-		}
-
-		existingLinks, err := s.getPostLinks(ctx, postID)
-		if err != nil {
-			recordSpanError(span, err)
-			return nil, fmt.Errorf("failed to fetch post links: %w", err)
 		}
 
 		linksChanged = !linkRequestsMatchExistingLinks(existingLinks, *req.Links)
@@ -376,6 +396,13 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 		}
 	}
 
+	if req.Links == nil && linkMetadataRemoved && removedLink != nil {
+		if _, err := tx.ExecContext(ctx, "DELETE FROM links WHERE id = $1", removedLink.ID); err != nil {
+			recordSpanError(span, err)
+			return nil, fmt.Errorf("failed to delete link metadata: %w", err)
+		}
+	}
+
 	if req.Images != nil && imagesChanged {
 		if _, err := tx.ExecContext(ctx, "DELETE FROM post_images WHERE post_id = $1", postID); err != nil {
 			recordSpanError(span, err)
@@ -406,14 +433,15 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 	}
 
 	metadata := map[string]interface{}{
-		"post_id":          postID.String(),
-		"section_id":       sectionID.String(),
-		"content_excerpt":  truncateAuditExcerpt(trimmedContent),
-		"previous_content": previousContent,
-		"links_changed":    linksChanged,
-		"links_provided":   req.Links != nil,
-		"images_changed":   imagesChanged,
-		"images_provided":  req.Images != nil,
+		"post_id":               postID.String(),
+		"section_id":            sectionID.String(),
+		"content_excerpt":       truncateAuditExcerpt(trimmedContent),
+		"previous_content":      previousContent,
+		"links_changed":         linksChanged,
+		"links_provided":        req.Links != nil,
+		"link_metadata_removed": linkMetadataRemoved,
+		"images_changed":        imagesChanged,
+		"images_provided":       req.Images != nil,
 	}
 	if req.Links != nil {
 		metadata["link_count"] = len(*req.Links)
@@ -426,6 +454,18 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 	if err := auditService.LogAuditWithMetadata(ctx, "update_post", userID, ownerID, metadata); err != nil {
 		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create audit log: %w", err)
+	}
+	if linkMetadataRemoved && removedLink != nil {
+		removalMetadata := map[string]interface{}{
+			"post_id":    postID.String(),
+			"section_id": sectionID.String(),
+			"link_id":    removedLink.ID.String(),
+			"link_url":   removedLink.URL,
+		}
+		if err := auditService.LogAuditWithMetadata(ctx, "remove_link_metadata", userID, ownerID, removalMetadata); err != nil {
+			recordSpanError(span, err)
+			return nil, fmt.Errorf("failed to create link metadata removal audit log: %w", err)
+		}
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -778,6 +818,30 @@ func linkRequestsMatchExistingLinks(existing []models.Link, requested []models.L
 		}
 	}
 	return true
+}
+
+func findPrimaryNonImageLink(links []models.Link) *models.Link {
+	for i := range links {
+		if !isImageLink(links[i]) {
+			return &links[i]
+		}
+	}
+	return nil
+}
+
+func isImageLink(link models.Link) bool {
+	if link.URL == "" {
+		return false
+	}
+	if link.Metadata != nil {
+		if rawType, ok := link.Metadata["type"].(string); ok {
+			normalized := strings.ToLower(rawType)
+			if normalized == "image" || strings.HasPrefix(normalized, "image/") {
+				return true
+			}
+		}
+	}
+	return imageLinkPattern.MatchString(link.URL)
 }
 
 // getPostReactions retrieves reaction counts and viewer reactions for a post
