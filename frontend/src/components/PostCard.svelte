@@ -21,6 +21,7 @@
   import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
   import RecipeCard from './recipes/RecipeCard.svelte';
   import RecipeStatsBar from './recipes/RecipeStatsBar.svelte';
+  import BandcampEmbed from '../lib/components/embeds/BandcampEmbed.svelte';
 
   export let post: Post;
   export let highlightCommentId: string | null = null;
@@ -396,6 +397,12 @@
   $: primaryLink = post.links?.[0];
   $: primaryLinkIsImage = primaryLink ? Boolean(getImageLinkUrl(primaryLink)) : false;
   $: metadata = primaryLink?.metadata;
+  $: bandcampEmbed =
+    metadata?.embed &&
+    (metadata.embed.provider ?? '').toLowerCase() === 'bandcamp' &&
+    metadata.embed.embedUrl
+      ? metadata.embed
+      : undefined;
   $: primaryImageUrl = imageItems.length > 0 ? imageItems[0].url : undefined;
   $: isInternalUploadLink =
     !hasPostImages && imageItems.length > 0 && imageItems[0].link
@@ -1170,7 +1177,9 @@
             <span class="underline">{activeImageLink.url}</span>
           </a>
         {/if}
-        {#if primaryLink && metadata?.recipe}
+        {#if primaryLink && bandcampEmbed}
+          <BandcampEmbed embed={bandcampEmbed} linkUrl={primaryLink.url} title={metadata?.title} />
+        {:else if primaryLink && metadata?.recipe}
           <RecipeCard
             recipe={metadata.recipe}
             sourceUrl={primaryLink.url}
@@ -1221,7 +1230,9 @@
           </a>
         {/if}
       {:else if !isEditing && primaryLink && metadata}
-        {#if metadata.recipe}
+        {#if bandcampEmbed}
+          <BandcampEmbed embed={bandcampEmbed} linkUrl={primaryLink.url} title={metadata?.title} />
+        {:else if metadata.recipe}
           <RecipeCard
             recipe={metadata.recipe}
             sourceUrl={primaryLink.url}

@@ -146,6 +146,9 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 			}
 			metadata["recipe"] = recipe
 		}
+		if embed := extractEmbed(ctx, rawURL, body, metaTags); embed != nil {
+			metadata["embed"] = embed
+		}
 	}
 
 	if _, ok := metadata["image"]; !ok && !isHTML && looksLikeImageURL(u) {
@@ -161,6 +164,57 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	}
 
 	return metadata, nil
+}
+
+func (f *Fetcher) fetchHTML(ctx context.Context, rawURL string) ([]byte, map[string]string, error) {
+	if ctx == nil {
+		return nil, nil, errors.New("context is required")
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, fetchTimeout)
+	defer cancel()
+
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return nil, nil, fmt.Errorf("parse url: %w", err)
+	}
+	if err := f.validateURL(ctx, u); err != nil {
+		return nil, nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, nil, fmt.Errorf("build request: %w", err)
+	}
+	req.Header.Set("User-Agent", "ClubhouseMetadataFetcher/1.0")
+
+	client := f.client
+	if client == nil {
+		client = &http.Client{Timeout: fetchTimeout}
+	}
+	clientCopy := *client
+	clientCopy.CheckRedirect = f.redirectValidator(ctx, client.CheckRedirect)
+
+	resp, err := clientCopy.Do(req)
+	if err != nil {
+		return nil, nil, fmt.Errorf("fetch url: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
+		return nil, nil, fmt.Errorf("unexpected status: %s", resp.Status)
+	}
+
+	contentType := strings.ToLower(resp.Header.Get("Content-Type"))
+	if !strings.Contains(contentType, "text/html") {
+		return nil, nil, errors.New("non-html response")
+	}
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBodyBytes))
+	if err != nil {
+		return nil, nil, fmt.Errorf("read response: %w", err)
+	}
+	metaTags, _ := extractHTMLMeta(body)
+	return body, metaTags, nil
 }
 
 func (f *Fetcher) redirectValidator(ctx context.Context, existing func(req *http.Request, via []*http.Request) error) func(req *http.Request, via []*http.Request) error {
