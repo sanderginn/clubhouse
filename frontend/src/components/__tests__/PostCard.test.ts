@@ -108,6 +108,28 @@ describe('PostCard', () => {
     expect(iframe).toHaveAttribute('height', '166');
   });
 
+  it('renders YouTube embed when metadata includes embed data', () => {
+    const postWithEmbed: Post = {
+      ...basePost,
+      links: [
+        {
+          url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+          metadata: {
+            url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            title: 'Video',
+            embed: {
+              provider: 'youtube',
+              embedUrl: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
+            },
+          },
+        },
+      ],
+    };
+
+    render(PostCard, { post: postWithEmbed });
+    expect(screen.getByTestId('youtube-embed-frame')).toBeInTheDocument();
+  });
+
   it('renders recipe card when recipe metadata present', () => {
     const postWithRecipe: Post = {
       ...basePost,

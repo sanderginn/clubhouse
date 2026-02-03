@@ -24,10 +24,10 @@ const (
 // Fetcher retrieves metadata for links.
 type Fetcher struct {
 	client   *http.Client
-	resolver ipResolver
+	resolver IPResolver
 }
 
-type ipResolver interface {
+type IPResolver interface {
 	LookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error)
 }
 
@@ -43,6 +43,20 @@ func NewFetcher(client *http.Client) *Fetcher {
 }
 
 var defaultFetcher = NewFetcher(nil)
+
+// SetDefaultFetcher overrides the default fetcher (primarily for tests).
+func SetDefaultFetcher(fetcher *Fetcher) {
+	if fetcher == nil {
+		defaultFetcher = NewFetcher(nil)
+		return
+	}
+	defaultFetcher = fetcher
+}
+
+// SetResolver overrides the DNS resolver used by the fetcher.
+func (f *Fetcher) SetResolver(resolver IPResolver) {
+	f.resolver = resolver
+}
 
 // FetchMetadata fetches metadata for a URL using the default fetcher.
 func FetchMetadata(ctx context.Context, rawURL string) (map[string]interface{}, error) {

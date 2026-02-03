@@ -15,6 +15,7 @@
   import { logError } from '../../lib/observability/logger';
   import { recordComponentRender } from '../../lib/observability/performance';
   import SpotifyEmbed from '../../lib/components/embeds/SpotifyEmbed.svelte';
+  import YouTubeEmbed from '../../lib/components/embeds/YouTubeEmbed.svelte';
 
   export let postId: string;
   export let commentCount = 0;
@@ -524,7 +525,12 @@
               {#if editingCommentId !== comment.id && comment.links?.length}
                 {#each comment.links as link (link.url)}
                   <div class="mt-2">
-                    {#if link.metadata}
+                    {#if link.metadata?.embed?.provider === 'youtube' && link.metadata.embed.embedUrl}
+                      <YouTubeEmbed
+                        embedUrl={link.metadata.embed.embedUrl}
+                        title={link.metadata.title || 'YouTube video'}
+                      />
+                    {:else if link.metadata}
                       {@const embedUrl =
                         link.metadata.embed?.embedUrl ??
                         (isSpotifyEmbedUrl(link.metadata.embedUrl) ? link.metadata.embedUrl : undefined)}

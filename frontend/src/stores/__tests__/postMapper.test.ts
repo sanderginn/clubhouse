@@ -48,6 +48,36 @@ describe('mapApiPost', () => {
     expect(post.links?.[0].metadata?.duration).toBe(120);
   });
 
+  it('maps embed metadata', () => {
+    const post = mapApiPost({
+      id: 'post-embed',
+      user_id: 'user-embed',
+      section_id: 'section-embed',
+      content: 'hello',
+      created_at: '2025-01-01T00:00:00Z',
+      links: [
+        {
+          id: 'link-embed',
+          url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+          metadata: {
+            embed: {
+              type: 'iframe',
+              provider: 'youtube',
+              embed_url: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
+              width: 560,
+              height: 315,
+            },
+          },
+        },
+      ],
+    });
+
+    expect(post.links?.[0].metadata?.embed?.provider).toBe('youtube');
+    expect(post.links?.[0].metadata?.embed?.embedUrl).toBe(
+      'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ'
+    );
+  });
+
   it('handles missing user and links gracefully', () => {
     const post = mapApiPost({
       id: 'post-2',
