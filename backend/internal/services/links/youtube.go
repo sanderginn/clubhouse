@@ -88,7 +88,10 @@ func parseYouTubeVideoID(rawURL string) (string, error) {
 
 func isYouTubeHost(host string) bool {
 	host = strings.ToLower(strings.TrimSpace(host))
-	return strings.Contains(host, "youtube.com") || strings.HasSuffix(host, "youtu.be")
+	return host == "youtube.com" ||
+		strings.HasSuffix(host, ".youtube.com") ||
+		host == "youtu.be" ||
+		strings.HasSuffix(host, ".youtu.be")
 }
 
 func firstPathSegment(value string) string {

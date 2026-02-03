@@ -15,6 +15,8 @@ func TestYouTubeExtractorCanExtract(t *testing.T) {
 		{"https://www.youtube.com/watch?v=dQw4w9WgXcQ", true},
 		{"https://youtu.be/dQw4w9WgXcQ", true},
 		{"https://www.youtube.com/embed/dQw4w9WgXcQ", true},
+		{"https://notyoutube.com/watch?v=dQw4w9WgXcQ", false},
+		{"https://youtube.com.evil.com/watch?v=dQw4w9WgXcQ", false},
 		{"https://example.com/watch?v=dQw4w9WgXcQ", false},
 	}
 
