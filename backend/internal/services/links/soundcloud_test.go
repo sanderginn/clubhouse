@@ -49,7 +49,7 @@ func TestSoundCloudExtractorExtract(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = io.WriteString(w, `{
 			"type": "rich",
-			"version": "1.0",
+			"version": 1.0,
 			"title": "Test Track",
 			"author_name": "Artist",
 			"html": "<iframe src=\"`+embedSrc+`\"></iframe>",
