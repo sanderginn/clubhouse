@@ -291,10 +291,10 @@ describe('PostCard', () => {
     authStore.setUser({ id: 'user-1', username: 'Sander', email: 'sander@test.com' });
     render(PostCard, { post: postWithLink });
 
-    const editButton = screen.getByRole('button', { name: 'Edit post' });
+    const editButton = screen.getByRole('button', { name: 'Edit' });
     await fireEvent.click(editButton);
 
-    expect(screen.getByRole('textbox', { name: 'Edit post' })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Edit post content' })).toBeInTheDocument();
   });
 
   it('submits edit form', async () => {
@@ -306,13 +306,13 @@ describe('PostCard', () => {
     authStore.setUser({ id: 'user-1', username: 'Sander', email: 'sander@test.com' });
     render(PostCard, { post: postWithLink });
 
-    const editButton = screen.getByRole('button', { name: 'Edit post' });
+    const editButton = screen.getByRole('button', { name: 'Edit' });
     await fireEvent.click(editButton);
 
-    const textarea = screen.getByRole('textbox', { name: 'Edit post' });
+    const textarea = screen.getByRole('textbox', { name: 'Edit post content' });
     await fireEvent.input(textarea, { target: { value: 'Updated content' } });
 
-    const saveButton = screen.getByRole('button', { name: 'Save post edits' });
+    const saveButton = screen.getByRole('button', { name: 'Save' });
     await fireEvent.click(saveButton);
 
     await tick();
