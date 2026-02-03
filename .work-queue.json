@@ -49,6 +49,7 @@
     667,
     668,
     669,
+    680,
     687,
     693,
     694,
@@ -1016,7 +1017,7 @@
     {
       "issue_number": 680,
       "title": "Create RatingStars component",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -1028,7 +1029,9 @@
       "assigned_to": "agent-1770079188-98564",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770079188-98564",
       "branch": "feat/issue-680-create-ratingstars-component",
-      "claimed_at": "2026-02-03T00:39:48Z"
+      "claimed_at": "2026-02-03T00:39:48Z",
+      "pr_number": 713,
+      "completed_at": "2026-02-03T00:54:02Z"
     },
     {
       "issue_number": 681,
