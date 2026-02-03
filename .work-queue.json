@@ -1383,7 +1383,7 @@
     {
       "issue_number": 730,
       "title": "Add Spotify embed support (backend + frontend)",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         728
       ],
@@ -1392,7 +1392,11 @@
         "backend",
         "frontend"
       ],
-      "priority": 3
+      "priority": 3,
+      "assigned_to": "agent-1770120954-39602",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770120954-39602",
+      "branch": "feat/issue-730-add-spotify-embed-support-backend-fronte",
+      "claimed_at": "2026-02-03T12:15:54Z"
     },
     {
       "issue_number": 731,
