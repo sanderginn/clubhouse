@@ -130,7 +130,7 @@
 
   <form
     on:submit|preventDefault={handleSubmit}
-    class={`absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-md bg-white border border-gray-200 shadow-lg rounded-xl p-3 space-y-3 transform transition-all duration-200 ease-out origin-top-right ${expandedClasses} lg:static lg:mt-0 lg:w-[28rem] lg:shadow-none lg:rounded-lg lg:opacity-100 lg:translate-y-0 lg:scale-100 lg:pointer-events-auto lg:flex lg:items-center lg:gap-3 lg:space-y-0 lg:p-2`}
+    class={`absolute left-1/2 -translate-x-1/2 mt-2 w-[calc(100vw-2rem)] max-w-md bg-white border border-gray-200 shadow-lg rounded-xl p-3 space-y-3 transform transition-all duration-200 ease-out origin-top-right ${expandedClasses} lg:static lg:mt-0 lg:mx-auto lg:w-[28rem] lg:shadow-none lg:rounded-lg lg:opacity-100 lg:translate-y-0 lg:scale-100 lg:pointer-events-auto lg:flex lg:items-center lg:gap-3 lg:space-y-0 lg:p-2`}
     aria-hidden={!isPanelActive}
     inert={!isPanelActive}
   >
