@@ -814,7 +814,7 @@
     {
       "issue_number": 668,
       "title": "Implement SavedRecipeService",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         662,
         663,
@@ -826,7 +826,11 @@
         "recipes"
       ],
       "priority": 7,
-      "phase": "recipes-2"
+      "phase": "recipes-2",
+      "assigned_to": "agent-1770078032-65302",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770078032-65302",
+      "branch": "feat/issue-668-implement-savedrecipeservice",
+      "claimed_at": "2026-02-03T00:20:32Z"
     },
     {
       "issue_number": 669,
