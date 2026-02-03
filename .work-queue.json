@@ -779,7 +779,7 @@
     {
       "issue_number": 666,
       "title": "Add CookLog Go model",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         664
       ],
@@ -789,7 +789,11 @@
         "recipes"
       ],
       "priority": 5,
-      "phase": "recipes-1"
+      "phase": "recipes-1",
+      "assigned_to": "agent-1770078022-64978",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770078022-64978",
+      "branch": "feat/issue-666-add-cooklog-go-model",
+      "claimed_at": "2026-02-03T00:20:22Z"
     },
     {
       "issue_number": 667,
