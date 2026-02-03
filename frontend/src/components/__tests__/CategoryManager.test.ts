@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, cleanup } from '@testing-library/svelte';
+import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import type { RecipeCategory, SavedRecipe } from '../../stores/recipeStore';
 import { recipeStore } from '../../stores/recipeStore';
@@ -115,10 +115,33 @@ describe('CategoryManager', () => {
 
     await fireEvent.click(screen.getByTestId('category-delete-cat-2'));
     expect(screen.getByTestId('category-delete-confirm')).toBeInTheDocument();
+    expect(screen.getByTestId('category-delete-destination')).toHaveValue('Uncategorized');
 
     await fireEvent.click(screen.getByTestId('category-delete-confirm-button'));
 
     expect(deleteSpy).toHaveBeenCalledWith('cat-2');
+  });
+
+  it('moves recipes to a selected destination before deleting', async () => {
+    const saveSpy = vi.spyOn(recipeStore, 'saveRecipe').mockResolvedValue();
+    const unsaveSpy = vi.spyOn(recipeStore, 'unsaveRecipe').mockResolvedValue();
+    const deleteSpy = vi.spyOn(recipeStore, 'deleteCategory').mockResolvedValue();
+
+    render(CategoryManager);
+
+    await fireEvent.click(screen.getByTestId('category-delete-cat-1'));
+    await fireEvent.change(screen.getByTestId('category-delete-destination'), {
+      target: { value: 'Quick' },
+    });
+    await fireEvent.click(screen.getByTestId('category-delete-confirm-button'));
+
+    await waitFor(() => {
+      expect(saveSpy).toHaveBeenCalledWith('post-1', ['Quick']);
+      expect(saveSpy).toHaveBeenCalledWith('post-2', ['Quick']);
+      expect(unsaveSpy).toHaveBeenCalledWith('post-1', 'Favorites');
+      expect(unsaveSpy).toHaveBeenCalledWith('post-2', 'Favorites');
+      expect(deleteSpy).toHaveBeenCalledWith('cat-1');
+    });
   });
 
   it('reorders categories with the move buttons', async () => {

@@ -11,9 +11,12 @@
   let editingCategoryId: string | null = null;
   let editingCategoryName = '';
   let deleteTarget: RecipeCategory | null = null;
+  let deleteDestination = 'Uncategorized';
   let localError: string | null = null;
   let isBusy = false;
   let isReordering = false;
+
+  const DEFAULT_CATEGORY = 'Uncategorized';
 
   $: categories = $sortedCategories;
   $: recipeCounts = new Map<string, number>(
@@ -94,6 +97,7 @@
 
   function startDelete(category: RecipeCategory) {
     deleteTarget = category;
+    deleteDestination = DEFAULT_CATEGORY;
     resetLocalError();
   }
 
@@ -109,6 +113,13 @@
 
     isBusy = true;
     try {
+      if (deleteDestination !== DEFAULT_CATEGORY) {
+        const recipes = $savedRecipesByCategory.get(deleteTarget.name) ?? [];
+        for (const recipe of recipes) {
+          await recipeStore.saveRecipe(recipe.postId, [deleteDestination]);
+          await recipeStore.unsaveRecipe(recipe.postId, deleteTarget.name);
+        }
+      }
       await recipeStore.deleteCategory(deleteTarget.id);
       deleteTarget = null;
       resetLocalError();
@@ -318,7 +329,23 @@
   {#if deleteTarget}
     <div class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-3 text-xs text-red-700" data-testid="category-delete-confirm">
       <p class="font-semibold">Delete "{deleteTarget.name}"?</p>
-      <p class="mt-1">Recipes in this category will move to Uncategorized.</p>
+      <p class="mt-1">Choose where to move recipes in this category.</p>
+      <div class="mt-3 flex flex-wrap items-center gap-2">
+        <label class="text-[11px] font-semibold text-red-700" for="delete-destination">Move to</label>
+        <select
+          id="delete-destination"
+          class="rounded-md border border-red-200 bg-white px-2 py-1 text-xs text-red-700"
+          bind:value={deleteDestination}
+          data-testid="category-delete-destination"
+        >
+          <option value={DEFAULT_CATEGORY}>{DEFAULT_CATEGORY}</option>
+          {#each categories as category (category.id)}
+            {#if category.id !== deleteTarget.id}
+              <option value={category.name}>{category.name}</option>
+            {/if}
+          {/each}
+        </select>
+      </div>
       <div class="mt-3 flex flex-wrap items-center gap-2">
         <button
           type="button"
