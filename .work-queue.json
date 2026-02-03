@@ -55,6 +55,7 @@
     675,
     680,
     687,
+    688,
     693,
     694,
     695,
@@ -1161,7 +1162,7 @@
     {
       "issue_number": 688,
       "title": "[Stretch] Create RecipeCard component for parsed recipe display",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         687
       ],
@@ -1176,7 +1177,9 @@
       "assigned_to": "agent-1770105473-99078",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770105473-99078",
       "branch": "feat/issue-688-stretch-create-recipecard-component-for-",
-      "claimed_at": "2026-02-03T07:57:53Z"
+      "claimed_at": "2026-02-03T07:57:53Z",
+      "pr_number": 719,
+      "completed_at": "2026-02-03T08:20:06Z"
     },
     {
       "issue_number": 693,
