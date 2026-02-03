@@ -236,6 +236,15 @@ func TestFetchMetadataBandcampEmbed(t *testing.T) {
 
 	fetcher := NewFetcher(&http.Client{
 		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			if ua := r.Header.Get("User-Agent"); !strings.Contains(ua, "Mozilla/5.0") {
+				t.Fatalf("expected bandcamp user-agent to look like a browser, got %q", ua)
+			}
+			if accept := r.Header.Get("Accept"); accept != "text/html,application/xhtml+xml" {
+				t.Fatalf("expected bandcamp accept header, got %q", accept)
+			}
+			if lang := r.Header.Get("Accept-Language"); lang != "en-US,en;q=0.9" {
+				t.Fatalf("expected bandcamp accept-language header, got %q", lang)
+			}
 			return &http.Response{
 				StatusCode: http.StatusOK,
 				Status:     "200 OK",
@@ -265,6 +274,49 @@ func TestFetchMetadataBandcampEmbed(t *testing.T) {
 	}
 	if embed.Height != bandcampAlbumHeight {
 		t.Fatalf("height = %v, want %d", embed.Height, bandcampAlbumHeight)
+	}
+}
+
+func TestFetchMetadataRetriesOnServerError(t *testing.T) {
+	htmlBody := `<!doctype html><html><head><title>Retry Title</title></head></html>`
+	attempts := 0
+
+	fetcher := NewFetcher(&http.Client{
+		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			attempts++
+			if attempts == 1 {
+				return &http.Response{
+					StatusCode: http.StatusServiceUnavailable,
+					Status:     "503 Service Unavailable",
+					Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
+					Body:       io.NopCloser(strings.NewReader("unavailable")),
+					Request:    r,
+				}, nil
+			}
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Status:     "200 OK",
+				Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
+				Body:       io.NopCloser(strings.NewReader(htmlBody)),
+				Request:    r,
+			}, nil
+		}),
+	})
+	fetcher.resolver = fakeResolver{
+		addrs: map[string][]net.IPAddr{
+			"example.com": {{IP: net.ParseIP("93.184.216.34")}},
+		},
+	}
+
+	metadata, err := fetcher.Fetch(context.Background(), "https://example.com/retry")
+	if err != nil {
+		t.Fatalf("FetchMetadata error: %v", err)
+	}
+	if attempts < 2 {
+		t.Fatalf("expected retry attempts, got %d", attempts)
+	}
+	if metadata["title"] != "Retry Title" {
+		t.Fatalf("expected title metadata after retry, got %v", metadata["title"])
 	}
 }
 
