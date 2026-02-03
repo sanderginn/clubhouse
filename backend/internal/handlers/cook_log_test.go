@@ -21,7 +21,7 @@ func TestCookLogHandlerLogCook(t *testing.T) {
 	sectionID := testutil.CreateTestSection(t, db, "Recipe Section", "recipe")
 	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Test recipe")
 
-	handler := NewCookLogHandler(db)
+	handler := NewCookLogHandler(db, nil)
 
 	body := bytes.NewBufferString(`{"rating":5,"notes":"Added extra garlic"}`)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/posts/"+postID+"/cook-log", body)
@@ -49,6 +49,120 @@ func TestCookLogHandlerLogCook(t *testing.T) {
 	}
 }
 
+func TestCookLogPublishesSectionEvent(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+	testutil.CleanupRedis(t)
+
+	redisClient := testutil.GetTestRedis(t)
+
+	userID := testutil.CreateTestUser(t, db, "cooklogeventuser", "cooklogevent@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Recipe Section", "recipe")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Test recipe")
+
+	channel := formatChannel(sectionPrefix, sectionID)
+	pubsub := subscribeTestChannel(t, redisClient, channel)
+
+	handler := NewCookLogHandler(db, redisClient)
+
+	body := bytes.NewBufferString(`{"rating":4,"notes":"Nice"}`)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/posts/"+postID+"/cook-log", body)
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(createTestUserContext(req.Context(), uuid.MustParse(userID), "cooklogeventuser", false))
+	w := httptest.NewRecorder()
+
+	handler.LogCook(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d. Body: %s", w.Code, w.Body.String())
+	}
+
+	event := receiveEvent(t, pubsub)
+	if event.Type != "recipe_cooked" {
+		t.Fatalf("expected recipe_cooked event, got %s", event.Type)
+	}
+
+	dataBytes, err := json.Marshal(event.Data)
+	if err != nil {
+		t.Fatalf("failed to marshal event data: %v", err)
+	}
+
+	var payload recipeCookedEventData
+	if err := json.Unmarshal(dataBytes, &payload); err != nil {
+		t.Fatalf("failed to unmarshal recipe cooked payload: %v", err)
+	}
+
+	if payload.PostID.String() != postID {
+		t.Fatalf("expected post_id %s, got %s", postID, payload.PostID.String())
+	}
+	if payload.UserID.String() != userID {
+		t.Fatalf("expected user_id %s, got %s", userID, payload.UserID.String())
+	}
+	if payload.Username != "cooklogeventuser" {
+		t.Fatalf("expected username cooklogeventuser, got %s", payload.Username)
+	}
+	if payload.Rating != 4 {
+		t.Fatalf("expected rating 4, got %d", payload.Rating)
+	}
+}
+
+func TestCookLogRemovePublishesSectionEvent(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+	testutil.CleanupRedis(t)
+
+	redisClient := testutil.GetTestRedis(t)
+
+	userID := testutil.CreateTestUser(t, db, "cooklogremoveevent", "cooklogremove@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Recipe Section", "recipe")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Test recipe")
+
+	logID := uuid.New()
+	if _, err := db.Exec(`
+		INSERT INTO cook_logs (id, user_id, post_id, rating, created_at)
+		VALUES ($1, $2, $3, $4, now())
+	`, logID, userID, postID, 5); err != nil {
+		t.Fatalf("failed to create cook log: %v", err)
+	}
+
+	channel := formatChannel(sectionPrefix, sectionID)
+	pubsub := subscribeTestChannel(t, redisClient, channel)
+
+	handler := NewCookLogHandler(db, redisClient)
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/posts/"+postID+"/cook-log", nil)
+	req = req.WithContext(createTestUserContext(req.Context(), uuid.MustParse(userID), "cooklogremoveevent", false))
+	w := httptest.NewRecorder()
+
+	handler.RemoveCookLog(w, req)
+
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("expected status 204, got %d. Body: %s", w.Code, w.Body.String())
+	}
+
+	event := receiveEvent(t, pubsub)
+	if event.Type != "recipe_cook_removed" {
+		t.Fatalf("expected recipe_cook_removed event, got %s", event.Type)
+	}
+
+	dataBytes, err := json.Marshal(event.Data)
+	if err != nil {
+		t.Fatalf("failed to marshal event data: %v", err)
+	}
+
+	var payload recipeCookRemovedEventData
+	if err := json.Unmarshal(dataBytes, &payload); err != nil {
+		t.Fatalf("failed to unmarshal recipe cook removed payload: %v", err)
+	}
+
+	if payload.PostID.String() != postID {
+		t.Fatalf("expected post_id %s, got %s", postID, payload.PostID.String())
+	}
+	if payload.UserID.String() != userID {
+		t.Fatalf("expected user_id %s, got %s", userID, payload.UserID.String())
+	}
+}
+
 func TestCookLogHandlerUpdateCookLog(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
@@ -65,7 +179,7 @@ func TestCookLogHandlerUpdateCookLog(t *testing.T) {
 		t.Fatalf("failed to create cook log: %v", err)
 	}
 
-	handler := NewCookLogHandler(db)
+	handler := NewCookLogHandler(db, nil)
 
 	body := bytes.NewBufferString(`{"rating":4,"notes":"Updated notes"}`)
 	req := httptest.NewRequest(http.MethodPut, "/api/v1/posts/"+postID+"/cook-log", body)
@@ -106,7 +220,7 @@ func TestCookLogHandlerRemoveCookLog(t *testing.T) {
 		t.Fatalf("failed to create cook log: %v", err)
 	}
 
-	handler := NewCookLogHandler(db)
+	handler := NewCookLogHandler(db, nil)
 
 	req := httptest.NewRequest(http.MethodDelete, "/api/v1/posts/"+postID+"/cook-log", nil)
 	req = req.WithContext(createTestUserContext(req.Context(), uuid.MustParse(userID), "cooklogdeleteuser", false))
@@ -147,7 +261,7 @@ func TestCookLogHandlerGetPostCookLogs(t *testing.T) {
 		t.Fatalf("failed to create cook logs: %v", err)
 	}
 
-	handler := NewCookLogHandler(db)
+	handler := NewCookLogHandler(db, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/posts/"+postID+"/cook-logs", nil)
 	req = req.WithContext(createTestUserContext(req.Context(), uuid.MustParse(userID), "cookloglistuser1", false))
@@ -205,7 +319,7 @@ func TestCookLogHandlerGetMyCookLogs(t *testing.T) {
 		t.Fatalf("failed to create cook logs: %v", err)
 	}
 
-	handler := NewCookLogHandler(db)
+	handler := NewCookLogHandler(db, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/me/cook-logs", nil)
 	req = req.WithContext(createTestUserContext(req.Context(), uuid.MustParse(userID), "cooklogmeuser", false))

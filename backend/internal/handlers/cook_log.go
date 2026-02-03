@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/redis/go-redis/v9"
 	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/observability"
@@ -15,12 +16,18 @@ import (
 // CookLogHandler handles cook log endpoints.
 type CookLogHandler struct {
 	cookLogService *services.CookLogService
+	postService    *services.PostService
+	userService    *services.UserService
+	redis          *redis.Client
 }
 
 // NewCookLogHandler creates a new cook log handler.
-func NewCookLogHandler(db *sql.DB) *CookLogHandler {
+func NewCookLogHandler(db *sql.DB, redisClient *redis.Client) *CookLogHandler {
 	return &CookLogHandler{
 		cookLogService: services.NewCookLogService(db),
+		postService:    services.NewPostService(db),
+		userService:    services.NewUserService(db),
+		redis:          redisClient,
 	}
 }
 
@@ -67,6 +74,29 @@ func (h *CookLogHandler) LogCook(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	publishCtx, cancel := publishContext()
+	username := ""
+	if user, err := h.userService.GetUserByID(publishCtx, userID); err == nil {
+		username = user.Username
+	} else {
+		observability.LogWarn(publishCtx, "failed to load user for recipe_cooked event",
+			"user_id", userID.String(),
+			"post_id", postID.String(),
+			"error", err.Error(),
+		)
+	}
+	eventData := recipeCookedEventData{
+		PostID:   postID,
+		UserID:   userID,
+		Username: username,
+		Rating:   cookLog.Rating,
+	}
+	_ = publishEvent(publishCtx, h.redis, formatChannel(postPrefix, postID), "recipe_cooked", eventData)
+	if sectionID, err := h.postService.GetSectionIDByPostID(publishCtx, postID); err == nil {
+		_ = publishEvent(publishCtx, h.redis, formatChannel(sectionPrefix, sectionID), "recipe_cooked", eventData)
+	}
+	cancel()
 
 	observability.RecordCookLogCreated(r.Context())
 	observability.LogInfo(r.Context(), "cook log created",
@@ -199,6 +229,17 @@ func (h *CookLogHandler) RemoveCookLog(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	publishCtx, cancel := publishContext()
+	eventData := recipeCookRemovedEventData{
+		PostID: postID,
+		UserID: userID,
+	}
+	_ = publishEvent(publishCtx, h.redis, formatChannel(postPrefix, postID), "recipe_cook_removed", eventData)
+	if sectionID, err := h.postService.GetSectionIDByPostID(publishCtx, postID); err == nil {
+		_ = publishEvent(publishCtx, h.redis, formatChannel(sectionPrefix, sectionID), "recipe_cook_removed", eventData)
+	}
+	cancel()
 
 	observability.RecordCookLogRemoved(r.Context())
 	observability.LogInfo(r.Context(), "cook log removed",

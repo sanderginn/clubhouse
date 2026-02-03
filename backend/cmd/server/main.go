@@ -147,7 +147,7 @@ func main() {
 	commentHandler := handlers.NewCommentHandler(dbConn, redisConn, pushService)
 	adminHandler := handlers.NewAdminHandler(dbConn, redisConn)
 	reactionHandler := handlers.NewReactionHandler(dbConn, redisConn, pushService)
-	cookLogHandler := handlers.NewCookLogHandler(dbConn)
+	cookLogHandler := handlers.NewCookLogHandler(dbConn, redisConn)
 	userHandler := handlers.NewUserHandler(dbConn)
 	sectionHandler := handlers.NewSectionHandler(dbConn)
 	searchHandler := handlers.NewSearchHandler(dbConn)
@@ -157,7 +157,7 @@ func main() {
 	frontendMetricsHandler := handlers.NewMetricsHandler()
 	pushHandler := handlers.NewPushHandler(dbConn, pushService)
 	uploadHandler := handlers.NewUploadHandler()
-	savedRecipeHandler := handlers.NewSavedRecipeHandler(dbConn)
+	savedRecipeHandler := handlers.NewSavedRecipeHandler(dbConn, redisConn)
 	requireAuth := middleware.RequireAuth(redisConn, dbConn)
 	requireCSRF := middleware.RequireCSRF(redisConn)
 	requireAuthCSRF := func(h http.Handler) http.Handler {
