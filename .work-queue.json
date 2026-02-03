@@ -879,7 +879,7 @@
     {
       "issue_number": 670,
       "title": "Extend PostService to include recipe stats",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         667,
         668,
@@ -891,7 +891,11 @@
         "recipes"
       ],
       "priority": 9,
-      "phase": "recipes-2"
+      "phase": "recipes-2",
+      "assigned_to": "agent-1770079758-16158",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770079758-16158",
+      "branch": "feat/issue-670-extend-postservice-to-include-recipe-sta",
+      "claimed_at": "2026-02-03T00:49:18Z"
     },
     {
       "issue_number": 671,
