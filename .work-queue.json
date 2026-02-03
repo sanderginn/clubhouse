@@ -1470,6 +1470,196 @@
       "claimed_at": "2026-02-03T14:05:52Z",
       "pr_number": 739,
       "completed_at": "2026-02-03T14:25:27Z"
+    },
+    {
+      "issue_number": 740,
+      "title": "Fix SoundCloud oEmbed JSON decode error (version field type mismatch)",
+      "status": "pending",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "backend"
+      ],
+      "priority": 1
+    },
+    {
+      "issue_number": 741,
+      "title": "Fix Bandcamp link metadata fetch 403 Forbidden error",
+      "status": "pending",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "backend"
+      ],
+      "priority": 2
+    },
+    {
+      "issue_number": 742,
+      "title": "Fix Cookbook \"All Recipes\" filter showing no recipes",
+      "status": "pending",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 3
+    },
+    {
+      "issue_number": 743,
+      "title": "Fix search bar alignment (still not centered after PRs #606 and #625)",
+      "status": "pending",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "ui"
+      ],
+      "priority": 4
+    },
+    {
+      "issue_number": 744,
+      "title": "Fix recipe stats not updating after save until page reload",
+      "status": "pending",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 5
+    },
+    {
+      "issue_number": 745,
+      "title": "Fix \"I cooked this\" rating stars not displaying during selection",
+      "status": "pending",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 6
+    },
+    {
+      "issue_number": 746,
+      "title": "Fix \"My Recipes\" metadata card not rendering properly",
+      "status": "pending",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 7
+    },
+    {
+      "issue_number": 747,
+      "title": "Fix \"My Recipes\" not showing ratings in Cookbook",
+      "status": "pending",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 8
+    },
+    {
+      "issue_number": 748,
+      "title": "Fix section-specific component ordering inconsistency",
+      "status": "pending",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "ui"
+      ],
+      "priority": 9
+    },
+    {
+      "issue_number": 749,
+      "title": "Allow removing attached link metadata when editing a post",
+      "status": "pending",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "backend"
+      ],
+      "priority": 10
+    },
+    {
+      "issue_number": 750,
+      "title": "Support hh:mm:ss timestamp format for music links (allow times over 1 hour)",
+      "status": "pending",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "frontend"
+      ],
+      "priority": 11
+    },
+    {
+      "issue_number": 751,
+      "title": "Add button to trigger recipe parser when adding link to recipe post",
+      "status": "pending",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 12
+    },
+    {
+      "issue_number": 752,
+      "title": "Add timestamp click-to-seek functionality for music embeds",
+      "status": "pending",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "frontend"
+      ],
+      "priority": 13
+    },
+    {
+      "issue_number": 753,
+      "title": "Allow heart reactions on music timestamps",
+      "status": "pending",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "frontend"
+      ],
+      "priority": 14
+    },
+    {
+      "issue_number": 754,
+      "title": "Add track/set length filter to music section",
+      "status": "pending",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "frontend"
+      ],
+      "priority": 15
+    },
+    {
+      "issue_number": 755,
+      "title": "Allow comments on music posts with timestamp references",
+      "status": "pending",
+      "dependencies": [
+        752
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "frontend"
+      ],
+      "priority": 16
     }
   ]
 }
