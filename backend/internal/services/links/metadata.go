@@ -285,7 +285,7 @@ func applyRequestHeaders(req *http.Request, u *url.URL) {
 
 func isBandcampHost(host string) bool {
 	normalized := strings.ToLower(strings.TrimSpace(host))
-	return strings.HasSuffix(normalized, "bandcamp.com")
+	return normalized == "bandcamp.com" || strings.HasSuffix(normalized, ".bandcamp.com")
 }
 
 func shouldRetryFetch(ctx context.Context, err error, resp *http.Response) bool {
