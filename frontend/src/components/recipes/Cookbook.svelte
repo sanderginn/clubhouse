@@ -16,10 +16,11 @@
   type TabKey = 'my' | 'all';
   type SortKey = 'rating' | 'date' | 'cooked';
 
-  const ALL_CATEGORY = 'All';
+  const ALL_CATEGORY_VALUE = '__all__';
+  const ALL_CATEGORY_LABEL = 'All recipes';
 
   let activeTab: TabKey = 'my';
-  let selectedCategory = ALL_CATEGORY;
+  let selectedCategory = ALL_CATEGORY_VALUE;
   let isCollapsed = false;
   let sortKey: SortKey = 'rating';
 
@@ -48,7 +49,10 @@
   });
 
   $: categories = $sortedCategories;
-  $: categoryOptions = [ALL_CATEGORY, ...categories.map((category) => category.name)];
+  $: categoryOptions = [
+    { value: ALL_CATEGORY_VALUE, label: ALL_CATEGORY_LABEL },
+    ...categories.map((category) => ({ value: category.name, label: category.name })),
+  ];
   $: categoryCounts = buildCategoryCounts($savedRecipesByCategory);
   $: totalSavedCount = Array.from(categoryCounts.values()).reduce((total, count) => total + count, 0);
   $: selectedSavedRecipes = getSavedRecipesForCategory($savedRecipesByCategory, selectedCategory);
@@ -57,8 +61,11 @@
   $: allRecipeItems = buildAllRecipeItems($posts);
   $: sortedAllRecipes = sortAllRecipes(allRecipeItems, sortKey);
 
-  $: if (selectedCategory !== ALL_CATEGORY && !categoryOptions.includes(selectedCategory)) {
-    selectedCategory = ALL_CATEGORY;
+  $: if (
+    selectedCategory !== ALL_CATEGORY_VALUE &&
+    !categoryOptions.some((option) => option.value === selectedCategory)
+  ) {
+    selectedCategory = ALL_CATEGORY_VALUE;
   }
 
   function buildCategoryCounts(map: Map<string, SavedRecipe[]>): Map<string, number> {
@@ -73,8 +80,12 @@
     map: Map<string, SavedRecipe[]>,
     category: string
   ): SavedRecipe[] {
-    if (category === ALL_CATEGORY) {
-      return Array.from(map.values()).flat();
+    if (category === ALL_CATEGORY_VALUE) {
+      const all: SavedRecipe[] = [];
+      for (const recipes of map.values()) {
+        all.push(...recipes);
+      }
+      return all;
     }
     return map.get(category) ?? [];
   }
@@ -292,8 +303,8 @@
                   data-testid="cookbook-category-select"
                 >
                   {#each categoryOptions as option}
-                    <option value={option}>
-                      {option} {option === ALL_CATEGORY ? `(${totalSavedCount})` : `(${categoryCounts.get(option) ?? 0})`}
+                    <option value={option.value}>
+                      {option.label} {option.value === ALL_CATEGORY_VALUE ? `(${totalSavedCount})` : `(${categoryCounts.get(option.value) ?? 0})`}
                     </option>
                   {/each}
                 </select>
@@ -304,16 +315,18 @@
                   <button
                     type="button"
                     class={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
-                      selectedCategory === option
+                      selectedCategory === option.value
                         ? 'bg-emerald-50 text-emerald-700'
                         : 'text-gray-600 hover:bg-gray-100'
                     }`}
-                    on:click={() => (selectedCategory = option)}
-                    data-testid={`cookbook-category-${option}`}
+                    on:click={() => (selectedCategory = option.value)}
+                    data-testid={`cookbook-category-${option.value}`}
                   >
-                    <span>{option}</span>
+                    <span>{option.label}</span>
                     <span class="rounded-full bg-white px-2 py-0.5 text-[11px] text-gray-500">
-                      {option === ALL_CATEGORY ? totalSavedCount : categoryCounts.get(option) ?? 0}
+                      {option.value === ALL_CATEGORY_VALUE
+                        ? totalSavedCount
+                        : categoryCounts.get(option.value) ?? 0}
                     </span>
                   </button>
                 {/each}
