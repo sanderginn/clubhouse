@@ -60,6 +60,7 @@
     680,
     681,
     685,
+    686,
     687,
     688,
     693,
@@ -1165,7 +1166,7 @@
     {
       "issue_number": 686,
       "title": "Integrate Cookbook into App.svelte for recipe section",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         685
       ],
@@ -1179,7 +1180,9 @@
       "assigned_to": "agent-1770109919-82206",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770109919-82206",
       "branch": "feat/issue-686-integrate-cookbook-into-appsvelte-for-re",
-      "claimed_at": "2026-02-03T09:11:59Z"
+      "claimed_at": "2026-02-03T09:11:59Z",
+      "pr_number": 726,
+      "completed_at": "2026-02-03T09:18:31Z"
     },
     {
       "issue_number": 687,
