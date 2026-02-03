@@ -85,14 +85,18 @@
     {
       "issue_number": 748,
       "title": "Fix section-specific component ordering inconsistency",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "bug",
         "frontend",
         "ui"
       ],
-      "priority": 9
+      "priority": 9,
+      "assigned_to": "agent-1770134869-27321",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770134869-27321",
+      "branch": "fix/issue-748-fix-sectionspecific-component-ordering-i",
+      "claimed_at": "2026-02-03T16:07:49Z"
     },
     {
       "issue_number": 749,
