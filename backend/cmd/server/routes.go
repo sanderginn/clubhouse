@@ -15,6 +15,10 @@ type postRouteDeps struct {
 	addReactionToPost      http.HandlerFunc
 	removeReactionFromPost http.HandlerFunc
 	getReactions           http.HandlerFunc
+	logCook                http.HandlerFunc
+	updateCookLog          http.HandlerFunc
+	removeCookLog          http.HandlerFunc
+	getCookLogs            http.HandlerFunc
 	getPost                http.HandlerFunc
 	updatePost             http.HandlerFunc
 	deletePost             http.HandlerFunc
@@ -45,6 +49,26 @@ func newPostRouteHandler(requireAuth authMiddleware, requireAuthCSRF authMiddlew
 		if r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/reactions") {
 			// GET /api/v1/posts/{id}/reactions
 			requireAuth(http.HandlerFunc(deps.getReactions)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/cook-logs") {
+			// GET /api/v1/posts/{id}/cook-logs
+			requireAuth(http.HandlerFunc(deps.getCookLogs)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/cook-log") {
+			// POST /api/v1/posts/{id}/cook-log
+			requireAuthCSRF(http.HandlerFunc(deps.logCook)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodPut && strings.Contains(r.URL.Path, "/cook-log") {
+			// PUT /api/v1/posts/{id}/cook-log
+			requireAuthCSRF(http.HandlerFunc(deps.updateCookLog)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodDelete && strings.Contains(r.URL.Path, "/cook-log") {
+			// DELETE /api/v1/posts/{id}/cook-log
+			requireAuthCSRF(http.HandlerFunc(deps.removeCookLog)).ServeHTTP(w, r)
 			return
 		}
 		if r.Method == http.MethodPatch && isPostIDPath(r.URL.Path) {

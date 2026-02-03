@@ -37,6 +37,9 @@ type metrics struct {
 	commentsCreated           metric.Int64Counter
 	reactionsAdded            metric.Int64Counter
 	reactionsRemoved          metric.Int64Counter
+	cookLogsCreated           metric.Int64Counter
+	cookLogsUpdated           metric.Int64Counter
+	cookLogsRemoved           metric.Int64Counter
 	postsDeleted              metric.Int64Counter
 	postsRestored             metric.Int64Counter
 	commentsDeleted           metric.Int64Counter
@@ -312,6 +315,33 @@ func initMetrics() error {
 		reactionsRemoved, err := meter.Int64Counter(
 			"clubhouse_reactions_removed_total",
 			metric.WithDescription("Total number of reactions removed"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		cookLogsCreated, err := meter.Int64Counter(
+			"clubhouse_cook_logs_created_total",
+			metric.WithDescription("Total number of cook logs created"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		cookLogsUpdated, err := meter.Int64Counter(
+			"clubhouse_cook_logs_updated_total",
+			metric.WithDescription("Total number of cook logs updated"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		cookLogsRemoved, err := meter.Int64Counter(
+			"clubhouse_cook_logs_removed_total",
+			metric.WithDescription("Total number of cook logs removed"),
 		)
 		if err != nil {
 			metricsInitErr = err
@@ -741,6 +771,9 @@ func initMetrics() error {
 			commentsCreated:           commentsCreated,
 			reactionsAdded:            reactionsAdded,
 			reactionsRemoved:          reactionsRemoved,
+			cookLogsCreated:           cookLogsCreated,
+			cookLogsUpdated:           cookLogsUpdated,
+			cookLogsRemoved:           cookLogsRemoved,
 			postsDeleted:              postsDeleted,
 			postsRestored:             postsRestored,
 			commentsDeleted:           commentsDeleted,
@@ -1176,6 +1209,33 @@ func RecordReactionRemoved(ctx context.Context, emoji string) {
 		return
 	}
 	m.reactionsRemoved.Add(ctx, 1, metric.WithAttributes(attribute.String("emoji", emoji)))
+}
+
+// RecordCookLogCreated increments the cook log created counter.
+func RecordCookLogCreated(ctx context.Context) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.cookLogsCreated.Add(ctx, 1)
+}
+
+// RecordCookLogUpdated increments the cook log updated counter.
+func RecordCookLogUpdated(ctx context.Context) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.cookLogsUpdated.Add(ctx, 1)
+}
+
+// RecordCookLogRemoved increments the cook log removed counter.
+func RecordCookLogRemoved(ctx context.Context) {
+	m := getMetrics()
+	if m == nil {
+		return
+	}
+	m.cookLogsRemoved.Add(ctx, 1)
 }
 
 // RecordPostDeleted increments the post deleted counter.

@@ -69,12 +69,8 @@ type DeleteCookLogResponse struct {
 	Message string   `json:"message"`
 }
 
-// GetPostCookInfoResponse represents the response for cook tooltip data.
-type GetPostCookInfoResponse struct {
-	CookInfo PostCookInfo `json:"cook_info"`
-}
-
 // ListCookLogsResponse represents the response for listing cook logs.
 type ListCookLogsResponse struct {
 	CookLogs []CookLogWithPost `json:"cook_logs"`
+	Meta     PageMeta          `json:"meta"`
 }
