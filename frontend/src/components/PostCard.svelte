@@ -19,6 +19,7 @@
   import { logError } from '../lib/observability/logger';
   import { recordComponentRender } from '../lib/observability/performance';
   import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
+  import RecipeCard from './recipes/RecipeCard.svelte';
 
   export let post: Post;
   export let highlightCommentId: string | null = null;
@@ -1167,7 +1168,14 @@
             <span class="underline">{activeImageLink.url}</span>
           </a>
         {/if}
-        {#if primaryLink && metadata && !primaryLinkIsImage}
+        {#if primaryLink && metadata?.recipe}
+          <RecipeCard
+            recipe={metadata.recipe}
+            sourceUrl={primaryLink.url}
+            fallbackImage={metadata.image}
+            fallbackTitle={metadata.title}
+          />
+        {:else if primaryLink && metadata && !primaryLinkIsImage}
           <a
             href={primaryLink.url}
             target="_blank"
@@ -1211,47 +1219,56 @@
           </a>
         {/if}
       {:else if !isEditing && primaryLink && metadata}
-        <a
-          href={primaryLink.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="block rounded-lg border border-gray-200 overflow-hidden hover:border-gray-300 transition-colors"
-        >
-          <div class="flex">
-            {#if metadata.image}
-              <div class="w-24 h-24 flex-shrink-0">
-                <img
-                  src={metadata.image}
-                  alt={metadata.title || 'Link preview'}
-                  class="w-full h-full object-cover"
-                />
-              </div>
-            {/if}
-            <div class="flex-1 p-3 min-w-0">
-              <div class="flex items-center gap-1 mb-1">
-                <span>{getProviderIcon(metadata.provider)}</span>
-                {#if metadata.provider}
-                  <span class="text-xs text-gray-500 capitalize">{metadata.provider}</span>
+        {#if metadata.recipe}
+          <RecipeCard
+            recipe={metadata.recipe}
+            sourceUrl={primaryLink.url}
+            fallbackImage={metadata.image}
+            fallbackTitle={metadata.title}
+          />
+        {:else}
+          <a
+            href={primaryLink.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="block rounded-lg border border-gray-200 overflow-hidden hover:border-gray-300 transition-colors"
+          >
+            <div class="flex">
+              {#if metadata.image}
+                <div class="w-24 h-24 flex-shrink-0">
+                  <img
+                    src={metadata.image}
+                    alt={metadata.title || 'Link preview'}
+                    class="w-full h-full object-cover"
+                  />
+                </div>
+              {/if}
+              <div class="flex-1 p-3 min-w-0">
+                <div class="flex items-center gap-1 mb-1">
+                  <span>{getProviderIcon(metadata.provider)}</span>
+                  {#if metadata.provider}
+                    <span class="text-xs text-gray-500 capitalize">{metadata.provider}</span>
+                  {/if}
+                </div>
+                {#if metadata.title}
+                  <h4 class="font-medium text-gray-900 text-sm truncate">
+                    {metadata.title}
+                  </h4>
+                {/if}
+                {#if metadata.description}
+                  <p class="text-gray-600 text-xs line-clamp-2 mt-0.5">
+                    {metadata.description}
+                  </p>
+                {/if}
+                {#if metadata.author}
+                  <p class="text-gray-500 text-xs mt-1">
+                    by {metadata.author}
+                  </p>
                 {/if}
               </div>
-              {#if metadata.title}
-                <h4 class="font-medium text-gray-900 text-sm truncate">
-                  {metadata.title}
-                </h4>
-              {/if}
-              {#if metadata.description}
-                <p class="text-gray-600 text-xs line-clamp-2 mt-0.5">
-                  {metadata.description}
-                </p>
-              {/if}
-              {#if metadata.author}
-                <p class="text-gray-500 text-xs mt-1">
-                  by {metadata.author}
-                </p>
-              {/if}
             </div>
-          </div>
-        </a>
+          </a>
+        {/if}
       {:else if !isEditing && primaryLink}
         <a
           href={primaryLink.url}
