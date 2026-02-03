@@ -263,12 +263,12 @@ describe('PostForm', () => {
     await fireEvent.keyDown(linkInput, { key: 'Enter' });
     await tick();
 
-    expect(screen.queryByLabelText('Timestamp (mm:ss)')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Timestamp (mm:ss or hh:mm:ss)')).not.toBeInTheDocument();
 
     setActiveSection();
     await tick();
 
-    expect(screen.getByLabelText('Timestamp (mm:ss)')).toBeInTheDocument();
+    expect(screen.getByLabelText('Timestamp (mm:ss or hh:mm:ss)')).toBeInTheDocument();
   });
 
   it('includes highlights in link payload when added', async () => {
@@ -293,7 +293,7 @@ describe('PostForm', () => {
     await fireEvent.keyDown(linkInput, { key: 'Enter' });
     await tick();
 
-    const timestampInput = screen.getByLabelText('Timestamp (mm:ss)');
+    const timestampInput = screen.getByLabelText('Timestamp (mm:ss or hh:mm:ss)');
     const labelInput = screen.getByLabelText('Label (optional)');
     await fireEvent.input(timestampInput, { target: { value: '01:30' } });
     await fireEvent.input(labelInput, { target: { value: 'Intro' } });
@@ -335,7 +335,7 @@ describe('PostForm', () => {
     await fireEvent.keyDown(linkInput, { key: 'Enter' });
     await tick();
 
-    const timestampInput = screen.getByLabelText('Timestamp (mm:ss)');
+    const timestampInput = screen.getByLabelText('Timestamp (mm:ss or hh:mm:ss)');
     await fireEvent.input(timestampInput, { target: { value: '00:30' } });
     await fireEvent.click(screen.getByRole('button', { name: 'Add highlight' }));
 

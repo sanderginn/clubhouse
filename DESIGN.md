@@ -459,7 +459,7 @@ Auth: Required
 Body: {
   sectionId: "uuid",
   content: "text",
-  links: [{ url: "https://..." }]  // optional
+  links: [{ url: "https://...", highlights: [{ timestamp: 90, label: "Intro" }] }]  // optional, timestamp in seconds
 }
 Response: { post: { id, userId, sectionId, content, links, createdAt } }
 ```

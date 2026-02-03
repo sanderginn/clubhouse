@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Highlight } from '../../stores/postStore';
+  import { formatHighlightTimestamp, parseHighlightTimestamp } from '../../lib/highlights';
 
   const maxHighlights = 20;
 
@@ -9,21 +10,6 @@
   let timestampInput = '';
   let labelInput = '';
   let error: string | null = null;
-
-  const formatTimestamp = (seconds: number) => {
-    const safeSeconds = Math.max(0, Math.floor(seconds));
-    const minutes = Math.floor(safeSeconds / 60);
-    const remainder = safeSeconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${remainder.toString().padStart(2, '0')}`;
-  };
-
-  const parseTimestamp = (value: string) => {
-    const match = value.trim().match(/^(\d{1,3}):([0-5]\d)$/);
-    if (!match) return null;
-    const minutes = Number(match[1]);
-    const seconds = Number(match[2]);
-    return minutes * 60 + seconds;
-  };
 
   const isAtMax = () => highlights.length >= maxHighlights;
 
@@ -36,9 +22,9 @@
       return;
     }
 
-    const parsedSeconds = parseTimestamp(timestampInput);
+    const parsedSeconds = parseHighlightTimestamp(timestampInput);
     if (parsedSeconds === null) {
-      error = 'Enter a timestamp in mm:ss format.';
+      error = 'Enter a timestamp in mm:ss or hh:mm:ss format.';
       return;
     }
 
@@ -62,12 +48,12 @@
 <div class="space-y-3">
   <div class="grid gap-3 md:grid-cols-2">
     <div class="space-y-1">
-      <label class="text-xs font-medium text-gray-600" for="highlight-timestamp">Timestamp (mm:ss)</label>
+      <label class="text-xs font-medium text-gray-600" for="highlight-timestamp">Timestamp (mm:ss or hh:mm:ss)</label>
       <input
         id="highlight-timestamp"
         type="text"
         inputmode="numeric"
-        placeholder="03:15"
+        placeholder="03:15 or 1:03:15"
         class="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
         bind:value={timestampInput}
         disabled={disabled}
@@ -112,7 +98,7 @@
         <li class="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 text-sm">
           <div class="flex items-center gap-2">
             <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
-              {formatTimestamp(highlight.timestamp)}
+              {formatHighlightTimestamp(highlight.timestamp)}
             </span>
             {#if highlight.label}
               <span class="text-gray-700">{highlight.label}</span>
@@ -123,7 +109,7 @@
             class="text-xs text-gray-400 hover:text-gray-600"
             on:click={() => removeHighlight(index)}
             disabled={disabled}
-            aria-label={`Remove highlight ${formatTimestamp(highlight.timestamp)}`}
+            aria-label={`Remove highlight ${formatHighlightTimestamp(highlight.timestamp)}`}
           >
             Remove
           </button>
