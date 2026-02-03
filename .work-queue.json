@@ -1401,7 +1401,7 @@
     {
       "issue_number": 731,
       "title": "Add SoundCloud embed support (backend + frontend)",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         728
       ],
@@ -1410,7 +1410,11 @@
         "backend",
         "frontend"
       ],
-      "priority": 4
+      "priority": 4,
+      "assigned_to": "agent-1770120956-39752",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770120956-39752",
+      "branch": "feat/issue-731-add-soundcloud-embed-support-backend-fro",
+      "claimed_at": "2026-02-03T12:15:56Z"
     },
     {
       "issue_number": 732,
