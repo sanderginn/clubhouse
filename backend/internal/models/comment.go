@@ -8,31 +8,34 @@ import (
 
 // Comment represents a comment in the system
 type Comment struct {
-	ID              uuid.UUID      `json:"id"`
-	UserID          uuid.UUID      `json:"user_id"`
-	PostID          uuid.UUID      `json:"post_id"`
-	SectionID       *uuid.UUID     `json:"section_id,omitempty"`
-	ParentCommentID *uuid.UUID     `json:"parent_comment_id,omitempty"`
-	ImageID         *uuid.UUID     `json:"image_id,omitempty"`
-	Content         string         `json:"content"`
-	Links           []Link         `json:"links,omitempty"`
-	CreatedAt       time.Time      `json:"created_at"`
-	UpdatedAt       *time.Time     `json:"updated_at,omitempty"`
-	DeletedAt       *time.Time     `json:"deleted_at,omitempty"`
-	DeletedByUserID *uuid.UUID     `json:"deleted_by_user_id,omitempty"`
-	User            *User          `json:"user,omitempty"`
-	Replies         []Comment      `json:"replies,omitempty"`
-	ReactionCounts  map[string]int `json:"reaction_counts,omitempty"`
-	ViewerReactions []string       `json:"viewer_reactions,omitempty"`
+	ID               uuid.UUID      `json:"id"`
+	UserID           uuid.UUID      `json:"user_id"`
+	PostID           uuid.UUID      `json:"post_id"`
+	SectionID        *uuid.UUID     `json:"section_id,omitempty"`
+	ParentCommentID  *uuid.UUID     `json:"parent_comment_id,omitempty"`
+	ImageID          *uuid.UUID     `json:"image_id,omitempty"`
+	Content          string         `json:"content"`
+	TimestampSeconds *int           `json:"timestamp_seconds,omitempty"`
+	TimestampDisplay *string        `json:"timestamp_display,omitempty"`
+	Links            []Link         `json:"links,omitempty"`
+	CreatedAt        time.Time      `json:"created_at"`
+	UpdatedAt        *time.Time     `json:"updated_at,omitempty"`
+	DeletedAt        *time.Time     `json:"deleted_at,omitempty"`
+	DeletedByUserID  *uuid.UUID     `json:"deleted_by_user_id,omitempty"`
+	User             *User          `json:"user,omitempty"`
+	Replies          []Comment      `json:"replies,omitempty"`
+	ReactionCounts   map[string]int `json:"reaction_counts,omitempty"`
+	ViewerReactions  []string       `json:"viewer_reactions,omitempty"`
 }
 
 // CreateCommentRequest represents the request body for creating a comment
 type CreateCommentRequest struct {
-	PostID          string        `json:"post_id"`
-	ParentCommentID *string       `json:"parent_comment_id,omitempty"`
-	ImageID         *string       `json:"image_id,omitempty"`
-	Content         string        `json:"content"`
-	Links           []LinkRequest `json:"links,omitempty"`
+	PostID           string        `json:"post_id"`
+	ParentCommentID  *string       `json:"parent_comment_id,omitempty"`
+	ImageID          *string       `json:"image_id,omitempty"`
+	Content          string        `json:"content"`
+	TimestampSeconds *int          `json:"timestamp_seconds,omitempty"`
+	Links            []LinkRequest `json:"links,omitempty"`
 	// MentionUsernames contains explicitly selected mentions from the client.
 	MentionUsernames []string `json:"mention_usernames,omitempty"`
 }

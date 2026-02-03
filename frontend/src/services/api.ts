@@ -582,6 +582,7 @@ class ApiClient {
       parent_comment_id: data.parentCommentId,
       image_id: data.imageId,
       content: data.content,
+      timestamp_seconds: data.timestampSeconds,
       links: data.links,
       mention_usernames: data.mentionUsernames ?? [],
     });

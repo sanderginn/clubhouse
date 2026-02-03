@@ -97,6 +97,12 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 			writeError(r.Context(), w, http.StatusBadRequest, "LINK_URL_REQUIRED", err.Error())
 		case "link url must be less than 2048 characters":
 			writeError(r.Context(), w, http.StatusBadRequest, "LINK_URL_TOO_LONG", err.Error())
+		case "comment timestamps are only allowed for music posts":
+			writeError(r.Context(), w, http.StatusBadRequest, "TIMESTAMP_NOT_ALLOWED", err.Error())
+		case "timestamp must be non-negative":
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_TIMESTAMP", err.Error())
+		case "timestamp exceeds maximum duration":
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_TIMESTAMP", err.Error())
 		default:
 			writeError(r.Context(), w, http.StatusInternalServerError, "COMMENT_CREATION_FAILED", "Failed to create comment")
 		}

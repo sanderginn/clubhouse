@@ -558,6 +558,7 @@
           ? 'bandcamp'
           : metadata?.embed?.provider;
   $: highlightSeekMessage = getSeekUnavailableMessage(highlightEmbedProvider);
+  $: canSeekTimestamps = !!embedController?.supportsSeeking;
   $: {
     if (embedController && (!highlightEmbedProvider || embedController.provider !== highlightEmbedProvider)) {
       embedController = null;
@@ -1641,6 +1642,8 @@
           imageReplyTarget={imageReplyTarget}
           onClearImageReply={clearImageReplyTarget}
           onImageReferenceClick={handleImageReferenceNavigate}
+          sectionType={sectionInfo?.type ?? null}
+          onTimestampSeek={canSeekTimestamps ? handleHighlightSeek : null}
         />
       </div>
     </div>
