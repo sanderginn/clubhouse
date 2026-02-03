@@ -306,6 +306,42 @@ describe('PostForm', () => {
     });
   });
 
+  it('preserves highlights when link metadata normalizes the url', async () => {
+    setAuthenticated();
+    setActiveSection();
+
+    let resolvePreview: ((value: { metadata: { url: string; title: string } }) => void) | null =
+      null;
+    previewLink.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePreview = resolve;
+        })
+    );
+
+    render(PostForm);
+
+    const addLinkButton = screen.getByLabelText('Add link');
+    await fireEvent.click(addLinkButton);
+
+    const linkInput = screen.getByLabelText('Link URL');
+    await fireEvent.input(linkInput, { target: { value: 'example.com' } });
+    await fireEvent.keyDown(linkInput, { key: 'Enter' });
+    await tick();
+
+    const timestampInput = screen.getByLabelText('Timestamp (mm:ss)');
+    await fireEvent.input(timestampInput, { target: { value: '00:30' } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Add highlight' }));
+
+    if (!resolvePreview) {
+      throw new Error('preview resolver not set');
+    }
+    resolvePreview({ metadata: { url: 'https://example.com/', title: 'Example' } });
+    await tick();
+
+    expect(screen.getByText('00:30')).toBeInTheDocument();
+  });
+
   it('handles file attachments', async () => {
     setAuthenticated();
     setActiveSection();

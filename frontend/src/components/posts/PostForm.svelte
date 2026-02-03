@@ -25,7 +25,7 @@
   let linkInputError: string | null = null;
   let linkInputRef: HTMLInputElement | null = null;
   let highlights: Highlight[] = [];
-  let lastHighlightLink = '';
+  let lastHighlightLinkInput = '';
 
   let fileInput: HTMLInputElement;
   type UploadItem = {
@@ -49,10 +49,10 @@
   $: hasLink = Boolean((linkMetadata && linkMetadata.url) || linkUrl.trim());
   $: isMusicSection = $activeSection?.type === 'music';
   $: showHighlightEditor = isMusicSection && hasLink;
-  $: activeLinkUrl = (linkMetadata?.url ?? linkUrl).trim();
-  $: if (activeLinkUrl !== lastHighlightLink) {
+  $: linkInputValueNormalized = linkUrl.trim();
+  $: if (linkInputValueNormalized !== lastHighlightLinkInput) {
     highlights = [];
-    lastHighlightLink = activeLinkUrl;
+    lastHighlightLinkInput = linkInputValueNormalized;
   }
   $: if (!showHighlightEditor && highlights.length > 0) {
     highlights = [];
@@ -162,7 +162,7 @@
     linkInputError = null;
     isLinkInputVisible = false;
     highlights = [];
-    lastHighlightLink = '';
+    lastHighlightLinkInput = '';
   }
 
   function isValidUrl(value: string): boolean {
@@ -373,7 +373,7 @@
       linkInputError = null;
       isLinkInputVisible = false;
       highlights = [];
-      lastHighlightLink = '';
+      lastHighlightLinkInput = '';
       selectedFiles.forEach(revokePreviewUrl);
       selectedFiles = [];
       uploadLimitError = null;
