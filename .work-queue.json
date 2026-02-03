@@ -59,6 +59,7 @@
     679,
     680,
     681,
+    685,
     687,
     688,
     693,
@@ -1141,7 +1142,7 @@
     {
       "issue_number": 685,
       "title": "Create Cookbook component",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         676,
         679,
@@ -1157,7 +1158,9 @@
       "assigned_to": "agent-1770108902-69668",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770108902-69668",
       "branch": "feat/issue-685-create-cookbook-component",
-      "claimed_at": "2026-02-03T08:55:02Z"
+      "claimed_at": "2026-02-03T08:55:02Z",
+      "pr_number": 724,
+      "completed_at": "2026-02-03T09:11:17Z"
     },
     {
       "issue_number": 686,
