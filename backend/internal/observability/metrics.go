@@ -790,6 +790,18 @@ func initMetrics() error {
 	return metricsInitErr
 }
 
+// InitMetrics initializes the metrics instruments if they haven't been set up yet.
+func InitMetrics() error {
+	return initMetrics()
+}
+
+// ResetMetricsForTest clears metrics state so tests can reinitialize instrumentation.
+func ResetMetricsForTest() {
+	metricsOnce = sync.Once{}
+	metricsInitErr = nil
+	metricsInstance = nil
+}
+
 func getMetrics() *metrics {
 	return metricsInstance
 }
