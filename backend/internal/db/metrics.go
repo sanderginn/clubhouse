@@ -1,16 +1,40 @@
 package db
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"database/sql/driver"
 	"errors"
+	"runtime"
+	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/XSAM/otelsql"
 	"github.com/sanderginn/clubhouse/internal/observability"
 	"go.opentelemetry.io/otel/attribute"
 )
+
+var recordDBQueryError = observability.RecordDBQueryError
+
+const (
+	goroutineQueryTypeTTL        = 2 * time.Minute
+	goroutineQueryTypeMaxEntries = 1024
+)
+
+type goroutineQueryEntry struct {
+	queryType string
+	updatedAt time.Time
+}
+
+var goroutineQueryTypes = struct {
+	mu sync.Mutex
+	m  map[int64]goroutineQueryEntry
+}{
+	m: make(map[int64]goroutineQueryEntry),
+}
 
 func instrumentAttributesGetter(ctx context.Context, method otelsql.Method, query string, _ []driver.NamedValue) []attribute.KeyValue {
 	attrs := make([]attribute.KeyValue, 0, 2)
@@ -18,6 +42,7 @@ func instrumentAttributesGetter(ctx context.Context, method otelsql.Method, quer
 	queryType := queryTypeFromSQL(query)
 	if queryType != "" {
 		attrs = append(attrs, attribute.String("query_type", queryType))
+		setGoroutineQueryType(queryType)
 	}
 
 	table := tableFromSQL(query)
@@ -40,9 +65,93 @@ func instrumentErrorAttributesGetter(err error) []attribute.KeyValue {
 	if errorType == "" {
 		errorType = "unknown"
 	}
-	observability.RecordDBQueryError(context.Background(), "unknown", errorType)
+	queryType := popGoroutineQueryType()
+	if queryType == "" {
+		queryType = "unknown"
+	}
+	recordDBQueryError(context.Background(), queryType, errorType)
 	return []attribute.KeyValue{
 		attribute.String("error_type", errorType),
+	}
+}
+
+func setGoroutineQueryType(queryType string) {
+	if strings.TrimSpace(queryType) == "" {
+		return
+	}
+	id := currentGoroutineID()
+	if id == 0 {
+		return
+	}
+
+	now := time.Now()
+	goroutineQueryTypes.mu.Lock()
+	defer goroutineQueryTypes.mu.Unlock()
+
+	goroutineQueryTypes.m[id] = goroutineQueryEntry{
+		queryType: queryType,
+		updatedAt: now,
+	}
+	cleanupGoroutineQueryTypesLocked(now)
+}
+
+func popGoroutineQueryType() string {
+	id := currentGoroutineID()
+	if id == 0 {
+		return ""
+	}
+	goroutineQueryTypes.mu.Lock()
+	defer goroutineQueryTypes.mu.Unlock()
+
+	entry, ok := goroutineQueryTypes.m[id]
+	if !ok {
+		return ""
+	}
+	delete(goroutineQueryTypes.m, id)
+	return entry.queryType
+}
+
+func currentGoroutineID() int64 {
+	var buf [64]byte
+	n := runtime.Stack(buf[:], false)
+	if n == 0 {
+		return 0
+	}
+	fields := bytes.Fields(buf[:n])
+	if len(fields) < 2 {
+		return 0
+	}
+	id, err := strconv.ParseInt(string(fields[1]), 10, 64)
+	if err != nil {
+		return 0
+	}
+	return id
+}
+
+func cleanupGoroutineQueryTypesLocked(now time.Time) {
+	if len(goroutineQueryTypes.m) == 0 {
+		return
+	}
+
+	for id, entry := range goroutineQueryTypes.m {
+		if now.Sub(entry.updatedAt) > goroutineQueryTypeTTL {
+			delete(goroutineQueryTypes.m, id)
+		}
+	}
+
+	for len(goroutineQueryTypes.m) > goroutineQueryTypeMaxEntries {
+		oldestID := int64(0)
+		oldestTime := now
+		for id, entry := range goroutineQueryTypes.m {
+			if entry.updatedAt.Before(oldestTime) || oldestID == 0 {
+				oldestID = id
+				oldestTime = entry.updatedAt
+			}
+		}
+		if oldestID == 0 {
+			break
+		}
+		delete(goroutineQueryTypes.m, oldestID)
 	}
 }
 
@@ -57,19 +166,24 @@ func queryTypeFromSQL(query string) string {
 	if len(fields) == 0 {
 		return ""
 	}
-	switch fields[0] {
+
+	normalize := func(token string) string {
+		return strings.Trim(token, "(),;")
+	}
+
+	switch normalize(fields[0]) {
 	case "select", "insert", "update", "delete":
-		return fields[0]
+		return normalize(fields[0])
 	case "with":
 		for _, token := range fields[1:] {
-			switch token {
+			switch normalize(token) {
 			case "select", "insert", "update", "delete":
-				return token
+				return normalize(token)
 			}
 		}
 		return "with"
 	default:
-		return fields[0]
+		return normalize(fields[0])
 	}
 }
 
