@@ -2,10 +2,10 @@ import type {
   Post,
   Link,
   LinkMetadata,
+  LinkEmbed,
   PostImage,
   Highlight,
   RecipeStats,
-  EmbedData,
 } from './postStore';
 
 export interface ApiUser {
@@ -103,28 +103,33 @@ function normalizeRecipeStats(rawStats: unknown): RecipeStats | undefined {
   };
 }
 
-function normalizeEmbedData(rawEmbed: unknown): EmbedData | undefined {
-  if (!rawEmbed || typeof rawEmbed !== 'object' || Array.isArray(rawEmbed)) {
-    return undefined;
+function normalizeEmbed(record: Record<string, unknown>): LinkEmbed | undefined {
+  const rawEmbed = record.embed;
+  let embedRecord: Record<string, unknown> | null = null;
+
+  if (rawEmbed && typeof rawEmbed === 'object' && !Array.isArray(rawEmbed)) {
+    embedRecord = rawEmbed as Record<string, unknown>;
   }
-  const record = rawEmbed as Record<string, unknown>;
+
   const embedUrl =
-    normalizeString(record.embedUrl) ??
-    normalizeString(record.embed_url) ??
-    normalizeString(record.url);
+    normalizeString(embedRecord?.embed_url ?? embedRecord?.embedUrl ?? embedRecord?.url) ??
+    normalizeString(record.embed_url ?? record.embedUrl);
   if (!embedUrl) {
     return undefined;
   }
-  const type = normalizeString(record.type);
-  const provider = normalizeString(record.provider);
-  const width = normalizeNumber(record.width);
-  const height = normalizeNumber(record.height);
+
   return {
-    type,
-    provider,
-    embedUrl,
-    width,
-    height,
+    url: embedUrl,
+    provider:
+      normalizeString(embedRecord?.provider) ??
+      normalizeString(record.embed_provider ?? record.embedProvider),
+    type: normalizeString(embedRecord?.type),
+    height:
+      normalizeNumber(embedRecord?.height) ??
+      normalizeNumber(record.embed_height ?? record.embedHeight),
+    width:
+      normalizeNumber(embedRecord?.width) ??
+      normalizeNumber(record.embed_width ?? record.embedWidth),
   };
 }
 
@@ -196,11 +201,9 @@ export function normalizeLinkMetadata(
     normalizeString(metadata.imageUrl);
   const author = normalizeString(metadata.author) ?? normalizeString(metadata.artist);
   const duration = normalizeNumber(metadata.duration);
-  const embed = normalizeEmbedData(metadata.embed);
-  const embedUrl =
-    normalizeString(metadata.embedUrl) ??
-    normalizeString(metadata.embed_url) ??
-    embed?.embedUrl;
+  const embedUrl = normalizeString(metadata.embedUrl) ?? normalizeString(metadata.embed_url);
+  const embed = normalizeEmbed(metadata);
+  const resolvedEmbedUrl = embed?.url ?? embedUrl;
   const type =
     normalizeString(metadata.type) ??
     normalizeString(metadata.og_type) ??
@@ -213,8 +216,7 @@ export function normalizeLinkMetadata(
     !!image ||
     !!author ||
     !!duration ||
-    !!embedUrl ||
-    !!embed ||
+    !!resolvedEmbedUrl ||
     !!type;
   if (!hasMetadata) {
     return undefined;
@@ -228,7 +230,7 @@ export function normalizeLinkMetadata(
     image,
     author,
     duration,
-    embedUrl,
+    embedUrl: resolvedEmbedUrl,
     embed,
     type,
   };

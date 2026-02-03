@@ -156,6 +156,28 @@ describe('PostCard', () => {
     expect(screen.getByText('Intro')).toBeInTheDocument();
   });
 
+  it('renders spotify embed when embed metadata is present', () => {
+    const postWithSpotify: Post = {
+      ...basePost,
+      links: [
+        {
+          url: 'https://open.spotify.com/track/3n3Ppam7vgaVa1iaRUc9Lp',
+          metadata: {
+            url: 'https://open.spotify.com/track/3n3Ppam7vgaVa1iaRUc9Lp',
+            embed: {
+              url: 'https://open.spotify.com/embed/track/3n3Ppam7vgaVa1iaRUc9Lp',
+              height: 152,
+              provider: 'spotify',
+            },
+          },
+        },
+      ],
+    };
+
+    render(PostCard, { post: postWithSpotify });
+    expect(screen.getByTitle('Spotify track')).toBeInTheDocument();
+  });
+
   it('shows a posted in label when section pill label is enabled', () => {
     sectionStore.setSections([
       {

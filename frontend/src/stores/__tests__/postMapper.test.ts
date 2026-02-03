@@ -28,7 +28,11 @@ describe('mapApiPost', () => {
             image: 'https://example.com/image.png',
             author: 'Author',
             duration: 120,
-            embedUrl: 'https://example.com/embed',
+            embed: {
+              embed_url: 'https://open.spotify.com/embed/track/xyz',
+              provider: 'spotify',
+              height: 152,
+            },
           },
         },
       ],
@@ -37,7 +41,9 @@ describe('mapApiPost', () => {
     expect(post.id).toBe('post-1');
     expect(post.user?.username).toBe('sander');
     expect(post.commentCount).toBe(2);
-    expect(post.links?.[0].metadata?.embedUrl).toBe('https://example.com/embed');
+    expect(post.links?.[0].metadata?.embedUrl).toBe('https://open.spotify.com/embed/track/xyz');
+    expect(post.links?.[0].metadata?.embed?.provider).toBe('spotify');
+    expect(post.links?.[0].metadata?.embed?.height).toBe(152);
     expect(post.links?.[0].metadata?.author).toBe('Author');
     expect(post.links?.[0].metadata?.duration).toBe(120);
   });
@@ -132,6 +138,7 @@ describe('mapApiPost', () => {
       description: 'Example Description',
       image_url: 'https://cdn.example.com/image.png',
       embed_url: 'https://example.com/embed',
+      embed_height: '232',
       duration: '180',
     });
 
@@ -155,6 +162,7 @@ describe('mapApiPost', () => {
     expect(post.links?.[0].metadata?.description).toBe('Example Description');
     expect(post.links?.[0].metadata?.image).toBe('https://cdn.example.com/image.png');
     expect(post.links?.[0].metadata?.embedUrl).toBe('https://example.com/embed');
+    expect(post.links?.[0].metadata?.embed?.height).toBe(232);
     expect(post.links?.[0].metadata?.duration).toBe(180);
   });
 

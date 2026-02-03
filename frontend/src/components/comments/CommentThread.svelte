@@ -14,6 +14,7 @@
   import RelativeTime from '../RelativeTime.svelte';
   import { logError } from '../../lib/observability/logger';
   import { recordComponentRender } from '../../lib/observability/performance';
+  import SpotifyEmbed from '../../lib/components/embeds/SpotifyEmbed.svelte';
 
   export let postId: string;
   export let commentCount = 0;
@@ -62,6 +63,11 @@
   let lastHighlightId: string | null = null;
 
   const renderStart = typeof performance !== 'undefined' ? performance.now() : null;
+
+  function isSpotifyEmbedUrl(value: string | undefined): boolean {
+    if (!value) return false;
+    return value.includes('open.spotify.com/embed/');
+  }
 
   function getUserReactions(comment: { viewerReactions?: string[] }): Set<string> {
     return new Set(comment.viewerReactions ?? []);
@@ -519,44 +525,51 @@
                 {#each comment.links as link (link.url)}
                   <div class="mt-2">
                     {#if link.metadata}
-                      <a
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="block rounded-lg border border-gray-200 overflow-hidden hover:border-gray-300 transition-colors"
-                      >
-                        <div class="flex">
-                          {#if link.metadata.image}
-                            <div class="w-16 h-16 flex-shrink-0">
-                              <img
-                                src={link.metadata.image}
-                                alt={link.metadata.title || 'Link preview'}
-                                class="w-full h-full object-cover"
-                              />
-                            </div>
-                          {/if}
-                          <div class="flex-1 p-2 min-w-0">
-                            <div class="flex items-center gap-1 mb-1">
-                              <span>{getProviderIcon(link.metadata.provider)}</span>
-                              {#if link.metadata.provider}
-                                <span class="text-xs text-gray-500 capitalize">
-                                  {link.metadata.provider}
-                                </span>
+                      {@const embedUrl =
+                        link.metadata.embed?.url ??
+                        (isSpotifyEmbedUrl(link.metadata.embedUrl) ? link.metadata.embedUrl : undefined)}
+                      {#if embedUrl && isSpotifyEmbedUrl(embedUrl)}
+                        <SpotifyEmbed embedUrl={embedUrl} height={link.metadata.embed?.height} />
+                      {:else}
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="block rounded-lg border border-gray-200 overflow-hidden hover:border-gray-300 transition-colors"
+                        >
+                          <div class="flex">
+                            {#if link.metadata.image}
+                              <div class="w-16 h-16 flex-shrink-0">
+                                <img
+                                  src={link.metadata.image}
+                                  alt={link.metadata.title || 'Link preview'}
+                                  class="w-full h-full object-cover"
+                                />
+                              </div>
+                            {/if}
+                            <div class="flex-1 p-2 min-w-0">
+                              <div class="flex items-center gap-1 mb-1">
+                                <span>{getProviderIcon(link.metadata.provider)}</span>
+                                {#if link.metadata.provider}
+                                  <span class="text-xs text-gray-500 capitalize">
+                                    {link.metadata.provider}
+                                  </span>
+                                {/if}
+                              </div>
+                              {#if link.metadata.title}
+                                <h4 class="font-medium text-gray-900 text-xs truncate">
+                                  {link.metadata.title}
+                                </h4>
+                              {/if}
+                              {#if link.metadata.description}
+                                <p class="text-gray-600 text-xs line-clamp-2">
+                                  {link.metadata.description}
+                                </p>
                               {/if}
                             </div>
-                            {#if link.metadata.title}
-                              <h4 class="font-medium text-gray-900 text-xs truncate">
-                                {link.metadata.title}
-                              </h4>
-                            {/if}
-                            {#if link.metadata.description}
-                              <p class="text-gray-600 text-xs line-clamp-2">
-                                {link.metadata.description}
-                              </p>
-                            {/if}
                           </div>
-                        </div>
-                      </a>
+                        </a>
+                      {/if}
                     {:else}
                       <a
                         href={link.url}

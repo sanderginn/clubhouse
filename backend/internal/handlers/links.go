@@ -55,6 +55,7 @@ func (h *LinkHandler) PreviewLink(w http.ResponseWriter, r *http.Request) {
 
 	observability.RecordLinkMetadataFetchAttempt(r.Context(), 1)
 	start := time.Now()
+	embed, _ := linkmeta.ExtractEmbed(r.Context(), trimmedURL)
 	metadata, err := linkmeta.FetchMetadata(r.Context(), trimmedURL)
 	observability.RecordLinkMetadataFetchDuration(r.Context(), time.Since(start))
 	domain := linkmeta.ExtractDomain(trimmedURL)
@@ -62,8 +63,10 @@ func (h *LinkHandler) PreviewLink(w http.ResponseWriter, r *http.Request) {
 		errorType := linkmeta.ClassifyFetchError(err)
 		observability.RecordLinkMetadataFetchFailure(r.Context(), 1, domain, errorType)
 		observability.LogWarn(r.Context(), "link metadata fetch failed", "link_url", trimmedURL, "link_domain", domain, "error_type", errorType, "error", err.Error())
-		writeError(r.Context(), w, http.StatusBadGateway, "LINK_METADATA_FETCH_FAILED", "Failed to fetch link metadata")
-		return
+		if embed == nil {
+			writeError(r.Context(), w, http.StatusBadGateway, "LINK_METADATA_FETCH_FAILED", "Failed to fetch link metadata")
+			return
+		}
 	}
 	if len(metadata) == 0 {
 		observability.RecordLinkMetadataFetchFailure(r.Context(), 1, domain, "empty_metadata")
@@ -75,6 +78,7 @@ func (h *LinkHandler) PreviewLink(w http.ResponseWriter, r *http.Request) {
 	if metadata == nil {
 		metadata = map[string]interface{}{}
 	}
+	metadata = linkmeta.ApplyEmbedMetadata(metadata, embed)
 	if _, ok := metadata["url"]; !ok {
 		metadata["url"] = trimmedURL
 	}

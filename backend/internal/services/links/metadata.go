@@ -46,7 +46,20 @@ var defaultFetcher = NewFetcher(nil)
 
 // FetchMetadata fetches metadata for a URL using the default fetcher.
 func FetchMetadata(ctx context.Context, rawURL string) (map[string]interface{}, error) {
+	return fetchMetadataFunc(ctx, rawURL)
+}
+
+var fetchMetadataFunc = func(ctx context.Context, rawURL string) (map[string]interface{}, error) {
 	return defaultFetcher.Fetch(ctx, rawURL)
+}
+
+// SetFetchMetadataFuncForTests overrides the default fetcher. Use only in tests.
+func SetFetchMetadataFuncForTests(fn func(context.Context, string) (map[string]interface{}, error)) {
+	if fn == nil {
+		fetchMetadataFunc = defaultFetcher.Fetch
+		return
+	}
+	fetchMetadataFunc = fn
 }
 
 // Fetch retrieves metadata for the provided URL.

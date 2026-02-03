@@ -21,17 +21,17 @@ export interface LinkMetadata {
   author?: string;
   duration?: number;
   embedUrl?: string;
-  embed?: EmbedData;
+  embed?: LinkEmbed;
   type?: string;
   recipe?: RecipeMetadata;
 }
 
-export interface EmbedData {
-  type?: string;
+export interface LinkEmbed {
+  url: string;
   provider?: string;
-  embedUrl: string;
-  width?: number;
+  type?: string;
   height?: number;
+  width?: number;
 }
 
 export interface RecipeNutritionInfo {
@@ -207,85 +207,30 @@ function createPostStore() {
     updateReactionCount: (postId: string, emoji: string, delta: number) =>
       update((state) => ({
         ...state,
-        posts: state.posts.map((post) => {
-          if (post.id !== postId) {
-            return post;
-          }
-          const counts = { ...(post.reactionCounts ?? {}) };
-          const next = (counts[emoji] ?? 0) + delta;
-          if (next <= 0) {
-            delete counts[emoji];
-          } else {
-            counts[emoji] = next;
-          }
-          return {
-            ...post,
-            reactionCounts: counts,
-          };
-        }),
+        posts: state.posts.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                reactionCounts: {
+                  ...(post.reactionCounts ?? {}),
+                  [emoji]: Math.max(0, (post.reactionCounts?.[emoji] ?? 0) + delta),
+                },
+              }
+            : post
+        ),
       })),
     toggleReaction: (postId: string, emoji: string) =>
       update((state) => ({
         ...state,
         posts: state.posts.map((post) => {
-          if (post.id !== postId) {
-            return post;
-          }
-          const viewerReactions = new Set(post.viewerReactions ?? []);
-          const counts = { ...(post.reactionCounts ?? {}) };
-
-          if (viewerReactions.has(emoji)) {
-            viewerReactions.delete(emoji);
-            const next = (counts[emoji] ?? 0) - 1;
-            if (next <= 0) delete counts[emoji];
-            else counts[emoji] = next;
-          } else {
-            viewerReactions.add(emoji);
-            counts[emoji] = (counts[emoji] ?? 0) + 1;
-          }
-
+          if (post.id !== postId) return post;
+          const reactions = post.viewerReactions ?? [];
+          const hasReaction = reactions.includes(emoji);
           return {
             ...post,
-            reactionCounts: counts,
-            viewerReactions: Array.from(viewerReactions),
-          };
-        }),
-      })),
-    setLoading: (isLoading: boolean) =>
-      update((state) => ({
-        ...state,
-        isLoading,
-        error: isLoading ? null : state.error,
-        paginationError: isLoading ? null : state.paginationError,
-      })),
-    setError: (error: string | null) =>
-      update((state) => ({ ...state, error, isLoading: false, paginationError: null })),
-    setPaginationError: (error: string | null) =>
-      update((state) => ({ ...state, paginationError: error, isLoading: false })),
-    reset: () =>
-      set({
-        posts: [],
-        isLoading: false,
-        error: null,
-        paginationError: null,
-        cursor: null,
-        hasMore: true,
-      }),
-    updateUserProfilePicture: (userId: string, profilePictureUrl?: string) =>
-      update((state) => ({
-        ...state,
-        posts: state.posts.map((post) => {
-          const shouldUpdate =
-            post.user?.id === userId || (!post.user && post.userId === userId);
-          if (!shouldUpdate || !post.user) {
-            return post;
-          }
-          return {
-            ...post,
-            user: {
-              ...post.user,
-              profilePictureUrl,
-            },
+            viewerReactions: hasReaction
+              ? reactions.filter((reaction) => reaction !== emoji)
+              : [...reactions, emoji],
           };
         }),
       })),
@@ -294,8 +239,16 @@ function createPostStore() {
 
 export const postStore = createPostStore();
 
-export const posts = derived(postStore, ($postStore) => $postStore.posts);
-export const isLoadingPosts = derived(postStore, ($postStore) => $postStore.isLoading);
-export const postsError = derived(postStore, ($postStore) => $postStore.error);
-export const postsPaginationError = derived(postStore, ($postStore) => $postStore.paginationError);
-export const hasMorePosts = derived(postStore, ($postStore) => $postStore.hasMore);
+export const sortedPosts = derived(postStore, ($store) =>
+  [...$store.posts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+);
+
+export const isLoadingPosts = derived(postStore, ($store) => $store.isLoading);
+
+export const postError = derived(postStore, ($store) => $store.error);
+
+export const postPaginationError = derived(postStore, ($store) => $store.paginationError);
+
+export const hasMorePosts = derived(postStore, ($store) => $store.hasMore);
+
+export const postCursor = derived(postStore, ($store) => $store.cursor);

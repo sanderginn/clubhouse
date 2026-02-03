@@ -23,6 +23,7 @@
   import RecipeStatsBar from './recipes/RecipeStatsBar.svelte';
   import BandcampEmbed from '../lib/components/embeds/BandcampEmbed.svelte';
   import SoundCloudEmbed from '../lib/components/embeds/SoundCloudEmbed.svelte';
+  import SpotifyEmbed from '../lib/components/embeds/SpotifyEmbed.svelte';
 
   export let post: Post;
   export let highlightCommentId: string | null = null;
@@ -381,6 +382,11 @@
     }
   }
 
+  function isSpotifyEmbedUrl(value: string | undefined): boolean {
+    if (!value) return false;
+    return value.includes('open.spotify.com/embed/');
+  }
+
   $: postImages = (post.images ?? []).slice().sort((a, b) => a.position - b.position);
   $: hasPostImages = postImages.length > 0;
   $: imageLinks = (post.links ?? []).filter((item) => Boolean(getImageLinkUrl(item)));
@@ -412,6 +418,12 @@
     metadata?.embed?.provider === 'soundcloud' && metadata.embed.embedUrl
       ? ({ ...metadata.embed, embedUrl: metadata.embed.embedUrl } as SoundCloudEmbedData)
       : undefined;
+  $: spotifyEmbed =
+    metadata?.embed && isSpotifyEmbedUrl(metadata.embed.embedUrl) ? metadata.embed : undefined;
+  $: spotifyEmbedUrl =
+    spotifyEmbed?.embedUrl ??
+    (isSpotifyEmbedUrl(metadata?.embedUrl) ? metadata?.embedUrl : undefined);
+  $: spotifyEmbedHeight = spotifyEmbed?.height;
   $: primaryImageUrl = imageItems.length > 0 ? imageItems[0].url : undefined;
   $: isInternalUploadLink =
     !hasPostImages && imageItems.length > 0 && imageItems[0].link
@@ -1202,47 +1214,53 @@
             fallbackTitle={metadata.title}
           />
         {:else if primaryLink && metadata && !primaryLinkIsImage}
-          <a
-            href={primaryLink.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="mt-3 block rounded-lg border border-gray-200 overflow-hidden hover:border-gray-300 transition-colors"
-          >
-            <div class="flex">
-              {#if metadata.image}
-                <div class="w-24 h-24 flex-shrink-0">
-                  <img
-                    src={metadata.image}
-                    alt={metadata.title || 'Link preview'}
-                    class="w-full h-full object-cover"
-                  />
-                </div>
-              {/if}
-              <div class="flex-1 p-3 min-w-0">
-                <div class="flex items-center gap-1 mb-1">
-                  <span>{getProviderIcon(metadata.provider)}</span>
-                  {#if metadata.provider}
-                    <span class="text-xs text-gray-500 capitalize">{metadata.provider}</span>
+          {#if spotifyEmbedUrl}
+            <div class="mt-3">
+              <SpotifyEmbed embedUrl={spotifyEmbedUrl} height={spotifyEmbedHeight} />
+            </div>
+          {:else}
+            <a
+              href={primaryLink.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="mt-3 block rounded-lg border border-gray-200 overflow-hidden hover:border-gray-300 transition-colors"
+            >
+              <div class="flex">
+                {#if metadata.image}
+                  <div class="w-24 h-24 flex-shrink-0">
+                    <img
+                      src={metadata.image}
+                      alt={metadata.title || 'Link preview'}
+                      class="w-full h-full object-cover"
+                    />
+                  </div>
+                {/if}
+                <div class="flex-1 p-3 min-w-0">
+                  <div class="flex items-center gap-1 mb-1">
+                    <span>{getProviderIcon(metadata.provider)}</span>
+                    {#if metadata.provider}
+                      <span class="text-xs text-gray-500 capitalize">{metadata.provider}</span>
+                    {/if}
+                  </div>
+                  {#if metadata.title}
+                    <h4 class="font-medium text-gray-900 text-sm truncate">
+                      {metadata.title}
+                    </h4>
+                  {/if}
+                  {#if metadata.description}
+                    <p class="text-gray-600 text-xs line-clamp-2 mt-0.5">
+                      {metadata.description}
+                    </p>
+                  {/if}
+                  {#if metadata.author}
+                    <p class="text-gray-500 text-xs mt-1">
+                      by {metadata.author}
+                    </p>
                   {/if}
                 </div>
-                {#if metadata.title}
-                  <h4 class="font-medium text-gray-900 text-sm truncate">
-                    {metadata.title}
-                  </h4>
-                {/if}
-                {#if metadata.description}
-                  <p class="text-gray-600 text-xs line-clamp-2 mt-0.5">
-                    {metadata.description}
-                  </p>
-                {/if}
-                {#if metadata.author}
-                  <p class="text-gray-500 text-xs mt-1">
-                    by {metadata.author}
-                  </p>
-                {/if}
               </div>
-            </div>
-          </a>
+            </a>
+          {/if}
         {/if}
       {:else if !isEditing && primaryLink && metadata}
         {#if soundCloudEmbed}
@@ -1260,6 +1278,8 @@
             fallbackImage={metadata.image}
             fallbackTitle={metadata.title}
           />
+        {:else if spotifyEmbedUrl}
+          <SpotifyEmbed embedUrl={spotifyEmbedUrl} height={spotifyEmbedHeight} />
         {:else}
           <a
             href={primaryLink.url}
