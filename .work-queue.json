@@ -5,6 +5,7 @@
     "description": "Work queue for parallel issue assignment with dependency tracking"
   },
   "completed_issues": [
+    742,
     745,
     748,
     749,
@@ -16,7 +17,7 @@
     {
       "issue_number": 742,
       "title": "Fix Cookbook \"All Recipes\" filter showing no recipes",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -27,7 +28,9 @@
       "assigned_to": "agent-1770134861-27037",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770134861-27037",
       "branch": "fix/issue-742-fix-cookbook-all-recipes-filter-showing-",
-      "claimed_at": "2026-02-03T16:07:41Z"
+      "claimed_at": "2026-02-03T16:07:41Z",
+      "pr_number": 762,
+      "completed_at": "2026-02-03T16:54:20Z"
     },
     {
       "issue_number": 744,
