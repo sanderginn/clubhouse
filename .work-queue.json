@@ -55,6 +55,7 @@
     673,
     675,
     676,
+    678,
     680,
     681,
     687,
@@ -1019,7 +1020,7 @@
     {
       "issue_number": 678,
       "title": "Create RecipeSaveButton component",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         676
       ],
@@ -1033,7 +1034,9 @@
       "assigned_to": "agent-1770107639-48166",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770107639-48166",
       "branch": "feat/issue-678-create-recipesavebutton-component",
-      "claimed_at": "2026-02-03T08:33:59Z"
+      "claimed_at": "2026-02-03T08:33:59Z",
+      "pr_number": 723,
+      "completed_at": "2026-02-03T08:51:14Z"
     },
     {
       "issue_number": 679,
