@@ -49,6 +49,7 @@
     667,
     668,
     669,
+    670,
     671,
     672,
     673,
@@ -886,7 +887,7 @@
     {
       "issue_number": 670,
       "title": "Extend PostService to include recipe stats",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         667,
         668,
@@ -902,7 +903,9 @@
       "assigned_to": "agent-1770079758-16158",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770079758-16158",
       "branch": "feat/issue-670-extend-postservice-to-include-recipe-sta",
-      "claimed_at": "2026-02-03T00:49:18Z"
+      "claimed_at": "2026-02-03T00:49:18Z",
+      "pr_number": 715,
+      "completed_at": "2026-02-03T08:23:37Z"
     },
     {
       "issue_number": 671,
