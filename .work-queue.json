@@ -51,6 +51,7 @@
     669,
     671,
     672,
+    675,
     680,
     687,
     693,
@@ -966,7 +967,7 @@
     {
       "issue_number": 675,
       "title": "Add recipe API methods to frontend api.ts",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         671,
         672
@@ -981,7 +982,9 @@
       "assigned_to": "agent-1770105468-98911",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770105468-98911",
       "branch": "feat/issue-675-add-recipe-api-methods-to-frontend-apits",
-      "claimed_at": "2026-02-03T07:57:48Z"
+      "claimed_at": "2026-02-03T07:57:48Z",
+      "pr_number": 717,
+      "completed_at": "2026-02-03T08:10:54Z"
     },
     {
       "issue_number": 676,
