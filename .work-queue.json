@@ -1343,6 +1343,91 @@
       "claimed_at": "2026-02-02T23:42:01Z",
       "pr_number": 702,
       "completed_at": "2026-02-03T00:16:25Z"
+    },
+    {
+      "issue_number": 728,
+      "title": "Backend: Add embed data structures and infrastructure",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend"
+      ],
+      "priority": 1
+    },
+    {
+      "issue_number": 729,
+      "title": "Add YouTube embed support (backend + frontend)",
+      "status": "available",
+      "dependencies": [
+        728
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "frontend"
+      ],
+      "priority": 2
+    },
+    {
+      "issue_number": 730,
+      "title": "Add Spotify embed support (backend + frontend)",
+      "status": "available",
+      "dependencies": [
+        728
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "frontend"
+      ],
+      "priority": 3
+    },
+    {
+      "issue_number": 731,
+      "title": "Add SoundCloud embed support (backend + frontend)",
+      "status": "available",
+      "dependencies": [
+        728
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "frontend"
+      ],
+      "priority": 4
+    },
+    {
+      "issue_number": 732,
+      "title": "Add Bandcamp embed support (backend + frontend)",
+      "status": "available",
+      "dependencies": [
+        728
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "frontend"
+      ],
+      "priority": 5
+    },
+    {
+      "issue_number": 733,
+      "title": "Security: Add CSP headers and embed URL validation",
+      "status": "available",
+      "dependencies": [
+        729,
+        730,
+        731,
+        732
+      ],
+      "labels": [
+        "enhancement",
+        "security",
+        "backend",
+        "frontend"
+      ],
+      "priority": 6
     }
   ]
 }
