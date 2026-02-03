@@ -59,6 +59,7 @@ const storeRefs = {
     upsertPost: vi.fn(),
     incrementCommentCount: vi.fn(),
     updateReactionCount: vi.fn(),
+    updateHighlightReaction: vi.fn(),
   },
   commentState: writable<Record<string, { comments: Array<{ id: string; replies?: any[] }> }>>({}),
   commentStore: {} as {
@@ -142,6 +143,7 @@ beforeEach(() => {
   storeRefs.postStore.upsertPost.mockReset();
   storeRefs.postStore.incrementCommentCount.mockReset();
   storeRefs.postStore.updateReactionCount.mockReset();
+  storeRefs.postStore.updateHighlightReaction.mockReset();
   storeRefs.commentStore.addComment.mockReset();
   storeRefs.commentStore.addReply.mockReset();
   storeRefs.commentStore.markSeenComment.mockReset();
@@ -425,6 +427,79 @@ describe('websocketStore', () => {
 
     expect(storeRefs.postStore.updateReactionCount).not.toHaveBeenCalled();
     expect(storeRefs.commentStore.updateReactionCount).not.toHaveBeenCalled();
+  });
+
+  it('handles highlight reaction events', async () => {
+    storeRefs.isAuthenticated.set(true);
+    const { websocketStore } = await import('../websocketStore');
+    websocketStore.init();
+
+    const socket = MockWebSocket.instances[0];
+    socket.open();
+
+    socket.emit('message', {
+      data: JSON.stringify({
+        type: 'highlight_reaction_added',
+        data: {
+          post_id: 'post-1',
+          link_id: 'link-1',
+          highlight_id: 'highlight-1',
+          user_id: 'user-2',
+        },
+        timestamp: 'now',
+      }),
+    });
+
+    socket.emit('message', {
+      data: JSON.stringify({
+        type: 'highlight_reaction_removed',
+        data: {
+          post_id: 'post-1',
+          link_id: 'link-1',
+          highlight_id: 'highlight-1',
+          user_id: 'user-2',
+        },
+        timestamp: 'now',
+      }),
+    });
+
+    expect(storeRefs.postStore.updateHighlightReaction).toHaveBeenCalledWith(
+      'post-1',
+      'link-1',
+      'highlight-1',
+      1
+    );
+    expect(storeRefs.postStore.updateHighlightReaction).toHaveBeenCalledWith(
+      'post-1',
+      'link-1',
+      'highlight-1',
+      -1
+    );
+  });
+
+  it('skips highlight reaction events from current user', async () => {
+    storeRefs.isAuthenticated.set(true);
+    storeRefs.currentUser.set({ id: 'user-1' });
+    const { websocketStore } = await import('../websocketStore');
+    websocketStore.init();
+
+    const socket = MockWebSocket.instances[0];
+    socket.open();
+
+    socket.emit('message', {
+      data: JSON.stringify({
+        type: 'highlight_reaction_added',
+        data: {
+          post_id: 'post-1',
+          link_id: 'link-1',
+          highlight_id: 'highlight-1',
+          user_id: 'user-1',
+        },
+        timestamp: 'now',
+      }),
+    });
+
+    expect(storeRefs.postStore.updateHighlightReaction).not.toHaveBeenCalled();
   });
 
   it('schedules reconnect on close when authed', async () => {

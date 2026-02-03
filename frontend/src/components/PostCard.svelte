@@ -464,6 +464,33 @@
     }
   }
 
+  async function toggleHighlightReaction(linkId: string, highlight: { id?: string; viewerReacted?: boolean }) {
+    if (!highlight.id) {
+      return;
+    }
+    const hasReacted = Boolean(highlight.viewerReacted);
+    const delta = hasReacted ? -1 : 1;
+    postStore.updateHighlightReaction(post.id, linkId, highlight.id, delta, !hasReacted);
+
+    try {
+      if (hasReacted) {
+        await api.removeHighlightReaction(post.id, highlight.id);
+      } else {
+        await api.addHighlightReaction(post.id, highlight.id);
+      }
+    } catch (e) {
+      logError('Failed to toggle highlight reaction', { postId: post.id, highlightId: highlight.id }, e);
+      postStore.updateHighlightReaction(post.id, linkId, highlight.id, -delta, hasReacted);
+    }
+  }
+
+  function handleHighlightReaction(highlight: { id?: string; viewerReacted?: boolean }) {
+    if (!primaryLink?.id) {
+      return;
+    }
+    void toggleHighlightReaction(primaryLink.id, highlight);
+  }
+
   function getProviderIcon(provider: string | undefined): string {
     switch (provider) {
       case 'spotify':
@@ -1600,6 +1627,7 @@
           <HighlightDisplay
             highlights={primaryLink.highlights}
             onSeek={highlightEmbedProvider ? handleHighlightSeek : undefined}
+            onToggleReaction={primaryLink?.id ? handleHighlightReaction : undefined}
             unsupportedMessage={highlightSeekMessage}
           />
         </div>

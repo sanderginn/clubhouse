@@ -1,8 +1,11 @@
 import { writable, derived } from 'svelte/store';
 
 export interface Highlight {
+  id?: string;
   timestamp: number;
   label?: string;
+  heartCount?: number;
+  viewerReacted?: boolean;
 }
 
 export interface Link {
@@ -290,6 +293,48 @@ function createPostStore() {
             ...post,
             reactionCounts: counts,
             viewerReactions: Array.from(viewerReactions),
+          };
+        }),
+      })),
+    updateHighlightReaction: (
+      postId: string,
+      linkId: string,
+      highlightId: string,
+      delta: number,
+      viewerReacted?: boolean
+    ) =>
+      update((state) => ({
+        ...state,
+        posts: state.posts.map((post) => {
+          if (post.id !== postId) {
+            return post;
+          }
+          if (!post.links) {
+            return post;
+          }
+          const links = post.links.map((link) => {
+            if (link.id !== linkId || !link.highlights) {
+              return link;
+            }
+            const highlights = link.highlights.map((highlight) => {
+              if (highlight.id !== highlightId) {
+                return highlight;
+              }
+              const nextCount = Math.max(0, (highlight.heartCount ?? 0) + delta);
+              return {
+                ...highlight,
+                heartCount: nextCount,
+                viewerReacted: viewerReacted ?? highlight.viewerReacted,
+              };
+            });
+            return {
+              ...link,
+              highlights,
+            };
+          });
+          return {
+            ...post,
+            links,
           };
         }),
       })),

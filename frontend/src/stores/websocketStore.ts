@@ -52,6 +52,13 @@ interface WsReactionEvent {
   emoji: string;
 }
 
+interface WsHighlightReactionEvent {
+  post_id: string;
+  link_id: string;
+  highlight_id: string;
+  user_id: string;
+}
+
 interface WsSubscriptionPayload {
   sectionIds: string[];
 }
@@ -280,6 +287,40 @@ function connect() {
         if (payload.post_id) {
           postStore.updateReactionCount(payload.post_id, payload.emoji, -1);
         }
+        break;
+      }
+      case 'highlight_reaction_added': {
+        const payload = parsed.data as WsHighlightReactionEvent;
+        if (!payload?.post_id || !payload?.link_id || !payload?.highlight_id) {
+          break;
+        }
+        const userId = get(currentUser)?.id;
+        if (userId && payload.user_id === userId) {
+          break;
+        }
+        postStore.updateHighlightReaction(
+          payload.post_id,
+          payload.link_id,
+          payload.highlight_id,
+          1
+        );
+        break;
+      }
+      case 'highlight_reaction_removed': {
+        const payload = parsed.data as WsHighlightReactionEvent;
+        if (!payload?.post_id || !payload?.link_id || !payload?.highlight_id) {
+          break;
+        }
+        const userId = get(currentUser)?.id;
+        if (userId && payload.user_id === userId) {
+          break;
+        }
+        postStore.updateHighlightReaction(
+          payload.post_id,
+          payload.link_id,
+          payload.highlight_id,
+          -1
+        );
         break;
       }
       case 'notification': {

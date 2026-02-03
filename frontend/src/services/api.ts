@@ -81,6 +81,12 @@ export interface ApiReactionGroup {
   users: ApiReactionUser[];
 }
 
+export interface ApiHighlightReactionResponse {
+  highlight_id: string;
+  heart_count: number;
+  viewer_reacted: boolean;
+}
+
 export interface ApiUserSummary {
   id: string;
   username: string;
@@ -644,6 +650,23 @@ class ApiClient {
 
   async removeCommentReaction(commentId: string, emoji: string): Promise<void> {
     await this.delete(`/comments/${commentId}/reactions/${encodeURIComponent(emoji)}`);
+  }
+
+  async addHighlightReaction(
+    postId: string,
+    highlightId: string
+  ): Promise<ApiHighlightReactionResponse> {
+    return this.post(
+      `/posts/${postId}/highlights/${encodeURIComponent(highlightId)}/reactions`,
+      {}
+    );
+  }
+
+  async removeHighlightReaction(
+    postId: string,
+    highlightId: string
+  ): Promise<ApiHighlightReactionResponse> {
+    return this.delete(`/posts/${postId}/highlights/${encodeURIComponent(highlightId)}/reactions`);
   }
 
   async saveRecipe(postId: string, categories: string[]): Promise<{ saved_recipes: SavedRecipe[] }> {

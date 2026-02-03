@@ -75,8 +75,11 @@ type LinkRequest struct {
 
 // Highlight represents a timestamped highlight for a link.
 type Highlight struct {
-	Timestamp int    `json:"timestamp"`
-	Label     string `json:"label,omitempty"`
+	ID            string `json:"id,omitempty"`
+	Timestamp     int    `json:"timestamp"`
+	Label         string `json:"label,omitempty"`
+	HeartCount    int    `json:"heart_count,omitempty"`
+	ViewerReacted bool   `json:"viewer_reacted,omitempty"`
 }
 
 const (

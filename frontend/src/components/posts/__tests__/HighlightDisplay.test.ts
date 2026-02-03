@@ -63,4 +63,18 @@ describe('HighlightDisplay', () => {
     await fireEvent.click(getByRole('button', { name: '00:30' }));
     expect(getByText('Seeking not supported')).toBeInTheDocument();
   });
+
+  it('renders heart reactions and toggles on click', async () => {
+    const onToggleReaction = vi.fn();
+    const { getByRole, queryByText } = render(HighlightDisplay, {
+      highlights: [{ id: 'highlight-1', timestamp: 5, label: 'Intro', heartCount: 2, viewerReacted: true }],
+      onToggleReaction,
+    });
+
+    expect(getByRole('button', { name: 'Heart highlight 00:05 Intro' })).toBeInTheDocument();
+    expect(queryByText('2')).toBeInTheDocument();
+
+    await fireEvent.click(getByRole('button', { name: 'Heart highlight 00:05 Intro' }));
+    expect(onToggleReaction).toHaveBeenCalledTimes(1);
+  });
 });

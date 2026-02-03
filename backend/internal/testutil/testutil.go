@@ -96,6 +96,7 @@ func CleanupTables(t *testing.T, db *sql.DB) {
 			mfa_backup_codes,
 			auth_events,
 			audit_logs,
+			highlight_reactions,
 			push_subscriptions,
 			notifications,
 			mentions,
