@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, cleanup } from '@testing-library/svelte';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Post } from '../../stores/postStore';
-import type { RecipeCategory, SavedRecipe } from '../../stores/recipeStore';
+import type { CookLog, RecipeCategory, SavedRecipe } from '../../stores/recipeStore';
 import { postStore } from '../../stores/postStore';
 import { recipeStore } from '../../stores/recipeStore';
 
@@ -131,11 +131,22 @@ const multiCategorySavedRecipes = new Map<string, SavedRecipe[]>([
   ],
 ]);
 
+const cookLogs: CookLog[] = [
+  {
+    id: 'cook-1',
+    userId: 'user-1',
+    postId: 'post-1',
+    rating: 4.5,
+    createdAt: '2025-01-02T00:00:00Z',
+  },
+];
+
 beforeEach(() => {
   postStore.reset();
   recipeStore.reset();
   recipeStore.setCategories(categories);
   recipeStore.setSavedRecipes(new Map(savedRecipes));
+  recipeStore.setCookLogs([...cookLogs]);
   postStore.setPosts([postOne, postTwo], null, false);
 
   vi.spyOn(recipeStore, 'loadCategories').mockResolvedValue();
@@ -162,6 +173,14 @@ describe('Cookbook', () => {
     await fireEvent.click(item);
 
     expect(pushPath).toHaveBeenCalledWith('/posts/post-1');
+  });
+
+  it('shows rating details for saved recipes', () => {
+    render(Cookbook);
+
+    expect(screen.getByText('Cooked 12')).toBeInTheDocument();
+    expect(screen.getByText('Your rating')).toBeInTheDocument();
+    expect(screen.getByText('4.5')).toBeInTheDocument();
   });
 
   it('switches to all recipes and sorts by rating', async () => {

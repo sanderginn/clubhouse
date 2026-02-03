@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { get } from 'svelte/store';
   import type { Post, Link } from '../../stores/postStore';
-  import type { SavedRecipe } from '../../stores/recipeStore';
+  import type { CookLog, SavedRecipe } from '../../stores/recipeStore';
   import { posts } from '../../stores/postStore';
   import {
     recipeStore,
@@ -56,9 +56,10 @@
   $: categoryCounts = buildCategoryCounts($savedRecipesByCategory);
   $: totalSavedCount = Array.from(categoryCounts.values()).reduce((total, count) => total + count, 0);
   $: selectedSavedRecipes = getSavedRecipesForCategory($savedRecipesByCategory, selectedCategory);
-  $: myRecipeItems = buildSavedRecipeItems(selectedSavedRecipes);
+  $: cookLogRatings = buildCookLogRatings($recipeStore.cookLogs);
+  $: myRecipeItems = buildSavedRecipeItems(selectedSavedRecipes, cookLogRatings);
   $: sortedMyRecipes = [...myRecipeItems].sort((a, b) => b.createdAt - a.createdAt);
-  $: allRecipeItems = buildAllRecipeItems($posts);
+  $: allRecipeItems = buildAllRecipeItems($posts, cookLogRatings);
   $: sortedAllRecipes = sortAllRecipes(allRecipeItems, sortKey);
   $: selectedCategoryLabel =
     categoryOptions.find((option) => option.value === selectedCategory)?.label ?? ALL_CATEGORY_LABEL;
@@ -103,6 +104,7 @@
     averageRating: number | null;
     cookCount: number;
     saveCount: number;
+    userRating: number | null;
     createdAt: number;
   };
 
@@ -143,6 +145,20 @@
       avgRating: avgRating === null ? null : normalizeNumber(avgRating, 0),
       cookCount: normalizeNumber(cookCount, 0),
     };
+  }
+
+  function buildCookLogRatings(logs: CookLog[]): Map<string, number> {
+    const ratings = new Map<string, number>();
+    for (const log of logs) {
+      if (log.deletedAt) {
+        continue;
+      }
+      const rating = normalizeNumber(log.rating, 0);
+      if (rating > 0) {
+        ratings.set(log.postId, rating);
+      }
+    }
+    return ratings;
   }
 
   function extractSaveCount(post: Post): number {
@@ -211,11 +227,15 @@
     return metadata?.recipe?.cook_time ?? metadata?.recipe?.total_time ?? null;
   }
 
-  function buildSavedRecipeItems(recipes: SavedRecipe[]): RecipeListItem[] {
+  function buildSavedRecipeItems(
+    recipes: SavedRecipe[],
+    ratingLookup: Map<string, number>
+  ): RecipeListItem[] {
     return recipes.map((saved) => {
       const post = saved.post;
       const link = post ? findRecipeLink(post) : null;
       const cookStats = post ? extractCookStats(post) : { avgRating: null, cookCount: 0 };
+      const userRating = ratingLookup.get(saved.postId) ?? null;
       return {
         postId: saved.postId,
         title: post ? buildRecipeTitle(post, link) : 'Recipe',
@@ -227,12 +247,16 @@
         averageRating: cookStats.avgRating,
         cookCount: cookStats.cookCount,
         saveCount: post ? extractSaveCount(post) : 0,
+        userRating,
         createdAt: new Date(saved.createdAt).getTime(),
       };
     });
   }
 
-  function buildAllRecipeItems(postList: Post[]): RecipeListItem[] {
+  function buildAllRecipeItems(
+    postList: Post[],
+    ratingLookup: Map<string, number>
+  ): RecipeListItem[] {
     return postList
       .map((post) => {
         const link = findRecipeLink(post);
@@ -240,6 +264,7 @@
           return null;
         }
         const cookStats = extractCookStats(post);
+        const userRating = ratingLookup.get(post.id) ?? null;
         return {
           postId: post.id,
           title: buildRecipeTitle(post, link),
@@ -251,6 +276,7 @@
           averageRating: cookStats.avgRating,
           cookCount: cookStats.cookCount,
           saveCount: extractSaveCount(post),
+          userRating,
           createdAt: new Date(post.createdAt).getTime(),
         };
       })
@@ -426,14 +452,26 @@
                       {#if recipe.author}
                         <p class="mt-0.5 text-xs text-gray-500">by {recipe.author}</p>
                       {/if}
-                      <div class="mt-1 flex items-center gap-2 text-xs text-gray-500">
-                        {#if recipe.averageRating !== null}
-                          <RatingStars value={recipe.averageRating} readonly size="sm" ariaLabel="Average rating" />
-                          <span>{recipe.averageRating.toFixed(1)}</span>
-                        {:else}
-                          <span>No ratings yet</span>
-                        {/if}
+                      <div class="mt-1 flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                        <div class="flex items-center gap-2">
+                          {#if recipe.averageRating !== null}
+                            <RatingStars value={recipe.averageRating} readonly size="sm" ariaLabel="Average rating" />
+                            <span>{recipe.averageRating.toFixed(1)}</span>
+                          {:else}
+                            <span>No ratings yet</span>
+                          {/if}
+                        </div>
+                        <span>Cooked {recipe.cookCount}</span>
                       </div>
+                      {#if recipe.userRating !== null}
+                        <div class="mt-1 flex items-center gap-2 text-xs text-amber-700">
+                          <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                            Your rating
+                          </span>
+                          <RatingStars value={recipe.userRating} readonly size="sm" ariaLabel="Your rating" />
+                          <span class="font-semibold">{recipe.userRating.toFixed(1)}</span>
+                        </div>
+                      {/if}
                     </div>
                   </button>
                 {/each}
