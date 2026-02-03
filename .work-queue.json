@@ -1075,7 +1075,7 @@
     {
       "issue_number": 681,
       "title": "Create CookButton component",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         676,
         680
@@ -1086,7 +1086,11 @@
         "recipes"
       ],
       "priority": 18,
-      "phase": "recipes-5"
+      "phase": "recipes-5",
+      "assigned_to": "agent-1770107645-48409",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770107645-48409",
+      "branch": "feat/issue-681-create-cookbutton-component",
+      "claimed_at": "2026-02-03T08:34:05Z"
     },
     {
       "issue_number": 683,
