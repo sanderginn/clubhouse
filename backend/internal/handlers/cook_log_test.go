@@ -159,29 +159,29 @@ func TestCookLogHandlerGetPostCookLogs(t *testing.T) {
 		t.Fatalf("expected status 200, got %d. Body: %s", w.Code, w.Body.String())
 	}
 
-	var response models.GetPostCookInfoResponse
+	var response models.PostCookInfo
 	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
 		t.Fatalf("failed to decode response: %v", err)
 	}
 
-	if response.CookInfo.CookCount != 2 {
-		t.Fatalf("expected cook_count 2, got %d", response.CookInfo.CookCount)
+	if response.CookCount != 2 {
+		t.Fatalf("expected cook_count 2, got %d", response.CookCount)
 	}
 
-	if response.CookInfo.AvgRating == nil || *response.CookInfo.AvgRating < 4.4 || *response.CookInfo.AvgRating > 4.6 {
-		t.Fatalf("expected avg_rating around 4.5, got %v", response.CookInfo.AvgRating)
+	if response.AvgRating == nil || *response.AvgRating < 4.4 || *response.AvgRating > 4.6 {
+		t.Fatalf("expected avg_rating around 4.5, got %v", response.AvgRating)
 	}
 
-	if len(response.CookInfo.Users) != 2 {
-		t.Fatalf("expected 2 users, got %d", len(response.CookInfo.Users))
+	if len(response.Users) != 2 {
+		t.Fatalf("expected 2 users, got %d", len(response.Users))
 	}
 
-	if !response.CookInfo.ViewerCooked || response.CookInfo.ViewerCookLog == nil {
+	if !response.ViewerCooked || response.ViewerCookLog == nil {
 		t.Fatalf("expected viewer cook log")
 	}
 
-	if response.CookInfo.ViewerCookLog.Rating != 5 {
-		t.Fatalf("expected viewer rating 5, got %d", response.CookInfo.ViewerCookLog.Rating)
+	if response.ViewerCookLog.Rating != 5 {
+		t.Fatalf("expected viewer rating 5, got %d", response.ViewerCookLog.Rating)
 	}
 }
 

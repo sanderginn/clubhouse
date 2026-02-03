@@ -241,13 +241,9 @@ func (h *CookLogHandler) GetPostCookLogs(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	response := models.GetPostCookInfoResponse{
-		CookInfo: *info,
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(response); err != nil {
+	if err := json.NewEncoder(w).Encode(info); err != nil {
 		observability.LogError(r.Context(), observability.ErrorLog{
 			Message:    "failed to encode get post cook logs response",
 			Code:       "ENCODE_FAILED",
