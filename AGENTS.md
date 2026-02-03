@@ -119,26 +119,38 @@ clubhouse/
 
 ## Common Tasks
 
+This project uses [Task](https://taskfile.dev) for running common commands. Run `task --list` to see all available tasks.
+
 ### Running Locally
 ```bash
 # Start all services
-docker compose up -d
+task dev:up
 
 # View logs
-docker compose logs -f backend
-docker compose logs -f frontend
+task dev:logs
+task dev:logs-backend
+task dev:logs-frontend
 
 # Stop
-docker compose down
+task dev:down
+
+# Show status
+task dev:status
 ```
 
 ### Database Migrations
 ```bash
 # Create new migration
-cd backend && migrate create -ext sql -dir migrations -seq <name>
+task db:migrate-create NAME=add_foo_table
 
 # Run migrations
-migrate -path migrations -database "postgres://..." up
+task db:migrate-up
+
+# Rollback
+task db:migrate-down
+
+# Check version
+task db:migrate-status
 ```
 
 ### API Endpoint Pattern
@@ -303,10 +315,10 @@ Later expansions: suspend users, configure sections, custom emojis.
 These checks must pass before committing and pushing:
 ```bash
 # Run checks only for files changed in the current changeset
-prek run
+task ci:prek
 
 # Or run everything
-prek run --all-files
+task ci:prek-all
 ```
 
 ### CI (Buildkite)
@@ -351,27 +363,56 @@ Before major feature additions, ask:
 
 ## Useful Commands
 
+All commands are available via [Task](https://taskfile.dev). Run `task --list` to see everything.
+
 ```bash
-# Format Go code
-go fmt ./...
+# Run all quality checks
+task check
 
-# Lint
-golangci-lint run ./...
+# Run all tests
+task test
 
-# Build (check for compile errors)
-cd backend && go build ./...
+# Run all linters
+task lint
 
-# Test
-cd backend && go test -v ./...
+# Backend commands
+task backend:fmt          # Format Go code
+task backend:lint         # Run golangci-lint
+task backend:test         # Run tests
+task backend:test-verbose # Run tests with verbose output
+task backend:build        # Build binary
+task backend:tidy         # Tidy go.mod
+task backend:check        # Run all backend checks
 
-# Frontend tests (unit + component)
-cd frontend && npm run test
+# Frontend commands
+task frontend:install     # Install dependencies
+task frontend:lint        # Run ESLint
+task frontend:check       # Run svelte-check
+task frontend:test        # Run unit tests
+task frontend:test-e2e    # Run Playwright E2E tests
+task frontend:all         # Run install + lint + check + test
 
-# Check dependencies
-go mod tidy && git diff go.mod
+# CI checks (same as Buildkite)
+task ci:backend-lint      # Backend lint check
+task ci:backend-test      # Backend test check
+task ci:frontend          # Frontend checks
+task ci:all               # Run all CI checks
+task ci:prek              # Run pre-commit hooks (changed files)
+task ci:prek-all          # Run pre-commit hooks (all files)
 
-# Frontend check
-cd frontend && npm run check
+# Work queue management
+task queue:show           # Show work queue status
+task queue:show-all       # Show full status including completed
+task queue:show-available # Show only available issues
+task queue:show-blocked   # Show only blocked issues
+task queue:claim AGENT=agent-1        # Claim next issue
+task queue:claim-dry-run AGENT=agent-1 # Preview claim
+task queue:complete ISSUE=123 PR=456  # Mark issue completed
+
+# Database
+task db:backup            # Backup production database
+task db:restore FILE=...  # Restore from backup
+task db:psql              # Open psql shell
 ```
 
 ## Database Schema Reference

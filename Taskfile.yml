@@ -1,0 +1,448 @@
+# Taskfile for Clubhouse Development
+# https://taskfile.dev
+#
+# Run `task --list` to see all available tasks
+
+version: "3"
+
+vars:
+  BACKEND_DIR: "{{.ROOT_DIR}}/backend"
+  FRONTEND_DIR: "{{.ROOT_DIR}}/frontend"
+  SCRIPTS_DIR: "{{.ROOT_DIR}}/scripts"
+  BUILDKITE_SCRIPTS: "{{.ROOT_DIR}}/.buildkite/scripts"
+  WORK_QUEUE: "{{.ROOT_DIR}}/.work-queue.json"
+  BACKUP_DIR: "{{.ROOT_DIR}}/backups"
+
+tasks:
+  # ============================================================================
+  # Default task - show help
+  # ============================================================================
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  # ============================================================================
+  # Development Workflow (dev:)
+  # ============================================================================
+  dev:up:
+    desc: Start all development services
+    cmds:
+      - docker compose up -d
+
+  dev:down:
+    desc: Stop all development services
+    cmds:
+      - docker compose down
+
+  dev:logs:
+    desc: Follow logs for all services
+    cmds:
+      - docker compose logs -f
+
+  dev:logs-backend:
+    desc: Follow backend logs
+    cmds:
+      - docker compose logs -f backend
+
+  dev:logs-frontend:
+    desc: Follow frontend logs
+    cmds:
+      - docker compose logs -f frontend
+
+  dev:restart:
+    desc: Restart all services
+    cmds:
+      - docker compose restart
+
+  dev:clean:
+    desc: Stop services and remove volumes
+    cmds:
+      - docker compose down -v
+
+  dev:status:
+    desc: Show status of all services
+    cmds:
+      - docker compose ps
+
+  # ============================================================================
+  # Backend (backend:)
+  # ============================================================================
+  backend:fmt:
+    desc: Format Go code
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - go fmt ./...
+
+  backend:lint:
+    desc: Run golangci-lint
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - golangci-lint run ./...
+
+  backend:test:
+    desc: Run backend tests
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - go test ./...
+
+  backend:test-verbose:
+    desc: Run backend tests with verbose output
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - go test -v ./...
+
+  backend:build:
+    desc: Build the backend binary
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - go build ./...
+
+  backend:tidy:
+    desc: Tidy go.mod dependencies
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - go mod tidy
+
+  backend:check:
+    desc: Run all backend checks (fmt, lint, test, build)
+    cmds:
+      - task: backend:fmt
+      - task: backend:lint
+      - task: backend:test
+      - task: backend:build
+
+  # ============================================================================
+  # Frontend (frontend:)
+  # ============================================================================
+  frontend:install:
+    desc: Install frontend dependencies
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm install
+    sources:
+      - package.json
+      - package-lock.json
+    generates:
+      - node_modules/.package-lock.json
+
+  frontend:dev:
+    desc: Start frontend dev server
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run dev
+
+  frontend:build:
+    desc: Build frontend for production
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run build
+
+  frontend:preview:
+    desc: Preview production build
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run preview
+
+  frontend:lint:
+    desc: Run ESLint on frontend
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run lint
+
+  frontend:format:
+    desc: Format frontend code with Prettier
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run format
+
+  frontend:check:
+    desc: Run svelte-check for type errors
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run check
+
+  frontend:test:
+    desc: Run frontend unit tests
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run test
+
+  frontend:test-e2e:
+    desc: Run Playwright E2E tests
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run test:e2e
+
+  frontend:test-e2e-ui:
+    desc: Run Playwright E2E tests with UI
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run test:e2e:ui
+
+  frontend:all:
+    desc: Run install + lint + check + test
+    cmds:
+      - task: frontend:install
+      - task: frontend:lint
+      - task: frontend:check
+      - task: frontend:test
+
+  # ============================================================================
+  # Database (db:)
+  # ============================================================================
+  db:migrate-create:
+    desc: Create a new migration (requires NAME=...)
+    dir: "{{.BACKEND_DIR}}"
+    preconditions:
+      - sh: '[ -n "{{.NAME}}" ]'
+        msg: "NAME is required. Usage: task db:migrate-create NAME=add_foo_table"
+    cmds:
+      - migrate create -ext sql -dir migrations -seq {{.NAME}}
+
+  db:migrate-up:
+    desc: Apply all pending migrations
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - migrate -path migrations -database "$DATABASE_URL" up
+
+  db:migrate-down:
+    desc: Rollback the last migration
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - migrate -path migrations -database "$DATABASE_URL" down 1
+
+  db:migrate-status:
+    desc: Show current migration version
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - migrate -path migrations -database "$DATABASE_URL" version
+
+  db:psql:
+    desc: Open psql shell in the postgres container
+    cmds:
+      - docker compose exec postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+
+  db:backup:
+    desc: Backup the production database
+    vars:
+      BACKUP_DIR: '{{.BACKUP_DIR | default "./backups"}}'
+      RETENTION_DAYS: '{{.RETENTION_DAYS | default "7"}}'
+      TIMESTAMP:
+        sh: date -u "+%Y%m%dT%H%M%SZ"
+    cmds:
+      - mkdir -p "{{.BACKUP_DIR}}"
+      - |
+        if [ -f ./.env.production ]; then
+          set -a && . ./.env.production && set +a
+        fi
+        TMP_SQL="{{.BACKUP_DIR}}/clubhouse_{{.TIMESTAMP}}.sql.tmp"
+        BACKUP_FILE="{{.BACKUP_DIR}}/clubhouse_{{.TIMESTAMP}}.sql.gz"
+        trap "rm -f \"$TMP_SQL\"" EXIT
+        docker compose -f docker-compose.prod.yml exec -T postgres \
+          sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB"' > "$TMP_SQL"
+        gzip -c "$TMP_SQL" > "$BACKUP_FILE"
+        find "{{.BACKUP_DIR}}" -type f -name "clubhouse_*.sql.gz" -mtime +{{.RETENTION_DAYS}} -print -delete
+        echo "Backup written to $BACKUP_FILE"
+
+  db:restore:
+    desc: Restore database from backup (requires FILE=...)
+    preconditions:
+      - sh: '[ -n "{{.FILE}}" ]'
+        msg: "FILE is required. Usage: task db:restore FILE=./backups/clubhouse_xxx.sql.gz"
+      - sh: '[ -f "{{.FILE}}" ]'
+        msg: "Backup file not found: {{.FILE}}"
+    cmds:
+      - |
+        if [ -f ./.env.production ]; then
+          set -a && . ./.env.production && set +a
+        fi
+        TMP_SQL="$(mktemp -t clubhouse_restore.XXXXXX)"
+        trap "rm -f \"$TMP_SQL\"" EXIT
+        gunzip -t "{{.FILE}}"
+        gunzip -c "{{.FILE}}" > "$TMP_SQL"
+        docker compose -f docker-compose.prod.yml exec -T postgres \
+          sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "$TMP_SQL"
+        echo "Restore completed from {{.FILE}}"
+
+  # ============================================================================
+  # Docker (docker:)
+  # ============================================================================
+  docker:up:
+    desc: Start dev environment
+    cmds:
+      - docker compose up -d
+
+  docker:up-build:
+    desc: Build and start dev environment
+    cmds:
+      - docker compose up -d --build
+
+  docker:down:
+    desc: Stop dev environment
+    cmds:
+      - docker compose down
+
+  docker:test-up:
+    desc: Start test environment
+    cmds:
+      - docker compose -f docker-compose.test.yml up -d
+
+  docker:test-down:
+    desc: Stop test environment
+    cmds:
+      - docker compose -f docker-compose.test.yml down
+
+  docker:prod-up:
+    desc: Start production environment
+    cmds:
+      - docker compose -f docker-compose.prod.yml up -d
+
+  docker:prod-down:
+    desc: Stop production environment
+    cmds:
+      - docker compose -f docker-compose.prod.yml down
+
+  docker:build-backend:
+    desc: Build backend Docker image
+    cmds:
+      - docker build -t clubhouse-backend:latest -f backend/Dockerfile backend/
+
+  docker:build-frontend:
+    desc: Build frontend Docker image
+    cmds:
+      - docker build -t clubhouse-frontend:latest -f frontend/Dockerfile frontend/
+
+  docker:prune:
+    desc: Clean up unused Docker resources
+    cmds:
+      - docker system prune -f
+
+  # ============================================================================
+  # CI/Quality (ci:)
+  # ============================================================================
+  ci:backend-lint:
+    desc: Run backend lint (same as Buildkite)
+    cmds:
+      - "{{.BUILDKITE_SCRIPTS}}/backend-lint.sh"
+
+  ci:backend-test:
+    desc: Run backend tests (same as Buildkite)
+    cmds:
+      - "{{.BUILDKITE_SCRIPTS}}/backend-test.sh"
+
+  ci:frontend:
+    desc: Run frontend checks (same as Buildkite)
+    cmds:
+      - "{{.BUILDKITE_SCRIPTS}}/frontend-checks.sh"
+
+  ci:all:
+    desc: Run all CI checks
+    cmds:
+      - task: ci:backend-lint
+      - task: ci:backend-test
+      - task: ci:frontend
+
+  ci:prek:
+    desc: Run pre-commit hooks on changed files
+    cmds:
+      - prek run
+
+  ci:prek-all:
+    desc: Run pre-commit hooks on all files
+    cmds:
+      - prek run --all-files
+
+  # ============================================================================
+  # Work Queue (queue:)
+  # ============================================================================
+  queue:show:
+    desc: Show work queue status (summary + available + in-progress)
+    cmds:
+      - "{{.SCRIPTS_DIR}}/show-queue.sh"
+
+  queue:show-all:
+    desc: Show full work queue status including blocked and completed
+    cmds:
+      - "{{.SCRIPTS_DIR}}/show-queue.sh --all"
+
+  queue:show-available:
+    desc: Show only available issues
+    cmds:
+      - "{{.SCRIPTS_DIR}}/show-queue.sh --available"
+
+  queue:show-blocked:
+    desc: Show only blocked issues
+    cmds:
+      - "{{.SCRIPTS_DIR}}/show-queue.sh --blocked"
+
+  queue:claim:
+    desc: Claim next available issue (requires AGENT=...)
+    preconditions:
+      - sh: '[ -n "{{.AGENT}}" ]'
+        msg: "AGENT is required. Usage: task queue:claim AGENT=agent-1"
+    cmds:
+      - "{{.SCRIPTS_DIR}}/claim-issue.sh {{.AGENT}}"
+
+  queue:claim-dry-run:
+    desc: Preview which issue would be claimed (requires AGENT=...)
+    preconditions:
+      - sh: '[ -n "{{.AGENT}}" ]'
+        msg: "AGENT is required. Usage: task queue:claim-dry-run AGENT=agent-1"
+    cmds:
+      - "{{.SCRIPTS_DIR}}/claim-issue.sh --dry-run {{.AGENT}}"
+
+  queue:complete:
+    desc: Mark issue as completed (requires ISSUE=..., optional PR=...)
+    preconditions:
+      - sh: '[ -n "{{.ISSUE}}" ]'
+        msg: "ISSUE is required. Usage: task queue:complete ISSUE=123 PR=456"
+    cmds:
+      - "{{.SCRIPTS_DIR}}/complete-issue.sh {{.ISSUE}} {{.PR}}"
+
+  queue:prune:
+    desc: Archive completed issues that aren't blocking open work
+    cmds:
+      - "{{.SCRIPTS_DIR}}/prune-completed.sh"
+
+  queue:prune-dry-run:
+    desc: Preview which completed issues would be archived
+    cmds:
+      - "{{.SCRIPTS_DIR}}/prune-completed.sh --dry-run"
+
+  # ============================================================================
+  # Agent (agent:)
+  # ============================================================================
+  agent:setup:
+    desc: Show setup info for an agent (requires NUM=...)
+    preconditions:
+      - sh: '[ -n "{{.NUM}}" ]'
+        msg: "NUM is required. Usage: task agent:setup NUM=1"
+    cmds:
+      - "{{.SCRIPTS_DIR}}/agent-setup.sh {{.NUM}}"
+
+  agent:setup-worktrees:
+    desc: Create worktrees for all available issues
+    cmds:
+      - "{{.SCRIPTS_DIR}}/setup-worktrees.sh"
+
+  # ============================================================================
+  # Convenience Aliases (root level)
+  # ============================================================================
+  check:
+    desc: Run all quality checks (backend + frontend)
+    cmds:
+      - task: backend:check
+      - task: frontend:all
+
+  test:
+    desc: Run all tests (backend + frontend)
+    cmds:
+      - task: backend:test
+      - task: frontend:test
+
+  lint:
+    desc: Run all linters (backend + frontend)
+    cmds:
+      - task: backend:lint
+      - task: frontend:lint

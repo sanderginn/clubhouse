@@ -289,6 +289,15 @@ After rebasing, wait for the next review cycle.
 15. **Stay alive after PR** — do not exit after creating the PR. Wait for review feedback and address it until the PR is merged.
 16. **Do not spawn sub-agents** — you are already the subagent; proceed with this workflow directly.
 
+### Taskfile Maintenance
+
+If you discover a useful command or workflow that could benefit other developers:
+1. Check if a similar task already exists: `task --list`
+2. Add the task to `Taskfile.yml` following existing patterns
+3. Use appropriate namespace (dev:, backend:, frontend:, db:, docker:, ci:, queue:, agent:)
+4. Include a `desc:` field for discoverability
+5. Mention the new task in your PR description
+
 ## Worktree Contamination Check
 
 **Run this check after EVERY commit and before EVERY push.** Also run it if you're unsure whether you accidentally modified files outside your worktree.
