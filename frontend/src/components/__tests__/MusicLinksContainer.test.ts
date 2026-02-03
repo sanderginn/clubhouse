@@ -1,7 +1,9 @@
 import { render, screen, fireEvent, cleanup } from '@testing-library/svelte';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { get } from 'svelte/store';
 import { sectionStore } from '../../stores/sectionStore';
 import { sectionLinksStore, type SectionLink } from '../../stores/sectionLinksStore';
+import { musicLengthFilter } from '../../stores/musicFilterStore';
 
 const loadSectionLinks = vi.hoisted(() => vi.fn());
 const loadMoreSectionLinks = vi.hoisted(() => vi.fn());
@@ -40,6 +42,8 @@ function setActiveSection(type: 'music' | 'general') {
 beforeEach(() => {
   loadSectionLinks.mockReset();
   loadMoreSectionLinks.mockReset();
+  window.sessionStorage?.clear();
+  musicLengthFilter.set('all');
   sectionLinksStore.reset();
   sectionStore.setActiveSection(null);
 });
@@ -91,5 +95,16 @@ describe('MusicLinksContainer', () => {
     await fireEvent.click(button);
 
     expect(loadMoreSectionLinks).toHaveBeenCalledTimes(1);
+  });
+
+  it('updates the length filter selection', async () => {
+    setActiveSection('music');
+    render(MusicLinksContainer);
+
+    const tracksButton = screen.getByRole('button', { name: 'Tracks' });
+    await fireEvent.click(tracksButton);
+
+    expect(get(musicLengthFilter)).toBe('tracks');
+    expect(tracksButton).toHaveAttribute('aria-pressed', 'true');
   });
 });

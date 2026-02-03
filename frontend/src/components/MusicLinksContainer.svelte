@@ -6,6 +6,7 @@
     isLoadingSectionLinks,
     hasMoreSectionLinks,
     sectionLinksStore,
+    musicLengthFilter,
   } from '../stores';
   import { loadSectionLinks, loadMoreSectionLinks } from '../stores/sectionLinksFeedStore';
   import type { SectionLink } from '../stores/sectionLinksStore';
@@ -17,6 +18,7 @@
 
   $: isMusicSection = $activeSection?.type === 'music';
   $: linkCount = $sectionLinks.length;
+  $: lengthFilter = $musicLengthFilter;
 
   $: if (isMusicSection && $activeSection?.id && $activeSection.id !== lastSectionId) {
     lastSectionId = $activeSection.id;
@@ -35,6 +37,16 @@
 
   function toggleExpanded() {
     isExpanded = !isExpanded;
+  }
+
+  const lengthFilters = [
+    { value: 'all', label: 'All' },
+    { value: 'tracks', label: 'Tracks' },
+    { value: 'sets', label: 'Sets/Mixes' },
+  ] as const;
+
+  function setLengthFilter(value: (typeof lengthFilters)[number]['value']) {
+    musicLengthFilter.set(value);
   }
 
   function getThumbnailUrl(link: SectionLink): string | null {
@@ -72,13 +84,13 @@
 
 {#if isMusicSection}
   <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-    <button
-      type="button"
-      class="w-full flex items-center justify-between px-4 py-3"
-      on:click={toggleExpanded}
-      aria-expanded={isExpanded}
-    >
-      <div class="flex items-center gap-2">
+    <div class="flex items-center justify-between px-4 py-3 gap-3">
+      <button
+        type="button"
+        class="flex items-center gap-2"
+        on:click={toggleExpanded}
+        aria-expanded={isExpanded}
+      >
         <svg
           class={`h-4 w-4 text-gray-500 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
           viewBox="0 0 20 20"
@@ -97,8 +109,25 @@
         >
           {linkCount}
         </span>
+      </button>
+
+      <div class="flex items-center gap-1 rounded-full bg-gray-100 p-1">
+        {#each lengthFilters as filter}
+          <button
+            type="button"
+            class={`px-2.5 py-1 text-xs font-semibold rounded-full transition ${
+              lengthFilter === filter.value
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+            aria-pressed={lengthFilter === filter.value}
+            on:click={() => setLengthFilter(filter.value)}
+          >
+            {filter.label}
+          </button>
+        {/each}
       </div>
-    </button>
+    </div>
 
     {#if isExpanded}
       <div class="border-t border-gray-200 px-4 pb-4 pt-3 space-y-3">
