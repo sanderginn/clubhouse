@@ -13,7 +13,7 @@ You must run a **foreground loop** for the entire session. Never yield or go idl
 
 ```
 1. Check for main repo contamination (see "Handling Main Repo Contamination" below)
-2. Ensure worker pool is full (up to 4 workers if work is available)
+2. Ensure worker pool is full (up to 5 workers if work is available BUT review agents get prioritized if existing workers are awaiting review)
 3. Wait for any agent to report completion
 4. Handle the completed agent (review → feedback or merge)
 5. Go to 1
@@ -21,12 +21,12 @@ You must run a **foreground loop** for the entire session. Never yield or go idl
 
 **CRITICAL: Foreground Loop Persistence**
 - The foreground loop MUST continue running until all work is complete and no agents are active
-- After ANY interruption (user question, error, unexpected state), you MUST immediately resume the foreground loop
+- After ANY interruption (user question, error, unexpected state), you MUST immediately resume the foreground loop in an unattended manner. Do NOT claim to resume the foreground loop without doing so.
 - Never exit the loop to "wait for user input" — handle the situation and continue
 - If you find yourself about to say "I'll continue when..." or "Let me know when...", STOP and instead continue the loop immediately
 - The only valid exit condition is: zero active workers AND zero available issues in the queue
 
-**Note on worker count**: After recovery, there may be more than 4 workers active initially. This is intentional to complete existing work that may block dependencies. Once workers complete and the total count drops below 4, spawn fresh workers to maintain 4 active (if available issues exist).
+**Note on worker count**: After recovery, there may be more than 5 workers active initially. This is intentional to complete existing work that may block dependencies. Once workers complete and the total count drops below 5, spawn fresh workers to maintain 5 active (if available issues exist). All of this ONLY applies if there are no workers awaiting review. If there are, ALWAYS prioritize spawning a reviewer.
 
 ## Handling Main Repo Contamination
 
@@ -182,13 +182,13 @@ The startup flow includes recovery detection to resume any dangling work from in
 
 ### Step 2: Fill Worker Pool
 
-1. **Calculate remaining slots:** `max(0, 4 - resumed_workers)`
-   - Note: Resumed workers can exceed 4, so this may be 0
-   - Only spawn fresh workers if slots > 0
+1. **Calculate remaining slots:** `max(0, 5 - resumed_workers - workers_awaiting_review)`
+   - Note: Resumed workers can exceed 5, so this may be 0
+   - Only spawn fresh workers if slots > 0 AND no active workers are awaiting review, otherwise prioritize reviewer
 
 2. **If slots available:**
    - Run `./scripts/show-queue.sh --available` to count available issues
-   - Spawn fresh workers to fill up to 4 total (including resumed)
+   - Spawn fresh workers to fill up to 5 total (including resumed)
    - Use the "Spawning a Fresh Worker" process below
 
 3. **Log total active workers and enter the main loop**
@@ -265,6 +265,7 @@ Use `wait` to block until the reviewer finishes.
 
 The reviewer's final output contains a verdict line:
 - `REVIEW_VERDICT: REQUEST_CHANGES` — the reviewer posted feedback on the PR.
+- `REVIEW_VERDICT: PENDING_CI` — Code looks good but CI checks are still pending/running
 - `REVIEW_VERDICT: APPROVE` — the PR is ready to merge.
 
 ### Step 3a: If Feedback Was Posted
@@ -376,7 +377,7 @@ Update this table as events occur. Use it to route `send_input` calls to the cor
 3. **Never bypass status checks** — wait for them to pass before merging.
 4. **Never merge without a review** — always spawn a `$reviewer` first.
 5. **Always stay in the foreground loop** — do not yield or go idle while agents are active. This is non-negotiable.
-6. **Maximum 4 concurrent workers** — do not exceed this limit when spawning fresh workers. Exception: During recovery, resume all dangling PRs even if it results in >4 workers temporarily. Once recovered workers complete, enforce the 4-worker limit for new work.
+6. **Maximum 5 concurrent workers** — do not exceed this limit when spawning fresh workers. If any active worker is awaiting review, ALWAYS prioritize spawning a reviewer. Exception: During recovery, resume all dangling PRs even if it results in >5 workers temporarily. Once recovered workers complete, enforce the 5-worker limit for new work.
 7. **Close agents when done** — use `close_agent` for both workers and reviewers once they are no longer needed.
 8. **Tell spawned agents they are already the subagent and must not spawn further sub-agents** — prevent infinite recursion without blocking the workflow.
 9. **Tell spawned agents they share the environment** — workers must not interfere with each other's worktrees.

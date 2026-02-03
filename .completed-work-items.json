@@ -2,7 +2,7 @@
   "metadata": {
     "description": "Archived completed work items",
     "created_at": "2026-01-29T13:07:57Z",
-    "last_updated": "2026-02-01T14:02:47Z"
+    "last_updated": "2026-02-03T15:56:22Z"
   },
   "archived_issues": [
     {
@@ -5547,6 +5547,1452 @@
       "claimed_at": "2026-02-01T11:39:32Z",
       "pr_number": 583,
       "completed_at": "2026-02-01T11:53:28Z"
+    },
+    {
+      "issue_number": 628,
+      "title": "Fix SQL syntax errors in Audit Logs & Admin Operations dashboards",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "observability",
+        "grafana"
+      ],
+      "priority": 1,
+      "assigned_to": "agent-1770037755-13425",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770037755-13425",
+      "branch": "fix/issue-628-fix-sql-syntax-errors-in-audit-logs-admi",
+      "claimed_at": "2026-02-02T13:09:15Z",
+      "pr_number": 633,
+      "completed_at": "2026-02-02T13:26:04Z"
+    },
+    {
+      "issue_number": 629,
+      "title": "Add database metrics instrumentation to backend",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "observability"
+      ],
+      "priority": 2,
+      "assigned_to": "agent-1770037764-13739",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770037764-13739",
+      "branch": "feat/issue-629-add-database-metrics-instrumentation-to-",
+      "claimed_at": "2026-02-02T13:09:24Z",
+      "pr_number": 635,
+      "completed_at": "2026-02-02T13:28:40Z"
+    },
+    {
+      "issue_number": 630,
+      "title": "Add business metrics instrumentation to backend",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "observability"
+      ],
+      "priority": 3,
+      "assigned_to": "agent-1770037767-13905",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770037767-13905",
+      "branch": "feat/issue-630-add-business-metrics-instrumentation-to-",
+      "claimed_at": "2026-02-02T13:09:27Z",
+      "pr_number": 634,
+      "completed_at": "2026-02-02T13:20:08Z"
+    },
+    {
+      "issue_number": 631,
+      "title": "Investigate and fix Loki log shipping from backend",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "backend",
+        "observability"
+      ],
+      "priority": 4,
+      "assigned_to": "agent-1770037762-13659",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770037762-13659",
+      "branch": "fix/issue-631-investigate-and-fix-loki-log-shipping-fr",
+      "claimed_at": "2026-02-02T13:09:22Z",
+      "pr_number": 632,
+      "completed_at": "2026-02-02T13:24:29Z"
+    },
+    {
+      "issue_number": 616,
+      "title": "Fix \"Reply to image\" button not clickable in carousel and overlapped in lightbox",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend"
+      ],
+      "priority": 1,
+      "assigned_to": "agent-1769978981-15312",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769978981-15312",
+      "branch": "fix/issue-616-fix-reply-to-image-button-not-clickable-",
+      "claimed_at": "2026-02-01T20:49:41Z",
+      "pr_number": 623,
+      "completed_at": "2026-02-01T20:58:29Z"
+    },
+    {
+      "issue_number": 617,
+      "title": "Display image reply indicator on posted comments",
+      "status": "completed",
+      "dependencies": [
+        616
+      ],
+      "labels": [
+        "bug",
+        "frontend",
+        "backend"
+      ],
+      "priority": 2,
+      "assigned_to": "agent-1769979906-38748",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769979906-38748",
+      "branch": "fix/issue-617-display-image-reply-indicator-on-posted-",
+      "claimed_at": "2026-02-01T21:05:06Z",
+      "pr_number": 626,
+      "completed_at": "2026-02-01T21:41:32Z"
+    },
+    {
+      "issue_number": 618,
+      "title": "Add admin notification for new user registrations",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "backend"
+      ],
+      "priority": 3,
+      "assigned_to": "agent-1769979909-38860",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769979909-38860",
+      "branch": "feat/issue-618-add-admin-notification-for-new-user-regi",
+      "claimed_at": "2026-02-01T21:05:09Z",
+      "pr_number": 627,
+      "completed_at": "2026-02-01T22:02:44Z"
+    },
+    {
+      "issue_number": 619,
+      "title": "Fix nested reply styling on user profile Comments tab",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "ui"
+      ],
+      "priority": 4,
+      "assigned_to": "agent-1769978983-15417",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769978983-15417",
+      "branch": "fix/issue-619-fix-nested-reply-styling-on-user-profile",
+      "claimed_at": "2026-02-01T20:49:43Z",
+      "pr_number": 624,
+      "completed_at": "2026-02-01T21:00:57Z"
+    },
+    {
+      "issue_number": 620,
+      "title": "Make posts clickable on user profile Posts tab",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "ux"
+      ],
+      "priority": 5,
+      "assigned_to": "agent-1769978985-15443",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769978985-15443",
+      "branch": "fix/issue-620-make-posts-clickable-on-user-profile-pos",
+      "claimed_at": "2026-02-01T20:49:45Z",
+      "pr_number": 622,
+      "completed_at": "2026-02-01T20:58:38Z"
+    },
+    {
+      "issue_number": 621,
+      "title": "Fix search bar alignment - center within main container",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "ui"
+      ],
+      "priority": 6,
+      "assigned_to": "agent-1769978987-15325",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769978987-15325",
+      "branch": "fix/issue-621-fix-search-bar-alignment-center-within-m",
+      "claimed_at": "2026-02-01T20:49:47Z",
+      "pr_number": 625,
+      "completed_at": "2026-02-01T21:04:39Z"
+    },
+    {
+      "issue_number": 595,
+      "title": "Reply option missing on images (regression)",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend"
+      ],
+      "priority": 1,
+      "assigned_to": "agent-1769966268-11864",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769966268-11864",
+      "branch": "fix/issue-595-reply-option-missing-on-images-regressio",
+      "claimed_at": "2026-02-01T17:17:48Z",
+      "pr_number": 611,
+      "completed_at": "2026-02-01T17:54:01Z"
+    },
+    {
+      "issue_number": 596,
+      "title": "Fix @mention behavior for nonexistent users",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "backend"
+      ],
+      "priority": 1,
+      "assigned_to": "agent-1769967885-60504",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769967885-60504",
+      "branch": "fix/issue-596-fix-mention-behavior-for-nonexistent-use",
+      "claimed_at": "2026-02-01T17:44:45Z",
+      "pr_number": 614,
+      "completed_at": "2026-02-01T18:11:08Z"
+    },
+    {
+      "issue_number": 597,
+      "title": "Fix frontend OTLP traces proxy error",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "observability"
+      ],
+      "priority": 1,
+      "assigned_to": "agent-1769965662-77475",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769965662-77475",
+      "branch": "fix/issue-597-fix-frontend-otlp-traces-proxy-error",
+      "claimed_at": "2026-02-01T17:07:42Z",
+      "pr_number": 605,
+      "completed_at": "2026-02-01T17:19:43Z"
+    },
+    {
+      "issue_number": 598,
+      "title": "Improve notification read status and counter behavior",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "backend"
+      ],
+      "priority": 2,
+      "assigned_to": "agent-1769965679-82169",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769965679-82169",
+      "branch": "feat/issue-598-improve-notification-read-status-and-cou",
+      "claimed_at": "2026-02-01T17:07:59Z",
+      "pr_number": 613,
+      "completed_at": "2026-02-01T17:37:12Z"
+    },
+    {
+      "issue_number": 599,
+      "title": "Un-highlight nested comments by other users in profile and search",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "priority": 2,
+      "assigned_to": "agent-1769965681-82306",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769965681-82306",
+      "branch": "feat/issue-599-unhighlight-nested-comments-by-other-use",
+      "claimed_at": "2026-02-01T17:08:01Z",
+      "pr_number": 610,
+      "completed_at": "2026-02-01T17:29:41Z"
+    },
+    {
+      "issue_number": 600,
+      "title": "Group section-scoped search results under single section header",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "priority": 3,
+      "assigned_to": "agent-1769965683-82520",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769965683-82520",
+      "branch": "feat/issue-600-group-sectionscoped-search-results-under",
+      "claimed_at": "2026-02-01T17:08:03Z",
+      "pr_number": 607,
+      "completed_at": "2026-02-01T17:23:10Z"
+    },
+    {
+      "issue_number": 601,
+      "title": "Add \"Posted in:\" label to section pills in user profile",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "ux"
+      ],
+      "priority": 3,
+      "assigned_to": "agent-1769965691-82914",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769965691-82914",
+      "branch": "feat/issue-601-add-posted-in-label-to-section-pills-in-",
+      "claimed_at": "2026-02-01T17:08:11Z",
+      "pr_number": 608,
+      "completed_at": "2026-02-01T17:20:48Z"
+    },
+    {
+      "issue_number": 602,
+      "title": "Center search bar in navbar",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "ui"
+      ],
+      "priority": 4,
+      "pr_number": 606,
+      "completed_at": "2026-02-01T17:16:47Z"
+    },
+    {
+      "issue_number": 603,
+      "title": "Format backend logs as JSON",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "observability"
+      ],
+      "priority": 5,
+      "assigned_to": "agent-1769966281-12250",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769966281-12250",
+      "branch": "feat/issue-603-format-backend-logs-as-json",
+      "claimed_at": "2026-02-01T17:18:01Z",
+      "pr_number": 609,
+      "completed_at": "2026-02-01T17:24:54Z"
+    },
+    {
+      "issue_number": 604,
+      "title": "Configure all third-party services to log in JSON",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "infrastructure",
+        "observability"
+      ],
+      "priority": 5,
+      "assigned_to": "agent-1769966719-31324",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1769966719-31324",
+      "branch": "feat/issue-604-configure-all-thirdparty-services-to-log",
+      "claimed_at": "2026-02-01T17:25:19Z",
+      "pr_number": 612,
+      "completed_at": "2026-02-01T17:57:44Z"
+    },
+    {
+      "issue_number": 636,
+      "title": "Grafana Audit Logs dashboard: panel query fails with pq AND type error",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "observability",
+        "grafana"
+      ],
+      "priority": 1,
+      "assigned_to": "agent-1770066778-66340",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770066778-66340",
+      "branch": "fix/issue-636-grafana-audit-logs-dashboard-panel-query",
+      "claimed_at": "2026-02-02T21:12:58Z",
+      "pr_number": 642,
+      "completed_at": "2026-02-02T21:21:50Z"
+    },
+    {
+      "issue_number": 637,
+      "title": "Grafana Admin Operations dashboard: \"Actions by Admin\" panel missing time column",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "observability",
+        "grafana"
+      ],
+      "priority": 2,
+      "assigned_to": "agent-1770066783-66517",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770066783-66517",
+      "branch": "fix/issue-637-grafana-admin-operations-dashboard-actio",
+      "claimed_at": "2026-02-02T21:13:03Z",
+      "pr_number": 640,
+      "completed_at": "2026-02-02T21:22:36Z"
+    },
+    {
+      "issue_number": 638,
+      "title": "Grafana Frontend Errors dashboard: Sentry datasource missing",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "observability",
+        "grafana"
+      ],
+      "priority": 2,
+      "assigned_to": "agent-1770066787-66659",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770066787-66659",
+      "branch": "fix/issue-638-grafana-frontend-errors-dashboard-sentry",
+      "claimed_at": "2026-02-02T21:13:07Z",
+      "pr_number": 643,
+      "completed_at": "2026-02-02T21:23:53Z"
+    },
+    {
+      "issue_number": 639,
+      "title": "Grafana Traces dashboard: Trace Search panel has invalid TraceQL query",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "observability",
+        "grafana"
+      ],
+      "priority": 2,
+      "assigned_to": "agent-1770066789-66660",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770066789-66660",
+      "branch": "fix/issue-639-grafana-traces-dashboard-trace-search-pa",
+      "claimed_at": "2026-02-02T21:13:09Z",
+      "pr_number": 641,
+      "completed_at": "2026-02-02T21:20:58Z"
+    },
+    {
+      "issue_number": 644,
+      "title": "Postgres audit_logs queries failing with syntax error near add_reaction",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "observability",
+        "database"
+      ],
+      "priority": 1,
+      "assigned_to": "agent-1770071291-14939",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770071291-14939",
+      "branch": "fix/issue-644-postgres-auditlogs-queries-failing-with-",
+      "claimed_at": "2026-02-02T22:28:11Z",
+      "pr_number": 660,
+      "completed_at": "2026-02-02T22:37:39Z"
+    },
+    {
+      "issue_number": 645,
+      "title": "Tempo Trace Search panel TraceQL parse errors",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "observability"
+      ],
+      "priority": 2,
+      "assigned_to": "agent-1770069313-88661",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770069313-88661",
+      "branch": "fix/issue-645-tempo-trace-search-panel-traceql-parse-e",
+      "claimed_at": "2026-02-02T21:55:13Z",
+      "pr_number": 648,
+      "completed_at": "2026-02-02T22:00:44Z"
+    },
+    {
+      "issue_number": 646,
+      "title": "Grafana Sentry datasource errors when org slug is unset",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "observability",
+        "grafana"
+      ],
+      "priority": 2,
+      "assigned_to": "agent-1770069319-88803",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770069319-88803",
+      "branch": "fix/issue-646-grafana-sentry-datasource-errors-when-or",
+      "claimed_at": "2026-02-02T21:55:19Z",
+      "pr_number": 649,
+      "completed_at": "2026-02-02T22:02:40Z"
+    },
+    {
+      "issue_number": 647,
+      "title": "Loki query cancellations from Grafana dashboards",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "observability"
+      ],
+      "priority": 3,
+      "assigned_to": "agent-1770069321-88875",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770069321-88875",
+      "branch": "fix/issue-647-loki-query-cancellations-from-grafana-da",
+      "claimed_at": "2026-02-02T21:55:21Z",
+      "pr_number": 650,
+      "completed_at": "2026-02-02T22:04:39Z"
+    },
+    {
+      "issue_number": 651,
+      "title": "Backend: Add Highlight model and validation for music links",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend"
+      ],
+      "priority": 1,
+      "phase": 1,
+      "assigned_to": "agent-1770071294-15083",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770071294-15083",
+      "branch": "feat/issue-651-backend-add-highlight-model-and-validati",
+      "claimed_at": "2026-02-02T22:28:14Z",
+      "pr_number": 661,
+      "completed_at": "2026-02-02T22:54:27Z"
+    },
+    {
+      "issue_number": 652,
+      "title": "Backend: Store and retrieve highlights in post service",
+      "status": "completed",
+      "dependencies": [
+        651
+      ],
+      "labels": [
+        "enhancement",
+        "backend"
+      ],
+      "priority": 2,
+      "phase": 2,
+      "assigned_to": "agent-1770072891-51619",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770072891-51619",
+      "branch": "feat/issue-652-backend-store-and-retrieve-highlights-in",
+      "claimed_at": "2026-02-02T22:54:51Z",
+      "pr_number": 677,
+      "completed_at": "2026-02-02T23:08:03Z"
+    },
+    {
+      "issue_number": 653,
+      "title": "Frontend: Add Highlight types and editor/display components",
+      "status": "completed",
+      "dependencies": [
+        652
+      ],
+      "labels": [
+        "enhancement",
+        "frontend"
+      ],
+      "priority": 3,
+      "phase": 3,
+      "assigned_to": "agent-1770073721-71958",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770073721-71958",
+      "branch": "feat/issue-653-frontend-add-highlight-types-and-editord",
+      "claimed_at": "2026-02-02T23:08:41Z",
+      "pr_number": 692,
+      "completed_at": "2026-02-02T23:20:40Z"
+    },
+    {
+      "issue_number": 654,
+      "title": "Frontend: Integrate highlights into PostForm and PostCard",
+      "status": "completed",
+      "dependencies": [
+        652,
+        653
+      ],
+      "labels": [
+        "enhancement",
+        "frontend"
+      ],
+      "priority": 4,
+      "phase": 4,
+      "assigned_to": "agent-1770076124-17315",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770076124-17315",
+      "branch": "feat/issue-654-frontend-integrate-highlights-into-postf",
+      "claimed_at": "2026-02-02T23:48:44Z",
+      "pr_number": 703,
+      "completed_at": "2026-02-03T00:19:47Z"
+    },
+    {
+      "issue_number": 655,
+      "title": "Backend: Add SectionLink model for links aggregation",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend"
+      ],
+      "priority": 5,
+      "phase": 5,
+      "assigned_to": "agent-1770071302-15262",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770071302-15262",
+      "branch": "feat/issue-655-backend-add-sectionlink-model-for-links-",
+      "claimed_at": "2026-02-02T22:28:22Z",
+      "pr_number": 659,
+      "completed_at": "2026-02-02T22:35:40Z"
+    },
+    {
+      "issue_number": 656,
+      "title": "Backend: Add section links service and handler",
+      "status": "completed",
+      "dependencies": [
+        655
+      ],
+      "labels": [
+        "enhancement",
+        "backend"
+      ],
+      "priority": 6,
+      "phase": 6,
+      "assigned_to": "agent-1770071774-26337",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770071774-26337",
+      "branch": "feat/issue-656-backend-add-section-links-service-and-ha",
+      "claimed_at": "2026-02-02T22:36:14Z",
+      "pr_number": 674,
+      "completed_at": "2026-02-02T22:50:27Z"
+    },
+    {
+      "issue_number": 657,
+      "title": "Frontend: Add section links store and API client method",
+      "status": "completed",
+      "dependencies": [
+        656
+      ],
+      "labels": [
+        "enhancement",
+        "frontend"
+      ],
+      "priority": 7,
+      "phase": 7,
+      "assigned_to": "agent-1770072970-53269",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770072970-53269",
+      "branch": "feat/issue-657-frontend-add-section-links-store-and-api",
+      "claimed_at": "2026-02-02T22:56:10Z",
+      "pr_number": 682,
+      "completed_at": "2026-02-02T23:10:32Z"
+    },
+    {
+      "issue_number": 658,
+      "title": "Frontend: Add MusicLinksContainer component and integrate into App",
+      "status": "completed",
+      "dependencies": [
+        657
+      ],
+      "labels": [
+        "enhancement",
+        "frontend"
+      ],
+      "priority": 8,
+      "phase": 8,
+      "assigned_to": "agent-1770078034-65395",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770078034-65395",
+      "branch": "feat/issue-658-frontend-add-musiclinkscontainer-compone",
+      "claimed_at": "2026-02-03T00:20:34Z",
+      "pr_number": 710,
+      "completed_at": "2026-02-03T00:39:11Z"
+    },
+    {
+      "issue_number": 662,
+      "title": "Create saved_recipes table migration",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "recipes"
+      ],
+      "priority": 1,
+      "phase": "recipes-1",
+      "assigned_to": "agent-1770073717-71866",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770073717-71866",
+      "branch": "feat/issue-662-create-savedrecipes-table-migration",
+      "claimed_at": "2026-02-02T23:08:37Z",
+      "pr_number": 690,
+      "completed_at": "2026-02-02T23:16:31Z"
+    },
+    {
+      "issue_number": 663,
+      "title": "Create recipe_categories table migration",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "recipes"
+      ],
+      "priority": 2,
+      "phase": "recipes-1",
+      "assigned_to": "agent-1770073719-71949",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770073719-71949",
+      "branch": "feat/issue-663-create-recipecategories-table-migration",
+      "claimed_at": "2026-02-02T23:08:39Z",
+      "pr_number": 689,
+      "completed_at": "2026-02-02T23:14:29Z"
+    },
+    {
+      "issue_number": 664,
+      "title": "Create cook_logs table migration",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "recipes"
+      ],
+      "priority": 3,
+      "phase": "recipes-1",
+      "assigned_to": "agent-1770073864-75790",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770073864-75790",
+      "branch": "feat/issue-664-create-cooklogs-table-migration",
+      "claimed_at": "2026-02-02T23:11:04Z",
+      "pr_number": 691,
+      "completed_at": "2026-02-02T23:18:16Z"
+    },
+    {
+      "issue_number": 665,
+      "title": "Add SavedRecipe and RecipeCategory Go models",
+      "status": "completed",
+      "dependencies": [
+        662,
+        663
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "recipes"
+      ],
+      "priority": 4,
+      "phase": "recipes-1",
+      "assigned_to": "agent-1770077012-39469",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770077012-39469",
+      "branch": "feat/issue-665-add-savedrecipe-and-recipecategory-go-mo",
+      "claimed_at": "2026-02-03T00:03:32Z",
+      "pr_number": 704,
+      "completed_at": "2026-02-03T00:11:19Z"
+    },
+    {
+      "issue_number": 666,
+      "title": "Add CookLog Go model",
+      "status": "completed",
+      "dependencies": [
+        664
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "recipes"
+      ],
+      "priority": 5,
+      "phase": "recipes-1",
+      "assigned_to": "agent-1770078022-64978",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770078022-64978",
+      "branch": "feat/issue-666-add-cooklog-go-model",
+      "claimed_at": "2026-02-03T00:20:22Z",
+      "pr_number": 706,
+      "completed_at": "2026-02-03T00:25:54Z"
+    },
+    {
+      "issue_number": 667,
+      "title": "Add RecipeStats to Post model",
+      "status": "completed",
+      "dependencies": [
+        665,
+        666
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "recipes"
+      ],
+      "priority": 6,
+      "phase": "recipes-1",
+      "assigned_to": "agent-1770078663-83670",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770078663-83670",
+      "branch": "feat/issue-667-add-recipestats-to-post-model",
+      "claimed_at": "2026-02-03T00:31:03Z",
+      "pr_number": 709,
+      "completed_at": "2026-02-03T00:36:28Z"
+    },
+    {
+      "issue_number": 668,
+      "title": "Implement SavedRecipeService",
+      "status": "completed",
+      "dependencies": [
+        662,
+        663,
+        665
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "recipes"
+      ],
+      "priority": 7,
+      "phase": "recipes-2",
+      "assigned_to": "agent-1770078032-65302",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770078032-65302",
+      "branch": "feat/issue-668-implement-savedrecipeservice",
+      "claimed_at": "2026-02-03T00:20:32Z",
+      "pr_number": 708,
+      "completed_at": "2026-02-03T00:48:26Z"
+    },
+    {
+      "issue_number": 669,
+      "title": "Implement CookLogService",
+      "status": "completed",
+      "dependencies": [
+        664,
+        666
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "recipes"
+      ],
+      "priority": 8,
+      "phase": "recipes-2",
+      "assigned_to": "agent-1770078671-84848",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770078671-84848",
+      "branch": "feat/issue-669-implement-cooklogservice",
+      "claimed_at": "2026-02-03T00:31:11Z",
+      "pr_number": 711,
+      "completed_at": "2026-02-03T00:45:05Z"
+    },
+    {
+      "issue_number": 670,
+      "title": "Extend PostService to include recipe stats",
+      "status": "completed",
+      "dependencies": [
+        667,
+        668,
+        669
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "recipes"
+      ],
+      "priority": 9,
+      "phase": "recipes-2",
+      "assigned_to": "agent-1770079758-16158",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770079758-16158",
+      "branch": "feat/issue-670-extend-postservice-to-include-recipe-sta",
+      "claimed_at": "2026-02-03T00:49:18Z",
+      "pr_number": 715,
+      "completed_at": "2026-02-03T08:23:37Z"
+    },
+    {
+      "issue_number": 671,
+      "title": "Implement saved recipe HTTP handlers",
+      "status": "completed",
+      "dependencies": [
+        668
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "recipes"
+      ],
+      "priority": 10,
+      "phase": "recipes-3",
+      "assigned_to": "agent-1770079924-19822",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770079924-19822",
+      "branch": "feat/issue-671-implement-saved-recipe-http-handlers",
+      "claimed_at": "2026-02-03T00:52:04Z",
+      "pr_number": 716,
+      "completed_at": "2026-02-03T01:32:44Z"
+    },
+    {
+      "issue_number": 672,
+      "title": "Implement cook log HTTP handlers",
+      "status": "completed",
+      "dependencies": [
+        669
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "recipes"
+      ],
+      "priority": 11,
+      "phase": "recipes-3",
+      "assigned_to": "agent-1770079535-8527",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770079535-8527",
+      "branch": "feat/issue-672-implement-cook-log-http-handlers",
+      "claimed_at": "2026-02-03T00:45:35Z",
+      "pr_number": 714,
+      "completed_at": "2026-02-03T01:12:20Z"
+    },
+    {
+      "issue_number": 673,
+      "title": "Add WebSocket events for recipe actions",
+      "status": "completed",
+      "dependencies": [
+        671,
+        672
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "recipes"
+      ],
+      "priority": 12,
+      "phase": "recipes-3",
+      "assigned_to": "agent-1770105464-98762",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770105464-98762",
+      "branch": "feat/issue-673-add-websocket-events-for-recipe-actions",
+      "claimed_at": "2026-02-03T07:57:44Z",
+      "pr_number": 718,
+      "completed_at": "2026-02-03T08:17:26Z"
+    },
+    {
+      "issue_number": 675,
+      "title": "Add recipe API methods to frontend api.ts",
+      "status": "completed",
+      "dependencies": [
+        671,
+        672
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 13,
+      "phase": "recipes-4",
+      "assigned_to": "agent-1770105468-98911",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770105468-98911",
+      "branch": "feat/issue-675-add-recipe-api-methods-to-frontend-apits",
+      "claimed_at": "2026-02-03T07:57:48Z",
+      "pr_number": 717,
+      "completed_at": "2026-02-03T08:10:54Z"
+    },
+    {
+      "issue_number": 676,
+      "title": "Create recipeStore for frontend state management",
+      "status": "completed",
+      "dependencies": [
+        675
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 14,
+      "phase": "recipes-4",
+      "assigned_to": "agent-1770106286-23254",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770106286-23254",
+      "branch": "feat/issue-676-create-recipestore-for-frontend-state-ma",
+      "claimed_at": "2026-02-03T08:11:26Z",
+      "pr_number": 720,
+      "completed_at": "2026-02-03T08:33:27Z"
+    },
+    {
+      "issue_number": 678,
+      "title": "Create RecipeSaveButton component",
+      "status": "completed",
+      "dependencies": [
+        676
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 15,
+      "phase": "recipes-4",
+      "assigned_to": "agent-1770107639-48166",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770107639-48166",
+      "branch": "feat/issue-678-create-recipesavebutton-component",
+      "claimed_at": "2026-02-03T08:33:59Z",
+      "pr_number": 723,
+      "completed_at": "2026-02-03T08:51:14Z"
+    },
+    {
+      "issue_number": 679,
+      "title": "Create CategoryManager component",
+      "status": "completed",
+      "dependencies": [
+        676
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 16,
+      "phase": "recipes-4",
+      "assigned_to": "agent-1770107642-48220",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770107642-48220",
+      "branch": "feat/issue-679-create-categorymanager-component",
+      "claimed_at": "2026-02-03T08:34:02Z",
+      "pr_number": 721,
+      "completed_at": "2026-02-03T08:54:21Z"
+    },
+    {
+      "issue_number": 680,
+      "title": "Create RatingStars component",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 17,
+      "phase": "recipes-5",
+      "assigned_to": "agent-1770079188-98564",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770079188-98564",
+      "branch": "feat/issue-680-create-ratingstars-component",
+      "claimed_at": "2026-02-03T00:39:48Z",
+      "pr_number": 713,
+      "completed_at": "2026-02-03T00:54:02Z"
+    },
+    {
+      "issue_number": 681,
+      "title": "Create CookButton component",
+      "status": "completed",
+      "dependencies": [
+        676,
+        680
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 18,
+      "phase": "recipes-5",
+      "assigned_to": "agent-1770107645-48409",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770107645-48409",
+      "branch": "feat/issue-681-create-cookbutton-component",
+      "claimed_at": "2026-02-03T08:34:05Z",
+      "pr_number": 722,
+      "completed_at": "2026-02-03T08:48:10Z"
+    },
+    {
+      "issue_number": 683,
+      "title": "Create RecipeStatsBar component",
+      "status": "completed",
+      "dependencies": [
+        678,
+        680,
+        681
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 19,
+      "phase": "recipes-6",
+      "assigned_to": "agent-1770108897-69497",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770108897-69497",
+      "branch": "feat/issue-683-create-recipestatsbar-component",
+      "claimed_at": "2026-02-03T08:54:57Z",
+      "pr_number": 725,
+      "completed_at": "2026-02-03T09:29:53Z"
+    },
+    {
+      "issue_number": 684,
+      "title": "Integrate RecipeStatsBar into PostCard",
+      "status": "completed",
+      "dependencies": [
+        670,
+        683
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 20,
+      "phase": "recipes-6",
+      "assigned_to": "agent-1770111026-96759",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770111026-96759",
+      "branch": "feat/issue-684-integrate-recipestatsbar-into-postcard",
+      "claimed_at": "2026-02-03T09:30:26Z",
+      "pr_number": 727,
+      "completed_at": "2026-02-03T09:40:35Z"
+    },
+    {
+      "issue_number": 685,
+      "title": "Create Cookbook component",
+      "status": "completed",
+      "dependencies": [
+        676,
+        679,
+        680
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 21,
+      "phase": "recipes-7",
+      "assigned_to": "agent-1770108902-69668",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770108902-69668",
+      "branch": "feat/issue-685-create-cookbook-component",
+      "claimed_at": "2026-02-03T08:55:02Z",
+      "pr_number": 724,
+      "completed_at": "2026-02-03T09:11:17Z"
+    },
+    {
+      "issue_number": 686,
+      "title": "Integrate Cookbook into App.svelte for recipe section",
+      "status": "completed",
+      "dependencies": [
+        685
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 22,
+      "phase": "recipes-7",
+      "assigned_to": "agent-1770109919-82206",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770109919-82206",
+      "branch": "feat/issue-686-integrate-cookbook-into-appsvelte-for-re",
+      "claimed_at": "2026-02-03T09:11:59Z",
+      "pr_number": 726,
+      "completed_at": "2026-02-03T09:18:31Z"
+    },
+    {
+      "issue_number": 687,
+      "title": "[Stretch] Implement recipe content parser for link metadata",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "recipes",
+        "stretch"
+      ],
+      "priority": 23,
+      "phase": "recipes-8",
+      "assigned_to": "agent-1770079189-98727",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770079189-98727",
+      "branch": "feat/issue-687-stretch-implement-recipe-content-parser-",
+      "claimed_at": "2026-02-03T00:39:49Z",
+      "pr_number": 712,
+      "completed_at": "2026-02-03T00:51:29Z"
+    },
+    {
+      "issue_number": 688,
+      "title": "[Stretch] Create RecipeCard component for parsed recipe display",
+      "status": "completed",
+      "dependencies": [
+        687
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes",
+        "stretch"
+      ],
+      "priority": 24,
+      "phase": "recipes-8",
+      "assigned_to": "agent-1770105473-99078",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770105473-99078",
+      "branch": "feat/issue-688-stretch-create-recipecard-component-for-",
+      "claimed_at": "2026-02-03T07:57:53Z",
+      "pr_number": 719,
+      "completed_at": "2026-02-03T08:20:06Z"
+    },
+    {
+      "issue_number": 693,
+      "title": "Observability: emit metrics/logs for admin suspend/unsuspend actions",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "observability"
+      ],
+      "priority": 1,
+      "assigned_to": "agent-1770075723-3541",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770075723-3541",
+      "branch": "feat/issue-693-observability-emit-metricslogs-for-admin",
+      "claimed_at": "2026-02-02T23:42:03Z",
+      "pr_number": 699,
+      "completed_at": "2026-02-02T23:48:16Z"
+    },
+    {
+      "issue_number": 694,
+      "title": "Observability: add push subscription lifecycle metrics/logs",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "observability"
+      ],
+      "priority": 2,
+      "assigned_to": "agent-1770075725-3637",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770075725-3637",
+      "branch": "feat/issue-694-observability-add-push-subscription-life",
+      "claimed_at": "2026-02-02T23:42:05Z",
+      "pr_number": 700,
+      "completed_at": "2026-02-02T23:51:03Z"
+    },
+    {
+      "issue_number": 695,
+      "title": "Observability: track notification read events (single + mark all)",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "observability"
+      ],
+      "priority": 3,
+      "assigned_to": "agent-1770075728-3781",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770075728-3781",
+      "branch": "feat/issue-695-observability-track-notification-read-ev",
+      "claimed_at": "2026-02-02T23:42:08Z",
+      "pr_number": 701,
+      "completed_at": "2026-02-03T00:03:01Z"
+    },
+    {
+      "issue_number": 696,
+      "title": "Observability: add CSRF validation outcome metrics",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "observability"
+      ],
+      "priority": 4,
+      "assigned_to": "agent-1770077014-39478",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770077014-39478",
+      "branch": "feat/issue-696-observability-add-csrf-validation-outcom",
+      "claimed_at": "2026-02-03T00:03:34Z",
+      "pr_number": 705,
+      "completed_at": "2026-02-03T00:13:00Z"
+    },
+    {
+      "issue_number": 697,
+      "title": "Observability: record auth failures in RequireAuth/RequireAdmin middleware",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "observability"
+      ],
+      "priority": 5,
+      "assigned_to": "agent-1770078028-65163",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770078028-65163",
+      "branch": "feat/issue-697-observability-record-auth-failures-in-re",
+      "claimed_at": "2026-02-03T00:20:28Z",
+      "pr_number": 707,
+      "completed_at": "2026-02-03T00:30:32Z"
+    },
+    {
+      "issue_number": 698,
+      "title": "Observability: include query type in DB query error metrics",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "backend",
+        "observability"
+      ],
+      "priority": 6,
+      "assigned_to": "agent-1770075721-3436",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770075721-3436",
+      "branch": "fix/issue-698-observability-include-query-type-in-db-q",
+      "claimed_at": "2026-02-02T23:42:01Z",
+      "pr_number": 702,
+      "completed_at": "2026-02-03T00:16:25Z"
+    },
+    {
+      "issue_number": 728,
+      "title": "Backend: Add embed data structures and infrastructure",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend"
+      ],
+      "priority": 1,
+      "assigned_to": "agent-1770120456-29571",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770120456-29571",
+      "branch": "feat/issue-728-backend-add-embed-data-structures-and-in",
+      "claimed_at": "2026-02-03T12:07:37Z",
+      "pr_number": 734,
+      "completed_at": "2026-02-03T12:15:26Z"
+    },
+    {
+      "issue_number": 729,
+      "title": "Add YouTube embed support (backend + frontend)",
+      "status": "completed",
+      "dependencies": [
+        728
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "frontend"
+      ],
+      "priority": 2,
+      "assigned_to": "agent-1770120952-39493",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770120952-39493",
+      "branch": "feat/issue-729-add-youtube-embed-support-backend-fronte",
+      "claimed_at": "2026-02-03T12:15:52Z",
+      "pr_number": 736,
+      "completed_at": "2026-02-03T14:04:46Z"
+    },
+    {
+      "issue_number": 730,
+      "title": "Add Spotify embed support (backend + frontend)",
+      "status": "completed",
+      "dependencies": [
+        728
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "frontend"
+      ],
+      "priority": 3,
+      "assigned_to": "agent-1770120954-39602",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770120954-39602",
+      "branch": "feat/issue-730-add-spotify-embed-support-backend-fronte",
+      "claimed_at": "2026-02-03T12:15:54Z",
+      "pr_number": 738,
+      "completed_at": "2026-02-03T13:32:21Z"
+    },
+    {
+      "issue_number": 731,
+      "title": "Add SoundCloud embed support (backend + frontend)",
+      "status": "completed",
+      "dependencies": [
+        728
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "frontend"
+      ],
+      "priority": 4,
+      "assigned_to": "agent-1770120956-39752",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770120956-39752",
+      "branch": "feat/issue-731-add-soundcloud-embed-support-backend-fro",
+      "claimed_at": "2026-02-03T12:15:56Z",
+      "pr_number": 735,
+      "completed_at": "2026-02-03T13:14:09Z"
+    },
+    {
+      "issue_number": 732,
+      "title": "Add Bandcamp embed support (backend + frontend)",
+      "status": "completed",
+      "dependencies": [
+        728
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "frontend"
+      ],
+      "priority": 5,
+      "assigned_to": "agent-1770120958-39877",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770120958-39877",
+      "branch": "feat/issue-732-add-bandcamp-embed-support-backend-front",
+      "claimed_at": "2026-02-03T12:15:58Z",
+      "pr_number": 737,
+      "completed_at": "2026-02-03T12:41:05Z"
+    },
+    {
+      "issue_number": 733,
+      "title": "Security: Add CSP headers and embed URL validation",
+      "status": "completed",
+      "dependencies": [
+        729,
+        730,
+        731,
+        732
+      ],
+      "labels": [
+        "enhancement",
+        "security",
+        "backend",
+        "frontend"
+      ],
+      "priority": 6,
+      "assigned_to": "agent-1770127552-37381",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770127552-37381",
+      "branch": "feat/issue-733-security-add-csp-headers-and-embed-url-v",
+      "claimed_at": "2026-02-03T14:05:52Z",
+      "pr_number": 739,
+      "completed_at": "2026-02-03T14:25:27Z"
+    },
+    {
+      "issue_number": 740,
+      "title": "Fix SoundCloud oEmbed JSON decode error (version field type mismatch)",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "backend"
+      ],
+      "priority": 1,
+      "assigned_to": "agent-1770130758-64697",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770130758-64697",
+      "branch": "fix/issue-740-fix-soundcloud-oembed-json-decode-error-",
+      "claimed_at": "2026-02-03T14:59:18Z",
+      "pr_number": 756,
+      "completed_at": "2026-02-03T15:08:01Z"
+    },
+    {
+      "issue_number": 741,
+      "title": "Fix Bandcamp link metadata fetch 403 Forbidden error",
+      "status": "completed",
+      "dependencies": [
+        740
+      ],
+      "labels": [
+        "bug",
+        "backend"
+      ],
+      "priority": 2,
+      "assigned_to": "agent-1770131460-83577",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770131460-83577",
+      "branch": "fix/issue-741-fix-bandcamp-link-metadata-fetch-403-for",
+      "claimed_at": "2026-02-03T15:11:00Z",
+      "pr_number": 758,
+      "completed_at": "2026-02-03T15:31:31Z"
+    },
+    {
+      "issue_number": 743,
+      "title": "Fix search bar alignment (still not centered after PRs #606 and #625)",
+      "status": "completed",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "ui"
+      ],
+      "priority": 4,
+      "assigned_to": "agent-1770130763-64953",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770130763-64953",
+      "branch": "fix/issue-743-fix-search-bar-alignment-still-not-cente",
+      "claimed_at": "2026-02-03T14:59:23Z",
+      "pr_number": 757,
+      "completed_at": "2026-02-03T15:10:16Z"
     }
   ],
   "archived_issue_numbers": [
@@ -5841,6 +7287,81 @@
     571,
     572,
     573,
-    574
+    574,
+    595,
+    596,
+    597,
+    598,
+    599,
+    600,
+    601,
+    602,
+    603,
+    604,
+    616,
+    617,
+    618,
+    619,
+    620,
+    621,
+    628,
+    629,
+    630,
+    631,
+    636,
+    637,
+    638,
+    639,
+    644,
+    645,
+    646,
+    647,
+    651,
+    652,
+    653,
+    654,
+    655,
+    656,
+    657,
+    658,
+    662,
+    663,
+    664,
+    665,
+    666,
+    667,
+    668,
+    669,
+    670,
+    671,
+    672,
+    673,
+    675,
+    676,
+    678,
+    679,
+    680,
+    681,
+    683,
+    684,
+    685,
+    686,
+    687,
+    688,
+    693,
+    694,
+    695,
+    696,
+    697,
+    698,
+    728,
+    729,
+    730,
+    731,
+    732,
+    733,
+    740,
+    741,
+    743
   ]
 }
