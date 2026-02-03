@@ -689,7 +689,7 @@
     {
       "issue_number": 658,
       "title": "Frontend: Add MusicLinksContainer component and integrate into App",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         657
       ],
@@ -698,7 +698,11 @@
         "frontend"
       ],
       "priority": 8,
-      "phase": 8
+      "phase": 8,
+      "assigned_to": "agent-1770078034-65395",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770078034-65395",
+      "branch": "feat/issue-658-frontend-add-musiclinkscontainer-compone",
+      "claimed_at": "2026-02-03T00:20:34Z"
     },
     {
       "issue_number": 662,
