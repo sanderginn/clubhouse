@@ -1165,7 +1165,7 @@
     {
       "issue_number": 686,
       "title": "Integrate Cookbook into App.svelte for recipe section",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         685
       ],
@@ -1175,7 +1175,11 @@
         "recipes"
       ],
       "priority": 22,
-      "phase": "recipes-7"
+      "phase": "recipes-7",
+      "assigned_to": "agent-1770109919-82206",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770109919-82206",
+      "branch": "feat/issue-686-integrate-cookbook-into-appsvelte-for-re",
+      "claimed_at": "2026-02-03T09:11:59Z"
     },
     {
       "issue_number": 687,
