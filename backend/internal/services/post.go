@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/observability"
 	"go.opentelemetry.io/otel"
@@ -449,22 +450,25 @@ func (s *PostService) GetPostByID(ctx context.Context, postID uuid.UUID, userID 
 			p.id, p.user_id, p.section_id, p.content,
 			p.created_at, p.updated_at, p.deleted_at, p.deleted_by_user_id,
 			u.id, u.username, COALESCE(u.email, '') as email, u.profile_picture_url, u.bio, u.is_admin, u.created_at,
-			COALESCE(COUNT(DISTINCT c.id), 0) as comment_count
+			COALESCE(COUNT(DISTINCT c.id), 0) as comment_count,
+			s.type
 		FROM posts p
 		JOIN users u ON p.user_id = u.id
+		JOIN sections s ON p.section_id = s.id
 		LEFT JOIN comments c ON p.id = c.post_id AND c.deleted_at IS NULL
 		WHERE p.id = $1 AND p.deleted_at IS NULL
-		GROUP BY p.id, u.id
+		GROUP BY p.id, u.id, s.type
 	`
 
 	var post models.Post
 	var user models.User
+	var sectionType string
 
 	err := s.db.QueryRowContext(ctx, query, postID).Scan(
 		&post.ID, &post.UserID, &post.SectionID, &post.Content,
 		&post.CreatedAt, &post.UpdatedAt, &post.DeletedAt, &post.DeletedByUserID,
 		&user.ID, &user.Username, &user.Email, &user.ProfilePictureURL, &user.Bio, &user.IsAdmin, &user.CreatedAt,
-		&post.CommentCount,
+		&post.CommentCount, &sectionType,
 	)
 
 	if err != nil {
@@ -503,6 +507,19 @@ func (s *PostService) GetPostByID(ctx context.Context, postID uuid.UUID, userID 
 	}
 	post.ReactionCounts = counts
 	post.ViewerReactions = viewerReactions
+
+	if sectionType == "recipe" {
+		viewerID := &userID
+		if userID == uuid.Nil {
+			viewerID = nil
+		}
+		recipeStats, err := s.getRecipeStats(ctx, postID, viewerID)
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+		post.RecipeStats = recipeStats
+	}
 
 	return &post, nil
 }
@@ -811,6 +828,143 @@ func (s *PostService) getPostReactions(ctx context.Context, postID uuid.UUID, vi
 	return counts, viewerReactions, nil
 }
 
+func (s *PostService) getRecipeStats(ctx context.Context, postID uuid.UUID, viewerID *uuid.UUID) (*models.RecipeStats, error) {
+	statsByPost, err := s.getRecipeStatsForPosts(ctx, []uuid.UUID{postID}, viewerID)
+	if err != nil {
+		return nil, err
+	}
+	stats, ok := statsByPost[postID]
+	if !ok {
+		return &models.RecipeStats{}, nil
+	}
+	return stats, nil
+}
+
+func (s *PostService) getRecipeStatsForPosts(ctx context.Context, postIDs []uuid.UUID, viewerID *uuid.UUID) (map[uuid.UUID]*models.RecipeStats, error) {
+	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.getRecipeStatsForPosts")
+	span.SetAttributes(
+		attribute.Int("post_count", len(postIDs)),
+		attribute.Bool("has_viewer_id", viewerID != nil),
+	)
+	if viewerID != nil {
+		span.SetAttributes(attribute.String("viewer_id", viewerID.String()))
+	}
+	defer span.End()
+
+	stats := make(map[uuid.UUID]*models.RecipeStats, len(postIDs))
+	for _, postID := range postIDs {
+		stats[postID] = &models.RecipeStats{}
+	}
+
+	if len(postIDs) == 0 {
+		return stats, nil
+	}
+
+	viewerIDValue := uuid.Nil
+	if viewerID != nil {
+		viewerIDValue = *viewerID
+	}
+
+	saveRows, err := s.db.QueryContext(ctx, `
+		SELECT sr.post_id, COUNT(DISTINCT sr.id) AS save_count, bool_or(sr.user_id = $2) AS viewer_saved
+		FROM saved_recipes sr
+		WHERE sr.post_id = ANY($1) AND sr.deleted_at IS NULL
+		GROUP BY sr.post_id
+	`, pq.Array(postIDs), viewerIDValue)
+	if err != nil {
+		recordSpanError(span, err)
+		return nil, err
+	}
+	for saveRows.Next() {
+		var postID uuid.UUID
+		var saveCount int
+		var viewerSaved bool
+		if err := saveRows.Scan(&postID, &saveCount, &viewerSaved); err != nil {
+			_ = saveRows.Close()
+			recordSpanError(span, err)
+			return nil, err
+		}
+		if stat, ok := stats[postID]; ok {
+			stat.SaveCount = saveCount
+			stat.ViewerSaved = viewerSaved
+		}
+	}
+	if err := saveRows.Err(); err != nil {
+		_ = saveRows.Close()
+		recordSpanError(span, err)
+		return nil, err
+	}
+	_ = saveRows.Close()
+
+	cookRows, err := s.db.QueryContext(ctx, `
+		SELECT cl.post_id, COUNT(*) AS cook_count, ROUND(AVG(cl.rating)::numeric, 1) AS avg_rating, bool_or(cl.user_id = $2) AS viewer_cooked
+		FROM cook_logs cl
+		WHERE cl.post_id = ANY($1) AND cl.deleted_at IS NULL
+		GROUP BY cl.post_id
+	`, pq.Array(postIDs), viewerIDValue)
+	if err != nil {
+		recordSpanError(span, err)
+		return nil, err
+	}
+	for cookRows.Next() {
+		var postID uuid.UUID
+		var cookCount int
+		var avgRating sql.NullFloat64
+		var viewerCooked bool
+		if err := cookRows.Scan(&postID, &cookCount, &avgRating, &viewerCooked); err != nil {
+			_ = cookRows.Close()
+			recordSpanError(span, err)
+			return nil, err
+		}
+		if stat, ok := stats[postID]; ok {
+			stat.CookCount = cookCount
+			stat.ViewerCooked = viewerCooked
+			if avgRating.Valid {
+				stat.AvgRating = &avgRating.Float64
+			}
+		}
+	}
+	if err := cookRows.Err(); err != nil {
+		_ = cookRows.Close()
+		recordSpanError(span, err)
+		return nil, err
+	}
+	_ = cookRows.Close()
+
+	if viewerID != nil {
+		categoryRows, err := s.db.QueryContext(ctx, `
+			SELECT post_id, category
+			FROM saved_recipes
+			WHERE post_id = ANY($1) AND user_id = $2 AND deleted_at IS NULL
+			ORDER BY category ASC
+		`, pq.Array(postIDs), *viewerID)
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+		for categoryRows.Next() {
+			var postID uuid.UUID
+			var category string
+			if err := categoryRows.Scan(&postID, &category); err != nil {
+				_ = categoryRows.Close()
+				recordSpanError(span, err)
+				return nil, err
+			}
+			if stat, ok := stats[postID]; ok {
+				stat.ViewerCategories = append(stat.ViewerCategories, category)
+			}
+		}
+		if err := categoryRows.Err(); err != nil {
+			_ = categoryRows.Close()
+			recordSpanError(span, err)
+			return nil, err
+		}
+		_ = categoryRows.Close()
+	}
+
+	return stats, nil
+}
+
 // GetFeed retrieves a paginated feed of posts for a section using cursor-based pagination
 func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *string, limit int, userID uuid.UUID) (*models.FeedResponse, error) {
 	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.GetFeed")
@@ -825,6 +979,13 @@ func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *
 	if limit <= 0 || limit > 100 {
 		limit = 20
 	}
+
+	var sectionType string
+	if err := s.db.QueryRowContext(ctx, "SELECT type FROM sections WHERE id = $1", sectionID).Scan(&sectionType); err != nil {
+		recordSpanError(span, err)
+		return nil, err
+	}
+	span.SetAttributes(attribute.String("section_type", sectionType))
 
 	// Build base query
 	query := `
@@ -923,6 +1084,27 @@ func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *
 		lastPost := posts[len(posts)-1]
 		cursorStr := lastPost.CreatedAt.Format("2006-01-02T15:04:05.000Z07:00")
 		nextCursor = &cursorStr
+	}
+
+	if sectionType == "recipe" && len(posts) > 0 {
+		postIDs := make([]uuid.UUID, 0, len(posts))
+		for _, post := range posts {
+			postIDs = append(postIDs, post.ID)
+		}
+		viewerID := &userID
+		if userID == uuid.Nil {
+			viewerID = nil
+		}
+		statsByPost, err := s.getRecipeStatsForPosts(ctx, postIDs, viewerID)
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+		for _, post := range posts {
+			if stat, ok := statsByPost[post.ID]; ok {
+				post.RecipeStats = stat
+			}
+		}
 	}
 
 	return &models.FeedResponse{
@@ -1163,9 +1345,11 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, targetUserID uuid.UU
 			p.id, p.user_id, p.section_id, p.content,
 			p.created_at, p.updated_at, p.deleted_at, p.deleted_by_user_id,
 			u.id, u.username, COALESCE(u.email, '') as email, u.profile_picture_url, u.bio, u.is_admin, u.created_at,
-			COALESCE(COUNT(DISTINCT c.id), 0) as comment_count
+			COALESCE(COUNT(DISTINCT c.id), 0) as comment_count,
+			s.type
 		FROM posts p
 		JOIN users u ON p.user_id = u.id
+		JOIN sections s ON p.section_id = s.id
 		LEFT JOIN comments c ON p.id = c.post_id AND c.deleted_at IS NULL
 		WHERE p.user_id = $1 AND p.deleted_at IS NULL
 	`
@@ -1191,15 +1375,17 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, targetUserID uuid.UU
 	defer rows.Close()
 
 	var posts []*models.Post
+	var recipePostIDs []uuid.UUID
 	for rows.Next() {
 		var post models.Post
 		var user models.User
+		var sectionType string
 
 		err := rows.Scan(
 			&post.ID, &post.UserID, &post.SectionID, &post.Content,
 			&post.CreatedAt, &post.UpdatedAt, &post.DeletedAt, &post.DeletedByUserID,
 			&user.ID, &user.Username, &user.Email, &user.ProfilePictureURL, &user.Bio, &user.IsAdmin, &user.CreatedAt,
-			&post.CommentCount,
+			&post.CommentCount, &sectionType,
 		)
 		if err != nil {
 			recordSpanError(span, err)
@@ -1233,6 +1419,10 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, targetUserID uuid.UU
 		post.ReactionCounts = counts
 		post.ViewerReactions = viewerReactions
 
+		if sectionType == "recipe" {
+			recipePostIDs = append(recipePostIDs, post.ID)
+		}
+
 		posts = append(posts, &post)
 	}
 
@@ -1254,6 +1444,23 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, targetUserID uuid.UU
 		lastPost := posts[len(posts)-1]
 		cursorStr := lastPost.CreatedAt.Format("2006-01-02T15:04:05.000Z07:00")
 		nextCursor = &cursorStr
+	}
+
+	if len(recipePostIDs) > 0 {
+		viewerIDPtr := &viewerID
+		if viewerID == uuid.Nil {
+			viewerIDPtr = nil
+		}
+		statsByPost, err := s.getRecipeStatsForPosts(ctx, recipePostIDs, viewerIDPtr)
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+		for _, post := range posts {
+			if stat, ok := statsByPost[post.ID]; ok {
+				post.RecipeStats = stat
+			}
+		}
 	}
 
 	return &models.FeedResponse{
