@@ -87,6 +87,67 @@ export interface ApiUserSummary {
   profile_picture_url?: string | null;
 }
 
+export interface SavedRecipe {
+  id: string;
+  user_id: string;
+  post_id: string;
+  category: string;
+  created_at: string;
+  deleted_at?: string | null;
+  post?: ApiPost;
+}
+
+export interface SavedRecipeCategory {
+  name: string;
+  recipes: SavedRecipe[];
+}
+
+export interface RecipeCategory {
+  id: string;
+  user_id: string;
+  name: string;
+  position: number;
+  created_at: string;
+}
+
+export interface PostSaveInfo {
+  save_count: number;
+  users: ApiReactionUser[];
+  viewer_saved: boolean;
+  viewer_categories?: string[];
+}
+
+export interface CookLog {
+  id: string;
+  user_id: string;
+  post_id: string;
+  rating: number;
+  notes?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+  deleted_at?: string | null;
+}
+
+export interface CookLogUser {
+  id: string;
+  username: string;
+  profile_picture_url?: string | null;
+  rating: number;
+  created_at: string;
+}
+
+export interface PostCookInfo {
+  cook_count: number;
+  avg_rating?: number | null;
+  users: CookLogUser[];
+  viewer_cooked: boolean;
+  viewer_cook_log?: CookLog;
+}
+
+export interface CookLogWithPost extends CookLog {
+  post?: ApiPost;
+}
+
 class ApiClient {
   private tracer = trace.getTracer('clubhouse-frontend');
   private csrfToken: string | null = null;
@@ -576,6 +637,97 @@ class ApiClient {
 
   async removeCommentReaction(commentId: string, emoji: string): Promise<void> {
     await this.delete(`/comments/${commentId}/reactions/${encodeURIComponent(emoji)}`);
+  }
+
+  async saveRecipe(postId: string, categories: string[]): Promise<{ saved_recipes: SavedRecipe[] }> {
+    return this.post(`/posts/${postId}/save`, { categories });
+  }
+
+  async unsaveRecipe(postId: string, category?: string): Promise<void> {
+    const params = new URLSearchParams();
+    if (category) {
+      params.set('category', category);
+    }
+    const query = params.toString();
+    const endpoint = query ? `/posts/${postId}/save?${query}` : `/posts/${postId}/save`;
+    return this.delete(endpoint);
+  }
+
+  async getPostSaves(postId: string): Promise<PostSaveInfo> {
+    return this.get(`/posts/${postId}/saves`);
+  }
+
+  async getMySavedRecipes(): Promise<{ categories: SavedRecipeCategory[] }> {
+    return this.get('/me/saved-recipes');
+  }
+
+  async getMyRecipeCategories(): Promise<{ categories: RecipeCategory[] }> {
+    return this.get('/me/recipe-categories');
+  }
+
+  async createRecipeCategory(name: string): Promise<{ category: RecipeCategory }> {
+    return this.post('/me/recipe-categories', { name });
+  }
+
+  async updateRecipeCategory(
+    id: string,
+    data: { name?: string; position?: number }
+  ): Promise<{ category: RecipeCategory }> {
+    return this.patch(`/me/recipe-categories/${id}`, {
+      name: data.name,
+      position: data.position,
+    });
+  }
+
+  async deleteRecipeCategory(id: string): Promise<void> {
+    return this.delete(`/me/recipe-categories/${id}`);
+  }
+
+  async logCook(
+    postId: string,
+    rating: number,
+    notes?: string
+  ): Promise<{ cook_log: CookLog }> {
+    return this.post(`/posts/${postId}/cook-log`, { rating, notes });
+  }
+
+  async updateCookLog(
+    postId: string,
+    rating: number,
+    notes?: string
+  ): Promise<{ cook_log: CookLog }> {
+    return this.put(`/posts/${postId}/cook-log`, { rating, notes });
+  }
+
+  async removeCookLog(postId: string): Promise<void> {
+    return this.delete(`/posts/${postId}/cook-log`);
+  }
+
+  async getPostCookLogs(postId: string): Promise<PostCookInfo> {
+    return this.get(`/posts/${postId}/cook-logs`);
+  }
+
+  async getMyCookLogs(
+    limit?: number,
+    cursor?: string
+  ): Promise<{ cook_logs: CookLogWithPost[]; has_more: boolean; cursor?: string }> {
+    const params = new URLSearchParams();
+    if (limit !== undefined) {
+      params.set('limit', String(limit));
+    }
+    if (cursor) {
+      params.set('cursor', cursor);
+    }
+    const query = params.toString();
+    const response = await this.get<{
+      cook_logs: CookLogWithPost[];
+      meta?: { has_more?: boolean; cursor?: string | null };
+    }>(`/me/cook-logs${query ? `?${query}` : ''}`);
+    return {
+      cook_logs: response.cook_logs ?? [],
+      has_more: response.meta?.has_more ?? false,
+      cursor: response.meta?.cursor ?? undefined,
+    };
   }
 }
 
