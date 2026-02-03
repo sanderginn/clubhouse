@@ -751,7 +751,7 @@
     {
       "issue_number": 665,
       "title": "Add SavedRecipe and RecipeCategory Go models",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         662,
         663
@@ -762,7 +762,11 @@
         "recipes"
       ],
       "priority": 4,
-      "phase": "recipes-1"
+      "phase": "recipes-1",
+      "assigned_to": "agent-1770077012-39469",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770077012-39469",
+      "branch": "feat/issue-665-add-savedrecipe-and-recipecategory-go-mo",
+      "claimed_at": "2026-02-03T00:03:32Z"
     },
     {
       "issue_number": 666,
