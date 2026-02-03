@@ -22,6 +22,12 @@ const (
 	CSRFKeyPrefix = "csrf:"
 	// CSRFTokenLength is the length of the CSRF token in bytes (32 bytes = 256 bits)
 	CSRFTokenLength = 32
+	// CSRFValidationReasonMissing indicates a missing CSRF token.
+	CSRFValidationReasonMissing = "missing"
+	// CSRFValidationReasonMismatch indicates a session/user mismatch.
+	CSRFValidationReasonMismatch = "mismatch"
+	// CSRFValidationReasonExpired indicates an expired or missing token in storage.
+	CSRFValidationReasonExpired = "expired"
 )
 
 // ErrCSRFTokenNotFound is returned when a CSRF token cannot be found in Redis.
@@ -82,6 +88,7 @@ func (s *CSRFService) ValidateToken(ctx context.Context, token string, sessionID
 	if token == "" {
 		missingErr := errors.New("csrf token is required")
 		recordSpanError(span, missingErr)
+		observability.RecordCSRFValidationFailure(ctx, CSRFValidationReasonMissing)
 		return missingErr
 	}
 
@@ -91,6 +98,7 @@ func (s *CSRFService) ValidateToken(ctx context.Context, token string, sessionID
 		if err == redis.Nil {
 			observability.RecordCacheMiss(ctx, "csrf")
 			recordSpanError(span, ErrCSRFTokenNotFound)
+			observability.RecordCSRFValidationFailure(ctx, CSRFValidationReasonExpired)
 			return ErrCSRFTokenNotFound
 		}
 		recordSpanError(span, err)
@@ -103,6 +111,7 @@ func (s *CSRFService) ValidateToken(ctx context.Context, token string, sessionID
 	if value != expectedValue {
 		mismatchErr := errors.New("csrf token does not match session")
 		recordSpanError(span, mismatchErr)
+		observability.RecordCSRFValidationFailure(ctx, CSRFValidationReasonMismatch)
 		return mismatchErr
 	}
 
