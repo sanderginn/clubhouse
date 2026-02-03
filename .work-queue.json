@@ -45,7 +45,8 @@
     665,
     693,
     694,
-    695
+    695,
+    696
   ],
   "issues": [
     {
@@ -1140,7 +1141,7 @@
     {
       "issue_number": 696,
       "title": "Observability: add CSRF validation outcome metrics",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -1151,7 +1152,9 @@
       "assigned_to": "agent-1770077014-39478",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770077014-39478",
       "branch": "feat/issue-696-observability-add-csrf-validation-outcom",
-      "claimed_at": "2026-02-03T00:03:34Z"
+      "claimed_at": "2026-02-03T00:03:34Z",
+      "pr_number": 705,
+      "completed_at": "2026-02-03T00:13:00Z"
     },
     {
       "issue_number": 697,
