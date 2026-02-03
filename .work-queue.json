@@ -1347,13 +1347,17 @@
     {
       "issue_number": 728,
       "title": "Backend: Add embed data structures and infrastructure",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
         "backend"
       ],
-      "priority": 1
+      "priority": 1,
+      "assigned_to": "agent-1770120456-29571",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770120456-29571",
+      "branch": "feat/issue-728-backend-add-embed-data-structures-and-in",
+      "claimed_at": "2026-02-03T12:07:37Z"
     },
     {
       "issue_number": 729,
