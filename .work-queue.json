@@ -56,6 +56,7 @@
     675,
     676,
     680,
+    681,
     687,
     688,
     693,
@@ -1075,7 +1076,7 @@
     {
       "issue_number": 681,
       "title": "Create CookButton component",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         676,
         680
@@ -1090,7 +1091,9 @@
       "assigned_to": "agent-1770107645-48409",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770107645-48409",
       "branch": "feat/issue-681-create-cookbutton-component",
-      "claimed_at": "2026-02-03T08:34:05Z"
+      "claimed_at": "2026-02-03T08:34:05Z",
+      "pr_number": 722,
+      "completed_at": "2026-02-03T08:48:10Z"
     },
     {
       "issue_number": 683,
