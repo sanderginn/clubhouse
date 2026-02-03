@@ -806,7 +806,7 @@
     {
       "issue_number": 667,
       "title": "Add RecipeStats to Post model",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         665,
         666
@@ -817,7 +817,11 @@
         "recipes"
       ],
       "priority": 6,
-      "phase": "recipes-1"
+      "phase": "recipes-1",
+      "assigned_to": "agent-1770078663-83670",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770078663-83670",
+      "branch": "feat/issue-667-add-recipestats-to-post-model",
+      "claimed_at": "2026-02-03T00:31:03Z"
     },
     {
       "issue_number": 668,
