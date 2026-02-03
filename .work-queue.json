@@ -14,7 +14,8 @@
     750,
     751,
     752,
-    754
+    754,
+    755
   ],
   "issues": [
     {
@@ -234,7 +235,7 @@
     {
       "issue_number": 755,
       "title": "Allow comments on music posts with timestamp references",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         752
       ],
@@ -247,7 +248,9 @@
       "assigned_to": "agent-1770138025-6771",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770138025-6771",
       "branch": "feat/issue-755-allow-comments-on-music-posts-with-times",
-      "claimed_at": "2026-02-03T17:00:26Z"
+      "claimed_at": "2026-02-03T17:00:26Z",
+      "pr_number": 768,
+      "completed_at": "2026-02-03T17:49:40Z"
     }
   ]
 }
