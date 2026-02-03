@@ -51,6 +51,7 @@
     669,
     671,
     672,
+    673,
     675,
     680,
     687,
@@ -947,7 +948,7 @@
     {
       "issue_number": 673,
       "title": "Add WebSocket events for recipe actions",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         671,
         672
@@ -962,7 +963,9 @@
       "assigned_to": "agent-1770105464-98762",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770105464-98762",
       "branch": "feat/issue-673-add-websocket-events-for-recipe-actions",
-      "claimed_at": "2026-02-03T07:57:44Z"
+      "claimed_at": "2026-02-03T07:57:44Z",
+      "pr_number": 718,
+      "completed_at": "2026-02-03T08:17:26Z"
     },
     {
       "issue_number": 675,
