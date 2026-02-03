@@ -180,13 +180,17 @@
     {
       "issue_number": 754,
       "title": "Add track/set length filter to music section",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
         "frontend"
       ],
-      "priority": 15
+      "priority": 15,
+      "assigned_to": "agent-1770134876-27634",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770134876-27634",
+      "branch": "feat/issue-754-add-trackset-length-filter-to-music-sect",
+      "claimed_at": "2026-02-03T16:07:56Z"
     },
     {
       "issue_number": 755,
