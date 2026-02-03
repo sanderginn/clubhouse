@@ -60,6 +60,8 @@
   $: sortedMyRecipes = [...myRecipeItems].sort((a, b) => b.createdAt - a.createdAt);
   $: allRecipeItems = buildAllRecipeItems($posts);
   $: sortedAllRecipes = sortAllRecipes(allRecipeItems, sortKey);
+  $: selectedCategoryLabel =
+    categoryOptions.find((option) => option.value === selectedCategory)?.label ?? ALL_CATEGORY_LABEL;
 
   $: if (
     selectedCategory !== ALL_CATEGORY_VALUE &&
@@ -341,7 +343,7 @@
           <div class="flex-1">
             <div class="flex items-center justify-between">
               <div>
-                <h3 class="text-sm font-semibold text-gray-900">{selectedCategory}</h3>
+                <h3 class="text-sm font-semibold text-gray-900">{selectedCategoryLabel}</h3>
                 <p class="text-xs text-gray-500">Saved recipes at a glance.</p>
               </div>
               <span class="text-xs text-gray-400">{sortedMyRecipes.length} recipes</span>
