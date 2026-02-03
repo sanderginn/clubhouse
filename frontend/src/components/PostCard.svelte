@@ -24,6 +24,7 @@
   import BandcampEmbed from '../lib/components/embeds/BandcampEmbed.svelte';
   import SoundCloudEmbed from '../lib/components/embeds/SoundCloudEmbed.svelte';
   import SpotifyEmbed from '../lib/components/embeds/SpotifyEmbed.svelte';
+  import YouTubeEmbed from '../lib/components/embeds/YouTubeEmbed.svelte';
 
   export let post: Post;
   export let highlightCommentId: string | null = null;
@@ -1213,6 +1214,13 @@
             fallbackImage={metadata.image}
             fallbackTitle={metadata.title}
           />
+        {:else if primaryLink && metadata?.embed?.provider === 'youtube' && metadata.embed.embedUrl}
+          <div class="mt-3">
+            <YouTubeEmbed
+              embedUrl={metadata.embed.embedUrl}
+              title={metadata.title || 'YouTube video'}
+            />
+          </div>
         {:else if primaryLink && metadata && !primaryLinkIsImage}
           {#if spotifyEmbedUrl}
             <div class="mt-3">
@@ -1280,6 +1288,22 @@
           />
         {:else if spotifyEmbedUrl}
           <SpotifyEmbed embedUrl={spotifyEmbedUrl} height={spotifyEmbedHeight} />
+        {:else if metadata.embed?.provider === 'youtube' && metadata.embed.embedUrl}
+          <div class="mt-3">
+            <YouTubeEmbed
+              embedUrl={metadata.embed.embedUrl}
+              title={metadata.title || 'YouTube video'}
+            />
+          </div>
+        {:else if spotifyEmbedUrl}
+          <SpotifyEmbed embedUrl={spotifyEmbedUrl} height={spotifyEmbedHeight} />
+        {:else if metadata.embed?.provider === 'youtube' && metadata.embed.embedUrl}
+          <div class="mt-3">
+            <YouTubeEmbed
+              embedUrl={metadata.embed.embedUrl}
+              title={metadata.title || 'YouTube video'}
+            />
+          </div>
         {:else}
           <a
             href={primaryLink.url}

@@ -81,6 +81,29 @@ function normalizeNumber(value: unknown): number | undefined {
   return undefined;
 }
 
+function normalizeEmbed(rawEmbed: unknown): LinkEmbed | undefined {
+  if (!rawEmbed || typeof rawEmbed !== 'object' || Array.isArray(rawEmbed)) {
+    return undefined;
+  }
+  const record = rawEmbed as Record<string, unknown>;
+  const embedUrl =
+    normalizeString(record.embedUrl) ?? normalizeString(record.embed_url);
+  const provider = normalizeString(record.provider);
+  if (!embedUrl || !provider) {
+    return undefined;
+  }
+  const type = normalizeString(record.type);
+  const width = normalizeNumber(record.width);
+  const height = normalizeNumber(record.height);
+  return {
+    embedUrl,
+    provider,
+    type,
+    width,
+    height,
+  };
+}
+
 function normalizeRecipeStats(rawStats: unknown): RecipeStats | undefined {
   if (!rawStats || typeof rawStats !== 'object') {
     return undefined;
