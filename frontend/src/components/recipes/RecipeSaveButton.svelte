@@ -205,9 +205,12 @@
       recipeStore.applyUnsave(postId, category);
     }
 
-    const delta = toAdd.length - toRemove.length;
-    if (delta !== 0) {
-      postStore.updateRecipeSaveCount(postId, delta);
+    const wasSaved = previous.size > 0;
+    const willBeSaved = next.size > 0;
+    if (!wasSaved && willBeSaved) {
+      postStore.updateRecipeSaveCount(postId, 1);
+    } else if (wasSaved && !willBeSaved) {
+      postStore.updateRecipeSaveCount(postId, -1);
     }
   }
 
@@ -223,9 +226,12 @@
       recipeStore.applySavedRecipes([buildOptimisticRecipe(category)]);
     }
 
-    const delta = removed.length - added.length;
-    if (delta !== 0) {
-      postStore.updateRecipeSaveCount(postId, delta);
+    const wasSaved = previous.size > 0;
+    const willBeSaved = next.size > 0;
+    if (!wasSaved && willBeSaved) {
+      postStore.updateRecipeSaveCount(postId, -1);
+    } else if (wasSaved && !willBeSaved) {
+      postStore.updateRecipeSaveCount(postId, 1);
     }
   }
 

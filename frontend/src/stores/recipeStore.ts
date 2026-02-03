@@ -410,12 +410,13 @@ function createRecipeStore() {
           .map((category) => category.trim())
           .filter((category) => category.length > 0);
         const unique = Array.from(new Set(normalized));
-        const delta = unique.filter((category) => !existing.has(category)).length;
+        const wasSaved = existing.size > 0;
+        const willBeSaved = wasSaved || unique.length > 0;
         const response = await api.saveRecipe(postId, categories);
         const savedRecipes = (response.saved_recipes ?? []).map(mapApiSavedRecipe);
         recipeStore.applySavedRecipes(savedRecipes);
-        if (delta > 0) {
-          postStore.updateRecipeSaveCount(postId, delta);
+        if (!wasSaved && willBeSaved) {
+          postStore.updateRecipeSaveCount(postId, 1);
         }
       } catch (error) {
         recipeStore.setError(error instanceof Error ? error.message : 'Failed to save recipe');
@@ -424,11 +425,16 @@ function createRecipeStore() {
     unsaveRecipe: async (postId: string, category?: string): Promise<void> => {
       try {
         const existing = getSavedCategoriesForPost(get(recipeStore).savedRecipes, postId);
-        const delta = category === undefined ? existing.size : existing.has(category) ? 1 : 0;
+        const wasSaved = existing.size > 0;
+        const remaining =
+          category === undefined
+            ? 0
+            : existing.size - (existing.has(category) ? 1 : 0);
+        const willBeSaved = remaining > 0;
         await api.unsaveRecipe(postId, category);
         recipeStore.applyUnsave(postId, category);
-        if (delta > 0) {
-          postStore.updateRecipeSaveCount(postId, -delta);
+        if (wasSaved && !willBeSaved) {
+          postStore.updateRecipeSaveCount(postId, -1);
         }
       } catch (error) {
         recipeStore.setError(error instanceof Error ? error.message : 'Failed to unsave recipe');

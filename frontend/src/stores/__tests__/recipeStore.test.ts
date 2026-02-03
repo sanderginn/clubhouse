@@ -170,6 +170,54 @@ describe('recipeStore', () => {
     expect(post?.recipeStats?.saveCount).toBe(1);
   });
 
+  it('save count does not change when toggling categories while still saved', async () => {
+    apiSaveRecipe.mockResolvedValue({
+      saved_recipes: [
+        {
+          id: 'save-4',
+          user_id: 'user-1',
+          post_id: 'post-4',
+          category: 'Weeknight',
+          created_at: '2024-01-02T00:00:00Z',
+        },
+      ],
+    });
+    apiUnsaveRecipe.mockResolvedValue(undefined);
+
+    recipeStore.applySavedRecipes([
+      {
+        id: 'save-4a',
+        userId: 'user-1',
+        postId: 'post-4',
+        category: 'Favorites',
+        createdAt: '2024-01-01T00:00:00Z',
+      },
+    ]);
+
+    postStore.setPosts(
+      [
+        {
+          id: 'post-4',
+          userId: 'user-1',
+          sectionId: 'section-1',
+          content: 'Recipe 4',
+          createdAt: '2024-01-01T00:00:00Z',
+          recipeStats: { saveCount: 5, cookCount: 0, averageRating: null },
+        },
+      ],
+      null,
+      false
+    );
+
+    await recipeStore.saveRecipe('post-4', ['Weeknight']);
+    let post = get(postStore).posts.find((item) => item.id === 'post-4');
+    expect(post?.recipeStats?.saveCount).toBe(5);
+
+    await recipeStore.unsaveRecipe('post-4', 'Favorites');
+    post = get(postStore).posts.find((item) => item.id === 'post-4');
+    expect(post?.recipeStats?.saveCount).toBe(5);
+  });
+
   it('updateCategory renames saved recipe categories', async () => {
     apiUpdateCategory.mockResolvedValue({
       category: {
