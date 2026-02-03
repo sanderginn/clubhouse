@@ -1095,7 +1095,7 @@
     {
       "issue_number": 687,
       "title": "[Stretch] Implement recipe content parser for link metadata",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -1104,7 +1104,11 @@
         "stretch"
       ],
       "priority": 23,
-      "phase": "recipes-8"
+      "phase": "recipes-8",
+      "assigned_to": "agent-1770079189-98727",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770079189-98727",
+      "branch": "feat/issue-687-stretch-implement-recipe-content-parser-",
+      "claimed_at": "2026-02-03T00:39:49Z"
     },
     {
       "issue_number": 688,
