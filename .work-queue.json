@@ -17,7 +17,8 @@
     752,
     753,
     754,
-    755
+    755,
+    772
   ],
   "issues": [
     {
@@ -261,7 +262,7 @@
     {
       "issue_number": 772,
       "title": "Fix SoundCloud oEmbed JSON unmarshal error for width field",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -271,7 +272,9 @@
       "assigned_to": "agent-1770188010-94736",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770188010-94736",
       "branch": "fix/issue-772-fix-soundcloud-oembed-json-unmarshal-err",
-      "claimed_at": "2026-02-04T06:53:30Z"
+      "claimed_at": "2026-02-04T06:53:30Z",
+      "pr_number": 778,
+      "completed_at": "2026-02-04T06:59:19Z"
     },
     {
       "issue_number": 773,
