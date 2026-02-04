@@ -86,6 +86,28 @@ const postTwo: Post & {
   saveInfo: { saveCount: 2 },
 };
 
+const postThree: Post = {
+  id: 'post-3',
+  userId: 'user-3',
+  sectionId: 'section-1',
+  content: 'Quick soup',
+  createdAt: '2024-12-31T00:00:00Z',
+  links: [
+    {
+      url: 'https://example.com/soup',
+      metadata: {
+        title: 'Hearty Soup',
+        description: 'Weeknight staple',
+        image: 'https://example.com/soup.jpg',
+      },
+    },
+  ],
+  user: {
+    id: 'user-3',
+    username: 'Jamie',
+  },
+};
+
 const savedRecipes = new Map<string, SavedRecipe[]>([
   [
     'Favorites',
@@ -147,7 +169,7 @@ beforeEach(() => {
   recipeStore.setCategories(categories);
   recipeStore.setSavedRecipes(new Map(savedRecipes));
   recipeStore.setCookLogs([...cookLogs]);
-  postStore.setPosts([postOne, postTwo], null, false);
+  postStore.setPosts([postOne, postTwo, postThree], null, false);
 
   vi.spyOn(recipeStore, 'loadCategories').mockResolvedValue();
   vi.spyOn(recipeStore, 'loadSavedRecipes').mockResolvedValue();
@@ -197,6 +219,15 @@ describe('Cookbook', () => {
 
     const reordered = screen.getAllByTestId(/all-recipe-item-/);
     expect(reordered[0]).toHaveTextContent('Citrus Salad');
+  });
+
+  it('shows recipe posts with basic link metadata in all recipes', async () => {
+    render(Cookbook);
+
+    await fireEvent.click(screen.getByTestId('cookbook-tab-all'));
+
+    expect(screen.getByTestId('all-recipe-item-post-3')).toBeInTheDocument();
+    expect(screen.getByText('Hearty Soup')).toBeInTheDocument();
   });
 
   it('shows empty state when no categories', () => {
