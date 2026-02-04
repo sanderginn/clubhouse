@@ -18,7 +18,8 @@
     753,
     754,
     755,
-    772
+    772,
+    775
   ],
   "issues": [
     {
@@ -309,7 +310,7 @@
     {
       "issue_number": 775,
       "title": "Fix Cookbook \"All Recipes\" tab showing no recipes",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -320,7 +321,9 @@
       "assigned_to": "agent-1770188019-95162",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770188019-95162",
       "branch": "fix/issue-775-fix-cookbook-all-recipes-tab-showing-no-",
-      "claimed_at": "2026-02-04T06:53:39Z"
+      "claimed_at": "2026-02-04T06:53:39Z",
+      "pr_number": 779,
+      "completed_at": "2026-02-04T07:01:48Z"
     },
     {
       "issue_number": 776,
