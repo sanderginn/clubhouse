@@ -260,7 +260,7 @@
     return postList
       .map((post) => {
         const link = findRecipeLink(post);
-        if (!link || (!link.metadata?.recipe && link.metadata?.type !== 'recipe')) {
+        if (!link) {
           return null;
         }
         const cookStats = extractCookStats(post);
