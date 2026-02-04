@@ -227,33 +227,26 @@ func TestFetchMetadataImageFallbackByQueryValue(t *testing.T) {
 }
 
 func TestFetchMetadataBandcampEmbed(t *testing.T) {
-	htmlBody := `<!doctype html>
+	htmlBody := []byte(`<!doctype html>
 		<html>
 		<head>
+			<title>Test Album | Test Artist</title>
+			<meta property="og:title" content="Test Album" />
+			<meta property="og:image" content="https://f4.bcbits.com/img/a12345.jpg" />
 			<meta name="bc-page-properties" content="{&quot;item_type&quot;:&quot;a&quot;,&quot;item_id&quot;:12345}" />
 		</head>
-		</html>`
+		</html>`)
 
-	fetcher := NewFetcher(&http.Client{
-		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
-			if ua := r.Header.Get("User-Agent"); !strings.Contains(ua, "Mozilla/5.0") {
-				t.Fatalf("expected bandcamp user-agent to look like a browser, got %q", ua)
-			}
-			if accept := r.Header.Get("Accept"); accept != "text/html,application/xhtml+xml" {
-				t.Fatalf("expected bandcamp accept header, got %q", accept)
-			}
-			if lang := r.Header.Get("Accept-Language"); lang != "en-US,en;q=0.9" {
-				t.Fatalf("expected bandcamp accept-language header, got %q", lang)
-			}
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Status:     "200 OK",
-				Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
-				Body:       io.NopCloser(strings.NewReader(htmlBody)),
-				Request:    r,
-			}, nil
-		}),
+	// Mock the Bandcamp fetch function
+	SetBandcampFetchHTMLForTests(func(ctx context.Context, rawURL string) ([]byte, error) {
+		if !strings.Contains(rawURL, "bandcamp.com") {
+			t.Fatalf("expected bandcamp URL, got %q", rawURL)
+		}
+		return htmlBody, nil
 	})
+	defer SetBandcampFetchHTMLForTests(nil)
+
+	fetcher := NewFetcher(nil)
 	fetcher.resolver = fakeResolver{
 		addrs: map[string][]net.IPAddr{
 			"artist.bandcamp.com": {{IP: net.ParseIP("93.184.216.34")}},
@@ -265,59 +258,47 @@ func TestFetchMetadataBandcampEmbed(t *testing.T) {
 		t.Fatalf("FetchMetadata error: %v", err)
 	}
 
+	if metadata["title"] != "Test Album" {
+		t.Fatalf("title = %v, want Test Album", metadata["title"])
+	}
+	if metadata["provider"] != "bandcamp" {
+		t.Fatalf("provider = %v, want bandcamp", metadata["provider"])
+	}
+
 	embed, ok := metadata["embed"].(*EmbedData)
 	if !ok || embed == nil {
 		t.Fatalf("expected bandcamp embed to be present")
 	}
 	if embed.Provider != "bandcamp" {
-		t.Fatalf("provider = %v, want bandcamp", embed.Provider)
+		t.Fatalf("embed provider = %v, want bandcamp", embed.Provider)
 	}
 	if embed.Height != bandcampAlbumHeight {
 		t.Fatalf("height = %v, want %d", embed.Height, bandcampAlbumHeight)
 	}
 }
 
-func TestFetchMetadataBandcampOEmbedFallback(t *testing.T) {
-	oembedPayload := `{"type":"rich","version":"1.0","title":"Bandcamp Track","author_name":"Artist","html":"<iframe src=\"https://bandcamp.com/EmbeddedPlayer/track=123/\" width=\"400\" height=\"120\"></iframe>","width":400,"height":120,"thumbnail_url":"https://f4.bcbits.com/img/a123.jpg","provider_name":"Bandcamp"}`
+func TestFetchMetadataBandcampTrack(t *testing.T) {
+	htmlBody := []byte(`<!doctype html>
+		<html>
+		<head>
+			<title>Test Track | Test Artist</title>
+			<meta property="og:title" content="Test Track" />
+			<meta property="og:description" content="A test track description" />
+			<meta property="og:image" content="https://f4.bcbits.com/img/a12345.jpg" />
+			<meta name="bc-page-properties" content="{&quot;item_type&quot;:&quot;t&quot;,&quot;item_id&quot;:67890}" />
+		</head>
+		</html>`)
 
-	fetcher := NewFetcher(&http.Client{
-		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
-			switch r.URL.Host {
-			case "artist.bandcamp.com":
-				return &http.Response{
-					StatusCode: http.StatusForbidden,
-					Status:     "403 Forbidden",
-					Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
-					Body:       io.NopCloser(strings.NewReader("forbidden")),
-					Request:    r,
-				}, nil
-			case "bandcamp.com":
-				if r.URL.Path != "/oembed" {
-					t.Fatalf("unexpected bandcamp path: %s", r.URL.Path)
-				}
-				if ua := r.Header.Get("User-Agent"); ua != "ClubhouseBandcampEmbed/1.0" {
-					t.Fatalf("expected bandcamp oembed user-agent, got %q", ua)
-				}
-				if accept := r.Header.Get("Accept"); accept != "application/json" {
-					t.Fatalf("expected bandcamp oembed accept header, got %q", accept)
-				}
-				return &http.Response{
-					StatusCode: http.StatusOK,
-					Status:     "200 OK",
-					Header:     http.Header{"Content-Type": []string{"application/json"}},
-					Body:       io.NopCloser(strings.NewReader(oembedPayload)),
-					Request:    r,
-				}, nil
-			default:
-				t.Fatalf("unexpected host: %s", r.URL.Host)
-			}
-			return nil, nil
-		}),
+	// Mock the Bandcamp fetch function
+	SetBandcampFetchHTMLForTests(func(ctx context.Context, rawURL string) ([]byte, error) {
+		return htmlBody, nil
 	})
+	defer SetBandcampFetchHTMLForTests(nil)
+
+	fetcher := NewFetcher(nil)
 	fetcher.resolver = fakeResolver{
 		addrs: map[string][]net.IPAddr{
 			"artist.bandcamp.com": {{IP: net.ParseIP("93.184.216.34")}},
-			"bandcamp.com":        {{IP: net.ParseIP("93.184.216.34")}},
 		},
 	}
 
@@ -326,28 +307,42 @@ func TestFetchMetadataBandcampOEmbedFallback(t *testing.T) {
 		t.Fatalf("FetchMetadata error: %v", err)
 	}
 
-	if metadata["title"] != "Bandcamp Track" {
-		t.Fatalf("title = %v, want Bandcamp Track", metadata["title"])
+	if metadata["title"] != "Test Track" {
+		t.Fatalf("title = %v, want Test Track", metadata["title"])
 	}
-	if metadata["author"] != "Artist" {
-		t.Fatalf("author = %v, want Artist", metadata["author"])
-	}
-	if metadata["image"] != "https://f4.bcbits.com/img/a123.jpg" {
-		t.Fatalf("image = %v, want thumbnail url", metadata["image"])
+	if metadata["description"] != "A test track description" {
+		t.Fatalf("description = %v, want A test track description", metadata["description"])
 	}
 
 	embed, ok := metadata["embed"].(*EmbedData)
 	if !ok || embed == nil {
 		t.Fatalf("expected bandcamp embed to be present")
 	}
-	if embed.Provider != "bandcamp" {
-		t.Fatalf("provider = %v, want bandcamp", embed.Provider)
+	if embed.Height != bandcampTrackHeight {
+		t.Fatalf("height = %v, want %d", embed.Height, bandcampTrackHeight)
 	}
-	if embed.Type != "oembed" {
-		t.Fatalf("type = %v, want oembed", embed.Type)
+}
+
+func TestFetchMetadataBandcampFetchError(t *testing.T) {
+	// Mock the Bandcamp fetch function to return an error
+	SetBandcampFetchHTMLForTests(func(ctx context.Context, rawURL string) ([]byte, error) {
+		return nil, errors.New("connection refused")
+	})
+	defer SetBandcampFetchHTMLForTests(nil)
+
+	fetcher := NewFetcher(nil)
+	fetcher.resolver = fakeResolver{
+		addrs: map[string][]net.IPAddr{
+			"artist.bandcamp.com": {{IP: net.ParseIP("93.184.216.34")}},
+		},
 	}
-	if embed.EmbedURL != "https://bandcamp.com/EmbeddedPlayer/track=123/" {
-		t.Fatalf("embed url = %v, want bandcamp iframe src", embed.EmbedURL)
+
+	_, err := fetcher.Fetch(context.Background(), "https://artist.bandcamp.com/track/test")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "connection refused") {
+		t.Fatalf("expected connection refused error, got %v", err)
 	}
 }
 

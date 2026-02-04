@@ -96,6 +96,11 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 		return nil, err
 	}
 
+	// Use azuretls-client for Bandcamp to bypass their WAF
+	if isBandcampHost(u.Hostname()) {
+		return fetchBandcampMetadata(ctx, rawURL)
+	}
+
 	client := f.client
 	if client == nil {
 		client = &http.Client{Timeout: fetchTimeout}
@@ -105,21 +110,11 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 
 	resp, err := f.doRequestWithRetry(ctx, &clientCopy, u)
 	if err != nil {
-		if isBandcampHost(u.Hostname()) {
-			if metadata, fallbackErr := fetchBandcampOEmbedMetadata(ctx, rawURL, &clientCopy); fallbackErr == nil {
-				return metadata, nil
-			}
-		}
 		return nil, fmt.Errorf("fetch url: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
-		if isBandcampHost(u.Hostname()) {
-			if metadata, fallbackErr := fetchBandcampOEmbedMetadata(ctx, rawURL, &clientCopy); fallbackErr == nil {
-				return metadata, nil
-			}
-		}
 		return nil, fmt.Errorf("unexpected status: %s", resp.Status)
 	}
 
@@ -200,51 +195,6 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	return metadata, nil
 }
 
-func (f *Fetcher) fetchHTML(ctx context.Context, rawURL string) ([]byte, map[string]string, error) {
-	if ctx == nil {
-		return nil, nil, errors.New("context is required")
-	}
-
-	ctx, cancel := context.WithTimeout(ctx, fetchTimeout)
-	defer cancel()
-
-	u, err := url.Parse(rawURL)
-	if err != nil {
-		return nil, nil, fmt.Errorf("parse url: %w", err)
-	}
-	if err := f.validateURL(ctx, u); err != nil {
-		return nil, nil, err
-	}
-
-	client := f.client
-	if client == nil {
-		client = &http.Client{Timeout: fetchTimeout}
-	}
-	clientCopy := *client
-	clientCopy.CheckRedirect = f.redirectValidator(ctx, client.CheckRedirect)
-
-	resp, err := f.doRequestWithRetry(ctx, &clientCopy, u)
-	if err != nil {
-		return nil, nil, fmt.Errorf("fetch url: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
-		return nil, nil, fmt.Errorf("unexpected status: %s", resp.Status)
-	}
-
-	contentType := strings.ToLower(resp.Header.Get("Content-Type"))
-	if !strings.Contains(contentType, "text/html") {
-		return nil, nil, errors.New("non-html response")
-	}
-	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBodyBytes))
-	if err != nil {
-		return nil, nil, fmt.Errorf("read response: %w", err)
-	}
-	metaTags, _ := extractHTMLMeta(body)
-	return body, metaTags, nil
-}
-
 func (f *Fetcher) doRequestWithRetry(ctx context.Context, client *http.Client, u *url.URL) (*http.Response, error) {
 	if client == nil {
 		client = &http.Client{Timeout: fetchTimeout}
@@ -284,52 +234,12 @@ func applyRequestHeaders(req *http.Request, u *url.URL) {
 	if req == nil || u == nil {
 		return
 	}
-	if isBandcampHost(u.Hostname()) {
-		req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-		req.Header.Set("Accept", "text/html,application/xhtml+xml")
-		req.Header.Set("Accept-Language", "en-US,en;q=0.9")
-		return
-	}
 	req.Header.Set("User-Agent", "ClubhouseMetadataFetcher/1.0")
 }
 
 func isBandcampHost(host string) bool {
 	normalized := strings.ToLower(strings.TrimSpace(host))
 	return normalized == "bandcamp.com" || strings.HasSuffix(normalized, ".bandcamp.com")
-}
-
-func fetchBandcampOEmbedMetadata(ctx context.Context, rawURL string, client *http.Client) (map[string]interface{}, error) {
-	payload, err := fetchBandcampOEmbed(ctx, rawURL, client)
-	if err != nil {
-		return nil, err
-	}
-	embedURL := extractIFrameSrc(payload.HTML)
-	if embedURL == "" {
-		return nil, errors.New("bandcamp oembed missing iframe src")
-	}
-	if err := validateEmbedURL(embedURL); err != nil {
-		return nil, err
-	}
-
-	metadata := make(map[string]interface{})
-	if payload.Title != "" {
-		metadata["title"] = payload.Title
-	}
-	if payload.AuthorName != "" {
-		metadata["author"] = payload.AuthorName
-	}
-	if payload.ThumbnailURL != "" {
-		metadata["image"] = payload.ThumbnailURL
-	}
-	metadata["provider"] = "bandcamp"
-	metadata["embed"] = &EmbedData{
-		Type:     "oembed",
-		Provider: "bandcamp",
-		EmbedURL: embedURL,
-		Width:    payload.Width,
-		Height:   payload.Height,
-	}
-	return metadata, nil
 }
 
 func shouldRetryFetch(ctx context.Context, err error, resp *http.Response) bool {
