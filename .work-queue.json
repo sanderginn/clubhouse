@@ -21,7 +21,8 @@
     772,
     773,
     774,
-    775
+    775,
+    776
   ],
   "issues": [
     {
@@ -334,7 +335,7 @@
     {
       "issue_number": 776,
       "title": "Show expandable recipe card on published posts",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         775
       ],
@@ -347,7 +348,9 @@
       "assigned_to": "agent-1770188613-11773",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770188613-11773",
       "branch": "feat/issue-776-show-expandable-recipe-card-on-published",
-      "claimed_at": "2026-02-04T07:03:33Z"
+      "claimed_at": "2026-02-04T07:03:33Z",
+      "pr_number": 782,
+      "completed_at": "2026-02-04T07:14:13Z"
     },
     {
       "issue_number": 777,
