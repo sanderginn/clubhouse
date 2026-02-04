@@ -257,6 +257,79 @@
       "claimed_at": "2026-02-03T17:00:26Z",
       "pr_number": 768,
       "completed_at": "2026-02-03T17:49:40Z"
+    },
+    {
+      "issue_number": 772,
+      "title": "Fix SoundCloud oEmbed JSON unmarshal error for width field",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "backend"
+      ],
+      "priority": 17
+    },
+    {
+      "issue_number": 773,
+      "title": "Fix Bandcamp link metadata fetch returning 403 Forbidden",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "backend"
+      ],
+      "priority": 18
+    },
+    {
+      "issue_number": 774,
+      "title": "Fix timestamp click-to-seek not working for music embeds",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend"
+      ],
+      "priority": 19
+    },
+    {
+      "issue_number": 775,
+      "title": "Fix Cookbook \"All Recipes\" tab showing no recipes",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 20
+    },
+    {
+      "issue_number": 776,
+      "title": "Show expandable recipe card on published posts",
+      "status": "available",
+      "dependencies": [
+        775
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 21
+    },
+    {
+      "issue_number": 777,
+      "title": "Remove \"Print recipe\" button and \"View original source\" link from RecipeCard",
+      "status": "available",
+      "dependencies": [
+        776
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "recipes"
+      ],
+      "priority": 22
     }
   ]
 }
