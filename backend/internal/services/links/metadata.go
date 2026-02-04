@@ -105,11 +105,21 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 
 	resp, err := f.doRequestWithRetry(ctx, &clientCopy, u)
 	if err != nil {
+		if isBandcampHost(u.Hostname()) {
+			if metadata, fallbackErr := fetchBandcampOEmbedMetadata(ctx, rawURL, &clientCopy); fallbackErr == nil {
+				return metadata, nil
+			}
+		}
 		return nil, fmt.Errorf("fetch url: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
+		if isBandcampHost(u.Hostname()) {
+			if metadata, fallbackErr := fetchBandcampOEmbedMetadata(ctx, rawURL, &clientCopy); fallbackErr == nil {
+				return metadata, nil
+			}
+		}
 		return nil, fmt.Errorf("unexpected status: %s", resp.Status)
 	}
 
@@ -286,6 +296,40 @@ func applyRequestHeaders(req *http.Request, u *url.URL) {
 func isBandcampHost(host string) bool {
 	normalized := strings.ToLower(strings.TrimSpace(host))
 	return normalized == "bandcamp.com" || strings.HasSuffix(normalized, ".bandcamp.com")
+}
+
+func fetchBandcampOEmbedMetadata(ctx context.Context, rawURL string, client *http.Client) (map[string]interface{}, error) {
+	payload, err := fetchBandcampOEmbed(ctx, rawURL, client)
+	if err != nil {
+		return nil, err
+	}
+	embedURL := extractIFrameSrc(payload.HTML)
+	if embedURL == "" {
+		return nil, errors.New("bandcamp oembed missing iframe src")
+	}
+	if err := validateEmbedURL(embedURL); err != nil {
+		return nil, err
+	}
+
+	metadata := make(map[string]interface{})
+	if payload.Title != "" {
+		metadata["title"] = payload.Title
+	}
+	if payload.AuthorName != "" {
+		metadata["author"] = payload.AuthorName
+	}
+	if payload.ThumbnailURL != "" {
+		metadata["image"] = payload.ThumbnailURL
+	}
+	metadata["provider"] = "bandcamp"
+	metadata["embed"] = &EmbedData{
+		Type:     "oembed",
+		Provider: "bandcamp",
+		EmbedURL: embedURL,
+		Width:    payload.Width,
+		Height:   payload.Height,
+	}
+	return metadata, nil
 }
 
 func shouldRetryFetch(ctx context.Context, err error, resp *http.Response) bool {
