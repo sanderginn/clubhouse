@@ -355,7 +355,7 @@
     {
       "issue_number": 777,
       "title": "Remove \"Print recipe\" button and \"View original source\" link from RecipeCard",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         776
       ],
@@ -364,7 +364,11 @@
         "frontend",
         "recipes"
       ],
-      "priority": 22
+      "priority": 22,
+      "assigned_to": "agent-1770189278-17658",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770189278-17658",
+      "branch": "feat/issue-777-remove-print-recipe-button-and-view-orig",
+      "claimed_at": "2026-02-04T07:14:38Z"
     }
   ]
 }
