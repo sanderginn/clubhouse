@@ -306,14 +306,18 @@
     {
       "issue_number": 775,
       "title": "Fix Cookbook \"All Recipes\" tab showing no recipes",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "bug",
         "frontend",
         "recipes"
       ],
-      "priority": 20
+      "priority": 20,
+      "assigned_to": "agent-1770188019-95162",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770188019-95162",
+      "branch": "fix/issue-775-fix-cookbook-all-recipes-tab-showing-no-",
+      "claimed_at": "2026-02-04T06:53:39Z"
     },
     {
       "issue_number": 776,
