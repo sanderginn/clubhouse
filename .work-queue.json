@@ -19,6 +19,7 @@
     754,
     755,
     772,
+    773,
     774,
     775
   ],
@@ -281,7 +282,7 @@
     {
       "issue_number": 773,
       "title": "Fix Bandcamp link metadata fetch returning 403 Forbidden",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -291,7 +292,9 @@
       "assigned_to": "agent-1770188014-94922",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770188014-94922",
       "branch": "fix/issue-773-fix-bandcamp-link-metadata-fetch-returni",
-      "claimed_at": "2026-02-04T06:53:34Z"
+      "claimed_at": "2026-02-04T06:53:34Z",
+      "pr_number": 781,
+      "completed_at": "2026-02-04T07:03:08Z"
     },
     {
       "issue_number": 774,
