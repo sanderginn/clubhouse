@@ -2,6 +2,7 @@ package links
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -38,46 +39,64 @@ func TestSoundCloudExtractorExtract(t *testing.T) {
 	const targetURL = "https://soundcloud.com/artist/track"
 	const embedSrc = "https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/123"
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		query := r.URL.Query()
-		if query.Get("format") != "json" {
-			t.Fatalf("format = %q, want json", query.Get("format"))
-		}
-		if query.Get("url") != targetURL {
-			t.Fatalf("url = %q, want %q", query.Get("url"), targetURL)
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{
-			"type": "rich",
-			"version": 1.0,
-			"title": "Test Track",
-			"author_name": "Artist",
-			"html": "<iframe src=\"`+embedSrc+`\"></iframe>",
-			"width": 100,
-			"height": 166,
-			"thumbnail_url": "https://example.com/image.png"
-		}`)
-	}))
-	defer server.Close()
+	cases := []struct {
+		name       string
+		width      string
+		height     string
+		wantWidth  int
+		wantHeight int
+	}{
+		{name: "numeric", width: "100", height: "166", wantWidth: 100, wantHeight: 166},
+		{name: "string", width: `"100"`, height: `"166"`, wantWidth: 100, wantHeight: 166},
+	}
 
-	extractor := NewSoundCloudExtractor(&http.Client{Timeout: time.Second})
-	extractor.oEmbedURL = server.URL
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				query := r.URL.Query()
+				if query.Get("format") != "json" {
+					t.Fatalf("format = %q, want json", query.Get("format"))
+				}
+				if query.Get("url") != targetURL {
+					t.Fatalf("url = %q, want %q", query.Get("url"), targetURL)
+				}
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = io.WriteString(w, fmt.Sprintf(`{
+					"type": "rich",
+					"version": 1.0,
+					"title": "Test Track",
+					"author_name": "Artist",
+					"html": "<iframe src=\"%s\"></iframe>",
+					"width": %s,
+					"height": %s,
+					"thumbnail_url": "https://example.com/image.png"
+				}`, embedSrc, tc.width, tc.height))
+			}))
+			defer server.Close()
 
-	embed, err := extractor.Extract(context.Background(), targetURL)
-	if err != nil {
-		t.Fatalf("Extract error: %v", err)
-	}
-	if embed == nil {
-		t.Fatal("expected embed data")
-	}
-	if embed.Provider != "soundcloud" {
-		t.Fatalf("provider = %q, want soundcloud", embed.Provider)
-	}
-	if embed.EmbedURL != embedSrc {
-		t.Fatalf("embed_url = %q, want %q", embed.EmbedURL, embedSrc)
-	}
-	if embed.Height != 166 {
-		t.Fatalf("height = %d, want 166", embed.Height)
+			extractor := NewSoundCloudExtractor(&http.Client{Timeout: time.Second})
+			extractor.oEmbedURL = server.URL
+
+			embed, err := extractor.Extract(context.Background(), targetURL)
+			if err != nil {
+				t.Fatalf("Extract error: %v", err)
+			}
+			if embed == nil {
+				t.Fatal("expected embed data")
+			}
+			if embed.Provider != "soundcloud" {
+				t.Fatalf("provider = %q, want soundcloud", embed.Provider)
+			}
+			if embed.EmbedURL != embedSrc {
+				t.Fatalf("embed_url = %q, want %q", embed.EmbedURL, embedSrc)
+			}
+			if embed.Width != tc.wantWidth {
+				t.Fatalf("width = %d, want %d", embed.Width, tc.wantWidth)
+			}
+			if embed.Height != tc.wantHeight {
+				t.Fatalf("height = %d, want %d", embed.Height, tc.wantHeight)
+			}
+		})
 	}
 }
 
