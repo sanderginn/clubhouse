@@ -6,14 +6,18 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
 	bandcampAlbumHeight = 470
 	bandcampTrackHeight = 120
+	bandcampOEmbedURL   = "https://bandcamp.com/oembed"
+	bandcampTimeout     = 5 * time.Second
 )
 
 type BandcampExtractor struct{}
@@ -30,9 +34,13 @@ func (e BandcampExtractor) CanExtract(rawURL string) bool {
 func (e BandcampExtractor) Extract(ctx context.Context, rawURL string) (*EmbedData, error) {
 	body, metaTags, err := defaultFetcher.fetchHTML(ctx, rawURL)
 	if err != nil {
-		return nil, err
+		return fetchBandcampEmbedFromOEmbed(ctx, rawURL, defaultFetcher.client)
 	}
-	return e.ExtractFromHTML(ctx, rawURL, body, metaTags)
+	embed, err := e.ExtractFromHTML(ctx, rawURL, body, metaTags)
+	if err != nil {
+		return fetchBandcampEmbedFromOEmbed(ctx, rawURL, defaultFetcher.client)
+	}
+	return embed, nil
 }
 
 func (e BandcampExtractor) ExtractFromHTML(
@@ -162,4 +170,83 @@ func buildBandcampEmbedURL(content bandcampContent) (string, int) {
 		tracklist,
 	)
 	return embedURL, height
+}
+
+type bandcampOEmbedResponse struct {
+	Type         string `json:"type"`
+	Version      string `json:"version"`
+	Title        string `json:"title"`
+	AuthorName   string `json:"author_name"`
+	HTML         string `json:"html"`
+	Width        int    `json:"width"`
+	Height       int    `json:"height"`
+	ThumbnailURL string `json:"thumbnail_url"`
+	ProviderName string `json:"provider_name"`
+}
+
+func fetchBandcampEmbedFromOEmbed(ctx context.Context, rawURL string, client *http.Client) (*EmbedData, error) {
+	if ctx == nil {
+		return nil, errors.New("context is required")
+	}
+	ctx, cancel := context.WithTimeout(ctx, bandcampTimeout)
+	defer cancel()
+
+	payload, err := fetchBandcampOEmbed(ctx, rawURL, client)
+	if err != nil {
+		return nil, err
+	}
+
+	embedURL := extractIFrameSrc(payload.HTML)
+	if embedURL == "" {
+		return nil, errors.New("bandcamp oembed missing iframe src")
+	}
+	if err := validateEmbedURL(embedURL); err != nil {
+		return nil, err
+	}
+
+	return &EmbedData{
+		Type:     "oembed",
+		Provider: "bandcamp",
+		EmbedURL: embedURL,
+		Width:    payload.Width,
+		Height:   payload.Height,
+	}, nil
+}
+
+func fetchBandcampOEmbed(ctx context.Context, rawURL string, client *http.Client) (*bandcampOEmbedResponse, error) {
+	if ctx == nil {
+		return nil, errors.New("context is required")
+	}
+	if strings.TrimSpace(rawURL) == "" {
+		return nil, errors.New("bandcamp url is required")
+	}
+
+	oembedURL := fmt.Sprintf("%s?format=json&url=%s", bandcampOEmbedURL, url.QueryEscape(rawURL))
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, oembedURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("build bandcamp oembed request: %w", err)
+	}
+	req.Header.Set("User-Agent", "ClubhouseBandcampEmbed/1.0")
+	req.Header.Set("Accept", "application/json")
+
+	if client == nil {
+		client = &http.Client{Timeout: bandcampTimeout}
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("bandcamp oembed request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return nil, fmt.Errorf("bandcamp oembed status: %s", resp.Status)
+	}
+
+	var payload bandcampOEmbedResponse
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		return nil, fmt.Errorf("decode bandcamp oembed: %w", err)
+	}
+
+	return &payload, nil
 }
