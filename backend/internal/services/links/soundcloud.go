@@ -31,8 +31,8 @@ type soundCloudOEmbedResponse struct {
 	Title        string          `json:"title"`
 	AuthorName   string          `json:"author_name"`
 	HTML         string          `json:"html"`
-	Width        int             `json:"width"`
-	Height       int             `json:"height"`
+	Width        json.RawMessage `json:"width"`
+	Height       json.RawMessage `json:"height"`
 	ThumbnailURL string          `json:"thumbnail_url"`
 }
 
@@ -102,14 +102,23 @@ func (e *SoundCloudExtractor) Extract(ctx context.Context, rawURL string) (*Embe
 		return nil, err
 	}
 
+	width, err := parseSoundCloudDimension(payload.Width)
+	if err != nil {
+		observability.LogWarn(ctx, "soundcloud oembed width parse failed", "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "error", err.Error())
+	}
+	height, err := parseSoundCloudDimension(payload.Height)
+	if err != nil {
+		observability.LogWarn(ctx, "soundcloud oembed height parse failed", "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "error", err.Error())
+	}
+
 	observability.LogDebug(ctx, "soundcloud oembed fetched", "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "status", strconv.Itoa(resp.StatusCode))
 
 	return &EmbedData{
 		Type:     "oembed",
 		Provider: "soundcloud",
 		EmbedURL: embedURL,
-		Width:    payload.Width,
-		Height:   payload.Height,
+		Width:    width,
+		Height:   height,
 	}, nil
 }
 
@@ -144,4 +153,32 @@ func extractIFrameSrc(htmlSnippet string) string {
 	walk(parsed)
 
 	return src
+}
+
+func parseSoundCloudDimension(raw json.RawMessage) (int, error) {
+	if len(raw) == 0 {
+		return 0, nil
+	}
+
+	var numeric int
+	if err := json.Unmarshal(raw, &numeric); err == nil {
+		return numeric, nil
+	}
+
+	var text string
+	if err := json.Unmarshal(raw, &text); err != nil {
+		return 0, err
+	}
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return 0, nil
+	}
+	if strings.HasSuffix(text, "%") {
+		return 0, nil
+	}
+	value, err := strconv.Atoi(text)
+	if err != nil {
+		return 0, err
+	}
+	return value, nil
 }
