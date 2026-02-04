@@ -32,7 +32,7 @@ afterEach(() => {
 
 describe('RecipeCard', () => {
   it('renders collapsed summary by default', () => {
-    render(RecipeCard, { recipe, sourceUrl: 'https://example.com' });
+    render(RecipeCard, { recipe });
 
     expect(screen.getByTestId('recipe-title')).toHaveTextContent('Lemon Pasta');
     expect(screen.getByTestId('recipe-time')).toHaveTextContent('Prep: 10m');
@@ -42,7 +42,7 @@ describe('RecipeCard', () => {
   });
 
   it('expands to show ingredients, instructions, and checkboxes', async () => {
-    render(RecipeCard, { recipe, sourceUrl: 'https://example.com' });
+    render(RecipeCard, { recipe });
 
     await fireEvent.click(screen.getByTestId('recipe-toggle'));
 
@@ -56,7 +56,7 @@ describe('RecipeCard', () => {
   });
 
   it('copies ingredients to clipboard when requested', async () => {
-    render(RecipeCard, { recipe, sourceUrl: 'https://example.com' });
+    render(RecipeCard, { recipe });
 
     await fireEvent.click(screen.getByTestId('recipe-toggle'));
     await fireEvent.click(screen.getByTestId('recipe-copy'));
@@ -65,24 +65,4 @@ describe('RecipeCard', () => {
     expect(clipboard.writeText).toHaveBeenCalledWith('1 lemon\n200g pasta');
   });
 
-  it('opens a print window for the recipe', async () => {
-    const printWindow = {
-      document: {
-        open: vi.fn(),
-        write: vi.fn(),
-        close: vi.fn(),
-      },
-      focus: vi.fn(),
-      print: vi.fn(),
-      close: vi.fn(),
-    };
-    const openSpy = vi.spyOn(window, 'open').mockReturnValue(printWindow as unknown as Window);
-
-    render(RecipeCard, { recipe, sourceUrl: 'https://example.com' });
-    await fireEvent.click(screen.getByTestId('recipe-toggle'));
-    await fireEvent.click(screen.getByTestId('recipe-print'));
-
-    expect(openSpy).toHaveBeenCalled();
-    expect(printWindow.print).toHaveBeenCalled();
-  });
 });

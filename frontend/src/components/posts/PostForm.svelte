@@ -514,7 +514,6 @@
       {#if linkMetadata.recipe}
         <RecipeCard
           recipe={linkMetadata.recipe}
-          sourceUrl={linkMetadata.url}
           fallbackImage={linkMetadata.image}
           fallbackTitle={linkMetadata.title}
         />

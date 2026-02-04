@@ -8,7 +8,6 @@
   import type { RecipeMetadata } from '../../stores/postStore';
 
   export let recipe: RecipeMetadata;
-  export let sourceUrl: string | null = null;
   export let fallbackImage: string | null = null;
   export let fallbackTitle: string | null = null;
 
@@ -81,70 +80,6 @@
         copiedIngredients = false;
       }, 2000);
     }
-  }
-
-  function escapeHtml(input: string) {
-    return input
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
-
-  function handlePrint() {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    const printWindow = window.open('', '_blank', 'noopener,noreferrer');
-    if (!printWindow) {
-      window.print();
-      return;
-    }
-
-    const ingredientList = ingredients
-      .map((ingredient) => `<li>${escapeHtml(ingredient)}</li>`)
-      .join('');
-    const instructionList = instructions
-      .map((instruction) => `<li>${escapeHtml(instruction)}</li>`)
-      .join('');
-
-    const printHtml = `<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>${escapeHtml(recipeTitle)}</title>
-  <style>
-    body { font-family: "Georgia", serif; margin: 32px; color: #111827; }
-    h1 { margin: 0 0 8px; font-size: 28px; }
-    .meta { color: #4b5563; margin-bottom: 16px; }
-    .section { margin: 24px 0; }
-    ul, ol { padding-left: 20px; }
-    li { margin-bottom: 6px; }
-    img { max-width: 100%; height: auto; border-radius: 12px; margin-bottom: 16px; }
-  </style>
-</head>
-<body>
-  ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(recipeTitle)}" />` : ''}
-  <h1>${escapeHtml(recipeTitle)}</h1>
-  <div class="meta">
-    ${timeLabel ? escapeHtml(timeLabel) : ''}
-    ${!timeLabel && totalTimeLabel ? escapeHtml(totalTimeLabel) : ''}
-    ${yieldLabel ? ` · ${escapeHtml(yieldLabel)}` : ''}
-  </div>
-  ${recipe?.description ? `<p>${escapeHtml(recipe.description)}</p>` : ''}
-  ${ingredients.length > 0 ? `<div class="section"><h2>Ingredients</h2><ul>${ingredientList}</ul></div>` : ''}
-  ${instructions.length > 0 ? `<div class="section"><h2>Instructions</h2><ol>${instructionList}</ol></div>` : ''}
-</body>
-</html>`;
-
-    printWindow.document.open();
-    printWindow.document.write(printHtml);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-    printWindow.close();
   }
 
   onDestroy(() => {
@@ -264,36 +199,7 @@
           </section>
         {/if}
 
-        <section class="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            class="rounded-full border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50"
-            on:click={handlePrint}
-            data-testid="recipe-print"
-          >
-            Print recipe
-          </button>
-          {#if sourceUrl}
-            <a
-              href={sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-xs font-semibold text-blue-600 hover:text-blue-800"
-            >
-              View original source
-            </a>
-          {/if}
-        </section>
       </div>
     {/if}
   </div>
 </article>
-
-<style>
-  @media print {
-    .recipe-card button,
-    .recipe-card a {
-      display: none;
-    }
-  }
-</style>
