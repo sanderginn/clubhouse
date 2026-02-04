@@ -78,6 +78,40 @@ describe('mapApiPost', () => {
     );
   });
 
+  it('maps recipe metadata', () => {
+    const post = mapApiPost({
+      id: 'post-recipe',
+      user_id: 'user-recipe',
+      section_id: 'section-recipe',
+      content: 'recipe',
+      created_at: '2025-01-01T00:00:00Z',
+      links: [
+        {
+          id: 'link-recipe',
+          url: 'https://example.com/recipe',
+          metadata: {
+            recipe: {
+              name: 'Best Pasta',
+              ingredients: ['1 cup flour'],
+              instructions: ['Mix well'],
+              prep_time: 'PT10M',
+              nutrition: {
+                calories: '200',
+                servings: '2',
+              },
+            },
+          },
+        },
+      ],
+    });
+
+    expect(post.links?.[0].metadata?.recipe?.name).toBe('Best Pasta');
+    expect(post.links?.[0].metadata?.recipe?.ingredients).toEqual(['1 cup flour']);
+    expect(post.links?.[0].metadata?.recipe?.instructions).toEqual(['Mix well']);
+    expect(post.links?.[0].metadata?.recipe?.prep_time).toBe('PT10M');
+    expect(post.links?.[0].metadata?.recipe?.nutrition?.calories).toBe('200');
+  });
+
   it('handles missing user and links gracefully', () => {
     const post = mapApiPost({
       id: 'post-2',

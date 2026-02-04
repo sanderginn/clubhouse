@@ -6,6 +6,7 @@ import type {
   Highlight,
   RecipeStats,
   EmbedData,
+  RecipeMetadata,
 } from './postStore';
 
 export interface ApiUser {
@@ -79,6 +80,120 @@ function normalizeNumber(value: unknown): number | undefined {
     return Number.isFinite(parsed) ? parsed : undefined;
   }
   return undefined;
+}
+
+function normalizeStringArray(value: unknown): string[] | undefined {
+  if (typeof value === 'string') {
+    const normalized = normalizeString(value);
+    return normalized ? [normalized] : undefined;
+  }
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+  const normalized = value
+    .map((entry) => normalizeString(entry))
+    .filter((entry): entry is string => typeof entry === 'string' && entry.length > 0);
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function normalizeRecipeMetadata(rawRecipe: unknown): RecipeMetadata | undefined {
+  if (!rawRecipe) {
+    return undefined;
+  }
+  let recipe: Record<string, unknown> | null = null;
+  if (typeof rawRecipe === 'string') {
+    try {
+      const parsed = JSON.parse(rawRecipe) as unknown;
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        recipe = parsed as Record<string, unknown>;
+      }
+    } catch {
+      return undefined;
+    }
+  } else if (typeof rawRecipe === 'object' && !Array.isArray(rawRecipe)) {
+    recipe = rawRecipe as Record<string, unknown>;
+  }
+
+  if (!recipe) {
+    return undefined;
+  }
+
+  const name = normalizeString(recipe.name) ?? normalizeString(recipe.title);
+  const description = normalizeString(recipe.description);
+  const image =
+    normalizeString(recipe.image) ??
+    normalizeString(recipe.image_url) ??
+    normalizeString(recipe.imageUrl);
+  const ingredients =
+    normalizeStringArray(recipe.ingredients) ??
+    normalizeStringArray(recipe.ingredient) ??
+    normalizeStringArray(recipe.recipeIngredient) ??
+    normalizeStringArray(recipe.recipe_ingredient);
+  const instructions =
+    normalizeStringArray(recipe.instructions) ??
+    normalizeStringArray(recipe.instruction) ??
+    normalizeStringArray(recipe.recipeInstructions) ??
+    normalizeStringArray(recipe.recipe_instructions);
+  const prepTime = normalizeString(recipe.prep_time ?? recipe.prepTime);
+  const cookTime = normalizeString(recipe.cook_time ?? recipe.cookTime);
+  const totalTime = normalizeString(recipe.total_time ?? recipe.totalTime);
+  const yieldValue = normalizeString(recipe.yield);
+  const author = normalizeString(recipe.author);
+  const datePublished = normalizeString(recipe.date_published ?? recipe.datePublished);
+  const cuisine = normalizeString(recipe.cuisine);
+  const category = normalizeString(recipe.category);
+
+  let nutrition: RecipeMetadata['nutrition'] | undefined;
+  const rawNutrition =
+    (recipe.nutrition ?? recipe.nutrition_info ?? recipe.nutritionInfo) as unknown;
+  if (rawNutrition && typeof rawNutrition === 'object' && !Array.isArray(rawNutrition)) {
+    const nutritionRecord = rawNutrition as Record<string, unknown>;
+    const calories = normalizeString(nutritionRecord.calories ?? nutritionRecord.calorie);
+    const servings = normalizeString(nutritionRecord.servings ?? nutritionRecord.serving);
+    if (calories || servings) {
+      nutrition = {
+        ...(calories ? { calories } : {}),
+        ...(servings ? { servings } : {}),
+      };
+    }
+  }
+
+  const hasRecipe =
+    !!name ||
+    !!description ||
+    !!image ||
+    (ingredients?.length ?? 0) > 0 ||
+    (instructions?.length ?? 0) > 0 ||
+    !!prepTime ||
+    !!cookTime ||
+    !!totalTime ||
+    !!yieldValue ||
+    !!author ||
+    !!datePublished ||
+    !!cuisine ||
+    !!category ||
+    !!nutrition;
+
+  if (!hasRecipe) {
+    return undefined;
+  }
+
+  return {
+    ...(name ? { name } : {}),
+    ...(description ? { description } : {}),
+    ...(image ? { image } : {}),
+    ...(ingredients ? { ingredients } : {}),
+    ...(instructions ? { instructions } : {}),
+    ...(prepTime ? { prep_time: prepTime } : {}),
+    ...(cookTime ? { cook_time: cookTime } : {}),
+    ...(totalTime ? { total_time: totalTime } : {}),
+    ...(yieldValue ? { yield: yieldValue } : {}),
+    ...(author ? { author } : {}),
+    ...(datePublished ? { date_published: datePublished } : {}),
+    ...(cuisine ? { cuisine } : {}),
+    ...(category ? { category } : {}),
+    ...(nutrition ? { nutrition } : {}),
+  };
 }
 
 function normalizeRecipeStats(rawStats: unknown): RecipeStats | undefined {
@@ -235,6 +350,7 @@ export function normalizeLinkMetadata(
     normalizeString(metadata.type) ??
     normalizeString(metadata.og_type) ??
     normalizeString(metadata.ogType);
+  const recipe = normalizeRecipeMetadata(metadata.recipe);
 
   const hasMetadata =
     !!provider ||
@@ -245,7 +361,8 @@ export function normalizeLinkMetadata(
     !!duration ||
     !!resolvedEmbedUrl ||
     !!embed ||
-    !!type;
+    !!type ||
+    !!recipe;
   if (!hasMetadata) {
     return undefined;
   }
@@ -261,6 +378,7 @@ export function normalizeLinkMetadata(
     embedUrl: resolvedEmbedUrl,
     embed,
     type,
+    ...(recipe ? { recipe } : {}),
   };
 }
 
