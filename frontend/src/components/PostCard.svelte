@@ -1479,7 +1479,6 @@
         {:else if primaryLink && metadata?.recipe}
           <RecipeCard
             recipe={metadata.recipe}
-            sourceUrl={primaryLink.url}
             fallbackImage={metadata.image}
             fallbackTitle={metadata.title}
           />
@@ -1553,7 +1552,6 @@
         {:else if metadata.recipe}
           <RecipeCard
             recipe={metadata.recipe}
-            sourceUrl={primaryLink.url}
             fallbackImage={metadata.image}
             fallbackTitle={metadata.title}
           />
