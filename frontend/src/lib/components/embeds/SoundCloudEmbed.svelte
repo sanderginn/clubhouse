@@ -24,12 +24,12 @@
 
   onMount(async () => {
     if (typeof window === 'undefined' || !iframeElement) return;
+    if (!onReady) return;
 
     try {
       const SC = await loadSoundCloudApi();
       widget = SC.Widget(iframeElement);
       widget.bind(readyEvent, () => {
-        if (!onReady) return;
         onReady({
           provider: 'soundcloud',
           supportsSeeking: true,

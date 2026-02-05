@@ -15,7 +15,7 @@ func CSPMiddleware(next http.Handler) http.Handler {
 			"style-src 'self' 'unsafe-inline'",
 			"img-src 'self' data: https:",
 			"frame-src 'self' https://www.youtube-nocookie.com https://open.spotify.com https://w.soundcloud.com https://bandcamp.com",
-			"connect-src 'self' https://soundcloud.com",
+			"connect-src 'self' https://soundcloud.com https://api-widget.soundcloud.com",
 			"font-src 'self'",
 			"object-src 'none'",
 			"base-uri 'self'",
