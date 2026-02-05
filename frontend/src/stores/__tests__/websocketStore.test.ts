@@ -76,6 +76,7 @@ const storeRefs = {
   },
   mapApiComment: vi.fn(),
   mapApiPost: vi.fn(),
+  normalizeLinkMetadata: vi.fn(),
 };
 
 storeRefs.commentStore = {
@@ -134,6 +135,8 @@ vi.mock('../commentMapper', () => ({
 
 vi.mock('../postMapper', () => ({
   mapApiPost: (post: unknown) => storeRefs.mapApiPost(post),
+  normalizeLinkMetadata: (metadata: unknown, url: string) =>
+    storeRefs.normalizeLinkMetadata(metadata, url),
 }));
 
 beforeEach(() => {
@@ -153,6 +156,7 @@ beforeEach(() => {
   storeRefs.api.getComment.mockReset();
   storeRefs.mapApiComment.mockReset();
   storeRefs.mapApiPost.mockReset();
+  storeRefs.normalizeLinkMetadata.mockReset();
   storeRefs.recipeHandlers.handleRecipeSavedEvent.mockReset();
   storeRefs.recipeHandlers.handleRecipeUnsavedEvent.mockReset();
   storeRefs.recipeHandlers.handleCookLogCreatedEvent.mockReset();
@@ -248,6 +252,7 @@ describe('websocketStore', () => {
 
   it('handles link_metadata_updated event', async () => {
     storeRefs.isAuthenticated.set(true);
+    storeRefs.normalizeLinkMetadata.mockReturnValue({ url: 'https://example.com', title: 'Hello' });
     const { websocketStore } = await import('../websocketStore');
 
     websocketStore.init();
@@ -260,12 +265,17 @@ describe('websocketStore', () => {
         data: {
           post_id: 'post-1',
           link_id: 'link-1',
-          metadata: { url: 'https://example.com', title: 'Hello' },
+          url: 'https://example.com',
+          metadata: { title: 'Hello', embed: { embed_url: 'https://w.soundcloud.com/player' } },
         },
         timestamp: 'now',
       }),
     });
 
+    expect(storeRefs.normalizeLinkMetadata).toHaveBeenCalledWith(
+      expect.any(Object),
+      'https://example.com'
+    );
     expect(storeRefs.postStore.updateLinkMetadata).toHaveBeenCalledWith(
       'post-1',
       'link-1',

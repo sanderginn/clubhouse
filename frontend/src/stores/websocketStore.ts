@@ -1,7 +1,7 @@
 import { writable, get } from 'svelte/store';
 import { activeSection } from './sectionStore';
 import { isAuthenticated, currentUser } from './authStore';
-import { postStore, type LinkMetadata, type Post } from './postStore';
+import { postStore, type Post } from './postStore';
 import { commentStore, type Comment } from './commentStore';
 import { handleRealtimeNotification } from './notificationStore';
 import {
@@ -16,7 +16,7 @@ import {
 } from './recipeStore';
 import { api } from '../services/api';
 import { mapApiComment } from './commentMapper';
-import { mapApiPost, type ApiPost } from './postMapper';
+import { mapApiPost, normalizeLinkMetadata, type ApiPost } from './postMapper';
 import { logError, logInfo, logWarn } from '../lib/observability/logger';
 import { recordWebsocketConnect } from '../lib/observability/performance';
 
@@ -62,7 +62,8 @@ interface WsHighlightReactionEvent {
 interface WsLinkMetadataUpdatedEvent {
   post_id: string;
   link_id: string;
-  metadata: LinkMetadata;
+  url: string;
+  metadata: unknown;
 }
 
 interface WsSubscriptionPayload {
@@ -335,11 +336,16 @@ function connect() {
       }
       case 'link_metadata_updated': {
         const payload = parsed.data as WsLinkMetadataUpdatedEvent;
-        if (!payload?.post_id || !payload?.link_id || !payload?.metadata) {
+        if (!payload?.post_id || !payload?.link_id || !payload?.url || !payload?.metadata) {
           logWarn('WebSocket invalid link_metadata_updated payload', { payload });
           break;
         }
-        postStore.updateLinkMetadata(payload.post_id, payload.link_id, payload.metadata);
+        const normalized = normalizeLinkMetadata(payload.metadata, payload.url);
+        if (!normalized) {
+          logWarn('WebSocket link_metadata_updated had empty metadata', { payload });
+          break;
+        }
+        postStore.updateLinkMetadata(payload.post_id, payload.link_id, normalized);
         break;
       }
       case 'recipe_saved': {

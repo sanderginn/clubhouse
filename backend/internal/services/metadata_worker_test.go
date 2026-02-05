@@ -139,6 +139,7 @@ func TestMetadataWorker_ProcessJob(t *testing.T) {
 		Data struct {
 			PostID   string                 `json:"post_id"`
 			LinkID   string                 `json:"link_id"`
+			URL      string                 `json:"url"`
 			Metadata map[string]interface{} `json:"metadata"`
 		} `json:"data"`
 	}
@@ -147,6 +148,7 @@ func TestMetadataWorker_ProcessJob(t *testing.T) {
 	assert.Equal(t, "link_metadata_updated", event.Type)
 	assert.Equal(t, postID, event.Data.PostID)
 	assert.Equal(t, linkID, event.Data.LinkID)
+	assert.Equal(t, "https://example.com/test", event.Data.URL)
 	assert.Equal(t, "Test Title", event.Data.Metadata["title"])
 	assert.Equal(t, "Test Description", event.Data.Metadata["description"])
 

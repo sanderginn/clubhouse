@@ -17,6 +17,7 @@ import (
 type linkMetadataUpdatedData struct {
 	PostID   uuid.UUID              `json:"post_id"`
 	LinkID   uuid.UUID              `json:"link_id"`
+	URL      string                 `json:"url"`
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
@@ -155,7 +156,7 @@ func (w *MetadataWorker) processJob(ctx context.Context, job *MetadataJob, worke
 			"link_id", job.LinkID.String(),
 			"error", err.Error(),
 		)
-	} else if err := w.publishLinkMetadataUpdated(ctx, sectionID, job.PostID, job.LinkID, metadata); err != nil {
+	} else if err := w.publishLinkMetadataUpdated(ctx, sectionID, job.PostID, job.LinkID, job.URL, metadata); err != nil {
 		observability.LogWarn(ctx, "failed to publish metadata websocket event",
 			"post_id", job.PostID.String(),
 			"link_id", job.LinkID.String(),
@@ -186,7 +187,7 @@ func (w *MetadataWorker) getPostSectionID(ctx context.Context, postID uuid.UUID)
 	return sectionID, nil
 }
 
-func (w *MetadataWorker) publishLinkMetadataUpdated(ctx context.Context, sectionID uuid.UUID, postID uuid.UUID, linkID uuid.UUID, metadata map[string]interface{}) error {
+func (w *MetadataWorker) publishLinkMetadataUpdated(ctx context.Context, sectionID uuid.UUID, postID uuid.UUID, linkID uuid.UUID, url string, metadata map[string]interface{}) error {
 	if w.redis == nil {
 		return nil
 	}
@@ -196,6 +197,7 @@ func (w *MetadataWorker) publishLinkMetadataUpdated(ctx context.Context, section
 		Data: linkMetadataUpdatedData{
 			PostID:   postID,
 			LinkID:   linkID,
+			URL:      url,
 			Metadata: metadata,
 		},
 		Timestamp: time.Now().UTC(),
