@@ -24,6 +24,6 @@ describe('BandcampEmbed', () => {
       'https://bandcamp.com/EmbeddedPlayer/album=123'
     );
     expect(iframe).toHaveStyle('height: 470px;');
-    expect(screen.getByText('https://artist.bandcamp.com/album/test')).toBeInTheDocument();
+    expect(screen.getByText('Open on Bandcamp')).toBeInTheDocument();
   });
 });

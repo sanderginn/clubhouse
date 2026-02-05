@@ -10,21 +10,23 @@
 </script>
 
 <div class="mt-3 space-y-2">
-  <iframe
-    src={embed.embedUrl}
-    title={playerTitle}
-    class="w-full rounded-lg border border-gray-200"
-    style={`height: ${playerHeight}px;`}
-    loading="lazy"
-    sandbox="allow-scripts allow-same-origin allow-presentation"
-  ></iframe>
+  <div class="rounded-lg border border-gray-200 overflow-hidden bg-white">
+    <iframe
+      src={embed.embedUrl}
+      title={playerTitle}
+      class="block w-full"
+      style={`height: ${playerHeight}px; border: 0;`}
+      loading="lazy"
+      sandbox="allow-scripts allow-same-origin allow-presentation"
+    ></iframe>
+  </div>
   <a
     href={linkUrl}
     target="_blank"
     rel="noopener noreferrer"
-    class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm break-all"
+    class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
   >
-    <span>🔗</span>
-    <span class="underline">{linkUrl}</span>
+    <span aria-hidden="true">↗</span>
+    <span class="underline">Open on Bandcamp</span>
   </a>
 </div>
