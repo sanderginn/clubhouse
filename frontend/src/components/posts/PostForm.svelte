@@ -460,6 +460,7 @@
     <label for="post-content" class="sr-only">Post content</label>
     <MentionTextarea
       id="post-content"
+      name="post-content"
       bind:value={content}
       bind:mentionUsernames
       on:input={handleContentChange}

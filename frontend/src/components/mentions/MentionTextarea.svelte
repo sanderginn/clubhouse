@@ -5,6 +5,7 @@
 
   export let value = '';
   export let id = '';
+  export let name = '';
   export let rows = 3;
   export let placeholder = '';
   export let disabled = false;
@@ -221,6 +222,7 @@
     bind:this={textarea}
     bind:value
     id={id}
+    name={name || id || undefined}
     rows={rows}
     placeholder={placeholder}
     disabled={disabled}

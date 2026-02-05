@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/observability"
 	linkmeta "github.com/sanderginn/clubhouse/internal/services/links"
 )
@@ -215,6 +216,17 @@ func (w *MetadataWorker) publishLinkMetadataUpdated(ctx context.Context, section
 }
 
 func (w *MetadataWorker) updateLinkMetadata(ctx context.Context, linkID uuid.UUID, metadata map[string]interface{}) error {
+	currentHighlights, err := w.getExistingHighlights(ctx, linkID)
+	if err != nil {
+		return err
+	}
+	if len(currentHighlights) > 0 {
+		if metadata == nil {
+			metadata = map[string]interface{}{}
+		}
+		metadata["highlights"] = currentHighlights
+	}
+
 	metadataJSON, err := json.Marshal(metadata)
 	if err != nil {
 		return err
@@ -236,6 +248,28 @@ func (w *MetadataWorker) updateLinkMetadata(ctx context.Context, linkID uuid.UUI
 	}
 
 	return nil
+}
+
+func (w *MetadataWorker) getExistingHighlights(ctx context.Context, linkID uuid.UUID) ([]models.Highlight, error) {
+	var metadataJSON sql.NullString
+	if err := w.db.QueryRowContext(ctx, "SELECT metadata FROM links WHERE id = $1", linkID).Scan(&metadataJSON); err != nil {
+		return nil, err
+	}
+	if !metadataJSON.Valid {
+		return nil, nil
+	}
+
+	var metadata map[string]interface{}
+	if err := json.Unmarshal([]byte(metadataJSON.String), &metadata); err != nil {
+		return nil, err
+	}
+
+	highlights, err := extractHighlightsFromMetadata(metadata)
+	if err != nil {
+		return nil, err
+	}
+
+	return highlights, nil
 }
 
 // DefaultMetadataFetcher wraps the links.FetchMetadata function

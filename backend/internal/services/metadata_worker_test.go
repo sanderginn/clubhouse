@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -220,6 +221,68 @@ func TestMetadataWorker_ProcessMultipleJobs(t *testing.T) {
 	processingLen, _ := GetProcessingLength(ctx, rdb)
 	assert.Equal(t, int64(0), queueLen)
 	assert.Equal(t, int64(0), processingLen)
+}
+
+func TestMetadataWorker_PreservesHighlights(t *testing.T) {
+	rdb := setupMetadataWorkerTestRedis(t)
+	db := setupMetadataWorkerTestDB(t)
+	ctx := context.Background()
+
+	userID := testutil.CreateTestUser(t, db, "testuser", "test@example.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Test Section", "music")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Test post")
+	linkID := createTestLink(t, db, postID, "https://example.com/test")
+
+	highlights := []models.Highlight{
+		{Timestamp: 12, Label: "Intro"},
+		{Timestamp: 42, Label: "Drop"},
+	}
+	highlightsPayload, err := json.Marshal(map[string]interface{}{"highlights": highlights})
+	require.NoError(t, err)
+
+	_, err = db.Exec(`UPDATE links SET metadata = $1 WHERE id = $2`, highlightsPayload, linkID)
+	require.NoError(t, err)
+
+	fetcher := &mockMetadataFetcher{
+		metadata: map[string]interface{}{
+			"title":       "Test Title",
+			"description": "Test Description",
+		},
+	}
+
+	worker := NewMetadataWorker(rdb, db, fetcher, 1)
+
+	job := MetadataJob{
+		PostID:    uuid.MustParse(postID),
+		LinkID:    uuid.MustParse(linkID),
+		URL:       "https://example.com/test",
+		CreatedAt: time.Now(),
+	}
+	err = EnqueueMetadataJob(ctx, rdb, job)
+	require.NoError(t, err)
+
+	worker.Start(ctx)
+	time.Sleep(2 * time.Second)
+	worker.Stop(ctx)
+
+	var metadata sql.NullString
+	err = db.QueryRow("SELECT metadata FROM links WHERE id = $1", linkID).Scan(&metadata)
+	require.NoError(t, err)
+	assert.True(t, metadata.Valid)
+
+	var parsed map[string]interface{}
+	err = json.Unmarshal([]byte(metadata.String), &parsed)
+	require.NoError(t, err)
+	assert.Equal(t, "Test Title", parsed["title"])
+	assert.Equal(t, "Test Description", parsed["description"])
+
+	storedHighlights, err := extractHighlightsFromMetadata(parsed)
+	require.NoError(t, err)
+	require.Len(t, storedHighlights, 2)
+	assert.Equal(t, 12, storedHighlights[0].Timestamp)
+	assert.Equal(t, "Intro", storedHighlights[0].Label)
+	assert.Equal(t, 42, storedHighlights[1].Timestamp)
+	assert.Equal(t, "Drop", storedHighlights[1].Label)
 }
 
 func TestMetadataWorker_FetchError(t *testing.T) {

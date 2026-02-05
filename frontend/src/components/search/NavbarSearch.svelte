@@ -138,6 +138,7 @@
       <label for="navbar-search-input" class="sr-only">Search</label>
       <input
         id="navbar-search-input"
+        name="navbar-search-input"
         bind:this={inputEl}
         type="search"
         value={query}
@@ -164,6 +165,7 @@
 
     <div class="flex flex-wrap items-center gap-2 lg:flex-nowrap">
       <select
+        name="navbar-search-scope"
         value={scope}
         on:change={handleScopeChange}
         disabled={!isPanelActive}

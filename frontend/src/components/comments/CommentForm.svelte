@@ -114,6 +114,7 @@
   {/if}
   <MentionTextarea
     id="comment-content"
+    name="comment-content"
     bind:value={content}
     bind:mentionUsernames
     on:keydown={(event) => handleKeyDown(event.detail)}
@@ -130,6 +131,7 @@
       </label>
       <input
         id="comment-timestamp"
+        name="comment-timestamp"
         type="text"
         bind:value={timestampInput}
         placeholder="02:30"

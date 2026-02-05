@@ -22,6 +22,7 @@ export function initErrorTracker(): void {
     environment: import.meta.env.MODE,
     release: import.meta.env.VITE_APP_VERSION as string | undefined,
     integrations: [],
+    enabled: import.meta.env.PROD,
   });
 
   initialized = true;

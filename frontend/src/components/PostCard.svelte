@@ -1223,6 +1223,8 @@
             </div>
           {/if}
           <MentionTextarea
+            id={`edit-post-${post.id}`}
+            name={`edit-post-${post.id}`}
             bind:value={editContent}
             bind:mentionUsernames={editMentionUsernames}
             on:keydown={(event) => handleEditKeyDown(event.detail)}
