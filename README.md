@@ -120,6 +120,8 @@ Optional Grafana Sentry datasource variables (for the "Clubhouse - Frontend Erro
 - `GRAFANA_SENTRY_ORG`: Sentry organization slug.
 - `GRAFANA_SENTRY_AUTH_TOKEN`: Sentry API auth token with read access.
 
+Note: Grafana provisioning files are copied into the container on startup. This prevents Grafana entrypoint logic from deleting tracked files in this repository when Sentry is not configured.
+
 ## Architecture
 
 See [DESIGN.md](DESIGN.md) for complete system design.
