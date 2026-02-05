@@ -41,6 +41,6 @@
     frameborder="0"
     loading="lazy"
     sandbox="allow-scripts allow-same-origin allow-presentation"
-    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+    allow="fullscreen"
   ></iframe>
 </div>

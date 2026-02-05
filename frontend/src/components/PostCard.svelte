@@ -520,7 +520,7 @@
   function getSeekUnavailableMessage(provider: string | undefined): string {
     if (!provider) return 'Seeking not supported for this embed.';
     if (provider === 'spotify' || provider === 'bandcamp') return 'Seeking not supported for this embed.';
-    if (provider === 'youtube' || provider === 'soundcloud') return 'Player is still loading.';
+    if (provider === 'soundcloud') return 'Player is still loading.';
     return 'Seeking not supported for this embed.';
   }
 

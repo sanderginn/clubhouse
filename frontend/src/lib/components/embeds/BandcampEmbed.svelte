@@ -16,7 +16,6 @@
     class="w-full rounded-lg border border-gray-200"
     style={`height: ${playerHeight}px;`}
     loading="lazy"
-    allow="encrypted-media"
     sandbox="allow-scripts allow-same-origin allow-presentation"
   ></iframe>
   <a
