@@ -1,11 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   isYouTubeUrl,
   isSpotifyUrl,
   isSoundCloudUrl,
   isBandcampUrl,
   parseYouTubeUrl,
-  parseSpotifyUrl
+  parseSpotifyUrl,
+  fetchSoundCloudEmbed
 } from './urlParsers';
 
 describe('URL detection functions', () => {
@@ -186,5 +187,103 @@ describe('parseSpotifyUrl', () => {
     it('returns null for malformed URLs', () => {
       expect(parseSpotifyUrl('not a url')).toBeNull();
     });
+  });
+});
+
+describe('fetchSoundCloudEmbed', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('fetches and parses oEmbed response for track URL', async () => {
+    const mockResponse = {
+      height: 166,
+      html: '<iframe width="100%" height="166" scrolling="no" frameborder="no" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/123456&color=%23ff5500"></iframe>'
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockResponse)
+    });
+
+    const result = await fetchSoundCloudEmbed('https://soundcloud.com/artist/track-name');
+
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('soundcloud.com/oembed'),
+      expect.any(Object)
+    );
+    expect(result).toEqual({
+      embedUrl:
+        'https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/123456&color=%23ff5500',
+      height: 166
+    });
+  });
+
+  it('fetches and parses oEmbed response for playlist URL', async () => {
+    const mockResponse = {
+      height: 450,
+      html: '<iframe width="100%" height="450" scrolling="no" frameborder="no" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/playlists/789"></iframe>'
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockResponse)
+    });
+
+    const result = await fetchSoundCloudEmbed('https://soundcloud.com/artist/sets/playlist-name');
+
+    expect(result).toEqual({
+      embedUrl: 'https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/playlists/789',
+      height: 450
+    });
+  });
+
+  it('returns null for non-200 response', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404
+    });
+
+    const result = await fetchSoundCloudEmbed('https://soundcloud.com/nonexistent/track');
+
+    expect(result).toBeNull();
+  });
+
+  it('returns null when HTML is missing from response', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ height: 166 })
+    });
+
+    const result = await fetchSoundCloudEmbed('https://soundcloud.com/artist/track');
+
+    expect(result).toBeNull();
+  });
+
+  it('returns null when iframe src cannot be extracted', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          height: 166,
+          html: '<div>No iframe here</div>'
+        })
+    });
+
+    const result = await fetchSoundCloudEmbed('https://soundcloud.com/artist/track');
+
+    expect(result).toBeNull();
+  });
+
+  it('returns null on network error', async () => {
+    global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+
+    const result = await fetchSoundCloudEmbed('https://soundcloud.com/artist/track');
+
+    expect(result).toBeNull();
   });
 });

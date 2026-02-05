@@ -121,3 +121,39 @@ export function parseYouTubeUrl(url: string): string | null {
     return null;
   }
 }
+
+export async function fetchSoundCloudEmbed(
+  url: string
+): Promise<{ embedUrl: string; height: number } | null> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const oembedUrl = `https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(url)}`;
+    const response = await fetch(oembedUrl, { signal: controller.signal });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+
+    if (!data.html) {
+      return null;
+    }
+
+    const srcMatch = data.html.match(/src="([^"]+)"/);
+    if (!srcMatch || !srcMatch[1]) {
+      return null;
+    }
+
+    return {
+      embedUrl: srcMatch[1],
+      height: data.height || 166
+    };
+  } catch {
+    return null;
+  }
+}
