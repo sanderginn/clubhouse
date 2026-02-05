@@ -12,7 +12,7 @@
 </script>
 
 <div class="mt-3 space-y-2 w-full max-w-[700px] mx-auto">
-  <div class="rounded-lg border border-gray-200 overflow-hidden bg-white w-full">
+  <div class="overflow-hidden bg-white w-full">
     <iframe
       src={embed.embedUrl}
       title={playerTitle}
