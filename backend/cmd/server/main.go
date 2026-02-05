@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -19,6 +20,18 @@ import (
 	"github.com/sanderginn/clubhouse/internal/observability"
 	"github.com/sanderginn/clubhouse/internal/services"
 )
+
+func getEnvInt(key string, defaultVal int) int {
+	val := strings.TrimSpace(os.Getenv(key))
+	if val == "" {
+		return defaultVal
+	}
+	parsed, err := strconv.Atoi(val)
+	if err != nil {
+		return defaultVal
+	}
+	return parsed
+}
 
 func writeJSONBytes(ctx context.Context, w http.ResponseWriter, statusCode int, body []byte) {
 	w.Header().Set("Content-Type", "application/json")
@@ -127,6 +140,11 @@ func main() {
 		os.Exit(1)
 	}
 	defer redisConn.Close()
+
+	workerCount := getEnvInt("METADATA_WORKER_COUNT", 3)
+	metadataWorker := services.NewMetadataWorker(redisConn, dbConn, &services.DefaultMetadataFetcher{}, workerCount)
+	metadataWorker.Start(ctx)
+	observability.LogInfo(ctx, "metadata worker started", "worker_count", fmt.Sprintf("%d", workerCount))
 
 	// Initialize HTTP server
 	mux := http.NewServeMux()
@@ -501,6 +519,8 @@ func main() {
 		})
 		os.Exit(1)
 	}
+
+	metadataWorker.Stop(ctx)
 
 	observability.LogInfo(ctx, "server stopped")
 }
