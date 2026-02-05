@@ -338,6 +338,40 @@ function createPostStore() {
           };
         }),
       })),
+    updateLinkMetadata: (postId: string, linkId: string, metadata: LinkMetadata) =>
+      update((state) => {
+        const postIndex = state.posts.findIndex((post) => post.id === postId);
+        if (postIndex === -1) {
+          return state;
+        }
+
+        const post = state.posts[postIndex];
+        if (!post.links) {
+          return state;
+        }
+
+        const linkIndex = post.links.findIndex((link) => link.id === linkId);
+        if (linkIndex === -1) {
+          return state;
+        }
+
+        const updatedLinks = [...post.links];
+        updatedLinks[linkIndex] = {
+          ...updatedLinks[linkIndex],
+          metadata,
+        };
+
+        const updatedPosts = [...state.posts];
+        updatedPosts[postIndex] = {
+          ...post,
+          links: updatedLinks,
+        };
+
+        return {
+          ...state,
+          posts: updatedPosts,
+        };
+      }),
     setLoading: (isLoading: boolean) =>
       update((state) => ({
         ...state,

@@ -140,6 +140,48 @@ describe('postStore', () => {
     expect(state.posts[0].links?.[0].highlights?.[0].viewerReacted).toBe(false);
   });
 
+  it('updateLinkMetadata updates metadata for a link', () => {
+    postStore.setPosts(
+      [
+        {
+          ...basePost,
+          links: [{ id: 'link-1', url: 'https://example.com', metadata: undefined }],
+        },
+      ],
+      null,
+      true
+    );
+
+    postStore.updateLinkMetadata('post-1', 'link-1', {
+      url: 'https://example.com',
+      title: 'Test Title',
+      embedUrl: 'https://embed.example.com',
+    });
+
+    const state = get(postStore);
+    expect(state.posts[0].links?.[0].metadata?.title).toBe('Test Title');
+    expect(state.posts[0].links?.[0].metadata?.embedUrl).toBe('https://embed.example.com');
+  });
+
+  it('updateLinkMetadata is a no-op for unknown post or link', () => {
+    postStore.setPosts(
+      [
+        {
+          ...basePost,
+          links: [{ id: 'link-1', url: 'https://example.com', metadata: undefined }],
+        },
+      ],
+      null,
+      true
+    );
+
+    postStore.updateLinkMetadata('post-999', 'link-1', { url: 'https://example.com', title: 'X' });
+    postStore.updateLinkMetadata('post-1', 'link-999', { url: 'https://example.com', title: 'X' });
+
+    const state = get(postStore);
+    expect(state.posts[0].links?.[0].metadata).toBeUndefined();
+  });
+
   it('reset restores defaults', () => {
     postStore.setPosts([basePost], 'cursor-1', false);
     postStore.reset();

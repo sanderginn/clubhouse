@@ -60,6 +60,7 @@ const storeRefs = {
     incrementCommentCount: vi.fn(),
     updateReactionCount: vi.fn(),
     updateHighlightReaction: vi.fn(),
+    updateLinkMetadata: vi.fn(),
   },
   commentState: writable<Record<string, { comments: Array<{ id: string; replies?: any[] }> }>>({}),
   commentStore: {} as {
@@ -144,6 +145,7 @@ beforeEach(() => {
   storeRefs.postStore.incrementCommentCount.mockReset();
   storeRefs.postStore.updateReactionCount.mockReset();
   storeRefs.postStore.updateHighlightReaction.mockReset();
+  storeRefs.postStore.updateLinkMetadata.mockReset();
   storeRefs.commentStore.addComment.mockReset();
   storeRefs.commentStore.addReply.mockReset();
   storeRefs.commentStore.markSeenComment.mockReset();
@@ -242,6 +244,33 @@ describe('websocketStore', () => {
     });
 
     expect(storeRefs.postStore.upsertPost).toHaveBeenCalledWith({ id: 'post-1' });
+  });
+
+  it('handles link_metadata_updated event', async () => {
+    storeRefs.isAuthenticated.set(true);
+    const { websocketStore } = await import('../websocketStore');
+
+    websocketStore.init();
+    const socket = MockWebSocket.instances[0];
+    socket.open();
+
+    socket.emit('message', {
+      data: JSON.stringify({
+        type: 'link_metadata_updated',
+        data: {
+          post_id: 'post-1',
+          link_id: 'link-1',
+          metadata: { url: 'https://example.com', title: 'Hello' },
+        },
+        timestamp: 'now',
+      }),
+    });
+
+    expect(storeRefs.postStore.updateLinkMetadata).toHaveBeenCalledWith(
+      'post-1',
+      'link-1',
+      expect.objectContaining({ title: 'Hello' })
+    );
   });
 
   it('handles recipe realtime events', async () => {
