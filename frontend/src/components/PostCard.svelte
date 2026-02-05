@@ -18,7 +18,7 @@
   import { sections } from '../stores/sectionStore';
   import { getSectionSlugById } from '../services/sectionSlug';
   import { logError } from '../lib/observability/logger';
-  import { isYouTubeUrl, isSpotifyUrl, parseYouTubeUrl, parseSpotifyUrl } from '$lib/embeds/urlParsers';
+  import { isYouTubeUrl, isSpotifyUrl, isSoundCloudUrl, parseYouTubeUrl, parseSpotifyUrl, fetchSoundCloudEmbed } from '$lib/embeds/urlParsers';
   import { recordComponentRender } from '../lib/observability/performance';
   import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
   import RecipeCard from './recipes/RecipeCard.svelte';
@@ -48,6 +48,15 @@
     embedUrl: string;
     height?: number;
   };
+
+  let soundCloudEmbedFromFrontend: SoundCloudEmbedData | null = null;
+
+  onMount(async () => {
+    const url = primaryLink?.url;
+    if (url && isSoundCloudUrl(url) && !metadata?.embed?.embedUrl) {
+      soundCloudEmbedFromFrontend = await fetchSoundCloudEmbed(url);
+    }
+  });
 
   $: userReactions = new Set(post.viewerReactions ?? []);
   $: sectionSlug = getSectionSlugById($sections, post.sectionId) ?? post.sectionId;
@@ -567,9 +576,10 @@
       ? metadata.embed
       : undefined;
   $: soundCloudEmbed =
-    metadata?.embed?.provider === 'soundcloud' && metadata.embed.embedUrl
+    soundCloudEmbedFromFrontend ??
+    (metadata?.embed?.provider === 'soundcloud' && metadata.embed.embedUrl
       ? ({ ...metadata.embed, embedUrl: metadata.embed.embedUrl } as SoundCloudEmbedData)
-      : undefined;
+      : undefined);
   $: spotifyEmbed = (() => {
     const url = primaryLink?.url;
     if (url && isSpotifyUrl(url)) {
