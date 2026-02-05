@@ -12,6 +12,6 @@ describe('YouTubeEmbed', () => {
     expect(iframe).toBeInTheDocument();
     const src = iframe.getAttribute('src') ?? '';
     expect(src).toContain(embedUrl);
-    expect(iframe).toHaveAttribute('allowfullscreen');
+    expect(iframe).toHaveAttribute('allow', expect.stringContaining('fullscreen'));
   });
 });
