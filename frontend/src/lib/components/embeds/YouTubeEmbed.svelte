@@ -15,6 +15,7 @@
   };
 
   let player: PlayerInstance | null = null;
+  let isDestroyed = false;
 
   let videoId: string | null = null;
   let playerHost = 'https://www.youtube.com';
@@ -100,6 +101,9 @@
       } catch {
         return;
       }
+      if (isDestroyed || !playerContainer || !videoId) {
+        return;
+      }
       const win = window as YTGlobal;
       if (!win.YT?.Player) return;
       player = new win.YT.Player(playerContainer, {
@@ -129,6 +133,7 @@
   });
 
   onDestroy(() => {
+    isDestroyed = true;
     if (player) {
       player.destroy();
       player = null;
