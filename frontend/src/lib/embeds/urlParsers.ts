@@ -41,6 +41,46 @@ export function isBandcampUrl(url: string): boolean {
   }
 }
 
+type SpotifyContentType = 'track' | 'album' | 'playlist' | 'artist' | 'show' | 'episode';
+
+const SPOTIFY_HEIGHTS: Record<SpotifyContentType, number> = {
+  track: 152,
+  album: 380,
+  playlist: 380,
+  artist: 380,
+  show: 232,
+  episode: 232
+};
+
+export function parseSpotifyUrl(url: string): { embedUrl: string; height: number } | null {
+  if (!isSpotifyUrl(url)) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(url);
+    const pathParts = parsed.pathname.split('/').filter(Boolean);
+
+    if (pathParts.length < 2) {
+      return null;
+    }
+
+    const type = pathParts[0] as SpotifyContentType;
+    const id = pathParts[1];
+
+    if (!(type in SPOTIFY_HEIGHTS)) {
+      return null;
+    }
+
+    return {
+      embedUrl: `https://open.spotify.com/embed/${type}/${id}`,
+      height: SPOTIFY_HEIGHTS[type]
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function parseYouTubeUrl(url: string): string | null {
   if (!isYouTubeUrl(url)) {
     return null;
