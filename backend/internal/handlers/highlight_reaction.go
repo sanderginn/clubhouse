@@ -102,6 +102,48 @@ func (h *HighlightReactionHandler) AddHighlightReaction(w http.ResponseWriter, r
 	}
 }
 
+// GetHighlightReactions handles GET /api/v1/posts/{postId}/highlights/{highlightId}/reactions
+func (h *HighlightReactionHandler) GetHighlightReactions(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		return
+	}
+
+	postID, highlightID, err := extractHighlightReactionPath(r.URL.Path)
+	if err != nil {
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid highlight reaction path")
+		return
+	}
+
+	reactions, err := h.service.GetReactions(r.Context(), postID, highlightID)
+	if err != nil {
+		switch err.Error() {
+		case "invalid highlight id":
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_HIGHLIGHT_ID", err.Error())
+		case "highlight not found":
+			writeError(r.Context(), w, http.StatusNotFound, "HIGHLIGHT_NOT_FOUND", err.Error())
+		default:
+			writeError(r.Context(), w, http.StatusInternalServerError, "HIGHLIGHT_REACTION_FAILED", "Failed to fetch highlight reactions")
+		}
+		return
+	}
+
+	response := models.GetReactionsResponse{
+		Reactions: reactions,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode highlight reactions response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}
+
 // RemoveHighlightReaction handles DELETE /api/v1/posts/{postId}/highlights/{highlightId}/reactions
 func (h *HighlightReactionHandler) RemoveHighlightReaction(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {

@@ -11,7 +11,7 @@ func CSPMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		csp := []string{
 			"default-src 'self'",
-			"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://w.soundcloud.com",
+			"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://w.soundcloud.com https://www.youtube.com https://www.youtube-nocookie.com",
 			"style-src 'self' 'unsafe-inline'",
 			"img-src 'self' data: https:",
 			"frame-src 'self' https://www.youtube-nocookie.com https://open.spotify.com https://w.soundcloud.com https://bandcamp.com",

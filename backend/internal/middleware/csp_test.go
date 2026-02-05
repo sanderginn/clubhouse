@@ -29,6 +29,9 @@ func TestCSPMiddlewareSetsHeader(t *testing.T) {
 	if !strings.Contains(header, "https://w.soundcloud.com") {
 		t.Fatalf("expected soundcloud script-src in CSP, got %q", header)
 	}
+	if !strings.Contains(header, "https://www.youtube.com") {
+		t.Fatalf("expected youtube script-src in CSP, got %q", header)
+	}
 	if !strings.Contains(header, "connect-src 'self' https://soundcloud.com https://api-widget.soundcloud.com") {
 		t.Fatalf("expected soundcloud connect-src in CSP, got %q", header)
 	}

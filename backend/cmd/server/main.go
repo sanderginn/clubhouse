@@ -307,6 +307,7 @@ func main() {
 		getThread:               commentHandler.GetThread,
 		restorePost:             postHandler.RestorePost,
 		addHighlightReaction:    highlightReactionHandler.AddHighlightReaction,
+		getHighlightReactions:   highlightReactionHandler.GetHighlightReactions,
 		removeHighlightReaction: highlightReactionHandler.RemoveHighlightReaction,
 		addReactionToPost:       reactionHandler.AddReactionToPost,
 		removeReactionFromPost:  reactionHandler.RemoveReactionFromPost,

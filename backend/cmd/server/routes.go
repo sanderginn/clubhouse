@@ -13,6 +13,7 @@ type postRouteDeps struct {
 	getThread               http.HandlerFunc
 	restorePost             http.HandlerFunc
 	addHighlightReaction    http.HandlerFunc
+	getHighlightReactions   http.HandlerFunc
 	removeHighlightReaction http.HandlerFunc
 	addReactionToPost       http.HandlerFunc
 	removeReactionFromPost  http.HandlerFunc
@@ -44,6 +45,11 @@ func newPostRouteHandler(requireAuth authMiddleware, requireAuthCSRF authMiddlew
 		if r.Method == http.MethodPost && isHighlightReactionPath(r.URL.Path) {
 			// POST /api/v1/posts/{id}/highlights/{highlightId}/reactions
 			requireAuthCSRF(http.HandlerFunc(deps.addHighlightReaction)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodGet && isHighlightReactionPath(r.URL.Path) {
+			// GET /api/v1/posts/{id}/highlights/{highlightId}/reactions
+			requireAuth(http.HandlerFunc(deps.getHighlightReactions)).ServeHTTP(w, r)
 			return
 		}
 		if r.Method == http.MethodDelete && isHighlightReactionPath(r.URL.Path) {

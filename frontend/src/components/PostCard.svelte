@@ -1652,6 +1652,7 @@
         <div class="mt-2">
           <HighlightDisplay
             highlights={primaryLink.highlights}
+            postId={post.id}
             onSeek={highlightEmbedProvider ? handleHighlightSeek : undefined}
             onToggleReaction={primaryLink?.id ? handleHighlightReaction : undefined}
             unsupportedMessage={highlightSeekMessage}
