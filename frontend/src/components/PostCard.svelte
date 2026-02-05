@@ -18,6 +18,7 @@
   import { sections } from '../stores/sectionStore';
   import { getSectionSlugById } from '../services/sectionSlug';
   import { logError } from '../lib/observability/logger';
+  import { isYouTubeUrl, isSpotifyUrl, parseYouTubeUrl, parseSpotifyUrl } from '$lib/embeds/urlParsers';
   import { recordComponentRender } from '../lib/observability/performance';
   import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
   import RecipeCard from './recipes/RecipeCard.svelte';
@@ -569,12 +570,27 @@
     metadata?.embed?.provider === 'soundcloud' && metadata.embed.embedUrl
       ? ({ ...metadata.embed, embedUrl: metadata.embed.embedUrl } as SoundCloudEmbedData)
       : undefined;
-  $: spotifyEmbed =
-    metadata?.embed && isSpotifyEmbedUrl(metadata.embed.embedUrl) ? metadata.embed : undefined;
+  $: spotifyEmbed = (() => {
+    const url = primaryLink?.url;
+    if (url && isSpotifyUrl(url)) {
+      return parseSpotifyUrl(url);
+    }
+    if (metadata?.embed && isSpotifyEmbedUrl(metadata.embed.embedUrl)) {
+      return metadata.embed;
+    }
+    return undefined;
+  })();
   $: spotifyEmbedUrl =
     spotifyEmbed?.embedUrl ??
     (isSpotifyEmbedUrl(metadata?.embedUrl) ? metadata?.embedUrl : undefined);
   $: spotifyEmbedHeight = spotifyEmbed?.height;
+  $: youtubeEmbedUrl = (() => {
+    const url = primaryLink?.url;
+    if (url && isYouTubeUrl(url)) {
+      return parseYouTubeUrl(url);
+    }
+    return metadata?.embed?.provider === 'youtube' ? metadata.embed.embedUrl : undefined;
+  })();
   $: highlightEmbedProvider = soundCloudEmbed
     ? 'soundcloud'
     : metadata?.embed?.provider === 'youtube'
@@ -1557,11 +1573,11 @@
           />
         {:else if spotifyEmbedUrl}
           <SpotifyEmbed embedUrl={spotifyEmbedUrl} height={spotifyEmbedHeight} />
-        {:else if metadata.embed?.provider === 'youtube' && metadata.embed.embedUrl}
+        {:else if youtubeEmbedUrl}
           <div class="mt-3">
             <YouTubeEmbed
-              embedUrl={metadata.embed.embedUrl}
-              title={metadata.title || 'YouTube video'}
+              embedUrl={youtubeEmbedUrl}
+              title={metadata?.title || 'YouTube video'}
               onReady={handleEmbedReady}
             />
           </div>
