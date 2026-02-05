@@ -18,6 +18,7 @@
   import { sections } from '../stores/sectionStore';
   import { getSectionSlugById } from '../services/sectionSlug';
   import { logError } from '../lib/observability/logger';
+  import { isYouTubeUrl, isSpotifyUrl, isSoundCloudUrl, parseYouTubeUrl, parseSpotifyUrl, fetchSoundCloudEmbed } from '$lib/embeds/urlParsers';
   import { recordComponentRender } from '../lib/observability/performance';
   import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
   import RecipeCard from './recipes/RecipeCard.svelte';
@@ -47,6 +48,15 @@
     embedUrl: string;
     height?: number;
   };
+
+  let soundCloudEmbedFromFrontend: SoundCloudEmbedData | null = null;
+
+  onMount(async () => {
+    const url = primaryLink?.url;
+    if (url && isSoundCloudUrl(url) && !metadata?.embed?.embedUrl) {
+      soundCloudEmbedFromFrontend = await fetchSoundCloudEmbed(url);
+    }
+  });
 
   $: userReactions = new Set(post.viewerReactions ?? []);
   $: sectionSlug = getSectionSlugById($sections, post.sectionId) ?? post.sectionId;
@@ -520,7 +530,7 @@
   function getSeekUnavailableMessage(provider: string | undefined): string {
     if (!provider) return 'Seeking not supported for this embed.';
     if (provider === 'spotify' || provider === 'bandcamp') return 'Seeking not supported for this embed.';
-    if (provider === 'youtube' || provider === 'soundcloud') return 'Player is still loading.';
+    if (provider === 'soundcloud') return 'Player is still loading.';
     return 'Seeking not supported for this embed.';
   }
 
@@ -566,18 +576,34 @@
       ? metadata.embed
       : undefined;
   $: soundCloudEmbed =
-    metadata?.embed?.provider === 'soundcloud' && metadata.embed.embedUrl
+    soundCloudEmbedFromFrontend ??
+    (metadata?.embed?.provider === 'soundcloud' && metadata.embed.embedUrl
       ? ({ ...metadata.embed, embedUrl: metadata.embed.embedUrl } as SoundCloudEmbedData)
-      : undefined;
-  $: spotifyEmbed =
-    metadata?.embed && isSpotifyEmbedUrl(metadata.embed.embedUrl) ? metadata.embed : undefined;
+      : undefined);
+  $: spotifyEmbed = (() => {
+    const url = primaryLink?.url;
+    if (url && isSpotifyUrl(url)) {
+      return parseSpotifyUrl(url);
+    }
+    if (metadata?.embed && isSpotifyEmbedUrl(metadata.embed.embedUrl)) {
+      return metadata.embed;
+    }
+    return undefined;
+  })();
   $: spotifyEmbedUrl =
     spotifyEmbed?.embedUrl ??
     (isSpotifyEmbedUrl(metadata?.embedUrl) ? metadata?.embedUrl : undefined);
   $: spotifyEmbedHeight = spotifyEmbed?.height;
+  $: youtubeEmbedUrl = (() => {
+    const url = primaryLink?.url;
+    if (url && isYouTubeUrl(url)) {
+      return parseYouTubeUrl(url);
+    }
+    return metadata?.embed?.provider === 'youtube' ? metadata.embed.embedUrl : undefined;
+  })();
   $: highlightEmbedProvider = soundCloudEmbed
     ? 'soundcloud'
-    : metadata?.embed?.provider === 'youtube'
+    : youtubeEmbedUrl
       ? 'youtube'
       : spotifyEmbedUrl
         ? 'spotify'
@@ -1197,6 +1223,8 @@
             </div>
           {/if}
           <MentionTextarea
+            id={`edit-post-${post.id}`}
+            name={`edit-post-${post.id}`}
             bind:value={editContent}
             bind:mentionUsernames={editMentionUsernames}
             on:keydown={(event) => handleEditKeyDown(event.detail)}
@@ -1557,11 +1585,11 @@
           />
         {:else if spotifyEmbedUrl}
           <SpotifyEmbed embedUrl={spotifyEmbedUrl} height={spotifyEmbedHeight} />
-        {:else if metadata.embed?.provider === 'youtube' && metadata.embed.embedUrl}
+        {:else if youtubeEmbedUrl}
           <div class="mt-3">
             <YouTubeEmbed
-              embedUrl={metadata.embed.embedUrl}
-              title={metadata.title || 'YouTube video'}
+              embedUrl={youtubeEmbedUrl}
+              title={metadata?.title || 'YouTube video'}
               onReady={handleEmbedReady}
             />
           </div>
@@ -1624,6 +1652,7 @@
         <div class="mt-2">
           <HighlightDisplay
             highlights={primaryLink.highlights}
+            postId={post.id}
             onSeek={highlightEmbedProvider ? handleHighlightSeek : undefined}
             onToggleReaction={primaryLink?.id ? handleHighlightReaction : undefined}
             unsupportedMessage={highlightSeekMessage}

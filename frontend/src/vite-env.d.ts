@@ -18,18 +18,7 @@ type SoundCloudWidget = {
   unbind: (event: string) => void;
 };
 
-declare namespace YT {
-  class Player {
-    constructor(element: HTMLElement, options: { events?: { onReady?: () => void } });
-    seekTo(seconds: number, allowSeekAhead: boolean): void;
-    playVideo(): void;
-    destroy(): void;
-  }
-}
-
 interface Window {
-  YT?: typeof YT;
-  onYouTubeIframeAPIReady?: () => void;
   SC?: {
     Widget: (element: HTMLIFrameElement) => SoundCloudWidget;
   };

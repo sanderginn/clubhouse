@@ -124,8 +124,8 @@ services:
       - grafana_data:/var/lib/grafana
       - ./grafana/plugins-bundled:/usr/share/grafana/plugins-bundled
       - ./grafana/entrypoint.sh:/etc/grafana/entrypoint.sh:ro
-      - ./grafana/datasources:/etc/grafana/provisioning/datasources
-      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/datasources:/provisioning-src/datasources:ro
+      - ./grafana/dashboards:/provisioning-src/dashboards:ro
     networks:
       - clubhouse
     depends_on:

@@ -515,6 +515,8 @@
               {#if editingCommentId === comment.id}
                 <div class="space-y-2">
                   <MentionTextarea
+                    id={`edit-comment-${comment.id}`}
+                    name={`edit-comment-${comment.id}`}
                     bind:value={editCommentContent}
                     bind:mentionUsernames={editMentionUsernames}
                     on:keydown={(event) => handleEditKeyDown(event.detail, comment.id)}

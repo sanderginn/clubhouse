@@ -132,6 +132,59 @@ func (s *HighlightReactionService) RemoveReaction(ctx context.Context, postID uu
 	return state, nil
 }
 
+func (s *HighlightReactionService) GetReactions(ctx context.Context, postID uuid.UUID, highlightID string) ([]models.ReactionGroup, error) {
+	ctx, span := otel.Tracer("clubhouse.highlight_reactions").Start(ctx, "HighlightReactionService.GetReactions")
+	span.SetAttributes(
+		attribute.String("post_id", postID.String()),
+		attribute.String("highlight_id", highlightID),
+	)
+	defer span.End()
+
+	_, _, err := s.resolveHighlight(ctx, postID, highlightID)
+	if err != nil {
+		recordSpanError(span, err)
+		return nil, err
+	}
+
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT u.id, u.username, u.profile_picture_url
+		FROM highlight_reactions hr
+		JOIN users u ON u.id = hr.user_id
+		WHERE hr.highlight_id = $1
+		ORDER BY hr.created_at ASC
+	`, highlightID)
+	if err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("failed to fetch highlight reactions: %w", err)
+	}
+	defer rows.Close()
+
+	users := make([]models.ReactionUser, 0)
+	for rows.Next() {
+		var user models.ReactionUser
+		if err := rows.Scan(&user.ID, &user.Username, &user.ProfilePictureUrl); err != nil {
+			recordSpanError(span, err)
+			return nil, fmt.Errorf("failed to scan highlight reaction user: %w", err)
+		}
+		users = append(users, user)
+	}
+	if err := rows.Err(); err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("failed to iterate highlight reaction users: %w", err)
+	}
+
+	if len(users) == 0 {
+		return []models.ReactionGroup{}, nil
+	}
+
+	return []models.ReactionGroup{
+		{
+			Emoji: highlightReactionEmoji,
+			Users: users,
+		},
+	}, nil
+}
+
 func (s *HighlightReactionService) getReactionState(ctx context.Context, highlightID string, userID uuid.UUID) (*models.HighlightReactionResponse, error) {
 	var count int
 	if err := s.db.QueryRowContext(ctx, `

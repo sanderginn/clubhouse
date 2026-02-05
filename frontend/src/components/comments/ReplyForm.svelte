@@ -84,6 +84,7 @@
   <label class="sr-only" for={`reply-${parentCommentId}`}>Reply</label>
   <MentionTextarea
     id={`reply-${parentCommentId}`}
+    name={`reply-${parentCommentId}`}
     bind:value={content}
     bind:mentionUsernames
     on:keydown={(event) => handleKeyDown(event.detail)}
@@ -100,6 +101,7 @@
       </label>
       <input
         id={`reply-timestamp-${parentCommentId}`}
+        name={`reply-timestamp-${parentCommentId}`}
         type="text"
         bind:value={timestampInput}
         placeholder="02:30"

@@ -24,12 +24,12 @@
 
   onMount(async () => {
     if (typeof window === 'undefined' || !iframeElement) return;
+    if (!onReady) return;
 
     try {
       const SC = await loadSoundCloudApi();
       widget = SC.Widget(iframeElement);
       widget.bind(readyEvent, () => {
-        if (!onReady) return;
         onReady({
           provider: 'soundcloud',
           supportsSeeking: true,
@@ -60,7 +60,6 @@
     class="w-full"
     loading="lazy"
     sandbox="allow-scripts allow-same-origin allow-presentation"
-    allow="autoplay"
     style="border: 0;"
     data-testid="soundcloud-embed"
     bind:this={iframeElement}

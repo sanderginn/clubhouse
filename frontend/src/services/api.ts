@@ -669,6 +669,10 @@ class ApiClient {
     return this.delete(`/posts/${postId}/highlights/${encodeURIComponent(highlightId)}/reactions`);
   }
 
+  async getHighlightReactions(postId: string, highlightId: string): Promise<{ reactions: ApiReactionGroup[] }> {
+    return this.get(`/posts/${postId}/highlights/${encodeURIComponent(highlightId)}/reactions`);
+  }
+
   async saveRecipe(postId: string, categories: string[]): Promise<{ saved_recipes: SavedRecipe[] }> {
     return this.post(`/posts/${postId}/save`, { categories });
   }

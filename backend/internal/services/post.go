@@ -14,15 +14,18 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
+	"github.com/redis/go-redis/v9"
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/observability"
+	linkmeta "github.com/sanderginn/clubhouse/internal/services/links"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 )
 
 // PostService handles post-related operations
 type PostService struct {
-	db *sql.DB
+	db    *sql.DB
+	redis *redis.Client
 }
 
 const maxPostImages = 10
@@ -32,6 +35,10 @@ var imageLinkPattern = regexp.MustCompile(`(?i)\.(jpg|jpeg|png|gif|webp|bmp|svg|
 // NewPostService creates a new post service
 func NewPostService(db *sql.DB) *PostService {
 	return &PostService{db: db}
+}
+
+func NewPostServiceWithRedis(db *sql.DB, rdb *redis.Client) *PostService {
+	return &PostService{db: db, redis: rdb}
 }
 
 // GetSectionIDByPostID fetches the section id for a post.
@@ -109,8 +116,8 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 	// Create post ID
 	postID := uuid.New()
 	trimmedContent := strings.TrimSpace(req.Content)
-
-	linkMetadata := fetchLinkMetadata(ctx, req.Links)
+	shouldEnqueueMetadataJobs := s.redis != nil && GetConfigService().IsLinkMetadataEnabled()
+	jobs := make([]MetadataJob, 0, len(req.Links))
 
 	// Begin transaction
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -142,15 +149,10 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 	if len(req.Links) > 0 {
 		post.Links = make([]models.Link, 0, len(req.Links))
 
-		for i, linkReq := range req.Links {
+		for _, linkReq := range req.Links {
 			linkID := uuid.New()
 
-			var fetchedMetadata models.JSONMap
-			if len(linkMetadata) > i && len(linkMetadata[i]) > 0 {
-				fetchedMetadata = linkMetadata[i]
-			}
-
-			mergedMetadata, sortedHighlights := mergeHighlightsIntoMetadata(linkReq, fetchedMetadata)
+			mergedMetadata, sortedHighlights := mergeHighlightsIntoMetadata(linkReq, nil)
 			metadataValue := interface{}(nil)
 			if len(mergedMetadata) > 0 {
 				metadataValue = mergedMetadata
@@ -180,6 +182,15 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 			}
 
 			post.Links = append(post.Links, link)
+
+			if shouldEnqueueMetadataJobs && !linkmeta.IsInternalUploadURL(linkReq.URL) {
+				jobs = append(jobs, MetadataJob{
+					PostID:    post.ID,
+					LinkID:    linkID,
+					URL:       linkReq.URL,
+					CreatedAt: time.Now(),
+				})
+			}
 		}
 	}
 
@@ -232,6 +243,19 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 	if err := tx.Commit(); err != nil {
 		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	for _, job := range jobs {
+		enqueueCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		if err := EnqueueMetadataJob(enqueueCtx, s.redis, job); err != nil {
+			observability.LogWarn(ctx, "failed to enqueue metadata job",
+				"post_id", job.PostID.String(),
+				"link_id", job.LinkID.String(),
+				"link_url", job.URL,
+				"error", err.Error(),
+			)
+		}
+		cancel()
 	}
 
 	observability.RecordPostCreated(ctx, sectionName)

@@ -16,7 +16,7 @@ import {
 } from './recipeStore';
 import { api } from '../services/api';
 import { mapApiComment } from './commentMapper';
-import { mapApiPost, type ApiPost } from './postMapper';
+import { mapApiPost, normalizeLinkMetadata, type ApiPost } from './postMapper';
 import { logError, logInfo, logWarn } from '../lib/observability/logger';
 import { recordWebsocketConnect } from '../lib/observability/performance';
 
@@ -57,6 +57,13 @@ interface WsHighlightReactionEvent {
   link_id: string;
   highlight_id: string;
   user_id: string;
+}
+
+interface WsLinkMetadataUpdatedEvent {
+  post_id: string;
+  link_id: string;
+  url: string;
+  metadata: unknown;
 }
 
 interface WsSubscriptionPayload {
@@ -325,6 +332,20 @@ function connect() {
       }
       case 'notification': {
         handleRealtimeNotification(parsed.data);
+        break;
+      }
+      case 'link_metadata_updated': {
+        const payload = parsed.data as WsLinkMetadataUpdatedEvent;
+        if (!payload?.post_id || !payload?.link_id || !payload?.url || !payload?.metadata) {
+          logWarn('WebSocket invalid link_metadata_updated payload', { payload });
+          break;
+        }
+        const normalized = normalizeLinkMetadata(payload.metadata, payload.url);
+        if (!normalized) {
+          logWarn('WebSocket link_metadata_updated had empty metadata', { payload });
+          break;
+        }
+        postStore.updateLinkMetadata(payload.post_id, payload.link_id, normalized);
         break;
       }
       case 'recipe_saved': {

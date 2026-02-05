@@ -27,7 +27,7 @@ type PostHandler struct {
 // NewPostHandler creates a new post handler
 func NewPostHandler(db *sql.DB, redisClient *redis.Client, pushService *services.PushService) *PostHandler {
 	return &PostHandler{
-		postService: services.NewPostService(db),
+		postService: services.NewPostServiceWithRedis(db, redisClient),
 		userService: services.NewUserService(db),
 		notify:      services.NewNotificationService(db, redisClient, pushService),
 		redis:       redisClient,
