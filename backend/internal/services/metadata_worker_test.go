@@ -105,13 +105,19 @@ func TestMetadataWorker_ProcessJob(t *testing.T) {
 
 	worker := NewMetadataWorker(rdb, db, fetcher, 1)
 
+	channel := "section:" + sectionID
+	pubsub := rdb.Subscribe(ctx, channel)
+	defer pubsub.Close()
+	_, err := pubsub.Receive(ctx)
+	require.NoError(t, err)
+
 	job := MetadataJob{
 		PostID:    uuid.MustParse(postID),
 		LinkID:    uuid.MustParse(linkID),
 		URL:       "https://example.com/test",
 		CreatedAt: time.Now(),
 	}
-	err := EnqueueMetadataJob(ctx, rdb, job)
+	err = EnqueueMetadataJob(ctx, rdb, job)
 	require.NoError(t, err)
 
 	worker.Start(ctx)
@@ -122,6 +128,27 @@ func TestMetadataWorker_ProcessJob(t *testing.T) {
 
 	assert.Equal(t, 1, fetcher.called)
 	assert.Equal(t, []string{"https://example.com/test"}, fetcher.urls)
+
+	receiveCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	msg, err := pubsub.ReceiveMessage(receiveCtx)
+	require.NoError(t, err)
+
+	var event struct {
+		Type string `json:"type"`
+		Data struct {
+			PostID   string                 `json:"post_id"`
+			LinkID   string                 `json:"link_id"`
+			Metadata map[string]interface{} `json:"metadata"`
+		} `json:"data"`
+	}
+	err = json.Unmarshal([]byte(msg.Payload), &event)
+	require.NoError(t, err)
+	assert.Equal(t, "link_metadata_updated", event.Type)
+	assert.Equal(t, postID, event.Data.PostID)
+	assert.Equal(t, linkID, event.Data.LinkID)
+	assert.Equal(t, "Test Title", event.Data.Metadata["title"])
+	assert.Equal(t, "Test Description", event.Data.Metadata["description"])
 
 	var metadata sql.NullString
 	var updatedAt sql.NullTime

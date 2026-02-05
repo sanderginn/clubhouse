@@ -14,6 +14,12 @@ import (
 	linkmeta "github.com/sanderginn/clubhouse/internal/services/links"
 )
 
+type linkMetadataUpdatedData struct {
+	PostID   uuid.UUID              `json:"post_id"`
+	LinkID   uuid.UUID              `json:"link_id"`
+	Metadata map[string]interface{} `json:"metadata"`
+}
+
 // MetadataFetcher is an interface for fetching link metadata
 type MetadataFetcher interface {
 	Fetch(ctx context.Context, url string) (map[string]interface{}, error)
@@ -142,6 +148,21 @@ func (w *MetadataWorker) processJob(ctx context.Context, job *MetadataJob, worke
 		return
 	}
 
+	sectionID, err := w.getPostSectionID(ctx, job.PostID)
+	if err != nil {
+		observability.LogWarn(ctx, "failed to get section_id for metadata websocket event",
+			"post_id", job.PostID.String(),
+			"link_id", job.LinkID.String(),
+			"error", err.Error(),
+		)
+	} else if err := w.publishLinkMetadataUpdated(ctx, sectionID, job.PostID, job.LinkID, metadata); err != nil {
+		observability.LogWarn(ctx, "failed to publish metadata websocket event",
+			"post_id", job.PostID.String(),
+			"link_id", job.LinkID.String(),
+			"error", err.Error(),
+		)
+	}
+
 	observability.LogInfo(ctx, "metadata fetched and stored",
 		"worker_id", fmt.Sprintf("%d", workerID),
 		"post_id", job.PostID.String(),
@@ -154,6 +175,41 @@ func (w *MetadataWorker) processJob(ctx context.Context, job *MetadataJob, worke
 			Err:     err,
 		})
 	}
+}
+
+func (w *MetadataWorker) getPostSectionID(ctx context.Context, postID uuid.UUID) (uuid.UUID, error) {
+	var sectionID uuid.UUID
+	err := w.db.QueryRowContext(ctx, "SELECT section_id FROM posts WHERE id = $1", postID).Scan(&sectionID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return sectionID, nil
+}
+
+func (w *MetadataWorker) publishLinkMetadataUpdated(ctx context.Context, sectionID uuid.UUID, postID uuid.UUID, linkID uuid.UUID, metadata map[string]interface{}) error {
+	if w.redis == nil {
+		return nil
+	}
+
+	payload, err := json.Marshal(realtimeEvent{
+		Type: "link_metadata_updated",
+		Data: linkMetadataUpdatedData{
+			PostID:   postID,
+			LinkID:   linkID,
+			Metadata: metadata,
+		},
+		Timestamp: time.Now().UTC(),
+	})
+	if err != nil {
+		return err
+	}
+
+	channel := fmt.Sprintf("section:%s", sectionID.String())
+	if err := publishWithRetry(ctx, w.redis, channel, payload); err != nil {
+		observability.RecordWebsocketError(ctx, "publish_failed", "link_metadata_updated")
+		return err
+	}
+	return nil
 }
 
 func (w *MetadataWorker) updateLinkMetadata(ctx context.Context, linkID uuid.UUID, metadata map[string]interface{}) error {
