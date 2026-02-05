@@ -603,7 +603,7 @@
   })();
   $: highlightEmbedProvider = soundCloudEmbed
     ? 'soundcloud'
-    : metadata?.embed?.provider === 'youtube'
+    : youtubeEmbedUrl
       ? 'youtube'
       : spotifyEmbedUrl
         ? 'spotify'
