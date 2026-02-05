@@ -72,3 +72,23 @@ func GetQueueLength(ctx context.Context, rdb *redis.Client) (int64, error) {
 func GetProcessingLength(ctx context.Context, rdb *redis.Client) (int64, error) {
 	return rdb.LLen(ctx, MetadataQueueProcessingKey).Result()
 }
+
+// RequeueProcessingJobs moves any in-flight jobs back to the pending queue.
+// This is useful on worker startup to recover jobs left in processing after a crash.
+func RequeueProcessingJobs(ctx context.Context, rdb *redis.Client) (int, error) {
+	requeued := 0
+
+	for {
+		result, err := rdb.RPopLPush(ctx, MetadataQueueProcessingKey, MetadataQueueKey).Result()
+		if err != nil {
+			if err == redis.Nil {
+				return requeued, nil
+			}
+			return requeued, err
+		}
+
+		if result != "" {
+			requeued++
+		}
+	}
+}

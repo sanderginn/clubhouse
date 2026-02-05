@@ -55,6 +55,16 @@ func NewMetadataWorker(rdb *redis.Client, db *sql.DB, fetcher MetadataFetcher, w
 func (w *MetadataWorker) Start(ctx context.Context) {
 	observability.LogInfo(ctx, "starting metadata workers", "count", fmt.Sprintf("%d", w.workerCount))
 
+	if requeued, err := RequeueProcessingJobs(ctx, w.redis); err != nil {
+		observability.LogWarn(ctx, "failed to requeue metadata jobs",
+			"error", err.Error(),
+		)
+	} else if requeued > 0 {
+		observability.LogInfo(ctx, "requeued metadata jobs from processing",
+			"count", fmt.Sprintf("%d", requeued),
+		)
+	}
+
 	for i := 0; i < w.workerCount; i++ {
 		w.wg.Add(1)
 		go w.runWorker(ctx, i)

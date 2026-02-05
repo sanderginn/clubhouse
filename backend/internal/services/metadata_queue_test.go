@@ -106,6 +106,41 @@ func TestAckMetadataJob(t *testing.T) {
 	assert.Equal(t, int64(0), processingLen)
 }
 
+func TestRequeueProcessingJobs(t *testing.T) {
+	rdb := setupMetadataQueueTestRedis(t)
+	ctx := context.Background()
+
+	job1 := MetadataJob{PostID: uuid.New(), LinkID: uuid.New(), URL: "https://example.com/1", CreatedAt: time.Now()}
+	job2 := MetadataJob{PostID: uuid.New(), LinkID: uuid.New(), URL: "https://example.com/2", CreatedAt: time.Now()}
+
+	require.NoError(t, EnqueueMetadataJob(ctx, rdb, job1))
+	require.NoError(t, EnqueueMetadataJob(ctx, rdb, job2))
+
+	dequeued1, err := DequeueMetadataJob(ctx, rdb, 1*time.Second)
+	require.NoError(t, err)
+	require.NotNil(t, dequeued1)
+	dequeued2, err := DequeueMetadataJob(ctx, rdb, 1*time.Second)
+	require.NoError(t, err)
+	require.NotNil(t, dequeued2)
+
+	requeued, err := RequeueProcessingJobs(ctx, rdb)
+	require.NoError(t, err)
+	assert.Equal(t, 2, requeued)
+
+	queueLen, _ := GetQueueLength(ctx, rdb)
+	processingLen, _ := GetProcessingLength(ctx, rdb)
+	assert.Equal(t, int64(2), queueLen)
+	assert.Equal(t, int64(0), processingLen)
+
+	redo1, err := DequeueMetadataJob(ctx, rdb, 1*time.Second)
+	require.NoError(t, err)
+	redo2, err := DequeueMetadataJob(ctx, rdb, 1*time.Second)
+	require.NoError(t, err)
+
+	assert.Equal(t, job1.URL, redo1.URL)
+	assert.Equal(t, job2.URL, redo2.URL)
+}
+
 func TestDequeueMetadataJob_FIFO(t *testing.T) {
 	rdb := setupMetadataQueueTestRedis(t)
 	ctx := context.Background()
