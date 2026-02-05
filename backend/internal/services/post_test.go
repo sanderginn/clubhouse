@@ -3,39 +3,15 @@ package services
 import (
 	"context"
 	"encoding/json"
-	"io"
-	"net"
-	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"github.com/sanderginn/clubhouse/internal/models"
-	linkmeta "github.com/sanderginn/clubhouse/internal/services/links"
 	"github.com/sanderginn/clubhouse/internal/testutil"
 )
-
-type roundTripperFunc func(*http.Request) (*http.Response, error)
-
-func (f roundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
-	return f(r)
-}
-
-type fakeResolver struct {
-	addrs map[string][]net.IPAddr
-	err   error
-}
-
-func (f fakeResolver) LookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error) {
-	if f.err != nil {
-		return nil, f.err
-	}
-	addrs, ok := f.addrs[host]
-	if !ok {
-		return nil, io.EOF
-	}
-	return addrs, nil
-}
 
 func TestCreatePostWithoutLinks(t *testing.T) {
 	db := testutil.RequireTestDB(t)
@@ -108,7 +84,7 @@ func TestCreatePostWithLinks(t *testing.T) {
 	}
 }
 
-func TestCreatePostStoresYouTubeEmbed(t *testing.T) {
+func TestCreatePost_EnqueuesMetadataJob(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
@@ -124,34 +100,12 @@ func TestCreatePostStoresYouTubeEmbed(t *testing.T) {
 		}
 	})
 
-	htmlBody := `<!doctype html><html><head><title>YouTube</title></head></html>`
-	fetcher := linkmeta.NewFetcher(&http.Client{
-		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Status:     "200 OK",
-				Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
-				Body:       io.NopCloser(strings.NewReader(htmlBody)),
-				Request:    r,
-			}, nil
-		}),
-	})
-	fetcher.SetResolver(fakeResolver{
-		addrs: map[string][]net.IPAddr{
-			"www.youtube.com": {{IP: net.ParseIP("93.184.216.34")}},
-			"youtube.com":     {{IP: net.ParseIP("93.184.216.34")}},
-			"youtu.be":        {{IP: net.ParseIP("93.184.216.34")}},
-		},
-	})
-	linkmeta.SetDefaultFetcher(fetcher)
-	t.Cleanup(func() {
-		linkmeta.SetDefaultFetcher(nil)
-	})
+	rdb := setupMetadataQueueTestRedis(t)
 
 	userID := testutil.CreateTestUser(t, db, "youtubepost", "youtubepost@test.com", false, true)
 	sectionID := testutil.CreateTestSection(t, db, "Video Section", "general")
 
-	service := NewPostService(db)
+	service := NewPostServiceWithRedis(db, rdb)
 	req := &models.CreatePostRequest{
 		SectionID: sectionID,
 		Content:   "Watch this",
@@ -165,24 +119,89 @@ func TestCreatePostStoresYouTubeEmbed(t *testing.T) {
 		t.Fatalf("CreatePost failed: %v", err)
 	}
 
-	var metadataBytes []byte
-	if err := db.QueryRow(`SELECT metadata FROM links WHERE post_id = $1`, post.ID).Scan(&metadataBytes); err != nil {
+	var metadataIsNull bool
+	if err := db.QueryRow(`SELECT metadata IS NULL FROM links WHERE post_id = $1`, post.ID).Scan(&metadataIsNull); err != nil {
 		t.Fatalf("failed to query link metadata: %v", err)
 	}
-	var metadata map[string]interface{}
-	if err := json.Unmarshal(metadataBytes, &metadata); err != nil {
-		t.Fatalf("failed to unmarshal link metadata: %v", err)
+	if !metadataIsNull {
+		t.Fatalf("expected stored link metadata to be NULL")
 	}
-	embed, ok := metadata["embed"].(map[string]interface{})
-	if !ok {
-		t.Fatalf("expected embed metadata to be present")
+
+	length, err := GetQueueLength(context.Background(), rdb)
+	if err != nil {
+		t.Fatalf("failed to get queue length: %v", err)
 	}
-	if embed["provider"] != "youtube" {
-		t.Fatalf("embed.provider = %v, want youtube", embed["provider"])
+	if length != 1 {
+		t.Fatalf("expected 1 metadata job, got %d", length)
 	}
-	expectedEmbedURL := "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ"
-	if embed["embed_url"] != expectedEmbedURL {
-		t.Fatalf("embed.embed_url = %v, want %v", embed["embed_url"], expectedEmbedURL)
+
+	job, err := DequeueMetadataJob(context.Background(), rdb, 1*time.Second)
+	if err != nil {
+		t.Fatalf("failed to dequeue metadata job: %v", err)
+	}
+	if job == nil {
+		t.Fatalf("expected metadata job")
+	}
+	if job.PostID != post.ID {
+		t.Fatalf("job.PostID = %s, want %s", job.PostID, post.ID)
+	}
+	if job.URL != req.Links[0].URL {
+		t.Fatalf("job.URL = %s, want %s", job.URL, req.Links[0].URL)
+	}
+	if len(post.Links) != 1 {
+		t.Fatalf("expected 1 link, got %d", len(post.Links))
+	}
+	if job.LinkID != post.Links[0].ID {
+		t.Fatalf("job.LinkID = %s, want %s", job.LinkID, post.Links[0].ID)
+	}
+}
+
+func TestCreatePost_MultipleLinks_EnqueuesAllJobs(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	config := GetConfigService()
+	current := config.GetConfig().LinkMetadataEnabled
+	enabled := true
+	if _, err := config.UpdateConfig(context.Background(), &enabled, nil, nil); err != nil {
+		t.Fatalf("failed to enable link metadata: %v", err)
+	}
+	t.Cleanup(func() {
+		if _, err := config.UpdateConfig(context.Background(), &current, nil, nil); err != nil {
+			t.Fatalf("failed to restore link metadata: %v", err)
+		}
+	})
+
+	rdb := setupMetadataQueueTestRedis(t)
+
+	userID := testutil.CreateTestUser(t, db, "multilinkpost", "multilinkpost@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Multi Link Section", "general")
+
+	service := NewPostServiceWithRedis(db, rdb)
+	req := &models.CreatePostRequest{
+		SectionID: sectionID,
+		Content:   "Multiple links",
+		Links: []models.LinkRequest{
+			{URL: "https://youtube.com/watch?v=abc"},
+			{URL: "https://spotify.com/track/xyz"},
+			{URL: "https://bandcamp.com/album/test"},
+		},
+	}
+
+	post, err := service.CreatePost(context.Background(), req, uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("CreatePost failed: %v", err)
+	}
+	if post == nil {
+		t.Fatalf("expected post")
+	}
+
+	length, err := GetQueueLength(context.Background(), rdb)
+	if err != nil {
+		t.Fatalf("failed to get queue length: %v", err)
+	}
+	if length != int64(len(req.Links)) {
+		t.Fatalf("expected %d metadata jobs, got %d", len(req.Links), length)
 	}
 }
 
@@ -1094,4 +1113,54 @@ func disableLinkMetadata(t *testing.T) {
 			t.Fatalf("failed to restore link metadata: %v", err)
 		}
 	})
+}
+
+func newFailingRedisClient(t *testing.T) *redis.Client {
+	t.Helper()
+	return redis.NewClient(&redis.Options{
+		Addr:         "127.0.0.1:1",
+		DialTimeout:  10 * time.Millisecond,
+		ReadTimeout:  10 * time.Millisecond,
+		WriteTimeout: 10 * time.Millisecond,
+	})
+}
+
+func TestCreatePost_QueueFailure_DoesNotFailPost(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	config := GetConfigService()
+	current := config.GetConfig().LinkMetadataEnabled
+	enabled := true
+	if _, err := config.UpdateConfig(context.Background(), &enabled, nil, nil); err != nil {
+		t.Fatalf("failed to enable link metadata: %v", err)
+	}
+	t.Cleanup(func() {
+		if _, err := config.UpdateConfig(context.Background(), &current, nil, nil); err != nil {
+			t.Fatalf("failed to restore link metadata: %v", err)
+		}
+	})
+
+	rdb := newFailingRedisClient(t)
+	t.Cleanup(func() { _ = rdb.Close() })
+
+	userID := testutil.CreateTestUser(t, db, "queuefailpost", "queuefailpost@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Queue Fail Section", "general")
+
+	service := NewPostServiceWithRedis(db, rdb)
+	req := &models.CreatePostRequest{
+		SectionID: sectionID,
+		Content:   "Queue should not fail post creation",
+		Links: []models.LinkRequest{
+			{URL: "https://example.com"},
+		},
+	}
+
+	post, err := service.CreatePost(context.Background(), req, uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("CreatePost failed: %v", err)
+	}
+	if post == nil {
+		t.Fatalf("expected post")
+	}
 }
