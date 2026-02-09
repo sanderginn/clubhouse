@@ -5,6 +5,7 @@
     "description": "Work queue for parallel issue assignment with dependency tracking"
   },
   "completed_issues": [
+    842,
     847,
     852
   ],
@@ -12,7 +13,7 @@
     {
       "issue_number": 842,
       "title": "Fix watchlist category edit and delete buttons not working",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -23,7 +24,9 @@
       "assigned_to": "agent-1770675773-48573",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770675773-48573",
       "branch": "fix/issue-842-fix-watchlist-category-edit-and-delete-b",
-      "claimed_at": "2026-02-09T22:22:53Z"
+      "claimed_at": "2026-02-09T22:22:53Z",
+      "pr_number": 906,
+      "completed_at": "2026-02-09T22:38:08Z"
     },
     {
       "issue_number": 843,
