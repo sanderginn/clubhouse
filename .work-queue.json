@@ -42,6 +42,7 @@
     801,
     802,
     803,
+    804,
     805,
     806
   ],
@@ -753,7 +754,7 @@
     {
       "issue_number": 804,
       "title": "Create MovieStatsBar component",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         802,
         803
@@ -767,7 +768,9 @@
       "assigned_to": "agent-1770634189-29441",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770634189-29441",
       "branch": "feat/issue-804-create-moviestatsbar-component",
-      "claimed_at": "2026-02-09T10:49:49Z"
+      "claimed_at": "2026-02-09T10:49:49Z",
+      "pr_number": 831,
+      "completed_at": "2026-02-09T10:57:58Z"
     },
     {
       "issue_number": 805,
