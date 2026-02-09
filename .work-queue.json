@@ -27,6 +27,7 @@
     786,
     787,
     789,
+    790,
     791
   ],
   "issues": [
@@ -451,7 +452,7 @@
     {
       "issue_number": 790,
       "title": "Create watchlist_items table migration",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -463,7 +464,9 @@
       "assigned_to": "agent-1770625195-19584",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770625195-19584",
       "branch": "feat/issue-790-create-watchlistitems-table-migration",
-      "claimed_at": "2026-02-09T08:19:55Z"
+      "claimed_at": "2026-02-09T08:19:55Z",
+      "pr_number": 811,
+      "completed_at": "2026-02-09T08:35:32Z"
     },
     {
       "issue_number": 791,
