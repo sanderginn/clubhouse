@@ -376,17 +376,29 @@
     {
       "issue_number": 786,
       "title": "Create MovieData and WatchlistItem models",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
-      "labels": ["enhancement", "backend", "movies"],
-      "priority": 23
+      "labels": [
+        "enhancement",
+        "backend",
+        "movies"
+      ],
+      "priority": 23,
+      "assigned_to": "agent-1770625186-19326",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770625186-19326",
+      "branch": "feat/issue-786-create-moviedata-and-watchlistitem-model",
+      "claimed_at": "2026-02-09T08:19:46Z"
     },
     {
       "issue_number": 787,
       "title": "Create WatchLog model and types",
       "status": "available",
       "dependencies": [],
-      "labels": ["enhancement", "backend", "movies"],
+      "labels": [
+        "enhancement",
+        "backend",
+        "movies"
+      ],
       "priority": 24
     },
     {
@@ -394,7 +406,11 @@
       "title": "Create TMDB client library",
       "status": "available",
       "dependencies": [],
-      "labels": ["enhancement", "backend", "movies"],
+      "labels": [
+        "enhancement",
+        "backend",
+        "movies"
+      ],
       "priority": 25
     },
     {
@@ -402,7 +418,12 @@
       "title": "Create watchlist_categories table migration",
       "status": "available",
       "dependencies": [],
-      "labels": ["enhancement", "backend", "movies", "database"],
+      "labels": [
+        "enhancement",
+        "backend",
+        "movies",
+        "database"
+      ],
       "priority": 26
     },
     {
@@ -410,7 +431,12 @@
       "title": "Create watchlist_items table migration",
       "status": "available",
       "dependencies": [],
-      "labels": ["enhancement", "backend", "movies", "database"],
+      "labels": [
+        "enhancement",
+        "backend",
+        "movies",
+        "database"
+      ],
       "priority": 27
     },
     {
@@ -418,151 +444,276 @@
       "title": "Create watch_logs table migration",
       "status": "available",
       "dependencies": [],
-      "labels": ["enhancement", "backend", "movies", "database"],
+      "labels": [
+        "enhancement",
+        "backend",
+        "movies",
+        "database"
+      ],
       "priority": 28
     },
     {
       "issue_number": 792,
       "title": "Create movie metadata extractor",
       "status": "available",
-      "dependencies": [788],
-      "labels": ["enhancement", "backend", "movies"],
+      "dependencies": [
+        788
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "movies"
+      ],
       "priority": 29
     },
     {
       "issue_number": 793,
       "title": "Create watchlist service",
       "status": "available",
-      "dependencies": [786, 789, 790],
-      "labels": ["enhancement", "backend", "movies"],
+      "dependencies": [
+        786,
+        789,
+        790
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "movies"
+      ],
       "priority": 30
     },
     {
       "issue_number": 794,
       "title": "Create watch log service",
       "status": "available",
-      "dependencies": [787, 791],
-      "labels": ["enhancement", "backend", "movies"],
+      "dependencies": [
+        787,
+        791
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "movies"
+      ],
       "priority": 31
     },
     {
       "issue_number": 795,
       "title": "Create watchlist handler",
       "status": "available",
-      "dependencies": [793],
-      "labels": ["enhancement", "backend", "movies"],
+      "dependencies": [
+        793
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "movies"
+      ],
       "priority": 32
     },
     {
       "issue_number": 796,
       "title": "Create watch log handler",
       "status": "available",
-      "dependencies": [794],
-      "labels": ["enhancement", "backend", "movies"],
+      "dependencies": [
+        794
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "movies"
+      ],
       "priority": 33
     },
     {
       "issue_number": 797,
       "title": "Register movie extractor in metadata pipeline",
       "status": "available",
-      "dependencies": [792],
-      "labels": ["enhancement", "backend", "movies"],
+      "dependencies": [
+        792
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "movies"
+      ],
       "priority": 34
     },
     {
       "issue_number": 798,
       "title": "Add movie stats to post responses",
       "status": "available",
-      "dependencies": [793, 794],
-      "labels": ["enhancement", "backend", "movies"],
+      "dependencies": [
+        793,
+        794
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "movies"
+      ],
       "priority": 35
     },
     {
       "issue_number": 799,
       "title": "Register watchlist and watch log routes",
       "status": "available",
-      "dependencies": [795, 796],
-      "labels": ["enhancement", "backend", "movies"],
+      "dependencies": [
+        795,
+        796
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "movies"
+      ],
       "priority": 36
     },
     {
       "issue_number": 800,
       "title": "Add watchlist and watch log API client functions",
       "status": "available",
-      "dependencies": [795, 796],
-      "labels": ["enhancement", "frontend", "movies"],
+      "dependencies": [
+        795,
+        796
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "movies"
+      ],
       "priority": 37
     },
     {
       "issue_number": 801,
       "title": "Create movieStore",
       "status": "available",
-      "dependencies": [800],
-      "labels": ["enhancement", "frontend", "movies"],
+      "dependencies": [
+        800
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "movies"
+      ],
       "priority": 38
     },
     {
       "issue_number": 802,
       "title": "Create WatchlistSaveButton component",
       "status": "available",
-      "dependencies": [801],
-      "labels": ["enhancement", "frontend", "movies"],
+      "dependencies": [
+        801
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "movies"
+      ],
       "priority": 39
     },
     {
       "issue_number": 803,
       "title": "Create WatchButton component",
       "status": "available",
-      "dependencies": [801],
-      "labels": ["enhancement", "frontend", "movies"],
+      "dependencies": [
+        801
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "movies"
+      ],
       "priority": 40
     },
     {
       "issue_number": 804,
       "title": "Create MovieStatsBar component",
       "status": "available",
-      "dependencies": [802, 803],
-      "labels": ["enhancement", "frontend", "movies"],
+      "dependencies": [
+        802,
+        803
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "movies"
+      ],
       "priority": 41
     },
     {
       "issue_number": 805,
       "title": "Create Watchlist view component",
       "status": "available",
-      "dependencies": [801],
-      "labels": ["enhancement", "frontend", "movies"],
+      "dependencies": [
+        801
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "movies"
+      ],
       "priority": 42
     },
     {
       "issue_number": 806,
       "title": "Create MovieCard component",
       "status": "available",
-      "dependencies": [792],
-      "labels": ["enhancement", "frontend", "movies"],
+      "dependencies": [
+        792
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "movies"
+      ],
       "priority": 43
     },
     {
       "issue_number": 807,
       "title": "Integrate MovieStatsBar and MovieCard into PostCard",
       "status": "available",
-      "dependencies": [804, 806],
-      "labels": ["enhancement", "frontend", "movies"],
+      "dependencies": [
+        804,
+        806
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "movies"
+      ],
       "priority": 44
     },
     {
       "issue_number": 808,
       "title": "Add Watchlist route and navigation",
       "status": "available",
-      "dependencies": [805],
-      "labels": ["enhancement", "frontend", "movies"],
+      "dependencies": [
+        805
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "movies"
+      ],
       "priority": 45
     },
     {
       "issue_number": 809,
       "title": "Create movies component index",
       "status": "available",
-      "dependencies": [802, 803, 804, 805, 806],
-      "labels": ["enhancement", "frontend", "movies"],
+      "dependencies": [
+        802,
+        803,
+        804,
+        805,
+        806
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "movies"
+      ],
       "priority": 46
     }
   ]
