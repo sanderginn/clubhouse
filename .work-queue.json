@@ -7,6 +7,7 @@
   "completed_issues": [
     842,
     843,
+    845,
     847,
     852
   ],
@@ -65,7 +66,7 @@
     {
       "issue_number": 845,
       "title": "Add link to TMDB page in MovieCard",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -76,7 +77,9 @@
       "assigned_to": "agent-1770675776-48698",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770675776-48698",
       "branch": "feat/issue-845-add-link-to-tmdb-page-in-moviecard",
-      "claimed_at": "2026-02-09T22:22:56Z"
+      "claimed_at": "2026-02-09T22:22:56Z",
+      "pr_number": 905,
+      "completed_at": "2026-02-09T22:39:53Z"
     },
     {
       "issue_number": 846,
