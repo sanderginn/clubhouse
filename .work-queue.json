@@ -5,6 +5,7 @@
     "description": "Work queue for parallel issue assignment with dependency tracking"
   },
   "completed_issues": [
+    847,
     852
   ],
   "issues": [
@@ -88,7 +89,7 @@
     {
       "issue_number": 847,
       "title": "Fetch and store season data from TMDB for series",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -99,7 +100,9 @@
       "assigned_to": "agent-1770675777-48792",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770675777-48792",
       "branch": "feat/issue-847-fetch-and-store-season-data-from-tmdb-fo",
-      "claimed_at": "2026-02-09T22:22:57Z"
+      "claimed_at": "2026-02-09T22:22:57Z",
+      "pr_number": 904,
+      "completed_at": "2026-02-09T22:31:30Z"
     },
     {
       "issue_number": 848,
@@ -181,14 +184,18 @@
     {
       "issue_number": 853,
       "title": "[Books] Create Open Library API client",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
         "backend",
         "books"
       ],
-      "priority": 61
+      "priority": 61,
+      "assigned_to": "agent-1770676211-64526",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770676211-64526",
+      "branch": "feat/issue-853-books-create-open-library-api-client",
+      "claimed_at": "2026-02-09T22:30:11Z"
     },
     {
       "issue_number": 854,
