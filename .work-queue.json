@@ -715,7 +715,7 @@
     {
       "issue_number": 806,
       "title": "Create MovieCard component",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         792
       ],
@@ -724,7 +724,11 @@
         "frontend",
         "movies"
       ],
-      "priority": 43
+      "priority": 43,
+      "assigned_to": "agent-1770626808-49515",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770626808-49515",
+      "branch": "feat/issue-806-create-moviecard-component",
+      "claimed_at": "2026-02-09T08:46:48Z"
     },
     {
       "issue_number": 807,
