@@ -1076,6 +1076,21 @@
         "movies"
       ],
       "priority": 59
+    },
+    {
+      "issue_number": 851,
+      "title": "Separate Watchlist by section type and display in Series section",
+      "status": "available",
+      "dependencies": [
+        846
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "backend",
+        "movies"
+      ],
+      "priority": 56
     }
   ]
 }
