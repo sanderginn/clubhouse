@@ -40,6 +40,7 @@
     799,
     800,
     801,
+    802,
     803,
     805,
     806
@@ -712,7 +713,7 @@
     {
       "issue_number": 802,
       "title": "Create WatchlistSaveButton component",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         801
       ],
@@ -725,7 +726,9 @@
       "assigned_to": "agent-1770632584-11049",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770632584-11049",
       "branch": "feat/issue-802-create-watchlistsavebutton-component",
-      "claimed_at": "2026-02-09T10:23:04Z"
+      "claimed_at": "2026-02-09T10:23:04Z",
+      "pr_number": 829,
+      "completed_at": "2026-02-09T10:49:07Z"
     },
     {
       "issue_number": 803,
