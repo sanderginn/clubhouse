@@ -12,6 +12,16 @@ type CastMember struct {
 	Character string `json:"character,omitempty"`
 }
 
+// Season represents TV season metadata.
+type Season struct {
+	SeasonNumber int    `json:"season_number"`
+	EpisodeCount int    `json:"episode_count"`
+	AirDate      string `json:"air_date"`
+	Name         string `json:"name"`
+	Overview     string `json:"overview"`
+	Poster       string `json:"poster"`
+}
+
 // MovieData represents normalized movie metadata.
 type MovieData struct {
 	Title       string       `json:"title"`
@@ -22,6 +32,7 @@ type MovieData struct {
 	Genres      []string     `json:"genres"`
 	ReleaseDate string       `json:"release_date"`
 	Cast        []CastMember `json:"cast"`
+	Seasons     []Season     `json:"seasons,omitempty"`
 	Director    string       `json:"director"`
 	TMDBRating  float64      `json:"tmdb_rating"`
 	TrailerKey  string       `json:"trailer_key"`

@@ -103,6 +103,16 @@ type TMDBGenre struct {
 	Name string `json:"name"`
 }
 
+// TMDBSeason represents season details returned by TMDB TV endpoints.
+type TMDBSeason struct {
+	SeasonNumber int    `json:"season_number"`
+	EpisodeCount int    `json:"episode_count"`
+	AirDate      string `json:"air_date"`
+	Name         string `json:"name"`
+	Overview     string `json:"overview"`
+	PosterPath   string `json:"poster_path"`
+}
+
 // TMDBCastMember represents a credited cast member.
 type TMDBCastMember struct {
 	ID        int    `json:"id"`
@@ -158,19 +168,20 @@ type MovieDetails struct {
 
 // TVDetails is the detailed TV response payload.
 type TVDetails struct {
-	ID             int         `json:"id"`
-	Name           string      `json:"name"`
-	Overview       string      `json:"overview"`
-	PosterPath     string      `json:"poster_path"`
-	BackdropPath   string      `json:"backdrop_path"`
-	EpisodeRunTime []int       `json:"episode_run_time"`
-	Runtime        int         `json:"runtime"`
-	Genres         []TMDBGenre `json:"genres"`
-	FirstAirDate   string      `json:"first_air_date"`
-	Credits        TMDBCredits `json:"credits"`
-	Director       string      `json:"director"`
-	VoteAverage    float64     `json:"vote_average"`
-	Videos         TMDBVideos  `json:"videos"`
+	ID             int          `json:"id"`
+	Name           string       `json:"name"`
+	Overview       string       `json:"overview"`
+	PosterPath     string       `json:"poster_path"`
+	BackdropPath   string       `json:"backdrop_path"`
+	EpisodeRunTime []int        `json:"episode_run_time"`
+	Runtime        int          `json:"runtime"`
+	Genres         []TMDBGenre  `json:"genres"`
+	FirstAirDate   string       `json:"first_air_date"`
+	Seasons        []TMDBSeason `json:"seasons"`
+	Credits        TMDBCredits  `json:"credits"`
+	Director       string       `json:"director"`
+	VoteAverage    float64      `json:"vote_average"`
+	Videos         TMDBVideos   `json:"videos"`
 }
 
 // FindResult is the TMDB /find response scoped for IMDB lookups.

@@ -247,6 +247,7 @@ func movieDataFromTVDetails(details *TVDetails) *MovieData {
 		Genres:      tmdbGenreNames(details.Genres),
 		ReleaseDate: strings.TrimSpace(details.FirstAirDate),
 		Cast:        tmdbCastMembers(details.Credits.Cast, movieMetadataCastMaxSize),
+		Seasons:     tmdbSeasons(details.Seasons),
 		Director:    strings.TrimSpace(details.Director),
 		TMDBRating:  details.VoteAverage,
 		TrailerKey:  tmdbTrailerKey(details.Videos.Results),
@@ -319,6 +320,36 @@ func tmdbCastMembers(cast []TMDBCastMember, limit int) []models.CastMember {
 	if len(result) == 0 {
 		return nil
 	}
+	return result
+}
+
+func tmdbSeasons(seasons []TMDBSeason) []models.Season {
+	if len(seasons) == 0 {
+		return nil
+	}
+
+	orderedSeasons := make([]TMDBSeason, len(seasons))
+	copy(orderedSeasons, seasons)
+	sort.SliceStable(orderedSeasons, func(i, j int) bool {
+		return orderedSeasons[i].SeasonNumber < orderedSeasons[j].SeasonNumber
+	})
+
+	result := make([]models.Season, 0, len(orderedSeasons))
+	for _, season := range orderedSeasons {
+		result = append(result, models.Season{
+			SeasonNumber: season.SeasonNumber,
+			EpisodeCount: season.EpisodeCount,
+			AirDate:      strings.TrimSpace(season.AirDate),
+			Name:         strings.TrimSpace(season.Name),
+			Overview:     strings.TrimSpace(season.Overview),
+			Poster:       tmdbImageURL(season.PosterPath, tmdbPosterSize),
+		})
+	}
+
+	if len(result) == 0 {
+		return nil
+	}
+
 	return result
 }
 
