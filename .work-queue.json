@@ -338,7 +338,7 @@
     {
       "issue_number": 859,
       "title": "[Books] Create Bookshelf and ReadLog models",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         852
       ],
@@ -347,7 +347,11 @@
         "backend",
         "books"
       ],
-      "priority": 67
+      "priority": 67,
+      "assigned_to": "agent-1770678395-25839",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770678395-25839",
+      "branch": "feat/issue-859-books-create-bookshelf-and-readlog-model",
+      "claimed_at": "2026-02-09T23:06:35Z"
     },
     {
       "issue_number": 860,
