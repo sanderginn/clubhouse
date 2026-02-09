@@ -4,11 +4,12 @@ CREATE TABLE watchlist_items (
   post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
   category TEXT NOT NULL DEFAULT 'Uncategorized',
   created_at TIMESTAMP NOT NULL DEFAULT now(),
-  deleted_at TIMESTAMP,
-  CONSTRAINT watchlist_items_user_post_category_unique
-    UNIQUE (user_id, post_id, category)
-    WHERE deleted_at IS NULL
+  deleted_at TIMESTAMP
 );
+
+CREATE UNIQUE INDEX watchlist_items_user_post_category_unique
+ON watchlist_items(user_id, post_id, category)
+WHERE deleted_at IS NULL;
 
 CREATE INDEX idx_watchlist_items_user_id ON watchlist_items(user_id) WHERE deleted_at IS NULL;
 CREATE INDEX idx_watchlist_items_post_id ON watchlist_items(post_id) WHERE deleted_at IS NULL;
