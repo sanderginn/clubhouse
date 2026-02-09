@@ -25,6 +25,7 @@
     776,
     777,
     786,
+    787,
     789
   ],
   "issues": [
@@ -396,7 +397,7 @@
     {
       "issue_number": 787,
       "title": "Create WatchLog model and types",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -407,7 +408,9 @@
       "assigned_to": "agent-1770625188-19411",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770625188-19411",
       "branch": "feat/issue-787-create-watchlog-model-and-types",
-      "claimed_at": "2026-02-09T08:19:48Z"
+      "claimed_at": "2026-02-09T08:19:48Z",
+      "pr_number": 813,
+      "completed_at": "2026-02-09T08:32:35Z"
     },
     {
       "issue_number": 788,
