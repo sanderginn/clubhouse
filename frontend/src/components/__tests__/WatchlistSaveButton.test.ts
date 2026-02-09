@@ -137,6 +137,60 @@ describe('WatchlistSaveButton', () => {
     expect(screen.getByLabelText('Classics')).toBeChecked();
   });
 
+  it('keeps dropdown open and focuses inline input when creating a category', async () => {
+    render(WatchlistSaveButton, { postId: 'post-focus' });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Add movie to watchlist' }));
+    await fireEvent.click(screen.getByText('+ Create category'));
+
+    const input = screen.getByLabelText('New category name');
+
+    expect(screen.getByRole('dialog', { name: 'Select watchlist categories' })).toBeInTheDocument();
+    expect(input).toHaveFocus();
+  });
+
+  it('cancels inline category creation on Escape without closing dropdown', async () => {
+    render(WatchlistSaveButton, { postId: 'post-escape' });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Add movie to watchlist' }));
+    await fireEvent.click(screen.getByText('+ Create category'));
+
+    const input = screen.getByLabelText('New category name');
+    await fireEvent.input(input, { target: { value: 'Classics' } });
+    await fireEvent.keyDown(input, { key: 'Escape' });
+
+    expect(screen.queryByTestId('watchlist-new-category-inline')).not.toBeInTheDocument();
+    expect(screen.getByText('+ Create category')).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Select watchlist categories' })).toBeInTheDocument();
+    expect(apiCreateWatchlistCategory).not.toHaveBeenCalled();
+  });
+
+  it('creates category on Enter and auto-selects it', async () => {
+    apiCreateWatchlistCategory.mockResolvedValue({
+      category: {
+        id: 'cat-enter',
+        name: 'Sci-Fi',
+        position: 3,
+      },
+    });
+
+    render(WatchlistSaveButton, { postId: 'post-enter' });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Add movie to watchlist' }));
+    await fireEvent.click(screen.getByText('+ Create category'));
+
+    const input = screen.getByLabelText('New category name');
+    await fireEvent.input(input, { target: { value: 'Sci-Fi' } });
+    await fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() => {
+      expect(apiCreateWatchlistCategory).toHaveBeenCalledWith('Sci-Fi');
+    });
+
+    expect(screen.getByLabelText('Sci-Fi')).toBeChecked();
+    expect(screen.getByRole('dialog', { name: 'Select watchlist categories' })).toBeInTheDocument();
+  });
+
   it('keeps initial saved state when initial watchlist load fails', async () => {
     apiGetMyWatchlist.mockRejectedValue(new Error('Load failed'));
 

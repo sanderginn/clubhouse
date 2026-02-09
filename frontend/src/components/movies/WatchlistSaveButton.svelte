@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
+  import { onDestroy, onMount, tick } from 'svelte';
   import { get } from 'svelte/store';
   import {
     api,
@@ -29,6 +29,7 @@
   let dropdownPlacement: 'bottom' | 'top' = 'bottom';
   let triggerRef: HTMLButtonElement | null = null;
   let dropdownRef: HTMLDivElement | null = null;
+  let newCategoryInputRef: HTMLInputElement | null = null;
   let pendingSelection = new Set<string>();
   let toastMessage: string | null = null;
   let lastToggleAt = 0;
@@ -176,10 +177,12 @@
     pendingSelection = next;
   }
 
-  function openInlineCategoryCreate() {
+  async function openInlineCategoryCreate() {
     showCreateCategoryInline = true;
     newCategoryName = '';
     createCategoryError = null;
+    await tick();
+    newCategoryInputRef?.focus();
   }
 
   function cancelInlineCategoryCreate() {
@@ -370,6 +373,14 @@
       return;
     }
 
+    const eventPath = typeof event.composedPath === 'function' ? event.composedPath() : [];
+    if (triggerRef && eventPath.includes(triggerRef)) {
+      return;
+    }
+    if (dropdownRef && eventPath.includes(dropdownRef)) {
+      return;
+    }
+
     const target = event.target;
     if (triggerRef && target instanceof Node && triggerRef.contains(target)) {
       return;
@@ -485,6 +496,7 @@
         {#if showCreateCategoryInline}
           <div class="space-y-2" data-testid="watchlist-new-category-inline">
             <input
+              bind:this={newCategoryInputRef}
               class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="New category name"
               bind:value={newCategoryName}
@@ -493,6 +505,12 @@
                 if (event.key === 'Enter') {
                   event.preventDefault();
                   createCategory();
+                  return;
+                }
+                if (event.key === 'Escape') {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  cancelInlineCategoryCreate();
                 }
               }}
             />
