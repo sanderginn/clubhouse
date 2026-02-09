@@ -85,9 +85,11 @@ func TestFetchMetadataHTML(t *testing.T) {
 
 func TestFetchMetadataMovieSectionIncludesMovieMetadata(t *testing.T) {
 	originalNewTMDBClientFromEnvFunc := newTMDBClientFromEnvFunc
+	originalNewOMDBClientFromEnvFunc := newOMDBClientFromEnvFunc
 	originalParseMovieMetadataFunc := parseMovieMetadataFunc
 	t.Cleanup(func() {
 		newTMDBClientFromEnvFunc = originalNewTMDBClientFromEnvFunc
+		newOMDBClientFromEnvFunc = originalNewOMDBClientFromEnvFunc
 		parseMovieMetadataFunc = originalParseMovieMetadataFunc
 	})
 
@@ -95,7 +97,7 @@ func TestFetchMetadataMovieSectionIncludesMovieMetadata(t *testing.T) {
 	newTMDBClientFromEnvFunc = func() (*TMDBClient, error) {
 		return &TMDBClient{}, nil
 	}
-	parseMovieMetadataFunc = func(ctx context.Context, rawURL string, client *TMDBClient) (*MovieData, error) {
+	parseMovieMetadataFunc = func(ctx context.Context, rawURL string, client *TMDBClient, omdbClient *OMDBClient) (*MovieData, error) {
 		parseCalls++
 		if rawURL != "https://www.imdb.com/title/tt0133093/" {
 			t.Fatalf("rawURL = %q, want imdb url", rawURL)
@@ -139,11 +141,13 @@ func TestFetchMetadataMovieSectionIncludesMovieMetadata(t *testing.T) {
 	}
 }
 
-func TestFetchMetadataGeneralSectionSkipsMovieMetadata(t *testing.T) {
+func TestFetchMetadataMovieSectionPassesOMDBClientWhenConfigured(t *testing.T) {
 	originalNewTMDBClientFromEnvFunc := newTMDBClientFromEnvFunc
+	originalNewOMDBClientFromEnvFunc := newOMDBClientFromEnvFunc
 	originalParseMovieMetadataFunc := parseMovieMetadataFunc
 	t.Cleanup(func() {
 		newTMDBClientFromEnvFunc = originalNewTMDBClientFromEnvFunc
+		newOMDBClientFromEnvFunc = originalNewOMDBClientFromEnvFunc
 		parseMovieMetadataFunc = originalParseMovieMetadataFunc
 	})
 
@@ -151,7 +155,63 @@ func TestFetchMetadataGeneralSectionSkipsMovieMetadata(t *testing.T) {
 	newTMDBClientFromEnvFunc = func() (*TMDBClient, error) {
 		return &TMDBClient{}, nil
 	}
-	parseMovieMetadataFunc = func(ctx context.Context, rawURL string, client *TMDBClient) (*MovieData, error) {
+	newOMDBClientFromEnvFunc = func() (*OMDBClient, error) {
+		return &OMDBClient{}, nil
+	}
+	parseMovieMetadataFunc = func(ctx context.Context, rawURL string, client *TMDBClient, omdbClient *OMDBClient) (*MovieData, error) {
+		parseCalls++
+		if omdbClient == nil {
+			t.Fatal("expected omdb client to be provided")
+		}
+		return &MovieData{Title: "The Matrix"}, nil
+	}
+
+	fetcher := NewFetcher(&http.Client{
+		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Status:     "200 OK",
+				Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
+				Body:       io.NopCloser(strings.NewReader(`<!doctype html><html><head><meta property="og:title" content="Fallback Title" /></head></html>`)),
+				Request:    r,
+			}, nil
+		}),
+	})
+	fetcher.resolver = fakeResolver{
+		addrs: map[string][]net.IPAddr{
+			"www.imdb.com": {{IP: net.ParseIP("93.184.216.34")}},
+		},
+	}
+
+	ctx := WithMetadataSectionType(context.Background(), "movie")
+	metadata, err := fetcher.Fetch(ctx, "https://www.imdb.com/title/tt0133093/")
+	if err != nil {
+		t.Fatalf("Fetch error: %v", err)
+	}
+
+	if parseCalls != 1 {
+		t.Fatalf("parseCalls = %d, want 1", parseCalls)
+	}
+	if _, ok := metadata["movie"]; !ok {
+		t.Fatalf("expected movie metadata to be present")
+	}
+}
+
+func TestFetchMetadataGeneralSectionSkipsMovieMetadata(t *testing.T) {
+	originalNewTMDBClientFromEnvFunc := newTMDBClientFromEnvFunc
+	originalNewOMDBClientFromEnvFunc := newOMDBClientFromEnvFunc
+	originalParseMovieMetadataFunc := parseMovieMetadataFunc
+	t.Cleanup(func() {
+		newTMDBClientFromEnvFunc = originalNewTMDBClientFromEnvFunc
+		newOMDBClientFromEnvFunc = originalNewOMDBClientFromEnvFunc
+		parseMovieMetadataFunc = originalParseMovieMetadataFunc
+	})
+
+	parseCalls := 0
+	newTMDBClientFromEnvFunc = func() (*TMDBClient, error) {
+		return &TMDBClient{}, nil
+	}
+	parseMovieMetadataFunc = func(ctx context.Context, rawURL string, client *TMDBClient, omdbClient *OMDBClient) (*MovieData, error) {
 		parseCalls++
 		return &MovieData{Title: "Should Not Be Used"}, nil
 	}
@@ -189,16 +249,18 @@ func TestFetchMetadataGeneralSectionSkipsMovieMetadata(t *testing.T) {
 
 func TestFetchMetadataMovieParserFailureFallsBackToHTMLMetadata(t *testing.T) {
 	originalNewTMDBClientFromEnvFunc := newTMDBClientFromEnvFunc
+	originalNewOMDBClientFromEnvFunc := newOMDBClientFromEnvFunc
 	originalParseMovieMetadataFunc := parseMovieMetadataFunc
 	t.Cleanup(func() {
 		newTMDBClientFromEnvFunc = originalNewTMDBClientFromEnvFunc
+		newOMDBClientFromEnvFunc = originalNewOMDBClientFromEnvFunc
 		parseMovieMetadataFunc = originalParseMovieMetadataFunc
 	})
 
 	newTMDBClientFromEnvFunc = func() (*TMDBClient, error) {
 		return &TMDBClient{}, nil
 	}
-	parseMovieMetadataFunc = func(ctx context.Context, rawURL string, client *TMDBClient) (*MovieData, error) {
+	parseMovieMetadataFunc = func(ctx context.Context, rawURL string, client *TMDBClient, omdbClient *OMDBClient) (*MovieData, error) {
 		return nil, errors.New("tmdb unavailable")
 	}
 

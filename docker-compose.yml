@@ -159,6 +159,7 @@ services:
       CLUBHOUSE_UPLOAD_DIR: /data/uploads
       CLUBHOUSE_UPLOAD_MAX_BYTES: ${CLUBHOUSE_UPLOAD_MAX_BYTES:-10485760}
       TMDB_API_KEY: ${TMDB_API_KEY:-}
+      OMDB_API_KEY: ${OMDB_API_KEY:-}
     ports:
       - "8080:8080"
     volumes:

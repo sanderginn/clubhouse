@@ -32,6 +32,7 @@ const metadataSectionTypeContextKey metadataContextKey = "link_metadata_section_
 
 var (
 	newTMDBClientFromEnvFunc = NewTMDBClientFromEnv
+	newOMDBClientFromEnvFunc = NewOMDBClientFromEnv
 	parseMovieMetadataFunc   = ParseMovieMetadata
 )
 
@@ -201,7 +202,12 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	}
 	if shouldExtractMovieMetadata(ctx) {
 		if tmdbClient, err := newTMDBClientFromEnvFunc(); err == nil {
-			if movie, movieErr := parseMovieMetadataFunc(ctx, rawURL, tmdbClient); movieErr == nil && movie != nil {
+			var omdbClient *OMDBClient
+			if omdb, omdbErr := newOMDBClientFromEnvFunc(); omdbErr == nil {
+				omdbClient = omdb
+			}
+
+			if movie, movieErr := parseMovieMetadataFunc(ctx, rawURL, tmdbClient, omdbClient); movieErr == nil && movie != nil {
 				metadata["movie"] = movie
 			}
 		}

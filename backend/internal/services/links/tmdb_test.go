@@ -96,7 +96,7 @@ func TestTMDBClientGetMovieDetails(t *testing.T) {
 		if r.URL.Path != "/movie/550" {
 			t.Fatalf("path = %q, want /movie/550", r.URL.Path)
 		}
-		if r.URL.Query().Get("append_to_response") != "credits,videos" {
+		if r.URL.Query().Get("append_to_response") != "credits,videos,external_ids" {
 			t.Fatalf("append_to_response = %q", r.URL.Query().Get("append_to_response"))
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -110,6 +110,7 @@ func TestTMDBClientGetMovieDetails(t *testing.T) {
 			"genres":[{"id":18,"name":"Drama"}],
 			"release_date":"1999-10-15",
 			"vote_average":8.4,
+			"imdb_id":"tt0137523",
 			"credits":{
 				"cast":[{"id":287,"name":"Brad Pitt","character":"Tyler Durden","order":0}],
 				"crew":[{"id":7467,"name":"David Fincher","job":"Director","department":"Directing"}]
@@ -132,6 +133,9 @@ func TestTMDBClientGetMovieDetails(t *testing.T) {
 	}
 	if details.Director != "David Fincher" {
 		t.Fatalf("director = %q, want David Fincher", details.Director)
+	}
+	if details.IMDBID != "tt0137523" {
+		t.Fatalf("imdb_id = %q, want tt0137523", details.IMDBID)
 	}
 	if len(details.Videos.Results) != 1 || details.Videos.Results[0].Key != "SUXWAEX2jlg" {
 		t.Fatalf("unexpected videos payload: %+v", details.Videos.Results)
@@ -158,6 +162,7 @@ func TestTMDBClientGetTVDetails(t *testing.T) {
 				{"season_number":0,"episode_count":3,"air_date":"2010-12-05","name":"Specials","overview":"Bonus episodes.","poster_path":"/specials.jpg"}
 			],
 			"vote_average":8.5,
+			"external_ids":{"imdb_id":"tt0944947"},
 			"credits":{
 				"cast":[{"id":239019,"name":"Emilia Clarke","character":"Daenerys Targaryen","order":1}],
 				"crew":[{"id":9813,"name":"Miguel Sapochnik","job":"Director","department":"Directing"}]
@@ -192,6 +197,9 @@ func TestTMDBClientGetTVDetails(t *testing.T) {
 	}
 	if details.Director != "Miguel Sapochnik" {
 		t.Fatalf("director = %q, want Miguel Sapochnik", details.Director)
+	}
+	if details.ExternalIDs.IMDBID != "tt0944947" {
+		t.Fatalf("external imdb_id = %q, want tt0944947", details.ExternalIDs.IMDBID)
 	}
 }
 
