@@ -3,6 +3,7 @@ import { render, screen, cleanup, fireEvent } from '@testing-library/svelte';
 import type { Post } from '../../stores/postStore';
 import { authStore } from '../../stores';
 import { sectionStore } from '../../stores/sectionStore';
+import { mapApiPost } from '../../stores/postMapper';
 import { tick } from 'svelte';
 
 const loadThreadComments = vi.hoisted(() => vi.fn());
@@ -25,6 +26,25 @@ vi.mock('../../services/api', () => ({
 }));
 
 const { default: PostCard } = await import('../PostCard.svelte');
+
+type MovieMetadataForTest = {
+  title: string;
+  overview?: string;
+  poster?: string;
+  runtime?: number;
+  genres?: string[];
+  release_date?: string;
+  director?: string;
+  tmdb_rating?: number;
+  trailer_key?: string;
+  cast?: Array<{ name: string; character: string }>;
+};
+
+type LinkMetadataWithMovieForTest = NonNullable<
+  NonNullable<Post['links']>[number]['metadata']
+> & {
+  movie?: MovieMetadataForTest;
+};
 
 const basePost: Post = {
   id: 'post-1',
@@ -156,6 +176,200 @@ describe('PostCard', () => {
     render(PostCard, { post: postWithRecipe });
     expect(screen.getByText('Tomato Soup')).toBeInTheDocument();
     expect(screen.getByText('View Recipe')).toBeInTheDocument();
+  });
+
+  it('renders movie stats bar for movie sections', () => {
+    sectionStore.setSections([
+      {
+        id: 'section-1',
+        name: 'Movies',
+        type: 'movie',
+        icon: '🎬',
+        slug: 'movies',
+      },
+    ]);
+
+    const postWithMovieStats: Post = {
+      ...basePost,
+      movieStats: {
+        watchlistCount: 5,
+        watchCount: 3,
+        averageRating: 4.5,
+        viewerWatchlisted: true,
+        viewerWatched: false,
+        viewerRating: null,
+        viewerCategories: ['Favorites'],
+      },
+    };
+
+    render(PostCard, { post: postWithMovieStats });
+    expect(screen.getByTestId('movie-stats-bar')).toBeInTheDocument();
+  });
+
+  it('renders movie card for movie metadata links in movie sections', () => {
+    sectionStore.setSections([
+      {
+        id: 'section-1',
+        name: 'Movies',
+        type: 'movie',
+        icon: '🎬',
+        slug: 'movies',
+      },
+    ]);
+
+    const metadataWithMovie: LinkMetadataWithMovieForTest = {
+      url: 'https://www.imdb.com/title/tt0816692/',
+      provider: 'imdb',
+      title: 'Interstellar',
+      movie: {
+        title: 'Interstellar',
+        overview: "A team travels through a wormhole to save humanity's future.",
+        runtime: 169,
+        genres: ['Sci-Fi', 'Drama'],
+        release_date: '2014-11-07',
+        director: 'Christopher Nolan',
+        tmdb_rating: 8.6,
+      },
+    };
+
+    const moviePost: Post = {
+      ...basePost,
+      links: [
+        {
+          url: 'https://www.imdb.com/title/tt0816692/',
+          metadata: metadataWithMovie,
+        },
+      ],
+    };
+
+    render(PostCard, { post: moviePost });
+    expect(screen.getByTestId('movie-card')).toBeInTheDocument();
+    expect(screen.getByTestId('movie-title')).toHaveTextContent('Interstellar');
+  });
+
+  it('renders movie card from mapped API metadata payload', () => {
+    sectionStore.setSections([
+      {
+        id: 'section-1',
+        name: 'Movies',
+        type: 'movie',
+        icon: '🎬',
+        slug: 'movies',
+      },
+    ]);
+
+    const mappedPost = mapApiPost({
+      id: 'post-from-api',
+      user_id: 'user-1',
+      section_id: 'section-1',
+      content: 'Interstellar',
+      created_at: '2025-01-01T00:00:00Z',
+      links: [
+        {
+          url: 'https://www.imdb.com/title/tt0816692/',
+          metadata: {
+            movie: {
+              title: 'Interstellar',
+              runtime: 169,
+              genres: ['Sci-Fi', 'Drama'],
+              release_date: '2014-11-07',
+              tmdb_rating: 8.6,
+            },
+          },
+        },
+      ],
+    });
+
+    render(PostCard, { post: mappedPost });
+
+    expect(screen.getByTestId('movie-card')).toBeInTheDocument();
+    expect(screen.getByTestId('movie-title')).toHaveTextContent('Interstellar');
+    expect(screen.getByTestId('movie-meta-line')).toHaveTextContent('★ 8.6 · 2h 49m');
+  });
+
+  it('does not render movie components for non-movie sections', () => {
+    sectionStore.setSections([
+      {
+        id: 'section-1',
+        name: 'General',
+        type: 'general',
+        icon: '💬',
+        slug: 'general',
+      },
+    ]);
+
+    const metadataWithMovie: LinkMetadataWithMovieForTest = {
+      url: 'https://www.imdb.com/title/tt0816692/',
+      provider: 'imdb',
+      title: 'Interstellar',
+      movie: {
+        title: 'Interstellar',
+      },
+    };
+
+    const generalPostWithMovieData: Post = {
+      ...basePost,
+      links: [
+        {
+          url: 'https://www.imdb.com/title/tt0816692/',
+          metadata: metadataWithMovie,
+        },
+      ],
+      movieStats: {
+        watchlistCount: 5,
+        watchCount: 2,
+        averageRating: 4,
+      },
+    };
+
+    render(PostCard, { post: generalPostWithMovieData });
+
+    expect(screen.queryByTestId('movie-card')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('movie-stats-bar')).not.toBeInTheDocument();
+  });
+
+  it('keeps recipe section rendering intact', () => {
+    sectionStore.setSections([
+      {
+        id: 'section-1',
+        name: 'Recipes',
+        type: 'recipe',
+        icon: '🍳',
+        slug: 'recipes',
+      },
+    ]);
+
+    const postWithRecipe: Post = {
+      ...basePost,
+      links: [
+        {
+          url: 'https://example.com/recipe',
+          metadata: {
+            url: 'https://example.com/recipe',
+            title: 'Example Recipe',
+            image: 'https://example.com/recipe.jpg',
+            recipe: {
+              name: 'Tomato Soup',
+              prep_time: '10m',
+              cook_time: '20m',
+              yield: '2',
+              ingredients: ['Tomatoes', 'Salt'],
+              instructions: ['Simmer', 'Serve'],
+            },
+          },
+        },
+      ],
+      recipeStats: {
+        saveCount: 12,
+        cookCount: 6,
+        averageRating: 4.8,
+      },
+    };
+
+    render(PostCard, { post: postWithRecipe });
+    expect(screen.getByText('Tomato Soup')).toBeInTheDocument();
+    expect(screen.getByTestId('recipe-stats-bar')).toBeInTheDocument();
+    expect(screen.queryByTestId('movie-card')).not.toBeInTheDocument();
   });
 
   it('renders highlights when link includes them', () => {

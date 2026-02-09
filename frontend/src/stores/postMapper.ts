@@ -8,6 +8,8 @@ import type {
   MovieStats,
   EmbedData,
   RecipeMetadata,
+  MovieMetadata,
+  MovieCastMember,
 } from './postStore';
 
 export interface ApiUser {
@@ -218,6 +220,101 @@ function normalizeRecipeMetadata(rawRecipe: unknown): RecipeMetadata | undefined
   };
 }
 
+function normalizeMovieMetadata(rawMovie: unknown): MovieMetadata | undefined {
+  if (!rawMovie) {
+    return undefined;
+  }
+
+  let movie: Record<string, unknown> | null = null;
+  if (typeof rawMovie === 'string') {
+    try {
+      const parsed = JSON.parse(rawMovie) as unknown;
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        movie = parsed as Record<string, unknown>;
+      }
+    } catch {
+      return undefined;
+    }
+  } else if (typeof rawMovie === 'object' && !Array.isArray(rawMovie)) {
+    movie = rawMovie as Record<string, unknown>;
+  }
+
+  if (!movie) {
+    return undefined;
+  }
+
+  const title = normalizeString(movie.title) ?? normalizeString(movie.name);
+  const overview = normalizeString(movie.overview) ?? normalizeString(movie.description);
+  const poster =
+    normalizeString(movie.poster) ??
+    normalizeString(movie.poster_url) ??
+    normalizeString(movie.posterUrl);
+  const backdrop =
+    normalizeString(movie.backdrop) ??
+    normalizeString(movie.backdrop_url) ??
+    normalizeString(movie.backdropUrl);
+  const runtime = normalizeNumber(movie.runtime);
+  const genres = normalizeStringArray(movie.genres);
+  const releaseDate = normalizeString(movie.release_date ?? movie.releaseDate);
+  const director = normalizeString(movie.director);
+  const tmdbRating = normalizeNumber(movie.tmdb_rating ?? movie.tmdbRating);
+  const trailerKey = normalizeString(movie.trailer_key ?? movie.trailerKey);
+
+  const cast = Array.isArray(movie.cast)
+    ? movie.cast
+        .map((castMember) => {
+          if (!castMember || typeof castMember !== 'object' || Array.isArray(castMember)) {
+            return null;
+          }
+          const castRecord = castMember as Record<string, unknown>;
+          const name = normalizeString(castRecord.name);
+          if (!name) {
+            return null;
+          }
+          const character = normalizeString(castRecord.character);
+          const normalizedCastMember: MovieCastMember = {
+            name,
+          };
+          if (character) {
+            normalizedCastMember.character = character;
+          }
+          return normalizedCastMember;
+        })
+        .filter((value): value is MovieCastMember => value !== null)
+    : undefined;
+
+  const hasMovieMetadata =
+    !!title ||
+    !!overview ||
+    !!poster ||
+    !!backdrop ||
+    typeof runtime === 'number' ||
+    !!(genres && genres.length > 0) ||
+    !!releaseDate ||
+    !!director ||
+    typeof tmdbRating === 'number' ||
+    !!trailerKey ||
+    !!(cast && cast.length > 0);
+
+  if (!hasMovieMetadata) {
+    return undefined;
+  }
+
+  return {
+    ...(title ? { title } : {}),
+    ...(overview ? { overview } : {}),
+    ...(poster ? { poster } : {}),
+    ...(backdrop ? { backdrop } : {}),
+    ...(typeof runtime === 'number' ? { runtime } : {}),
+    ...(genres ? { genres } : {}),
+    ...(releaseDate ? { releaseDate } : {}),
+    ...(cast ? { cast } : {}),
+    ...(director ? { director } : {}),
+    ...(typeof tmdbRating === 'number' ? { tmdbRating } : {}),
+    ...(trailerKey ? { trailerKey } : {}),
+  };
+}
+
 function normalizeRecipeStats(rawStats: unknown): RecipeStats | undefined {
   if (!rawStats || typeof rawStats !== 'object') {
     return undefined;
@@ -417,6 +514,7 @@ export function normalizeLinkMetadata(
     normalizeString(metadata.og_type) ??
     normalizeString(metadata.ogType);
   const recipe = normalizeRecipeMetadata(metadata.recipe);
+  const movie = normalizeMovieMetadata(metadata.movie);
 
   const hasMetadata =
     !!provider ||
@@ -428,7 +526,8 @@ export function normalizeLinkMetadata(
     !!resolvedEmbedUrl ||
     !!embed ||
     !!type ||
-    !!recipe;
+    !!recipe ||
+    !!movie;
   if (!hasMetadata) {
     return undefined;
   }
@@ -445,6 +544,7 @@ export function normalizeLinkMetadata(
     embed,
     type,
     ...(recipe ? { recipe } : {}),
+    ...(movie ? { movie } : {}),
   };
 }
 

@@ -27,6 +27,7 @@ export interface LinkMetadata {
   embed?: EmbedData;
   type?: string;
   recipe?: RecipeMetadata;
+  movie?: MovieMetadata;
 }
 
 export interface EmbedData {
@@ -57,6 +58,25 @@ export interface RecipeMetadata {
   cuisine?: string;
   category?: string;
   nutrition?: RecipeNutritionInfo;
+}
+
+export interface MovieCastMember {
+  name: string;
+  character?: string;
+}
+
+export interface MovieMetadata {
+  title?: string;
+  overview?: string;
+  poster?: string;
+  backdrop?: string;
+  runtime?: number;
+  genres?: string[];
+  releaseDate?: string;
+  cast?: MovieCastMember[];
+  director?: string;
+  tmdbRating?: number;
+  trailerKey?: string;
 }
 
 export interface PostImage {
