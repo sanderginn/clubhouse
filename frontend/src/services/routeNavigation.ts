@@ -4,6 +4,7 @@ const THREAD_PATH_SEGMENT = '/posts/';
 const ADMIN_PATH = '/admin';
 const SETTINGS_PATH = '/settings';
 const WATCHLIST_PATH = '/watchlist';
+const WATCHLIST_SEGMENT = WATCHLIST_PATH.slice(1);
 
 export type SearchHistoryState = {
   query: string;
@@ -25,6 +26,10 @@ export function buildThreadHref(sectionSlug: string, postId: string): string {
 
 export function buildStandaloneThreadHref(postId: string): string {
   return `${THREAD_ROOT_PATH}${postId}`;
+}
+
+export function buildSectionWatchlistHref(sectionSlug: string): string {
+  return `${buildSectionHref(sectionSlug)}/${WATCHLIST_SEGMENT}`;
 }
 
 export function parseSectionSlug(pathname: string): string | null {
@@ -63,6 +68,22 @@ export function parseStandaloneThreadPostId(pathname: string): string | null {
   const [postId] = remainder.split('/');
   const trimmed = postId?.trim();
   return trimmed ? trimmed : null;
+}
+
+export function parseSectionWatchlistSlug(pathname: string): string | null {
+  if (!pathname.startsWith(SECTION_PATH_PREFIX)) {
+    return null;
+  }
+  const remainder = pathname.slice(SECTION_PATH_PREFIX.length);
+  const [sectionSlug, segment] = remainder.split('/');
+  if (!sectionSlug || segment !== WATCHLIST_SEGMENT) {
+    return null;
+  }
+  try {
+    return decodeURIComponent(sectionSlug);
+  } catch {
+    return sectionSlug;
+  }
 }
 
 export function parseThreadCommentId(search: string): string | null {

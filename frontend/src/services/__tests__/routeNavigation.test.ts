@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildAdminHref,
   buildFeedHref,
+  buildSectionWatchlistHref,
   buildSectionHref,
   buildStandaloneThreadHref,
   buildSettingsHref,
@@ -10,6 +11,7 @@ import {
   isAdminPath,
   isSettingsPath,
   isWatchlistPath,
+  parseSectionWatchlistSlug,
   parseStandaloneThreadPostId,
   parseSectionSlug,
   parseThreadCommentId,
@@ -70,6 +72,13 @@ describe('routeNavigation', () => {
     expect(isWatchlistPath('/watchlist')).toBe(true);
     expect(isWatchlistPath('/watchlist/favorites')).toBe(true);
     expect(isWatchlistPath('/sections/movies')).toBe(false);
+  });
+
+  it('builds and parses section watchlist hrefs', () => {
+    expect(buildSectionWatchlistHref('movies')).toBe('/sections/movies/watchlist');
+    expect(parseSectionWatchlistSlug('/sections/movies/watchlist')).toBe('movies');
+    expect(parseSectionWatchlistSlug('/sections/movies')).toBeNull();
+    expect(parseSectionWatchlistSlug('/watchlist')).toBeNull();
   });
 
   it('builds feed hrefs from section slugs', () => {

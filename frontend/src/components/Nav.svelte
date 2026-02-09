@@ -13,7 +13,6 @@
   import {
     buildAdminHref,
     buildSectionHref,
-    buildWatchlistHref,
     pushPath,
   } from '../services/routeNavigation';
   import type { Section } from '../stores/sectionStore';
@@ -32,11 +31,6 @@
     pushPath(buildAdminHref());
   }
 
-  function handleWatchlistClick() {
-    uiStore.setActiveView('watchlist');
-    threadRouteStore.clearTarget();
-    pushPath(buildWatchlistHref());
-  }
 </script>
 
 <nav class="flex flex-col h-full" aria-label="Main navigation">
@@ -62,21 +56,6 @@
       {/each}
     </ul>
 
-    {#if $isAuthenticated}
-      <div class="mt-4 border-t border-gray-200 px-2 pt-4">
-        <button
-          on:click={handleWatchlistClick}
-          class="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors
-            {$activeView === 'watchlist'
-            ? 'bg-indigo-600 text-white'
-            : 'text-gray-700 hover:bg-indigo-50'}"
-          aria-current={$activeView === 'watchlist' ? 'page' : undefined}
-        >
-          <span class="text-lg" aria-hidden="true">🎬</span>
-          <span>My Movies</span>
-        </button>
-      </div>
-    {/if}
   </div>
 
   {#if $isAuthenticated}
