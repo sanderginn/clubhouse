@@ -45,6 +45,12 @@ type WatchLogResponse struct {
 	User     WatchLogUser `json:"user"`
 }
 
+// WatchLogWithPost represents a watch log with its related post.
+type WatchLogWithPost struct {
+	WatchLog
+	Post *Post `json:"post,omitempty"`
+}
+
 // PostWatchLogsResponse represents watch log summary and entries for a post.
 type PostWatchLogsResponse struct {
 	WatchCount    int                `json:"watch_count"`
