@@ -271,6 +271,105 @@ describe('Watchlist', () => {
     expect(screen.queryByTestId('watchlist-my-item-post-1')).not.toBeInTheDocument();
   });
 
+  it('supports inline category rename', async () => {
+    const updateSpy = vi.spyOn(movieStore, 'updateCategory').mockResolvedValue();
+
+    render(Watchlist);
+
+    await fireEvent.click(screen.getByTestId('watchlist-category-edit-cat-1'));
+    const editInput = await screen.findByTestId('watchlist-category-edit-input');
+    expect(editInput).toHaveValue('Favorites');
+
+    await fireEvent.input(editInput, {
+      target: { value: 'Top Picks' },
+    });
+    await fireEvent.click(await screen.findByTestId('watchlist-category-edit-save'));
+
+    await waitFor(() => {
+      expect(updateSpy).toHaveBeenCalledWith('cat-1', { name: 'Top Picks' });
+    });
+  });
+
+  it('shows a confirmation prompt before deleting category', async () => {
+    const deleteSpy = vi.spyOn(movieStore, 'deleteCategory').mockResolvedValue();
+
+    render(Watchlist);
+
+    await fireEvent.click(screen.getByTestId('watchlist-category-delete-cat-1'));
+    expect(await screen.findByTestId('watchlist-category-delete-confirm')).toBeInTheDocument();
+
+    await fireEvent.click(await screen.findByTestId('watchlist-category-delete-confirm-button'));
+
+    await waitFor(() => {
+      expect(deleteSpy).toHaveBeenCalledWith('cat-1');
+    });
+  });
+
+  it('shows loading states while category actions are in progress', async () => {
+    let resolveRename: (() => void) | null = null;
+    let resolveDelete: (() => void) | null = null;
+
+    vi.spyOn(movieStore, 'updateCategory').mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveRename = resolve;
+        })
+    );
+    vi.spyOn(movieStore, 'deleteCategory').mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveDelete = resolve;
+        })
+    );
+
+    render(Watchlist);
+
+    await fireEvent.click(screen.getByTestId('watchlist-category-edit-cat-1'));
+    await fireEvent.input(await screen.findByTestId('watchlist-category-edit-input'), {
+      target: { value: 'Top Picks' },
+    });
+    await fireEvent.click(await screen.findByTestId('watchlist-category-edit-save'));
+    const renameSaveButton = await screen.findByTestId('watchlist-category-edit-save');
+    expect(renameSaveButton).toBeDisabled();
+    expect(renameSaveButton).toHaveTextContent('Saving...');
+
+    resolveRename?.();
+    await waitFor(() => {
+      expect(screen.queryByTestId('watchlist-category-edit-input')).not.toBeInTheDocument();
+    });
+
+    await fireEvent.click(screen.getByTestId('watchlist-category-delete-cat-1'));
+    await fireEvent.click(await screen.findByTestId('watchlist-category-delete-confirm-button'));
+    const deleteConfirmButton = await screen.findByTestId(
+      'watchlist-category-delete-confirm-button'
+    );
+    expect(deleteConfirmButton).toBeDisabled();
+    expect(deleteConfirmButton).toHaveTextContent('Deleting...');
+
+    resolveDelete?.();
+    await waitFor(() => {
+      expect(screen.queryByTestId('watchlist-category-delete-confirm')).not.toBeInTheDocument();
+    });
+  });
+
+  it('shows category action error when rename fails', async () => {
+    vi.spyOn(movieStore, 'updateCategory').mockImplementation(async () => {
+      movieStore.setError('Rename failed');
+    });
+
+    render(Watchlist);
+
+    await fireEvent.click(screen.getByTestId('watchlist-category-edit-cat-1'));
+    await fireEvent.input(await screen.findByTestId('watchlist-category-edit-input'), {
+      target: { value: 'Top Picks' },
+    });
+    await fireEvent.click(await screen.findByTestId('watchlist-category-edit-save'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('watchlist-category-error')).toHaveTextContent('Rename failed');
+    });
+  });
+
   it('shows empty states for no saved movies and empty selected category', async () => {
     movieStore.reset();
 
