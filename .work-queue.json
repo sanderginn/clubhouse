@@ -645,7 +645,7 @@
     {
       "issue_number": 799,
       "title": "Register watchlist and watch log routes",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         795,
         796
@@ -655,7 +655,11 @@
         "backend",
         "movies"
       ],
-      "priority": 36
+      "priority": 36,
+      "assigned_to": "agent-1770630432-93818",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770630432-93818",
+      "branch": "feat/issue-799-register-watchlist-and-watch-log-routes",
+      "claimed_at": "2026-02-09T09:47:12Z"
     },
     {
       "issue_number": 800,
