@@ -45,6 +45,7 @@
     804,
     805,
     806,
+    808,
     809
   ],
   "issues": [
@@ -835,7 +836,7 @@
     {
       "issue_number": 808,
       "title": "Add Watchlist route and navigation",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         805
       ],
@@ -848,7 +849,9 @@
       "assigned_to": "agent-1770633872-26600",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770633872-26600",
       "branch": "feat/issue-808-add-watchlist-route-and-navigation",
-      "claimed_at": "2026-02-09T10:44:32Z"
+      "claimed_at": "2026-02-09T10:44:32Z",
+      "pr_number": 830,
+      "completed_at": "2026-02-09T11:08:33Z"
     },
     {
       "issue_number": 809,
