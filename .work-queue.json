@@ -44,7 +44,8 @@
     803,
     804,
     805,
-    806
+    806,
+    809
   ],
   "issues": [
     {
@@ -852,7 +853,7 @@
     {
       "issue_number": 809,
       "title": "Create movies component index",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         802,
         803,
@@ -869,7 +870,9 @@
       "assigned_to": "agent-1770634719-37939",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770634719-37939",
       "branch": "feat/issue-809-create-movies-component-index",
-      "claimed_at": "2026-02-09T10:58:39Z"
+      "claimed_at": "2026-02-09T10:58:39Z",
+      "pr_number": 832,
+      "completed_at": "2026-02-09T11:03:39Z"
     }
   ]
 }
