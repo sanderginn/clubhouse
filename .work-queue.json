@@ -29,7 +29,8 @@
     788,
     789,
     790,
-    791
+    791,
+    792
   ],
   "issues": [
     {
@@ -493,7 +494,7 @@
     {
       "issue_number": 792,
       "title": "Create movie metadata extractor",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         788
       ],
@@ -506,7 +507,9 @@
       "assigned_to": "agent-1770626209-37286",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770626209-37286",
       "branch": "feat/issue-792-create-movie-metadata-extractor",
-      "claimed_at": "2026-02-09T08:36:49Z"
+      "claimed_at": "2026-02-09T08:36:49Z",
+      "pr_number": 816,
+      "completed_at": "2026-02-09T08:46:13Z"
     },
     {
       "issue_number": 793,
