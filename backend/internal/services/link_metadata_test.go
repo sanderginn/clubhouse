@@ -29,7 +29,7 @@ func TestFetchLinkMetadataIncludesSpotifyEmbed(t *testing.T) {
 	})
 
 	links := []models.LinkRequest{{URL: "https://open.spotify.com/track/3n3Ppam7vgaVa1iaRUc9Lp"}}
-	metadata := fetchLinkMetadata(context.Background(), links)
+	metadata := fetchLinkMetadata(context.Background(), links, "music")
 	if len(metadata) != 1 {
 		t.Fatalf("expected 1 metadata entry, got %d", len(metadata))
 	}

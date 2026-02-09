@@ -124,8 +124,20 @@ func (w *MetadataWorker) processJob(ctx context.Context, job *MetadataJob, worke
 		"link_id", job.LinkID.String(),
 		"url", job.URL)
 
+	sectionID, sectionType, sectionErr := w.getPostSectionContext(ctx, job.PostID)
+	if sectionErr != nil {
+		observability.LogWarn(ctx, "failed to get section context for metadata job",
+			"post_id", job.PostID.String(),
+			"link_id", job.LinkID.String(),
+			"error", sectionErr.Error(),
+		)
+	}
+
 	fetchCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
+	if sectionType != "" {
+		fetchCtx = linkmeta.WithMetadataSectionType(fetchCtx, sectionType)
+	}
 
 	metadata, err := w.fetcher.Fetch(fetchCtx, job.URL)
 	if err != nil {
@@ -160,19 +172,14 @@ func (w *MetadataWorker) processJob(ctx context.Context, job *MetadataJob, worke
 		return
 	}
 
-	sectionID, err := w.getPostSectionID(ctx, job.PostID)
-	if err != nil {
-		observability.LogWarn(ctx, "failed to get section_id for metadata websocket event",
-			"post_id", job.PostID.String(),
-			"link_id", job.LinkID.String(),
-			"error", err.Error(),
-		)
-	} else if err := w.publishLinkMetadataUpdated(ctx, sectionID, job.PostID, job.LinkID, job.URL, metadata); err != nil {
-		observability.LogWarn(ctx, "failed to publish metadata websocket event",
-			"post_id", job.PostID.String(),
-			"link_id", job.LinkID.String(),
-			"error", err.Error(),
-		)
+	if sectionErr == nil {
+		if err := w.publishLinkMetadataUpdated(ctx, sectionID, job.PostID, job.LinkID, job.URL, metadata); err != nil {
+			observability.LogWarn(ctx, "failed to publish metadata websocket event",
+				"post_id", job.PostID.String(),
+				"link_id", job.LinkID.String(),
+				"error", err.Error(),
+			)
+		}
 	}
 
 	observability.LogInfo(ctx, "metadata fetched and stored",
@@ -189,13 +196,19 @@ func (w *MetadataWorker) processJob(ctx context.Context, job *MetadataJob, worke
 	}
 }
 
-func (w *MetadataWorker) getPostSectionID(ctx context.Context, postID uuid.UUID) (uuid.UUID, error) {
+func (w *MetadataWorker) getPostSectionContext(ctx context.Context, postID uuid.UUID) (uuid.UUID, string, error) {
 	var sectionID uuid.UUID
-	err := w.db.QueryRowContext(ctx, "SELECT section_id FROM posts WHERE id = $1", postID).Scan(&sectionID)
+	var sectionType string
+	err := w.db.QueryRowContext(ctx, `
+		SELECT p.section_id, s.type
+		FROM posts p
+		JOIN sections s ON p.section_id = s.id
+		WHERE p.id = $1
+	`, postID).Scan(&sectionID, &sectionType)
 	if err != nil {
-		return uuid.Nil, err
+		return uuid.Nil, "", err
 	}
-	return sectionID, nil
+	return sectionID, sectionType, nil
 }
 
 func (w *MetadataWorker) publishLinkMetadataUpdated(ctx context.Context, sectionID uuid.UUID, postID uuid.UUID, linkID uuid.UUID, url string, metadata map[string]interface{}) error {

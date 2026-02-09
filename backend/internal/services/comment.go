@@ -191,7 +191,7 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 	// Create comment ID
 	commentID := uuid.New()
 
-	linkMetadata := fetchLinkMetadata(ctx, req.Links)
+	linkMetadata := fetchLinkMetadata(ctx, req.Links, sectionType)
 
 	// Begin transaction
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -376,7 +376,7 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 
 		linksChanged = !linkRequestsMatchURLs(existingURLs, *req.Links)
 		if linksChanged && len(*req.Links) > 0 {
-			linkMetadata = fetchLinkMetadata(ctx, *req.Links)
+			linkMetadata = fetchLinkMetadata(ctx, *req.Links, sectionType)
 		}
 	}
 

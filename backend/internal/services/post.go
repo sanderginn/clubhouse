@@ -353,7 +353,7 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 
 		linksChanged = !linkRequestsMatchExistingLinks(existingLinks, *req.Links)
 		if linksChanged && len(*req.Links) > 0 {
-			linkMetadata = fetchLinkMetadata(ctx, *req.Links)
+			linkMetadata = fetchLinkMetadata(ctx, *req.Links, sectionType)
 		}
 	}
 

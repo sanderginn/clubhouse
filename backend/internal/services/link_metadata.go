@@ -9,7 +9,7 @@ import (
 	linkmeta "github.com/sanderginn/clubhouse/internal/services/links"
 )
 
-func fetchLinkMetadata(ctx context.Context, links []models.LinkRequest) []models.JSONMap {
+func fetchLinkMetadata(ctx context.Context, links []models.LinkRequest, sectionType string) []models.JSONMap {
 	if len(links) == 0 {
 		return nil
 	}
@@ -20,33 +20,34 @@ func fetchLinkMetadata(ctx context.Context, links []models.LinkRequest) []models
 	}
 
 	metadata := make([]models.JSONMap, len(links))
+	metadataCtx := linkmeta.WithMetadataSectionType(ctx, sectionType)
 	for i, link := range links {
 		if linkmeta.IsInternalUploadURL(link.URL) {
 			continue
 		}
-		embed, _ := linkmeta.ExtractEmbed(ctx, link.URL)
-		observability.RecordLinkMetadataFetchAttempt(ctx, 1)
+		embed, _ := linkmeta.ExtractEmbed(metadataCtx, link.URL)
+		observability.RecordLinkMetadataFetchAttempt(metadataCtx, 1)
 		start := time.Now()
-		meta, err := linkmeta.FetchMetadata(ctx, link.URL)
-		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
+		meta, err := linkmeta.FetchMetadata(metadataCtx, link.URL)
+		observability.RecordLinkMetadataFetchDuration(metadataCtx, time.Since(start))
 		domain := linkmeta.ExtractDomain(link.URL)
 		if err != nil || len(meta) == 0 {
 			errorType := linkmeta.ClassifyFetchError(err)
 			if err == nil {
 				errorType = "empty_metadata"
 			}
-			observability.RecordLinkMetadataFetchFailure(ctx, 1, domain, errorType)
+			observability.RecordLinkMetadataFetchFailure(metadataCtx, 1, domain, errorType)
 			if err != nil {
-				observability.LogWarn(ctx, "link metadata fetch failed", "link_url", link.URL, "link_domain", domain, "error_type", errorType, "error", err.Error())
+				observability.LogWarn(metadataCtx, "link metadata fetch failed", "link_url", link.URL, "link_domain", domain, "error_type", errorType, "error", err.Error())
 			} else {
-				observability.LogWarn(ctx, "link metadata fetch empty", "link_url", link.URL, "link_domain", domain, "error_type", errorType)
+				observability.LogWarn(metadataCtx, "link metadata fetch empty", "link_url", link.URL, "link_domain", domain, "error_type", errorType)
 			}
 			if embed == nil {
 				continue
 			}
 			meta = map[string]interface{}{}
 		} else {
-			observability.RecordLinkMetadataFetchSuccess(ctx, 1)
+			observability.RecordLinkMetadataFetchSuccess(metadataCtx, 1)
 		}
 		meta = linkmeta.ApplyEmbedMetadata(meta, embed)
 		metadata[i] = models.JSONMap(meta)
