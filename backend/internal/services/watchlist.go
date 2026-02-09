@@ -622,17 +622,43 @@ func (s *WatchlistService) DeleteCategory(ctx context.Context, userID, categoryI
 		return err
 	}
 
-	if _, err := tx.ExecContext(
-		ctx,
-		`UPDATE watchlist_items
-		SET category = $1
-		WHERE user_id = $2 AND category = $3 AND deleted_at IS NULL`,
-		defaultWatchlistCategory,
-		userID,
-		name,
-	); err != nil {
-		recordSpanError(span, err)
-		return err
+	if name != defaultWatchlistCategory {
+		// Remove overlaps first to satisfy unique active rows on (user_id, post_id, category).
+		if _, err := tx.ExecContext(
+			ctx,
+			`UPDATE watchlist_items source
+			SET deleted_at = now()
+			WHERE source.user_id = $1
+				AND source.category = $2
+				AND source.deleted_at IS NULL
+				AND EXISTS (
+					SELECT 1
+					FROM watchlist_items target
+					WHERE target.user_id = source.user_id
+						AND target.post_id = source.post_id
+						AND target.category = $3
+						AND target.deleted_at IS NULL
+				)`,
+			userID,
+			name,
+			defaultWatchlistCategory,
+		); err != nil {
+			recordSpanError(span, err)
+			return err
+		}
+
+		if _, err := tx.ExecContext(
+			ctx,
+			`UPDATE watchlist_items
+			SET category = $1
+			WHERE user_id = $2 AND category = $3 AND deleted_at IS NULL`,
+			defaultWatchlistCategory,
+			userID,
+			name,
+		); err != nil {
+			recordSpanError(span, err)
+			return err
+		}
 	}
 
 	if err := tx.Commit(); err != nil {
