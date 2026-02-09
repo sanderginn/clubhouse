@@ -3,6 +3,7 @@ import { render, screen, cleanup, fireEvent } from '@testing-library/svelte';
 import type { Post } from '../../stores/postStore';
 import { authStore } from '../../stores';
 import { sectionStore } from '../../stores/sectionStore';
+import { mapApiPost } from '../../stores/postMapper';
 import { tick } from 'svelte';
 
 const loadThreadComments = vi.hoisted(() => vi.fn());
@@ -244,6 +245,46 @@ describe('PostCard', () => {
     render(PostCard, { post: moviePost });
     expect(screen.getByTestId('movie-card')).toBeInTheDocument();
     expect(screen.getByTestId('movie-title')).toHaveTextContent('Interstellar');
+  });
+
+  it('renders movie card from mapped API metadata payload', () => {
+    sectionStore.setSections([
+      {
+        id: 'section-1',
+        name: 'Movies',
+        type: 'movie',
+        icon: '🎬',
+        slug: 'movies',
+      },
+    ]);
+
+    const mappedPost = mapApiPost({
+      id: 'post-from-api',
+      user_id: 'user-1',
+      section_id: 'section-1',
+      content: 'Interstellar',
+      created_at: '2025-01-01T00:00:00Z',
+      links: [
+        {
+          url: 'https://www.imdb.com/title/tt0816692/',
+          metadata: {
+            movie: {
+              title: 'Interstellar',
+              runtime: 169,
+              genres: ['Sci-Fi', 'Drama'],
+              release_date: '2014-11-07',
+              tmdb_rating: 8.6,
+            },
+          },
+        },
+      ],
+    });
+
+    render(PostCard, { post: mappedPost });
+
+    expect(screen.getByTestId('movie-card')).toBeInTheDocument();
+    expect(screen.getByTestId('movie-title')).toHaveTextContent('Interstellar');
+    expect(screen.getByTestId('movie-meta-line')).toHaveTextContent('★ 8.6 · 2h 49m');
   });
 
   it('does not render movie components for non-movie sections', () => {

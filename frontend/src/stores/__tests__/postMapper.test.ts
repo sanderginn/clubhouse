@@ -139,6 +139,56 @@ describe('mapApiPost', () => {
     expect(post.movieStats?.viewerCategories).toEqual(['Top Picks']);
   });
 
+  it('preserves and normalizes nested movie metadata payload', () => {
+    const post = mapApiPost({
+      id: 'post-movie-metadata',
+      user_id: 'user-movie-metadata',
+      section_id: 'section-movie',
+      content: 'Movie metadata',
+      created_at: '2025-01-01T00:00:00Z',
+      links: [
+        {
+          id: 'link-movie',
+          url: 'https://www.imdb.com/title/tt0816692/',
+          metadata: {
+            movie: {
+              title: 'Interstellar',
+              overview: 'A team travels through a wormhole.',
+              poster_url: 'https://example.com/poster.jpg',
+              backdrop_url: 'https://example.com/backdrop.jpg',
+              runtime: '169',
+              genres: ['Sci-Fi', 'Drama'],
+              release_date: '2014-11-07',
+              director: 'Christopher Nolan',
+              tmdb_rating: 8.6,
+              trailer_key: 'zSWdZVtXT7E',
+              cast: [
+                { name: 'Matthew McConaughey', character: 'Cooper' },
+                { name: 'Anne Hathaway', character: 'Brand' },
+              ],
+            },
+          },
+        },
+      ],
+    });
+
+    const movie = post.links?.[0].metadata?.movie;
+    expect(movie?.title).toBe('Interstellar');
+    expect(movie?.overview).toBe('A team travels through a wormhole.');
+    expect(movie?.poster).toBe('https://example.com/poster.jpg');
+    expect(movie?.backdrop).toBe('https://example.com/backdrop.jpg');
+    expect(movie?.runtime).toBe(169);
+    expect(movie?.genres).toEqual(['Sci-Fi', 'Drama']);
+    expect(movie?.releaseDate).toBe('2014-11-07');
+    expect(movie?.director).toBe('Christopher Nolan');
+    expect(movie?.tmdbRating).toBe(8.6);
+    expect(movie?.trailerKey).toBe('zSWdZVtXT7E');
+    expect(movie?.cast).toEqual([
+      { name: 'Matthew McConaughey', character: 'Cooper' },
+      { name: 'Anne Hathaway', character: 'Brand' },
+    ]);
+  });
+
   it('handles missing user and links gracefully', () => {
     const post = mapApiPost({
       id: 'post-2',
