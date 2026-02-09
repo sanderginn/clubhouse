@@ -48,6 +48,57 @@ interface ApiSectionLinksResponse {
   next_cursor?: string | null;
 }
 
+interface ApiWatchlistItem {
+  id: string;
+  user_id: string;
+  post_id: string;
+  category: string;
+  created_at: string;
+  post?: ApiPost;
+}
+
+interface ApiWatchlistCategory {
+  id: string;
+  name: string;
+  position: number;
+}
+
+interface ApiPostWatchlistInfo {
+  save_count: number;
+  users: ApiReactionUser[];
+  viewer_saved: boolean;
+  viewer_categories?: string[];
+}
+
+interface ApiWatchLog {
+  id: string;
+  user_id: string;
+  post_id: string;
+  rating: number;
+  notes?: string | null;
+  watched_at: string;
+  post?: ApiPost;
+}
+
+interface ApiWatchLogUser {
+  id: string;
+  username: string;
+  profile_picture_url?: string | null;
+}
+
+interface ApiWatchLogResponse {
+  watch_log: ApiWatchLog;
+  user: ApiWatchLogUser;
+}
+
+interface ApiPostWatchLogsResponse {
+  watch_count: number;
+  avg_rating?: number | null;
+  logs: ApiWatchLogResponse[];
+  viewer_watched: boolean;
+  viewer_rating?: number | null;
+}
+
 interface SectionLinksResponse {
   links: SectionLink[];
   hasMore: boolean;
@@ -63,6 +114,68 @@ function mapApiSectionLink(link: ApiSectionLink): SectionLink {
     userId: link.user_id,
     username: link.username,
     createdAt: link.created_at,
+  };
+}
+
+function mapApiWatchlistItem(item: ApiWatchlistItem): WatchlistItem {
+  return {
+    id: item.id,
+    userId: item.user_id,
+    postId: item.post_id,
+    category: item.category,
+    createdAt: item.created_at,
+  };
+}
+
+function mapApiWatchlistItemWithPost(item: ApiWatchlistItem): WatchlistItemWithPost {
+  return {
+    ...mapApiWatchlistItem(item),
+    post: item.post,
+  };
+}
+
+function mapApiWatchlistCategory(category: ApiWatchlistCategory): WatchlistCategory {
+  return {
+    id: category.id,
+    name: category.name,
+    position: category.position,
+  };
+}
+
+function mapApiWatchlistUser(user: ApiReactionUser): WatchlistUser {
+  return {
+    id: user.id,
+    username: user.username,
+    displayName: user.username,
+    avatar: user.profile_picture_url ?? undefined,
+  };
+}
+
+function mapApiWatchLogUser(user: ApiWatchLogUser): WatchLogUser {
+  return {
+    id: user.id,
+    username: user.username,
+    displayName: user.username,
+    avatar: user.profile_picture_url ?? undefined,
+  };
+}
+
+function mapApiWatchLog(log: ApiWatchLog, user?: ApiWatchLogUser): WatchLog {
+  return {
+    id: log.id,
+    userId: log.user_id,
+    postId: log.post_id,
+    rating: log.rating,
+    notes: log.notes ?? undefined,
+    watchedAt: log.watched_at,
+    user: user ? mapApiWatchLogUser(user) : undefined,
+  };
+}
+
+function mapApiWatchLogWithPost(log: ApiWatchLog): WatchLogWithPost {
+  return {
+    ...mapApiWatchLog(log),
+    post: log.post,
   };
 }
 
@@ -151,6 +264,67 @@ export interface PostCookInfo {
 }
 
 export interface CookLogWithPost extends CookLog {
+  post?: ApiPost;
+}
+
+export interface WatchlistItem {
+  id: string;
+  userId: string;
+  postId: string;
+  category: string;
+  createdAt: string;
+}
+
+export interface WatchlistCategory {
+  id: string;
+  name: string;
+  position: number;
+}
+
+export interface WatchlistUser {
+  id: string;
+  username: string;
+  displayName: string;
+  avatar?: string;
+}
+
+export interface PostWatchlistInfo {
+  saveCount: number;
+  users: WatchlistUser[];
+  viewerSaved: boolean;
+  viewerCategories: string[];
+}
+
+export interface WatchlistItemWithPost extends WatchlistItem {
+  post?: ApiPost;
+}
+
+export interface WatchLogUser {
+  id: string;
+  username: string;
+  displayName: string;
+  avatar?: string;
+}
+
+export interface WatchLog {
+  id: string;
+  userId: string;
+  postId: string;
+  rating: number;
+  notes?: string;
+  watchedAt: string;
+  user?: WatchLogUser;
+}
+
+export interface PostWatchLogsResponse {
+  watchCount: number;
+  avgRating?: number;
+  logs: WatchLog[];
+  viewerWatched: boolean;
+  viewerRating?: number;
+}
+
+export interface WatchLogWithPost extends WatchLog {
   post?: ApiPost;
 }
 
@@ -761,6 +935,141 @@ class ApiClient {
       cook_logs: response.cook_logs ?? [],
       has_more: response.meta?.has_more ?? false,
       cursor: response.meta?.cursor ?? undefined,
+    };
+  }
+
+  async addToWatchlist(
+    postId: string,
+    categories: string[]
+  ): Promise<{ watchlistItems: WatchlistItem[] }> {
+    const response = await this.post<{ watchlist_items: ApiWatchlistItem[] }>(
+      `/posts/${postId}/watchlist`,
+      { categories }
+    );
+    return { watchlistItems: (response.watchlist_items ?? []).map(mapApiWatchlistItem) };
+  }
+
+  async removeFromWatchlist(postId: string, category?: string): Promise<void> {
+    const params = new URLSearchParams();
+    if (category) {
+      params.set('category', category);
+    }
+    const query = params.toString();
+    const endpoint = query ? `/posts/${postId}/watchlist?${query}` : `/posts/${postId}/watchlist`;
+    return this.delete(endpoint);
+  }
+
+  async getPostWatchlistInfo(postId: string): Promise<PostWatchlistInfo> {
+    const response = await this.get<ApiPostWatchlistInfo>(`/posts/${postId}/watchlist-info`);
+    return {
+      saveCount: response.save_count ?? 0,
+      users: (response.users ?? []).map(mapApiWatchlistUser),
+      viewerSaved: response.viewer_saved ?? false,
+      viewerCategories: response.viewer_categories ?? [],
+    };
+  }
+
+  async getMyWatchlist(): Promise<{ categories: { name: string; items: WatchlistItemWithPost[] }[] }> {
+    const response = await this.get<{
+      categories: { name: string; items: ApiWatchlistItem[] }[];
+    }>('/me/watchlist');
+    return {
+      categories: (response.categories ?? []).map((category) => ({
+        name: category.name,
+        items: (category.items ?? []).map(mapApiWatchlistItemWithPost),
+      })),
+    };
+  }
+
+  async getWatchlistCategories(): Promise<{ categories: WatchlistCategory[] }> {
+    const response = await this.get<{ categories: ApiWatchlistCategory[] }>('/me/watchlist-categories');
+    return { categories: (response.categories ?? []).map(mapApiWatchlistCategory) };
+  }
+
+  async createWatchlistCategory(name: string): Promise<{ category: WatchlistCategory }> {
+    const response = await this.post<{ category: ApiWatchlistCategory }>('/me/watchlist-categories', {
+      name,
+    });
+    return { category: mapApiWatchlistCategory(response.category) };
+  }
+
+  async updateWatchlistCategory(
+    id: string,
+    data: { name?: string; position?: number }
+  ): Promise<{ category: WatchlistCategory }> {
+    const response = await this.patch<{ category: ApiWatchlistCategory }>(
+      `/me/watchlist-categories/${id}`,
+      {
+        name: data.name,
+        position: data.position,
+      }
+    );
+    return { category: mapApiWatchlistCategory(response.category) };
+  }
+
+  async deleteWatchlistCategory(id: string): Promise<void> {
+    return this.delete(`/me/watchlist-categories/${id}`);
+  }
+
+  async logWatch(
+    postId: string,
+    rating: number,
+    notes?: string,
+    watchedAt?: string
+  ): Promise<{ watchLog: WatchLog }> {
+    const response = await this.post<{ watch_log: ApiWatchLog }>(`/posts/${postId}/watch-log`, {
+      rating,
+      notes,
+      watched_at: watchedAt ?? new Date().toISOString(),
+    });
+    return { watchLog: mapApiWatchLog(response.watch_log) };
+  }
+
+  async updateWatchLog(
+    postId: string,
+    data: { rating?: number; notes?: string }
+  ): Promise<{ watchLog: WatchLog }> {
+    const response = await this.put<{ watch_log: ApiWatchLog }>(`/posts/${postId}/watch-log`, {
+      rating: data.rating,
+      notes: data.notes,
+    });
+    return { watchLog: mapApiWatchLog(response.watch_log) };
+  }
+
+  async removeWatchLog(postId: string): Promise<void> {
+    return this.delete(`/posts/${postId}/watch-log`);
+  }
+
+  async getPostWatchLogs(postId: string): Promise<PostWatchLogsResponse> {
+    const response = await this.get<ApiPostWatchLogsResponse>(`/posts/${postId}/watch-logs`);
+    return {
+      watchCount: response.watch_count ?? 0,
+      avgRating: response.avg_rating ?? undefined,
+      logs: (response.logs ?? []).map((log) => mapApiWatchLog(log.watch_log, log.user)),
+      viewerWatched: response.viewer_watched ?? false,
+      viewerRating: response.viewer_rating ?? undefined,
+    };
+  }
+
+  async getMyWatchLogs(
+    limit?: number,
+    cursor?: string
+  ): Promise<{ watchLogs: WatchLogWithPost[]; nextCursor?: string }> {
+    const params = new URLSearchParams();
+    if (limit !== undefined) {
+      params.set('limit', String(limit));
+    }
+    if (cursor) {
+      params.set('cursor', cursor);
+    }
+    const query = params.toString();
+    const response = await this.get<{
+      watch_logs: ApiWatchLog[];
+      next_cursor?: string | null;
+    }>(`/me/watch-logs${query ? `?${query}` : ''}`);
+    return {
+      watchLogs: (response.watch_logs ?? []).map(mapApiWatchLogWithPost),
+      nextCursor: response.next_cursor ?? undefined,
     };
   }
 }
