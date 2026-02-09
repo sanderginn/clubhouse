@@ -29,9 +29,19 @@
   let storedWatchLog: WatchLog | null = null;
   let baseWatchLog: WatchLog | null = null;
   let activeWatchLog: WatchLog | null = null;
+  let hasDismissedInitialWatch = false;
+  let initialWatchSignature = '';
+
+  $: {
+    const nextSignature = `${postId}:${initialWatched}:${initialRating ?? ''}`;
+    if (nextSignature !== initialWatchSignature) {
+      initialWatchSignature = nextSignature;
+      hasDismissedInitialWatch = false;
+    }
+  }
 
   $: propWatchLog =
-    initialWatched
+    initialWatched && !hasDismissedInitialWatch
       ? {
           id: 'initial-watch-log',
           userId: 'me',
@@ -162,6 +172,7 @@
         formError = error;
         showToast(error);
       } else {
+        hasDismissedInitialWatch = true;
         optimisticWatchLog = undefined;
         isModalOpen = false;
       }

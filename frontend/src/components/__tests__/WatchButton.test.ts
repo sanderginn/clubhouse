@@ -209,6 +209,26 @@ describe('WatchButton', () => {
     expect(screen.getByText('Mark Watched')).toBeInTheDocument();
   });
 
+  it('stays not watched after removing a prop-initialized watch log', async () => {
+    render(WatchButton, {
+      postId: 'post-6b',
+      initialWatched: true,
+      initialRating: 4,
+    });
+
+    expect(screen.getByText('Watched ★4')).toBeInTheDocument();
+
+    await fireEvent.click(screen.getByTestId('watched-button'));
+    await fireEvent.click(screen.getByTestId('watch-remove'));
+
+    expect(removeWatchLog).toHaveBeenCalledWith('post-6b');
+
+    await tick();
+
+    expect(screen.getByText('Mark Watched')).toBeInTheDocument();
+    expect(screen.queryByText('Watched ★4')).not.toBeInTheDocument();
+  });
+
   it('shows a toast on save error and keeps modal open', async () => {
     logWatch.mockImplementationOnce(async () => {
       setError('Failed to log watch');
