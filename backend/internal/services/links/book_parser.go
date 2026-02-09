@@ -267,9 +267,10 @@ func bookDataFromEdition(client *OpenLibraryClient, edition *OLEdition) *BookDat
 	}
 
 	metadata := &BookData{
-		Title:       strings.TrimSpace(edition.Title),
-		PageCount:   edition.NumberOfPages,
-		PublishDate: strings.TrimSpace(edition.PublishDate),
+		Title:          strings.TrimSpace(edition.Title),
+		PageCount:      edition.NumberOfPages,
+		PublishDate:    strings.TrimSpace(edition.PublishDate),
+		OpenLibraryKey: normalizeOpenLibraryKey(edition.Key, "books"),
 	}
 	if coverID := firstCoverID(edition.Covers); coverID > 0 {
 		metadata.CoverURL = client.CoverURL(coverID, "L")

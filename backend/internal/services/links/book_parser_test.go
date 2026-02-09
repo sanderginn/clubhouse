@@ -100,6 +100,7 @@ func TestParseBookMetadataAmazonURL(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{
+			"key":"/books/OL24226054M",
 			"title":"Amazon Book",
 			"publish_date":"2020",
 			"number_of_pages":320,
@@ -130,6 +131,9 @@ func TestParseBookMetadataAmazonURL(t *testing.T) {
 	if metadata.CoverURL != "https://covers.openlibrary.org/b/id/54321-L.jpg" {
 		t.Fatalf("CoverURL = %q", metadata.CoverURL)
 	}
+	if metadata.OpenLibraryKey != "/books/OL24226054M" {
+		t.Fatalf("OpenLibraryKey = %q, want /books/OL24226054M", metadata.OpenLibraryKey)
+	}
 }
 
 func TestParseBookMetadataAmazonCanonicalDPURL(t *testing.T) {
@@ -148,6 +152,7 @@ func TestParseBookMetadataAmazonCanonicalDPURL(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{
+			"key":"/books/OL24226054M",
 			"title":"Amazon Book",
 			"publish_date":"2020",
 			"number_of_pages":320,
@@ -167,6 +172,9 @@ func TestParseBookMetadataAmazonCanonicalDPURL(t *testing.T) {
 	}
 	if metadata.Title != "Amazon Book" {
 		t.Fatalf("Title = %q, want Amazon Book", metadata.Title)
+	}
+	if metadata.OpenLibraryKey != "/books/OL24226054M" {
+		t.Fatalf("OpenLibraryKey = %q, want /books/OL24226054M", metadata.OpenLibraryKey)
 	}
 }
 
@@ -208,6 +216,7 @@ func TestParseBookMetadataOpenLibraryEditionURL(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{
+			"key":"/books/OL24226054M",
 			"title":"Neuromancer",
 			"publish_date":"1984",
 			"number_of_pages":271,
@@ -247,6 +256,7 @@ func TestParseBookMetadataISBNURL(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{
+			"key":"/books/OL24226054M",
 			"title":"Neuromancer",
 			"publish_date":"1984",
 			"number_of_pages":271,
@@ -269,6 +279,9 @@ func TestParseBookMetadataISBNURL(t *testing.T) {
 	}
 	if metadata.Title != "Neuromancer" {
 		t.Fatalf("Title = %q, want Neuromancer", metadata.Title)
+	}
+	if metadata.OpenLibraryKey != "/books/OL24226054M" {
+		t.Fatalf("OpenLibraryKey = %q, want /books/OL24226054M", metadata.OpenLibraryKey)
 	}
 }
 
