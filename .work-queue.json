@@ -9,18 +9,14 @@
     {
       "issue_number": 842,
       "title": "Fix watchlist category edit and delete buttons not working",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [],
       "labels": [
         "bug",
         "frontend",
         "movies"
       ],
-      "priority": 51,
-      "assigned_to": "agent-1770675536-40252",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770675536-40252",
-      "branch": "fix/issue-842-fix-watchlist-category-edit-and-delete-b",
-      "claimed_at": "2026-02-09T22:18:56Z"
+      "priority": 51
     },
     {
       "issue_number": 843,
