@@ -24,20 +24,22 @@ type Season struct {
 
 // MovieData represents normalized movie metadata.
 type MovieData struct {
-	Title         string       `json:"title"`
-	Overview      string       `json:"overview"`
-	Poster        string       `json:"poster"`
-	Backdrop      string       `json:"backdrop"`
-	Runtime       int          `json:"runtime"`
-	Genres        []string     `json:"genres"`
-	ReleaseDate   string       `json:"release_date"`
-	Cast          []CastMember `json:"cast"`
-	Seasons       []Season     `json:"seasons,omitempty"`
-	Director      string       `json:"director"`
-	TMDBRating    float64      `json:"tmdb_rating"`
-	TrailerKey    string       `json:"trailer_key"`
-	TMDBID        int          `json:"tmdb_id,omitempty"`
-	TMDBMediaType string       `json:"tmdb_media_type,omitempty"`
+	Title               string       `json:"title"`
+	Overview            string       `json:"overview"`
+	Poster              string       `json:"poster"`
+	Backdrop            string       `json:"backdrop"`
+	Runtime             int          `json:"runtime"`
+	Genres              []string     `json:"genres"`
+	ReleaseDate         string       `json:"release_date"`
+	Cast                []CastMember `json:"cast"`
+	Seasons             []Season     `json:"seasons,omitempty"`
+	Director            string       `json:"director"`
+	TMDBRating          float64      `json:"tmdb_rating"`
+	RottenTomatoesScore *int         `json:"rotten_tomatoes_score,omitempty"`
+	MetacriticScore     *int         `json:"metacritic_score,omitempty"`
+	TrailerKey          string       `json:"trailer_key"`
+	TMDBID              int          `json:"tmdb_id,omitempty"`
+	TMDBMediaType       string       `json:"tmdb_media_type,omitempty"`
 }
 
 type WatchlistItem struct {

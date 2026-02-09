@@ -150,38 +150,46 @@ type TMDBVideos struct {
 	Results []TMDBVideo `json:"results"`
 }
 
+// TMDBExternalIDs contains external IDs (such as IMDB ID).
+type TMDBExternalIDs struct {
+	IMDBID string `json:"imdb_id"`
+}
+
 // MovieDetails is the detailed movie response payload.
 type MovieDetails struct {
-	ID           int         `json:"id"`
-	Title        string      `json:"title"`
-	Overview     string      `json:"overview"`
-	PosterPath   string      `json:"poster_path"`
-	BackdropPath string      `json:"backdrop_path"`
-	Runtime      int         `json:"runtime"`
-	Genres       []TMDBGenre `json:"genres"`
-	ReleaseDate  string      `json:"release_date"`
-	Credits      TMDBCredits `json:"credits"`
-	Director     string      `json:"director"`
-	VoteAverage  float64     `json:"vote_average"`
-	Videos       TMDBVideos  `json:"videos"`
+	ID           int             `json:"id"`
+	Title        string          `json:"title"`
+	Overview     string          `json:"overview"`
+	PosterPath   string          `json:"poster_path"`
+	BackdropPath string          `json:"backdrop_path"`
+	Runtime      int             `json:"runtime"`
+	Genres       []TMDBGenre     `json:"genres"`
+	ReleaseDate  string          `json:"release_date"`
+	Credits      TMDBCredits     `json:"credits"`
+	Director     string          `json:"director"`
+	VoteAverage  float64         `json:"vote_average"`
+	Videos       TMDBVideos      `json:"videos"`
+	IMDBID       string          `json:"imdb_id"`
+	ExternalIDs  TMDBExternalIDs `json:"external_ids"`
 }
 
 // TVDetails is the detailed TV response payload.
 type TVDetails struct {
-	ID             int          `json:"id"`
-	Name           string       `json:"name"`
-	Overview       string       `json:"overview"`
-	PosterPath     string       `json:"poster_path"`
-	BackdropPath   string       `json:"backdrop_path"`
-	EpisodeRunTime []int        `json:"episode_run_time"`
-	Runtime        int          `json:"runtime"`
-	Genres         []TMDBGenre  `json:"genres"`
-	FirstAirDate   string       `json:"first_air_date"`
-	Seasons        []TMDBSeason `json:"seasons"`
-	Credits        TMDBCredits  `json:"credits"`
-	Director       string       `json:"director"`
-	VoteAverage    float64      `json:"vote_average"`
-	Videos         TMDBVideos   `json:"videos"`
+	ID             int             `json:"id"`
+	Name           string          `json:"name"`
+	Overview       string          `json:"overview"`
+	PosterPath     string          `json:"poster_path"`
+	BackdropPath   string          `json:"backdrop_path"`
+	EpisodeRunTime []int           `json:"episode_run_time"`
+	Runtime        int             `json:"runtime"`
+	Genres         []TMDBGenre     `json:"genres"`
+	FirstAirDate   string          `json:"first_air_date"`
+	Seasons        []TMDBSeason    `json:"seasons"`
+	Credits        TMDBCredits     `json:"credits"`
+	Director       string          `json:"director"`
+	VoteAverage    float64         `json:"vote_average"`
+	Videos         TMDBVideos      `json:"videos"`
+	ExternalIDs    TMDBExternalIDs `json:"external_ids"`
 }
 
 // FindResult is the TMDB /find response scoped for IMDB lookups.
@@ -264,7 +272,7 @@ func (c *TMDBClient) GetMovieDetails(ctx context.Context, tmdbID int) (*MovieDet
 	}
 
 	values := url.Values{}
-	values.Set("append_to_response", "credits,videos")
+	values.Set("append_to_response", "credits,videos,external_ids")
 
 	var details MovieDetails
 	if err := c.get(ctx, fmt.Sprintf("/movie/%d", tmdbID), values, &details); err != nil {
@@ -283,7 +291,7 @@ func (c *TMDBClient) GetTVDetails(ctx context.Context, tmdbID int) (*TVDetails, 
 	}
 
 	values := url.Values{}
-	values.Set("append_to_response", "credits,videos")
+	values.Set("append_to_response", "credits,videos,external_ids")
 
 	var details TVDetails
 	if err := c.get(ctx, fmt.Sprintf("/tv/%d", tmdbID), values, &details); err != nil {

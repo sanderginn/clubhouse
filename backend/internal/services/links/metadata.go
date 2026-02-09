@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/net/html"
@@ -32,7 +33,12 @@ const metadataSectionTypeContextKey metadataContextKey = "link_metadata_section_
 
 var (
 	newTMDBClientFromEnvFunc = NewTMDBClientFromEnv
+	newOMDBClientFromEnvFunc = NewOMDBClientFromEnv
 	parseMovieMetadataFunc   = ParseMovieMetadata
+
+	omdbClientFromEnvOnce sync.Once
+	omdbClientFromEnv     *OMDBClient
+	omdbClientFromEnvErr  error
 )
 
 // Fetcher retrieves metadata for links.
@@ -201,7 +207,12 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	}
 	if shouldExtractMovieMetadata(ctx) {
 		if tmdbClient, err := newTMDBClientFromEnvFunc(); err == nil {
-			if movie, movieErr := parseMovieMetadataFunc(ctx, rawURL, tmdbClient); movieErr == nil && movie != nil {
+			var omdbClient *OMDBClient
+			if omdb, omdbErr := getOMDBClientFromEnv(); omdbErr == nil {
+				omdbClient = omdb
+			}
+
+			if movie, movieErr := parseMovieMetadataFunc(ctx, rawURL, tmdbClient, omdbClient); movieErr == nil && movie != nil {
 				metadata["movie"] = movie
 			}
 		}
@@ -220,6 +231,20 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	}
 
 	return metadata, nil
+}
+
+func getOMDBClientFromEnv() (*OMDBClient, error) {
+	omdbClientFromEnvOnce.Do(func() {
+		omdbClientFromEnv, omdbClientFromEnvErr = newOMDBClientFromEnvFunc()
+	})
+	return omdbClientFromEnv, omdbClientFromEnvErr
+}
+
+// resetOMDBClientFromEnvCacheForTests resets cached OMDb client state. Use only in tests.
+func resetOMDBClientFromEnvCacheForTests() {
+	omdbClientFromEnvOnce = sync.Once{}
+	omdbClientFromEnv = nil
+	omdbClientFromEnvErr = nil
 }
 
 func shouldExtractMovieMetadata(ctx context.Context) bool {

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/sanderginn/clubhouse/internal/models"
+	"github.com/sanderginn/clubhouse/internal/observability"
 )
 
 const (
@@ -27,7 +28,7 @@ var (
 
 type MovieData = models.MovieData
 
-func ParseMovieMetadata(ctx context.Context, rawURL string, client *TMDBClient) (*MovieData, error) {
+func ParseMovieMetadata(ctx context.Context, rawURL string, client *TMDBClient, omdbClient *OMDBClient) (*MovieData, error) {
 	if ctx == nil {
 		return nil, errors.New("context is required")
 	}
@@ -49,19 +50,19 @@ func ParseMovieMetadata(ctx context.Context, rawURL string, client *TMDBClient) 
 		if !ok {
 			return nil, nil
 		}
-		return parseIMDbMovieMetadata(ctx, client, imdbID)
+		return parseIMDbMovieMetadata(ctx, client, omdbClient, imdbID)
 	case isTMDBHost(host):
 		mediaType, tmdbID, ok := parseTMDBPath(segments)
 		if !ok {
 			return nil, nil
 		}
-		return parseTMDBMovieMetadata(ctx, client, mediaType, tmdbID)
+		return parseTMDBMovieMetadata(ctx, client, omdbClient, mediaType, tmdbID)
 	case isLetterboxdHost(host):
 		slug, ok := parseLetterboxdSlug(segments)
 		if !ok {
 			return nil, nil
 		}
-		return parseLetterboxdMovieMetadata(ctx, client, slug)
+		return parseLetterboxdMovieMetadata(ctx, client, omdbClient, slug)
 	default:
 		return nil, nil
 	}
@@ -150,42 +151,46 @@ func parseLetterboxdSlug(segments []string) (string, bool) {
 	return slug, true
 }
 
-func parseIMDbMovieMetadata(ctx context.Context, client *TMDBClient, imdbID string) (*MovieData, error) {
+func parseIMDbMovieMetadata(ctx context.Context, client *TMDBClient, omdbClient *OMDBClient, imdbID string) (*MovieData, error) {
 	result, err := client.FindByIMDBID(ctx, imdbID)
 	if err != nil {
 		return nil, fmt.Errorf("find tmdb result by imdb id %s: %w", imdbID, err)
 	}
 
 	if len(result.MovieResults) > 0 {
-		return parseTMDBMovieMetadata(ctx, client, "movie", result.MovieResults[0].ID)
+		return parseTMDBMovieMetadata(ctx, client, omdbClient, "movie", result.MovieResults[0].ID)
 	}
 	if len(result.TVResults) > 0 {
-		return parseTMDBMovieMetadata(ctx, client, "tv", result.TVResults[0].ID)
+		return parseTMDBMovieMetadata(ctx, client, omdbClient, "tv", result.TVResults[0].ID)
 	}
 
 	return nil, nil
 }
 
-func parseTMDBMovieMetadata(ctx context.Context, client *TMDBClient, mediaType string, tmdbID int) (*MovieData, error) {
+func parseTMDBMovieMetadata(ctx context.Context, client *TMDBClient, omdbClient *OMDBClient, mediaType string, tmdbID int) (*MovieData, error) {
 	switch mediaType {
 	case "movie":
 		details, err := client.GetMovieDetails(ctx, tmdbID)
 		if err != nil {
 			return nil, fmt.Errorf("get tmdb movie details for id %d: %w", tmdbID, err)
 		}
-		return movieDataFromMovieDetails(details, mediaType), nil
+		movieData := movieDataFromMovieDetails(details, mediaType)
+		enrichMovieDataWithOMDB(ctx, omdbClient, firstNonEmpty(details.IMDBID, details.ExternalIDs.IMDBID), movieData)
+		return movieData, nil
 	case "tv":
 		details, err := client.GetTVDetails(ctx, tmdbID)
 		if err != nil {
 			return nil, fmt.Errorf("get tmdb tv details for id %d: %w", tmdbID, err)
 		}
-		return movieDataFromTVDetails(details, mediaType), nil
+		movieData := movieDataFromTVDetails(details, mediaType)
+		enrichMovieDataWithOMDB(ctx, omdbClient, details.ExternalIDs.IMDBID, movieData)
+		return movieData, nil
 	default:
 		return nil, nil
 	}
 }
 
-func parseLetterboxdMovieMetadata(ctx context.Context, client *TMDBClient, slug string) (*MovieData, error) {
+func parseLetterboxdMovieMetadata(ctx context.Context, client *TMDBClient, omdbClient *OMDBClient, slug string) (*MovieData, error) {
 	titleQuery := letterboxdSlugToTitle(slug)
 	if titleQuery == "" {
 		return nil, nil
@@ -199,7 +204,7 @@ func parseLetterboxdMovieMetadata(ctx context.Context, client *TMDBClient, slug 
 		return nil, nil
 	}
 
-	return parseTMDBMovieMetadata(ctx, client, "movie", results[0].ID)
+	return parseTMDBMovieMetadata(ctx, client, omdbClient, "movie", results[0].ID)
 }
 
 func letterboxdSlugToTitle(slug string) string {
@@ -256,6 +261,29 @@ func movieDataFromTVDetails(details *TVDetails, mediaType string) *MovieData {
 		TMDBID:        details.ID,
 		TMDBMediaType: strings.TrimSpace(mediaType),
 	}
+}
+
+func enrichMovieDataWithOMDB(ctx context.Context, omdbClient *OMDBClient, imdbID string, movieData *MovieData) {
+	if ctx == nil || omdbClient == nil || movieData == nil {
+		return
+	}
+
+	imdbID = strings.ToLower(strings.TrimSpace(imdbID))
+	if !imdbIDPattern.MatchString(imdbID) {
+		return
+	}
+
+	ratings, err := omdbClient.GetRatingsByIMDBID(ctx, imdbID)
+	if err != nil {
+		observability.LogDebug(ctx, "omdb movie enrichment skipped", "imdb_id", imdbID, "error", err.Error())
+		return
+	}
+	if ratings == nil {
+		return
+	}
+
+	movieData.RottenTomatoesScore = ratings.RottenTomatoesScore
+	movieData.MetacriticScore = ratings.MetacriticScore
 }
 
 func tmdbImageURL(pathValue, size string) string {

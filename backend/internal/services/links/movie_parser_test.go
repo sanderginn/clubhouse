@@ -19,8 +19,8 @@ func TestParseMovieMetadataIMDbURL(t *testing.T) {
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`{"movie_results":[{"id":603,"title":"The Matrix"}],"tv_results":[]}`))
 		case "/movie/603":
-			if got := r.URL.Query().Get("append_to_response"); got != "credits,videos" {
-				t.Fatalf("append_to_response = %q, want credits,videos", got)
+			if got := r.URL.Query().Get("append_to_response"); got != "credits,videos,external_ids" {
+				t.Fatalf("append_to_response = %q, want credits,videos,external_ids", got)
 			}
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`{
@@ -58,7 +58,7 @@ func TestParseMovieMetadataIMDbURL(t *testing.T) {
 	defer server.Close()
 
 	client := newTestTMDBClient(t, server.URL)
-	metadata, err := ParseMovieMetadata(context.Background(), "https://www.imdb.com/title/tt0133093/", client)
+	metadata, err := ParseMovieMetadata(context.Background(), "https://www.imdb.com/title/tt0133093/", client, nil)
 	if err != nil {
 		t.Fatalf("ParseMovieMetadata error: %v", err)
 	}
@@ -120,7 +120,7 @@ func TestParseMovieMetadataTMDBMovieURL(t *testing.T) {
 	defer server.Close()
 
 	client := newTestTMDBClient(t, server.URL)
-	metadata, err := ParseMovieMetadata(context.Background(), "https://www.themoviedb.org/movie/550-fight-club", client)
+	metadata, err := ParseMovieMetadata(context.Background(), "https://www.themoviedb.org/movie/550-fight-club", client, nil)
 	if err != nil {
 		t.Fatalf("ParseMovieMetadata error: %v", err)
 	}
@@ -169,7 +169,7 @@ func TestParseMovieMetadataTMDBTVURL(t *testing.T) {
 	defer server.Close()
 
 	client := newTestTMDBClient(t, server.URL)
-	metadata, err := ParseMovieMetadata(context.Background(), "https://www.themoviedb.org/tv/1399-game-of-thrones", client)
+	metadata, err := ParseMovieMetadata(context.Background(), "https://www.themoviedb.org/tv/1399-game-of-thrones", client, nil)
 	if err != nil {
 		t.Fatalf("ParseMovieMetadata error: %v", err)
 	}
@@ -231,7 +231,7 @@ func TestParseMovieMetadataTMDBTVURLWithoutSeasons(t *testing.T) {
 	defer server.Close()
 
 	client := newTestTMDBClient(t, server.URL)
-	metadata, err := ParseMovieMetadata(context.Background(), "https://www.themoviedb.org/tv/3036-fringe", client)
+	metadata, err := ParseMovieMetadata(context.Background(), "https://www.themoviedb.org/tv/3036-fringe", client, nil)
 	if err != nil {
 		t.Fatalf("ParseMovieMetadata error: %v", err)
 	}
@@ -283,7 +283,7 @@ func TestParseMovieMetadataLetterboxdURL(t *testing.T) {
 	defer server.Close()
 
 	client := newTestTMDBClient(t, server.URL)
-	metadata, err := ParseMovieMetadata(context.Background(), "https://letterboxd.com/film/the-matrix/", client)
+	metadata, err := ParseMovieMetadata(context.Background(), "https://letterboxd.com/film/the-matrix/", client, nil)
 	if err != nil {
 		t.Fatalf("ParseMovieMetadata error: %v", err)
 	}
@@ -308,7 +308,7 @@ func TestParseMovieMetadataNoMatchingURL(t *testing.T) {
 	defer server.Close()
 
 	client := newTestTMDBClient(t, server.URL)
-	metadata, err := ParseMovieMetadata(context.Background(), "https://example.com/not-a-movie-link", client)
+	metadata, err := ParseMovieMetadata(context.Background(), "https://example.com/not-a-movie-link", client, nil)
 	if err != nil {
 		t.Fatalf("ParseMovieMetadata error: %v", err)
 	}
@@ -325,7 +325,7 @@ func TestParseMovieMetadataTMDBAPIError(t *testing.T) {
 	defer server.Close()
 
 	client := newTestTMDBClient(t, server.URL)
-	metadata, err := ParseMovieMetadata(context.Background(), "https://www.themoviedb.org/movie/550", client)
+	metadata, err := ParseMovieMetadata(context.Background(), "https://www.themoviedb.org/movie/550", client, nil)
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -334,5 +334,109 @@ func TestParseMovieMetadataTMDBAPIError(t *testing.T) {
 	}
 	if !errors.Is(err, ErrTMDBRateLimited) {
 		t.Fatalf("expected ErrTMDBRateLimited, got %v", err)
+	}
+}
+
+func TestParseMovieMetadataEnrichesWithOMDBRatings(t *testing.T) {
+	tmdbServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/movie/603" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"id":603,
+			"title":"The Matrix",
+			"overview":"A hacker learns reality is simulated.",
+			"poster_path":"/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
+			"backdrop_path":"/icmmSD4vTTDKOq2vvdulafOGw93.jpg",
+			"runtime":136,
+			"genres":[{"id":28,"name":"Action"}],
+			"release_date":"1999-03-30",
+			"vote_average":8.2,
+			"imdb_id":"tt0133093",
+			"credits":{"cast":[],"crew":[]},
+			"videos":{"results":[]}
+		}`))
+	}))
+	defer tmdbServer.Close()
+
+	omdbServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := strings.TrimSpace(r.URL.Query().Get("i")); got != "tt0133093" {
+			t.Fatalf("imdb id = %q, want tt0133093", got)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"Response":"True",
+			"Ratings":[
+				{"Source":"Rotten Tomatoes","Value":"88%"},
+				{"Source":"Metacritic","Value":"73/100"}
+			]
+		}`))
+	}))
+	defer omdbServer.Close()
+
+	tmdbClient := newTestTMDBClient(t, tmdbServer.URL)
+	omdbClient := newTestOMDBClient(t, omdbServer.URL)
+	metadata, err := ParseMovieMetadata(context.Background(), "https://www.themoviedb.org/movie/603-the-matrix", tmdbClient, omdbClient)
+	if err != nil {
+		t.Fatalf("ParseMovieMetadata error: %v", err)
+	}
+	if metadata == nil {
+		t.Fatal("expected metadata")
+	}
+	if metadata.RottenTomatoesScore == nil || *metadata.RottenTomatoesScore != 88 {
+		t.Fatalf("RottenTomatoesScore = %+v, want 88", metadata.RottenTomatoesScore)
+	}
+	if metadata.MetacriticScore == nil || *metadata.MetacriticScore != 73 {
+		t.Fatalf("MetacriticScore = %+v, want 73", metadata.MetacriticScore)
+	}
+}
+
+func TestParseMovieMetadataOMDBFailureFallsBackToTMDB(t *testing.T) {
+	tmdbServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/tv/1399" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"id":1399,
+			"name":"Game of Thrones",
+			"overview":"Noble families fight for control.",
+			"poster_path":"/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+			"backdrop_path":"/suopoADq0k8YZr4dQXcU6pToj6s.jpg",
+			"runtime":57,
+			"genres":[{"id":18,"name":"Drama"}],
+			"first_air_date":"2011-04-17",
+			"vote_average":8.5,
+			"external_ids":{"imdb_id":"tt0944947"},
+			"credits":{"cast":[],"crew":[]},
+			"videos":{"results":[]}
+		}`))
+	}))
+	defer tmdbServer.Close()
+
+	omdbServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusTooManyRequests)
+		_, _ = w.Write([]byte(`{"Error":"Request limit reached!"}`))
+	}))
+	defer omdbServer.Close()
+
+	tmdbClient := newTestTMDBClient(t, tmdbServer.URL)
+	omdbClient := newTestOMDBClient(t, omdbServer.URL)
+	metadata, err := ParseMovieMetadata(context.Background(), "https://www.themoviedb.org/tv/1399", tmdbClient, omdbClient)
+	if err != nil {
+		t.Fatalf("ParseMovieMetadata error: %v", err)
+	}
+	if metadata == nil {
+		t.Fatal("expected metadata")
+	}
+	if metadata.Title != "Game of Thrones" {
+		t.Fatalf("Title = %q, want Game of Thrones", metadata.Title)
+	}
+	if metadata.RottenTomatoesScore != nil {
+		t.Fatalf("expected RottenTomatoesScore to be nil, got %v", *metadata.RottenTomatoesScore)
+	}
+	if metadata.MetacriticScore != nil {
+		t.Fatalf("expected MetacriticScore to be nil, got %v", *metadata.MetacriticScore)
 	}
 }
