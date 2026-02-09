@@ -24,6 +24,7 @@
     775,
     776,
     777,
+    786,
     789
   ],
   "issues": [
@@ -377,7 +378,7 @@
     {
       "issue_number": 786,
       "title": "Create MovieData and WatchlistItem models",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -388,7 +389,9 @@
       "assigned_to": "agent-1770625186-19326",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770625186-19326",
       "branch": "feat/issue-786-create-moviedata-and-watchlistitem-model",
-      "claimed_at": "2026-02-09T08:19:46Z"
+      "claimed_at": "2026-02-09T08:19:46Z",
+      "pr_number": 812,
+      "completed_at": "2026-02-09T08:30:51Z"
     },
     {
       "issue_number": 787,
