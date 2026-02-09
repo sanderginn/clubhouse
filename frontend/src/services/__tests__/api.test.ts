@@ -276,4 +276,158 @@ describe('api client', () => {
 
     expect(findCall('/auth/csrf')).toBeUndefined();
   });
+
+  it('addToWatchlist posts categories and maps response fields', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/auth/csrf')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: vi.fn().mockResolvedValue({ token: 'csrf-token' }),
+        });
+      }
+
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue({
+          watchlist_items: [
+            {
+              id: 'wl-1',
+              user_id: 'user-1',
+              post_id: 'post-1',
+              category: 'Favorites',
+              created_at: '2026-02-01T00:00:00Z',
+            },
+          ],
+        }),
+      });
+    });
+
+    const response = await api.addToWatchlist('post-1', ['Favorites']);
+
+    const addCall = findCall('/posts/post-1/watchlist');
+    const body = JSON.parse(addCall?.[1]?.body as string);
+    expect(body.categories).toEqual(['Favorites']);
+    expect(response.watchlistItems).toEqual([
+      {
+        id: 'wl-1',
+        userId: 'user-1',
+        postId: 'post-1',
+        category: 'Favorites',
+        createdAt: '2026-02-01T00:00:00Z',
+      },
+    ]);
+  });
+
+  it('getPostWatchlistInfo maps snake_case response fields', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({
+        save_count: 3,
+        users: [{ id: 'user-1', username: 'alice', profile_picture_url: '/avatar.png' }],
+        viewer_saved: true,
+        viewer_categories: ['Favorites'],
+      }),
+    });
+
+    const response = await api.getPostWatchlistInfo('post-1');
+
+    expect(response).toEqual({
+      saveCount: 3,
+      users: [{ id: 'user-1', username: 'alice', displayName: 'alice', avatar: '/avatar.png' }],
+      viewerSaved: true,
+      viewerCategories: ['Favorites'],
+    });
+  });
+
+  it('logWatch sends watched_at and maps watch_log response', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/auth/csrf')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: vi.fn().mockResolvedValue({ token: 'csrf-token' }),
+        });
+      }
+
+      return Promise.resolve({
+        ok: true,
+        status: 201,
+        json: vi.fn().mockResolvedValue({
+          watch_log: {
+            id: 'log-1',
+            user_id: 'user-1',
+            post_id: 'post-1',
+            rating: 5,
+            notes: 'Great film',
+            watched_at: '2026-02-01T12:00:00Z',
+          },
+        }),
+      });
+    });
+
+    const response = await api.logWatch('post-1', 5, 'Great film', '2026-02-01T12:00:00Z');
+
+    const call = findCall('/posts/post-1/watch-log');
+    const body = JSON.parse(call?.[1]?.body as string);
+    expect(body).toEqual({
+      rating: 5,
+      notes: 'Great film',
+      watched_at: '2026-02-01T12:00:00Z',
+    });
+    expect(response).toEqual({
+      watchLog: {
+        id: 'log-1',
+        userId: 'user-1',
+        postId: 'post-1',
+        rating: 5,
+        notes: 'Great film',
+        watchedAt: '2026-02-01T12:00:00Z',
+      },
+    });
+  });
+
+  it('getMyWatchLogs adds query params and maps nextCursor', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({
+        watch_logs: [
+          {
+            id: 'log-1',
+            user_id: 'user-1',
+            post_id: 'post-1',
+            rating: 4,
+            notes: null,
+            watched_at: '2026-02-01T12:00:00Z',
+          },
+        ],
+        next_cursor: 'next-1',
+      }),
+    });
+
+    const response = await api.getMyWatchLogs(10, 'cursor-1');
+
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toContain('/me/watch-logs');
+    expect(url).toContain('limit=10');
+    expect(url).toContain('cursor=cursor-1');
+    expect(response).toEqual({
+      watchLogs: [
+        {
+          id: 'log-1',
+          userId: 'user-1',
+          postId: 'post-1',
+          rating: 4,
+          notes: undefined,
+          watchedAt: '2026-02-01T12:00:00Z',
+          post: undefined,
+          user: undefined,
+        },
+      ],
+      nextCursor: 'next-1',
+    });
+  });
 });
