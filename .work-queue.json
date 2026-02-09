@@ -710,7 +710,7 @@
     {
       "issue_number": 802,
       "title": "Create WatchlistSaveButton component",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         801
       ],
@@ -719,7 +719,11 @@
         "frontend",
         "movies"
       ],
-      "priority": 39
+      "priority": 39,
+      "assigned_to": "agent-1770632584-11049",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770632584-11049",
+      "branch": "feat/issue-802-create-watchlistsavebutton-component",
+      "claimed_at": "2026-02-09T10:23:04Z"
     },
     {
       "issue_number": 803,
