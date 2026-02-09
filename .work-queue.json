@@ -40,6 +40,7 @@
     799,
     800,
     801,
+    803,
     805,
     806
   ],
@@ -729,7 +730,7 @@
     {
       "issue_number": 803,
       "title": "Create WatchButton component",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         801
       ],
@@ -742,7 +743,9 @@
       "assigned_to": "agent-1770632588-11145",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770632588-11145",
       "branch": "feat/issue-803-create-watchbutton-component",
-      "claimed_at": "2026-02-09T10:23:08Z"
+      "claimed_at": "2026-02-09T10:23:08Z",
+      "pr_number": 827,
+      "completed_at": "2026-02-09T10:47:54Z"
     },
     {
       "issue_number": 804,
