@@ -112,6 +112,33 @@ describe('mapApiPost', () => {
     expect(post.links?.[0].metadata?.recipe?.nutrition?.calories).toBe('200');
   });
 
+  it('maps movie stats from API shape', () => {
+    const post = mapApiPost({
+      id: 'post-movie-stats',
+      user_id: 'user-movie-stats',
+      section_id: 'section-movie',
+      content: 'Movie stats',
+      created_at: '2025-01-01T00:00:00Z',
+      movie_stats: {
+        watchlist_count: 9,
+        watch_count: 4,
+        avg_rating: 4.25,
+        viewer_watchlisted: true,
+        viewer_watched: false,
+        viewer_rating: 5,
+        viewer_categories: ['Top Picks'],
+      },
+    });
+
+    expect(post.movieStats?.watchlistCount).toBe(9);
+    expect(post.movieStats?.watchCount).toBe(4);
+    expect(post.movieStats?.averageRating).toBe(4.25);
+    expect(post.movieStats?.viewerWatchlisted).toBe(true);
+    expect(post.movieStats?.viewerWatched).toBe(false);
+    expect(post.movieStats?.viewerRating).toBe(5);
+    expect(post.movieStats?.viewerCategories).toEqual(['Top Picks']);
+  });
+
   it('handles missing user and links gracefully', () => {
     const post = mapApiPost({
       id: 'post-2',
