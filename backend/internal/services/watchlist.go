@@ -212,9 +212,15 @@ func (s *WatchlistService) RemoveFromWatchlist(ctx context.Context, userID, post
 }
 
 // GetUserWatchlist returns watchlist items grouped by category.
-func (s *WatchlistService) GetUserWatchlist(ctx context.Context, userID uuid.UUID) (map[string][]models.WatchlistItemWithPost, error) {
+func (s *WatchlistService) GetUserWatchlist(ctx context.Context, userID uuid.UUID, sectionType *string) (map[string][]models.WatchlistItemWithPost, error) {
 	ctx, span := otel.Tracer("clubhouse.watchlist").Start(ctx, "WatchlistService.GetUserWatchlist")
-	span.SetAttributes(attribute.String("user_id", userID.String()))
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.Bool("has_section_type", sectionType != nil),
+	)
+	if sectionType != nil {
+		span.SetAttributes(attribute.String("section_type", *sectionType))
+	}
 	defer span.End()
 
 	query := `
@@ -222,11 +228,18 @@ func (s *WatchlistService) GetUserWatchlist(ctx context.Context, userID uuid.UUI
 			wi.id, wi.user_id, wi.post_id, wi.category, wi.created_at, wi.deleted_at
 		FROM watchlist_items wi
 		JOIN posts p ON wi.post_id = p.id
+		JOIN sections s ON p.section_id = s.id
 		WHERE wi.user_id = $1 AND wi.deleted_at IS NULL AND p.deleted_at IS NULL
-		ORDER BY wi.category ASC, wi.created_at DESC
 	`
 
-	rows, err := s.db.QueryContext(ctx, query, userID)
+	args := []interface{}{userID}
+	if sectionType != nil && *sectionType != "" {
+		query += " AND s.type = $2"
+		args = append(args, *sectionType)
+	}
+	query += " ORDER BY wi.category ASC, wi.created_at DESC"
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		recordSpanError(span, err)
 		return nil, err

@@ -495,10 +495,10 @@ function createMovieStore() {
         ...state,
         watchlist: moveCategoryWatchlistItems(state.watchlist, fromCategory, toCategory),
       })),
-    loadWatchlist: async (): Promise<void> => {
+    loadWatchlist: async (sectionType?: 'movie' | 'series'): Promise<void> => {
       movieStore.setLoadingWatchlist(true);
       try {
-        const response = await api.getMyWatchlist();
+        const response = await api.getMyWatchlist(sectionType);
         movieStore.setWatchlist(buildWatchlistMap(response.categories ?? []));
       } catch (error) {
         movieStore.setError(error instanceof Error ? error.message : 'Failed to load watchlist');

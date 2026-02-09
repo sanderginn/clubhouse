@@ -4,11 +4,13 @@
   import type { Link, LinkMetadata, Post } from '../../stores/postStore';
   import type { WatchlistCategory, WatchlistItem } from '../../stores/movieStore';
   import { movieStore, sortedCategories, watchlistByCategory } from '../../stores/movieStore';
+  import { sections } from '../../stores/sectionStore';
   import { api } from '../../services/api';
   import { buildStandaloneThreadHref, pushPath } from '../../services/routeNavigation';
 
   type TabKey = 'my' | 'all';
   type SortKey = 'rating' | 'date' | 'watch_count' | 'watchlist_count';
+  type WatchlistSectionType = 'movie' | 'series';
 
   type MovieListItem = {
     postId: string;
@@ -52,6 +54,8 @@
     createCategory: undefined;
   }>();
 
+  export let sectionType: WatchlistSectionType = 'movie';
+
   let activeTab: TabKey = 'my';
   let selectedCategory = ALL_CATEGORY_VALUE;
   let sortKey: SortKey = 'rating';
@@ -68,11 +72,9 @@
   let deleteCategoryName = '';
   let isCategoryActionBusy = false;
   let localCategoryError: string | null = null;
+  let lastLoadedSectionType: WatchlistSectionType | null = null;
 
-  const tabOptions: Array<{ key: TabKey; label: string }> = [
-    { key: 'my', label: 'My List' },
-    { key: 'all', label: 'All Movies' },
-  ];
+  let tabOptions: Array<{ key: TabKey; label: string }> = [];
 
   const sortOptions: Array<{ key: SortKey; label: string }> = [
     { key: 'rating', label: 'Rating' },
@@ -88,17 +90,25 @@
       movieStore.loadWatchlistCategories();
     }
 
-    if (!state.isLoadingWatchlist && state.watchlist.size === 0) {
-      movieStore.loadWatchlist();
-    }
-
     if (!state.isLoadingWatchLogs && state.watchLogs.length === 0) {
       movieStore.loadWatchLogs();
     }
   });
 
-  $: categoryCounts = buildCategoryCounts($watchlistByCategory);
-  $: postWatchlistCounts = buildPostWatchlistCounts($watchlistByCategory);
+  $: mediaLabelPlural = sectionType === 'series' ? 'series' : 'movies';
+  $: mediaLabelTitle = sectionType === 'series' ? 'Series' : 'Movies';
+  $: tabOptions = [
+    { key: 'my', label: 'My List' },
+    { key: 'all', label: `All ${mediaLabelTitle}` },
+  ];
+  $: sectionTypeBySectionID = new Map($sections.map((section) => [section.id, section.type]));
+  $: filteredWatchlistByCategory = filterWatchlistBySectionType(
+    $watchlistByCategory,
+    sectionTypeBySectionID,
+    sectionType
+  );
+  $: categoryCounts = buildCategoryCounts(filteredWatchlistByCategory);
+  $: postWatchlistCounts = buildPostWatchlistCounts(filteredWatchlistByCategory);
   $: totalSavedCount = Array.from(categoryCounts.values()).reduce(
     (total, count) => total + count,
     0
@@ -111,7 +121,7 @@
   );
   $: displayCategoryError = localCategoryError ?? $movieStore.error;
   $: watchedPostIDs = new Set($movieStore.watchLogs.map((log) => log.postId));
-  $: categoryOptions = buildCategoryOptions($sortedCategories, $watchlistByCategory);
+  $: categoryOptions = buildCategoryOptions($sortedCategories, filteredWatchlistByCategory);
   $: selectedCategoryLabel =
     categoryOptions.find((option) => option.value === selectedCategory)?.label ??
     ALL_CATEGORY_LABEL;
@@ -123,7 +133,7 @@
     selectedCategory = ALL_CATEGORY_VALUE;
   }
 
-  $: selectedWatchlistItems = getWatchlistItemsForCategory($watchlistByCategory, selectedCategory);
+  $: selectedWatchlistItems = getWatchlistItemsForCategory(filteredWatchlistByCategory, selectedCategory);
   $: myMovies = buildWatchlistMovieItems(
     selectedWatchlistItems,
     watchedPostIDs,
@@ -131,14 +141,68 @@
   );
   $: allMovies = sortMovies(
     filterMoviesBySearch(
-      buildAllMovieItems(allMoviePosts, watchedPostIDs, postWatchlistCounts),
+      buildAllMovieItems(
+        allMoviePosts,
+        watchedPostIDs,
+        postWatchlistCounts,
+        sectionTypeBySectionID,
+        sectionType
+      ),
       searchTerm
     ),
     sortKey
   );
+  $: if (lastLoadedSectionType !== sectionType) {
+    lastLoadedSectionType = sectionType;
+    selectedCategory = ALL_CATEGORY_VALUE;
+    searchTerm = '';
+    allMoviePosts = [];
+    allMoviesHasMore = false;
+    allMoviesNextCursor = null;
+    allMoviesAutoLoadAttempted = false;
+    allMoviesError = null;
+    if (typeof window !== 'undefined') {
+      void movieStore.loadWatchlist(sectionType);
+    }
+  }
   $: if (activeTab === 'all' && !allMoviesAutoLoadAttempted && !allMoviesLoading) {
     allMoviesAutoLoadAttempted = true;
     void loadAllMovies(true);
+  }
+
+  function isPostInSectionType(
+    post: Post | undefined,
+    sectionTypesBySectionID: Map<string, string>,
+    targetSectionType: WatchlistSectionType
+  ): boolean {
+    if (!post) {
+      return true;
+    }
+
+    const postSectionType = sectionTypesBySectionID.get(post.sectionId);
+    if (!postSectionType) {
+      return true;
+    }
+
+    return postSectionType === targetSectionType;
+  }
+
+  function filterWatchlistBySectionType(
+    watchlistMap: Map<string, WatchlistItem[]>,
+    sectionTypesBySectionID: Map<string, string>,
+    targetSectionType: WatchlistSectionType
+  ): Map<string, WatchlistItem[]> {
+    const filtered = new Map<string, WatchlistItem[]>();
+    for (const [categoryName, items] of watchlistMap.entries()) {
+      const matching = items.filter((item) =>
+        isPostInSectionType(item.post, sectionTypesBySectionID, targetSectionType)
+      );
+      if (matching.length > 0) {
+        filtered.set(categoryName, matching);
+      }
+    }
+
+    return filtered;
   }
 
   function buildCategoryCounts(map: Map<string, WatchlistItem[]>): Map<string, number> {
@@ -347,10 +411,16 @@
   function buildAllMovieItems(
     postList: Post[],
     watchedIDs: Set<string>,
-    fallbackCounts: Map<string, number>
+    fallbackCounts: Map<string, number>,
+    sectionTypesBySectionID: Map<string, string>,
+    targetSectionType: WatchlistSectionType
   ): MovieListItem[] {
     return postList
-      .filter((post) => isMovieOrSeriesPost(post))
+      .filter(
+        (post) =>
+          isMovieOrSeriesPost(post) &&
+          isPostInSectionType(post, sectionTypesBySectionID, targetSectionType)
+      )
       .map((post) => {
         const link = findMovieLink(post);
         return {
@@ -390,7 +460,8 @@
     try {
       const response = await api.getMoviePosts(
         ALL_MOVIES_PAGE_SIZE,
-        reset ? undefined : (allMoviesNextCursor ?? undefined)
+        reset ? undefined : (allMoviesNextCursor ?? undefined),
+        sectionType
       );
 
       allMoviePosts = reset ? response.posts : mergeMovies(allMoviePosts, response.posts);
@@ -398,7 +469,7 @@
       allMoviesNextCursor = response.nextCursor ?? null;
       allMoviesError = null;
     } catch (error) {
-      allMoviesError = error instanceof Error ? error.message : 'Failed to load movies';
+      allMoviesError = error instanceof Error ? error.message : `Failed to load ${mediaLabelPlural}`;
     } finally {
       allMoviesLoading = false;
     }
@@ -459,7 +530,7 @@
   }
 
   async function refreshWatchlistView(): Promise<void> {
-    await Promise.all([movieStore.loadWatchlistCategories(), movieStore.loadWatchlist()]);
+    await Promise.all([movieStore.loadWatchlistCategories(), movieStore.loadWatchlist(sectionType)]);
   }
 
   function startEditCategory(categoryName: string) {
@@ -766,9 +837,9 @@
           <div class="flex items-center justify-between">
             <div>
               <h3 class="text-sm font-semibold text-gray-900">{selectedCategoryLabel}</h3>
-              <p class="text-xs text-gray-500">Movies saved to your list.</p>
+              <p class="text-xs text-gray-500">{mediaLabelTitle} saved to your list.</p>
             </div>
-            <span class="text-xs text-gray-400">{myMovies.length} movies</span>
+            <span class="text-xs text-gray-400">{myMovies.length} {mediaLabelPlural}</span>
           </div>
 
           {#if myMovies.length === 0}
@@ -777,11 +848,11 @@
               data-testid="watchlist-empty"
             >
               {#if totalSavedCount === 0}
-                No movies saved yet
+                No {mediaLabelPlural} saved yet
               {:else if selectedCategory !== ALL_CATEGORY_VALUE}
-                No movies in this category
+                No {mediaLabelPlural} in this category
               {:else}
-                No movies saved yet
+                No {mediaLabelPlural} saved yet
               {/if}
             </div>
           {:else}
@@ -842,9 +913,9 @@
       <div>
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 class="text-sm font-semibold text-gray-900">All Movies</h3>
+            <h3 class="text-sm font-semibold text-gray-900">All {mediaLabelTitle}</h3>
             <p class="text-xs text-gray-500">
-              Browse everything shared in movie and series sections.
+              Browse everything shared in the {mediaLabelPlural} section.
             </p>
           </div>
 
@@ -878,7 +949,7 @@
             class="mt-3 rounded-xl border border-dashed border-gray-200 px-4 py-6 text-sm text-gray-500"
             data-testid="watchlist-all-loading"
           >
-            Loading movies...
+            Loading {mediaLabelPlural}...
           </div>
         {:else if allMoviesError && allMovies.length === 0}
           <div
@@ -903,7 +974,7 @@
             class="mt-3 rounded-xl border border-dashed border-gray-200 px-4 py-6 text-sm text-gray-500"
             data-testid="watchlist-all-empty"
           >
-            No movies available
+            No {mediaLabelPlural} available
           </div>
         {:else}
           <div

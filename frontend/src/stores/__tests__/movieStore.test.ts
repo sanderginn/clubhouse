@@ -118,6 +118,11 @@ describe('movieStore', () => {
     expect(favorites[0].post?.id).toBe('post-1');
   });
 
+  it('loadWatchlist forwards optional section type', async () => {
+    await movieStore.loadWatchlist('series');
+    expect(apiGetMyWatchlist).toHaveBeenCalledWith('series');
+  });
+
   it('addToWatchlist and removeFromWatchlist update state', async () => {
     apiAddToWatchlist.mockResolvedValue({
       watchlistItems: [

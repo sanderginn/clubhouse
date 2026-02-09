@@ -1344,13 +1344,23 @@ func isMovieOrSeriesSectionType(sectionType string) bool {
 }
 
 // GetMovieFeed retrieves a paginated feed of posts across movie and series sections.
-func (s *PostService) GetMovieFeed(ctx context.Context, cursor *string, limit int, userID uuid.UUID) (*models.FeedResponse, error) {
+func (s *PostService) GetMovieFeed(
+	ctx context.Context,
+	cursor *string,
+	limit int,
+	userID uuid.UUID,
+	sectionType *string,
+) (*models.FeedResponse, error) {
 	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.GetMovieFeed")
 	span.SetAttributes(
 		attribute.String("user_id", userID.String()),
 		attribute.Int("limit", limit),
 		attribute.Bool("has_cursor", cursor != nil && *cursor != ""),
+		attribute.Bool("has_section_type", sectionType != nil),
 	)
+	if sectionType != nil {
+		span.SetAttributes(attribute.String("section_type", *sectionType))
+	}
 	defer span.End()
 
 	if limit <= 0 || limit > 100 {
@@ -1367,11 +1377,19 @@ func (s *PostService) GetMovieFeed(ctx context.Context, cursor *string, limit in
 		JOIN sections s ON p.section_id = s.id
 		JOIN users u ON p.user_id = u.id
 		LEFT JOIN comments c ON p.id = c.post_id AND c.deleted_at IS NULL
-		WHERE s.type IN ('movie', 'series') AND p.deleted_at IS NULL
+		WHERE p.deleted_at IS NULL
 	`
 
 	args := make([]interface{}, 0, 3)
 	argIndex := 1
+
+	if sectionType != nil && *sectionType != "" {
+		query += fmt.Sprintf(" AND s.type = $%d", argIndex)
+		args = append(args, *sectionType)
+		argIndex++
+	} else {
+		query += " AND s.type IN ('movie', 'series')"
+	}
 
 	if cursor != nil && *cursor != "" {
 		query += fmt.Sprintf(" AND p.created_at < $%d", argIndex)

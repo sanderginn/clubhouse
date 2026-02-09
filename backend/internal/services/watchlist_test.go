@@ -370,7 +370,7 @@ func TestGetUserWatchlistGroupsByCategoryAndIncludesPost(t *testing.T) {
 		t.Fatalf("AddToWatchlist uncategorized failed: %v", err)
 	}
 
-	grouped, err := service.GetUserWatchlist(context.Background(), uuid.MustParse(userID))
+	grouped, err := service.GetUserWatchlist(context.Background(), uuid.MustParse(userID), nil)
 	if err != nil {
 		t.Fatalf("GetUserWatchlist failed: %v", err)
 	}
@@ -393,6 +393,56 @@ func TestGetUserWatchlistGroupsByCategoryAndIncludesPost(t *testing.T) {
 	}
 	if uncategorized[0].Post == nil || uncategorized[0].Post.ID != uuid.MustParse(postB) {
 		t.Fatalf("expected Uncategorized item post %s, got %+v", postB, uncategorized[0].Post)
+	}
+}
+
+func TestGetUserWatchlistFiltersBySectionType(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "watchlistsectionfilter", "watchlistsectionfilter@test.com", false, true)
+	movieSectionID := testutil.CreateTestSection(t, db, "Movies", "movie")
+	seriesSectionID := testutil.CreateTestSection(t, db, "Series", "series")
+	moviePostID := testutil.CreateTestPost(t, db, userID, movieSectionID, "Movie post")
+	seriesPostID := testutil.CreateTestPost(t, db, userID, seriesSectionID, "Series post")
+
+	service := NewWatchlistService(db)
+	_, err := service.CreateCategory(context.Background(), uuid.MustParse(userID), "Favorites")
+	if err != nil {
+		t.Fatalf("CreateCategory failed: %v", err)
+	}
+
+	_, err = service.AddToWatchlist(context.Background(), uuid.MustParse(userID), uuid.MustParse(moviePostID), []string{"Favorites"})
+	if err != nil {
+		t.Fatalf("AddToWatchlist movie failed: %v", err)
+	}
+	_, err = service.AddToWatchlist(context.Background(), uuid.MustParse(userID), uuid.MustParse(seriesPostID), []string{"Favorites"})
+	if err != nil {
+		t.Fatalf("AddToWatchlist series failed: %v", err)
+	}
+
+	movieType := "movie"
+	movieOnly, err := service.GetUserWatchlist(context.Background(), uuid.MustParse(userID), &movieType)
+	if err != nil {
+		t.Fatalf("GetUserWatchlist movie filter failed: %v", err)
+	}
+	if len(movieOnly["Favorites"]) != 1 {
+		t.Fatalf("expected 1 movie item, got %d", len(movieOnly["Favorites"]))
+	}
+	if movieOnly["Favorites"][0].PostID != uuid.MustParse(moviePostID) {
+		t.Fatalf("expected movie post %s, got %s", moviePostID, movieOnly["Favorites"][0].PostID)
+	}
+
+	seriesType := "series"
+	seriesOnly, err := service.GetUserWatchlist(context.Background(), uuid.MustParse(userID), &seriesType)
+	if err != nil {
+		t.Fatalf("GetUserWatchlist series filter failed: %v", err)
+	}
+	if len(seriesOnly["Favorites"]) != 1 {
+		t.Fatalf("expected 1 series item, got %d", len(seriesOnly["Favorites"]))
+	}
+	if seriesOnly["Favorites"][0].PostID != uuid.MustParse(seriesPostID) {
+		t.Fatalf("expected series post %s, got %s", seriesPostID, seriesOnly["Favorites"][0].PostID)
 	}
 }
 

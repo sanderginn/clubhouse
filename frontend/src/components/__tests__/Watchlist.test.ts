@@ -4,6 +4,7 @@ import type { WatchLog, WatchlistCategory, WatchlistItem } from '../../stores/mo
 import type { ApiPost } from '../../stores/postMapper';
 import { mapApiPost } from '../../stores/postMapper';
 import { movieStore } from '../../stores/movieStore';
+import { sectionStore } from '../../stores/sectionStore';
 import { api } from '../../services/api';
 
 const pushPath = vi.fn();
@@ -93,6 +94,32 @@ const apiPostThree: ApiPost = {
   },
 };
 
+const apiPostFive: ApiPost = {
+  id: 'post-5',
+  user_id: 'user-5',
+  section_id: 'section-movie',
+  content: 'Terminator 2',
+  created_at: '2026-01-06T00:00:00Z',
+  links: [
+    {
+      url: 'https://example.com/terminator2',
+      metadata: {
+        title: 'Terminator 2',
+        image: 'https://example.com/terminator2.jpg',
+        movie: {
+          title: 'Terminator 2',
+          poster: 'https://example.com/terminator2.jpg',
+        },
+      },
+    },
+  ],
+  movie_stats: {
+    avg_rating: 4.6,
+    watch_count: 2,
+    watchlist_count: 9,
+  },
+};
+
 const apiNonMoviePost: ApiPost = {
   id: 'post-4',
   user_id: 'user-4',
@@ -112,6 +139,7 @@ const apiNonMoviePost: ApiPost = {
 const postOne = mapApiPost(apiPostOne);
 const postTwo = mapApiPost(apiPostTwo);
 const postThree = mapApiPost(apiPostThree);
+const postFive = mapApiPost(apiPostFive);
 const nonMoviePost = mapApiPost(apiNonMoviePost);
 
 const categories: WatchlistCategory[] = [
@@ -120,19 +148,27 @@ const categories: WatchlistCategory[] = [
 ];
 
 const watchlistMap = new Map<string, WatchlistItem[]>([
-  [
-    'Favorites',
     [
-      {
-        id: 'watch-1',
+      'Favorites',
+      [
+        {
+          id: 'watch-1',
         userId: 'user-1',
         postId: 'post-1',
         category: 'Favorites',
-        createdAt: '2026-01-05T00:00:00Z',
-        post: postOne,
-      },
+          createdAt: '2026-01-05T00:00:00Z',
+          post: postOne,
+        },
+        {
+          id: 'watch-3',
+          userId: 'user-1',
+          postId: 'post-3',
+          category: 'Favorites',
+          createdAt: '2026-01-07T00:00:00Z',
+          post: postThree,
+        },
+      ],
     ],
-  ],
   [
     'Horror',
     [
@@ -161,24 +197,38 @@ const watchLogs: WatchLog[] = [
 
 beforeEach(() => {
   movieStore.reset();
+  sectionStore.setSections([
+    { id: 'section-general', name: 'General', type: 'general', icon: '💬', slug: 'general' },
+    { id: 'section-movie', name: 'Movies', type: 'movie', icon: '🎬', slug: 'movies' },
+    { id: 'section-series', name: 'Series', type: 'series', icon: '📺', slug: 'series' },
+  ]);
 
   movieStore.setCategories([...categories]);
   movieStore.setWatchlist(new Map(watchlistMap));
   movieStore.setWatchLogs([...watchLogs]);
 
-  vi.spyOn(api, 'getMoviePosts').mockImplementation(async (_limit?: number, cursor?: string) => {
-    if (cursor === 'cursor-page-2') {
+  vi.spyOn(api, 'getMoviePosts').mockImplementation(
+    async (_limit?: number, cursor?: string, sectionType?: 'movie' | 'series') => {
+      if (sectionType === 'series') {
+        return {
+          posts: [postThree],
+          hasMore: false,
+        };
+      }
+
+      if (cursor === 'cursor-page-2') {
+        return {
+          posts: [postFive],
+          hasMore: false,
+        };
+      }
       return {
-        posts: [postThree],
-        hasMore: false,
+        posts: [postOne, postTwo, nonMoviePost],
+        hasMore: true,
+        nextCursor: 'cursor-page-2',
       };
     }
-    return {
-      posts: [postOne, postTwo, nonMoviePost],
-      hasMore: true,
-      nextCursor: 'cursor-page-2',
-    };
-  });
+  );
 
   vi.spyOn(movieStore, 'loadWatchlistCategories').mockResolvedValue();
   vi.spyOn(movieStore, 'loadWatchlist').mockResolvedValue();
@@ -199,6 +249,7 @@ describe('Watchlist', () => {
     expect(screen.getByTestId('watchlist-tab-my')).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByTestId('watchlist-my-item-post-1')).toBeInTheDocument();
     expect(screen.getByTestId('watchlist-my-item-post-2')).toBeInTheDocument();
+    expect(screen.queryByTestId('watchlist-my-item-post-3')).not.toBeInTheDocument();
     expect(screen.getByTestId('watchlist-watched-post-1')).toBeInTheDocument();
   });
 
@@ -210,7 +261,7 @@ describe('Watchlist', () => {
     let items = await screen.findAllByTestId(/watchlist-all-item-/);
     expect(items).toHaveLength(2);
     expect(screen.queryByTestId('watchlist-all-item-post-4')).not.toBeInTheDocument();
-    expect(api.getMoviePosts).toHaveBeenNthCalledWith(1, 20, undefined);
+    expect(api.getMoviePosts).toHaveBeenNthCalledWith(1, 20, undefined, 'movie');
     expect(items[0]).toHaveTextContent('The Matrix');
 
     await fireEvent.change(screen.getByTestId('watchlist-sort'), {
@@ -221,24 +272,37 @@ describe('Watchlist', () => {
     expect(items[0]).toHaveTextContent('Alien');
 
     await fireEvent.click(screen.getByTestId('watchlist-all-load-more'));
-    await screen.findByTestId('watchlist-all-item-post-3');
-    expect(api.getMoviePosts).toHaveBeenNthCalledWith(2, 20, 'cursor-page-2');
+    await screen.findByTestId('watchlist-all-item-post-5');
+    expect(api.getMoviePosts).toHaveBeenNthCalledWith(2, 20, 'cursor-page-2', 'movie');
 
     await fireEvent.change(screen.getByTestId('watchlist-sort'), {
       target: { value: 'watchlist_count' },
     });
 
     items = screen.getAllByTestId(/watchlist-all-item-/);
-    expect(items[0]).toHaveTextContent('Severance');
+    expect(items[0]).toHaveTextContent('Terminator 2');
 
     await fireEvent.input(screen.getByTestId('watchlist-search'), {
-      target: { value: 'sever' },
+      target: { value: 'terminator' },
     });
     await waitFor(() => {
       expect(screen.getAllByTestId(/watchlist-all-item-/)).toHaveLength(1);
     });
     items = screen.getAllByTestId(/watchlist-all-item-/);
-    expect(items[0]).toHaveTextContent('Severance');
+    expect(items[0]).toHaveTextContent('Terminator 2');
+  });
+
+  it('renders series-specific labels and filters in series context', async () => {
+    render(Watchlist, { sectionType: 'series' });
+
+    expect(screen.getByRole('tab', { name: 'All Series' })).toBeInTheDocument();
+    expect(screen.getByText('1 series')).toBeInTheDocument();
+    expect(screen.getByTestId('watchlist-my-item-post-3')).toBeInTheDocument();
+    expect(screen.queryByTestId('watchlist-my-item-post-1')).not.toBeInTheDocument();
+
+    await fireEvent.click(screen.getByTestId('watchlist-tab-all'));
+    expect(api.getMoviePosts).toHaveBeenNthCalledWith(1, 20, undefined, 'series');
+    expect(await screen.findByTestId('watchlist-all-item-post-3')).toBeInTheDocument();
   });
 
   it('does not auto-retry movie feed after failure without user action', async () => {
@@ -404,6 +468,15 @@ describe('Watchlist', () => {
 
     await fireEvent.click(screen.getByTestId('watchlist-category-Classics'));
     expect(screen.getByText('No movies in this category')).toBeInTheDocument();
+  });
+
+  it('shows series-specific empty copy in series context', () => {
+    movieStore.reset();
+
+    render(Watchlist, { sectionType: 'series' });
+
+    expect(screen.getByText('No series saved yet')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'All Series' })).toBeInTheDocument();
   });
 
   it('navigates to the post when a movie card is clicked', async () => {

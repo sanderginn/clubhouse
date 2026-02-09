@@ -215,12 +215,13 @@ describe('api client', () => {
       }),
     });
 
-    const response = await api.getMoviePosts(15, 'cursor-1');
+    const response = await api.getMoviePosts(15, 'cursor-1', 'series');
 
     const [url] = fetchMock.mock.calls[0];
     expect(url).toContain('/posts/movies');
     expect(url).toContain('limit=15');
     expect(url).toContain('cursor=cursor-1');
+    expect(url).toContain('section_type=series');
     expect(response.hasMore).toBe(true);
     expect(response.nextCursor).toBe('cursor-next');
     expect(response.posts).toHaveLength(1);
@@ -228,6 +229,20 @@ describe('api client', () => {
     expect(response.posts[0]?.movieStats?.averageRating).toBe(4.8);
     expect(response.posts[0]?.movieStats?.watchCount).toBe(10);
     expect(response.posts[0]?.movieStats?.watchlistCount).toBe(3);
+  });
+
+  it('getMyWatchlist passes optional section_type filter', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({ categories: [] }),
+    });
+
+    await api.getMyWatchlist('movie');
+
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toContain('/me/watchlist');
+    expect(url).toContain('section_type=movie');
   });
 
   it('getThreadComments builds query params', async () => {

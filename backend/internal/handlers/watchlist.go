@@ -237,7 +237,13 @@ func (h *WatchlistHandler) ListWatchlist(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	grouped, err := h.watchlistService.GetUserWatchlist(r.Context(), userID)
+	sectionType, err := parseMovieOrSeriesSectionType(r.URL.Query().Get("section_type"))
+	if err != nil {
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_SECTION_TYPE", "section_type must be either movie or series")
+		return
+	}
+
+	grouped, err := h.watchlistService.GetUserWatchlist(r.Context(), userID, sectionType)
 	if err != nil {
 		writeError(r.Context(), w, http.StatusInternalServerError, "GET_WATCHLIST_FAILED", "Failed to get watchlist")
 		return
