@@ -204,18 +204,29 @@ func TestFetchMetadataMovieParserFailureFallsBackToHTMLMetadata(t *testing.T) {
 
 	fetcher := NewFetcher(&http.Client{
 		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			if r.Header.Get("Accept-Language") == "" {
+				t.Fatalf("expected Accept-Language header to be set for imdb requests")
+			}
+
+			ua := strings.TrimSpace(r.Header.Get("User-Agent"))
+			body := `<!doctype html><html><head></head><body>blocked</body></html>`
+			if ua == imdbUserAgent {
+				body = `<!doctype html>
+					<html>
+					<head>
+						<title>Fallback Title</title>
+						<meta property="og:title" content="Fallback Title" />
+						<meta property="og:description" content="Fallback Description" />
+						<meta property="og:image" content="/poster.jpg" />
+					</head>
+					</html>`
+			}
 			return &http.Response{
 				StatusCode: http.StatusOK,
 				Status:     "200 OK",
 				Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
-				Body: io.NopCloser(strings.NewReader(`<!doctype html>
-					<html>
-					<head>
-						<meta property="og:title" content="Fallback Title" />
-						<meta property="og:description" content="Fallback Description" />
-					</head>
-					</html>`)),
-				Request: r,
+				Body:       io.NopCloser(strings.NewReader(body)),
+				Request:    r,
 			}, nil
 		}),
 	})
@@ -235,6 +246,12 @@ func TestFetchMetadataMovieParserFailureFallsBackToHTMLMetadata(t *testing.T) {
 	}
 	if metadata["description"] != "Fallback Description" {
 		t.Fatalf("description = %v, want Fallback Description", metadata["description"])
+	}
+	if metadata["image"] != "https://www.imdb.com/poster.jpg" {
+		t.Fatalf("image = %v, want https://www.imdb.com/poster.jpg", metadata["image"])
+	}
+	if metadata["provider"] != "imdb" {
+		t.Fatalf("provider = %v, want imdb", metadata["provider"])
 	}
 	if _, ok := metadata["movie"]; ok {
 		t.Fatalf("expected movie metadata to be absent when tmdb parsing fails")

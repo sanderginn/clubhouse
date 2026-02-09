@@ -22,6 +22,8 @@ const (
 	maxFetchRetries  = 2
 	retryBackoffBase = 75 * time.Millisecond
 	retryBackoffMax  = 300 * time.Millisecond
+	defaultUserAgent = "ClubhouseMetadataFetcher/1.0"
+	imdbUserAgent    = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
 )
 
 type metadataContextKey string
@@ -267,7 +269,11 @@ func applyRequestHeaders(req *http.Request, u *url.URL) {
 	if req == nil || u == nil {
 		return
 	}
-	req.Header.Set("User-Agent", "ClubhouseMetadataFetcher/1.0")
+	req.Header.Set("User-Agent", defaultUserAgent)
+	if isIMDbHost(u.Hostname()) {
+		req.Header.Set("User-Agent", imdbUserAgent)
+		req.Header.Set("Accept-Language", "en-US,en;q=0.9")
+	}
 }
 
 func isBandcampHost(host string) bool {
