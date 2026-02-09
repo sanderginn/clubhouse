@@ -31,6 +31,7 @@
     790,
     791,
     792,
+    793,
     794,
     797,
     806
@@ -517,7 +518,7 @@
     {
       "issue_number": 793,
       "title": "Create watchlist service",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         786,
         789,
@@ -532,7 +533,9 @@
       "assigned_to": "agent-1770626210-37376",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770626210-37376",
       "branch": "feat/issue-793-create-watchlist-service",
-      "claimed_at": "2026-02-09T08:36:50Z"
+      "claimed_at": "2026-02-09T08:36:50Z",
+      "pr_number": 817,
+      "completed_at": "2026-02-09T09:16:22Z"
     },
     {
       "issue_number": 794,
