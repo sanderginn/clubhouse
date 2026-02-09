@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import * as stores from '../stores';
 import { movieStore } from '../stores/movieStore';
 
@@ -45,7 +45,7 @@ describe('App watchlist routing', () => {
     expect(window.location.pathname).toBe('/watchlist');
 
     render(App);
-    window.dispatchEvent(new PopStateEvent('popstate'));
+    window.dispatchEvent(new Event('popstate'));
 
     await waitFor(() => {
       expect(screen.getByTestId('watchlist')).toBeInTheDocument();
@@ -59,11 +59,29 @@ describe('App watchlist routing', () => {
     expect(window.location.pathname).toBe('/watchlist');
 
     render(App);
-    window.dispatchEvent(new PopStateEvent('popstate'));
+    window.dispatchEvent(new Event('popstate'));
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Sign in to Clubhouse' })).toBeInTheDocument();
     });
     expect(screen.queryByTestId('watchlist')).not.toBeInTheDocument();
+  });
+
+  it('switches unauth register route to login when navigating to watchlist', async () => {
+    const { unmount } = render(App);
+
+    await fireEvent.click(screen.getByRole('button', { name: 'create a new account' }));
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Create your account' })).toBeInTheDocument();
+    });
+
+    unmount();
+    window.history.replaceState(null, '', '/watchlist');
+
+    render(App);
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Sign in to Clubhouse' })).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('heading', { name: 'Create your account' })).not.toBeInTheDocument();
   });
 });

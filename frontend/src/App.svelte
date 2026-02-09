@@ -103,6 +103,8 @@
       return;
     }
     if (isWatchlistPath(path)) {
+      unauthRoute = 'login';
+      resetToken = null;
       threadRouteStore.clearTarget();
       pendingSectionIdentifier = null;
       pendingThreadPostId = null;
