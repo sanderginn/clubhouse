@@ -173,13 +173,13 @@ func parseTMDBMovieMetadata(ctx context.Context, client *TMDBClient, mediaType s
 		if err != nil {
 			return nil, fmt.Errorf("get tmdb movie details for id %d: %w", tmdbID, err)
 		}
-		return movieDataFromMovieDetails(details), nil
+		return movieDataFromMovieDetails(details, mediaType), nil
 	case "tv":
 		details, err := client.GetTVDetails(ctx, tmdbID)
 		if err != nil {
 			return nil, fmt.Errorf("get tmdb tv details for id %d: %w", tmdbID, err)
 		}
-		return movieDataFromTVDetails(details), nil
+		return movieDataFromTVDetails(details, mediaType), nil
 	default:
 		return nil, nil
 	}
@@ -213,44 +213,48 @@ func letterboxdSlugToTitle(slug string) string {
 	return strings.Join(strings.Fields(title), " ")
 }
 
-func movieDataFromMovieDetails(details *MovieDetails) *MovieData {
+func movieDataFromMovieDetails(details *MovieDetails, mediaType string) *MovieData {
 	if details == nil {
 		return nil
 	}
 
 	return &MovieData{
-		Title:       strings.TrimSpace(details.Title),
-		Overview:    strings.TrimSpace(details.Overview),
-		Poster:      tmdbImageURL(details.PosterPath, tmdbPosterSize),
-		Backdrop:    tmdbImageURL(details.BackdropPath, tmdbBackdropSize),
-		Runtime:     details.Runtime,
-		Genres:      tmdbGenreNames(details.Genres),
-		ReleaseDate: strings.TrimSpace(details.ReleaseDate),
-		Cast:        tmdbCastMembers(details.Credits.Cast, movieMetadataCastMaxSize),
-		Director:    strings.TrimSpace(details.Director),
-		TMDBRating:  details.VoteAverage,
-		TrailerKey:  tmdbTrailerKey(details.Videos.Results),
+		Title:         strings.TrimSpace(details.Title),
+		Overview:      strings.TrimSpace(details.Overview),
+		Poster:        tmdbImageURL(details.PosterPath, tmdbPosterSize),
+		Backdrop:      tmdbImageURL(details.BackdropPath, tmdbBackdropSize),
+		Runtime:       details.Runtime,
+		Genres:        tmdbGenreNames(details.Genres),
+		ReleaseDate:   strings.TrimSpace(details.ReleaseDate),
+		Cast:          tmdbCastMembers(details.Credits.Cast, movieMetadataCastMaxSize),
+		Director:      strings.TrimSpace(details.Director),
+		TMDBRating:    details.VoteAverage,
+		TrailerKey:    tmdbTrailerKey(details.Videos.Results),
+		TMDBID:        details.ID,
+		TMDBMediaType: strings.TrimSpace(mediaType),
 	}
 }
 
-func movieDataFromTVDetails(details *TVDetails) *MovieData {
+func movieDataFromTVDetails(details *TVDetails, mediaType string) *MovieData {
 	if details == nil {
 		return nil
 	}
 
 	return &MovieData{
-		Title:       strings.TrimSpace(details.Name),
-		Overview:    strings.TrimSpace(details.Overview),
-		Poster:      tmdbImageURL(details.PosterPath, tmdbPosterSize),
-		Backdrop:    tmdbImageURL(details.BackdropPath, tmdbBackdropSize),
-		Runtime:     details.Runtime,
-		Genres:      tmdbGenreNames(details.Genres),
-		ReleaseDate: strings.TrimSpace(details.FirstAirDate),
-		Cast:        tmdbCastMembers(details.Credits.Cast, movieMetadataCastMaxSize),
-		Seasons:     tmdbSeasons(details.Seasons),
-		Director:    strings.TrimSpace(details.Director),
-		TMDBRating:  details.VoteAverage,
-		TrailerKey:  tmdbTrailerKey(details.Videos.Results),
+		Title:         strings.TrimSpace(details.Name),
+		Overview:      strings.TrimSpace(details.Overview),
+		Poster:        tmdbImageURL(details.PosterPath, tmdbPosterSize),
+		Backdrop:      tmdbImageURL(details.BackdropPath, tmdbBackdropSize),
+		Runtime:       details.Runtime,
+		Genres:        tmdbGenreNames(details.Genres),
+		ReleaseDate:   strings.TrimSpace(details.FirstAirDate),
+		Cast:          tmdbCastMembers(details.Credits.Cast, movieMetadataCastMaxSize),
+		Seasons:       tmdbSeasons(details.Seasons),
+		Director:      strings.TrimSpace(details.Director),
+		TMDBRating:    details.VoteAverage,
+		TrailerKey:    tmdbTrailerKey(details.Videos.Results),
+		TMDBID:        details.ID,
+		TMDBMediaType: strings.TrimSpace(mediaType),
 	}
 }
 

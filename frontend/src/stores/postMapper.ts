@@ -120,6 +120,17 @@ function normalizeStringArray(value: unknown): string[] | undefined {
   return normalized.length > 0 ? normalized : undefined;
 }
 
+function normalizeTMDBMediaType(value: unknown): 'movie' | 'tv' | undefined {
+  const normalized = normalizeString(value)?.toLowerCase();
+  if (normalized === 'movie') {
+    return 'movie';
+  }
+  if (normalized === 'tv' || normalized === 'series') {
+    return 'tv';
+  }
+  return undefined;
+}
+
 function normalizeRecipeMetadata(rawRecipe: unknown): RecipeMetadata | undefined {
   if (!rawRecipe) {
     return undefined;
@@ -259,6 +270,10 @@ function normalizeMovieMetadata(rawMovie: unknown): MovieMetadata | undefined {
   const director = normalizeString(movie.director);
   const tmdbRating = normalizeNumber(movie.tmdb_rating ?? movie.tmdbRating);
   const trailerKey = normalizeString(movie.trailer_key ?? movie.trailerKey);
+  const tmdbId = normalizeNumber(movie.tmdb_id ?? movie.tmdbId);
+  const tmdbMediaType = normalizeTMDBMediaType(
+    movie.tmdb_media_type ?? movie.tmdbMediaType
+  );
 
   const cast = Array.isArray(movie.cast)
     ? movie.cast
@@ -294,6 +309,8 @@ function normalizeMovieMetadata(rawMovie: unknown): MovieMetadata | undefined {
     !!director ||
     typeof tmdbRating === 'number' ||
     !!trailerKey ||
+    typeof tmdbId === 'number' ||
+    !!tmdbMediaType ||
     !!(cast && cast.length > 0);
 
   if (!hasMovieMetadata) {
@@ -312,6 +329,8 @@ function normalizeMovieMetadata(rawMovie: unknown): MovieMetadata | undefined {
     ...(director ? { director } : {}),
     ...(typeof tmdbRating === 'number' ? { tmdbRating } : {}),
     ...(trailerKey ? { trailerKey } : {}),
+    ...(typeof tmdbId === 'number' ? { tmdbId } : {}),
+    ...(tmdbMediaType ? { tmdbMediaType } : {}),
   };
 }
 

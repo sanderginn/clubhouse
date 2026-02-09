@@ -20,6 +20,10 @@
     director?: string;
     tmdbRating?: number;
     trailerKey?: string;
+    tmdbId?: number;
+    tmdb_id?: number;
+    tmdbMediaType?: string;
+    tmdb_media_type?: string;
   };
 
   export let movie: MovieMetadata = { title: '' };
@@ -54,6 +58,12 @@
   $: overviewText = movie.overview?.trim() || 'No synopsis available.';
   $: castList = (movie.cast ?? []).slice(0, 5);
   $: trailerEmbedUrl = buildTrailerUrl(movie.trailerKey);
+  $: tmdbId = resolveTMDBID(movie.tmdbId ?? movie.tmdb_id);
+  $: tmdbMediaType = normalizeTMDBMediaType(movie.tmdbMediaType ?? movie.tmdb_media_type);
+  $: tmdbUrl =
+    typeof tmdbId === 'number' && tmdbMediaType
+      ? `https://www.themoviedb.org/${tmdbMediaType}/${tmdbId}`
+      : null;
 
   function formatRuntime(runtime?: number): string | null {
     if (typeof runtime !== 'number' || !Number.isFinite(runtime) || runtime <= 0) {
@@ -99,6 +109,28 @@
     }
 
     return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(key)}`;
+  }
+
+  function resolveTMDBID(rawValue?: number): number | null {
+    if (typeof rawValue !== 'number' || !Number.isFinite(rawValue)) {
+      return null;
+    }
+    const parsed = Math.trunc(rawValue);
+    if (parsed <= 0) {
+      return null;
+    }
+    return parsed;
+  }
+
+  function normalizeTMDBMediaType(value?: string): 'movie' | 'tv' | null {
+    const normalized = value?.trim().toLowerCase();
+    if (normalized === 'movie') {
+      return 'movie';
+    }
+    if (normalized === 'tv' || normalized === 'series') {
+      return 'tv';
+    }
+    return null;
   }
 
   function toggleExpanded() {
@@ -240,6 +272,17 @@
             {/if}
           </h3>
           <p class="mt-1 text-sm text-slate-700" data-testid="movie-meta-line">{metaLine}</p>
+          {#if tmdbUrl}
+            <a
+              href={tmdbUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="mt-1 inline-flex text-xs font-medium text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline"
+              data-testid="movie-tmdb-link"
+            >
+              View on TMDB
+            </a>
+          {/if}
         </div>
 
         <button

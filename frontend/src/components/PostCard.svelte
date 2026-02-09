@@ -69,6 +69,10 @@
     tmdb_rating?: number;
     trailerKey?: string;
     trailer_key?: string;
+    tmdbId?: number;
+    tmdb_id?: number;
+    tmdbMediaType?: string;
+    tmdb_media_type?: string;
   };
   type MovieCardMetadata = {
     title: string;
@@ -82,6 +86,8 @@
     director?: string;
     tmdbRating?: number;
     trailerKey?: string;
+    tmdbId?: number;
+    tmdbMediaType?: 'movie' | 'tv';
   };
   type LinkMetadataWithMovie = LinkMetadata & {
     movie?: MovieMetadata;
@@ -635,6 +641,22 @@
               character: typeof member.character === 'string' ? member.character : '',
             }))
         : undefined;
+    const normalizedTMDBID =
+      typeof movie.tmdbId === 'number'
+        ? movie.tmdbId
+        : typeof movie.tmdb_id === 'number'
+          ? movie.tmdb_id
+          : undefined;
+    const rawTMDBMediaType =
+      (typeof movie.tmdbMediaType === 'string' ? movie.tmdbMediaType : undefined) ??
+      (typeof movie.tmdb_media_type === 'string' ? movie.tmdb_media_type : undefined);
+    const normalizedTMDBMediaType =
+      rawTMDBMediaType?.trim().toLowerCase() === 'movie'
+        ? 'movie'
+        : rawTMDBMediaType?.trim().toLowerCase() === 'tv' ||
+            rawTMDBMediaType?.trim().toLowerCase() === 'series'
+          ? 'tv'
+          : undefined;
 
     return {
       title,
@@ -648,6 +670,8 @@
       ...(normalizedDirector ? { director: normalizedDirector } : {}),
       ...(typeof normalizedRating === 'number' ? { tmdbRating: normalizedRating } : {}),
       ...(normalizedTrailerKey ? { trailerKey: normalizedTrailerKey } : {}),
+      ...(typeof normalizedTMDBID === 'number' ? { tmdbId: normalizedTMDBID } : {}),
+      ...(normalizedTMDBMediaType ? { tmdbMediaType: normalizedTMDBMediaType } : {}),
     };
   }
 

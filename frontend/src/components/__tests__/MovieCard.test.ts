@@ -15,6 +15,8 @@ type MovieMetadata = {
   director?: string;
   tmdbRating?: number;
   trailerKey?: string;
+  tmdbId?: number;
+  tmdbMediaType?: 'movie' | 'tv';
 };
 
 const fullMovie: MovieMetadata = {
@@ -36,6 +38,8 @@ const fullMovie: MovieMetadata = {
   director: 'Christopher Nolan',
   tmdbRating: 8.6,
   trailerKey: 'zSWdZVtXT7E',
+  tmdbId: 157336,
+  tmdbMediaType: 'movie',
 };
 
 afterEach(() => {
@@ -53,7 +57,37 @@ describe('MovieCard', () => {
     expect(screen.getByTestId('movie-genres')).toHaveTextContent('Drama');
     expect(screen.getByTestId('movie-genres')).toHaveTextContent('Adventure');
     expect(screen.getByTestId('movie-genres')).toHaveTextContent('+1');
+    expect(screen.getByTestId('movie-tmdb-link')).toHaveAttribute(
+      'href',
+      'https://www.themoviedb.org/movie/157336'
+    );
     expect(screen.queryByTestId('movie-expanded-content')).not.toBeInTheDocument();
+  });
+
+  it('renders a secure TMDB link for TV metadata', () => {
+    render(MovieCard, {
+      movie: {
+        ...fullMovie,
+        tmdbId: 1399,
+        tmdbMediaType: 'tv',
+      },
+    });
+
+    const tmdbLink = screen.getByTestId('movie-tmdb-link');
+    expect(tmdbLink).toHaveAttribute('href', 'https://www.themoviedb.org/tv/1399');
+    expect(tmdbLink).toHaveAttribute('target', '_blank');
+    expect(tmdbLink).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
+  it('does not render TMDB link when tmdb id is missing', () => {
+    render(MovieCard, {
+      movie: {
+        ...fullMovie,
+        tmdbId: undefined,
+      },
+    });
+
+    expect(screen.queryByTestId('movie-tmdb-link')).not.toBeInTheDocument();
   });
 
   it('renders fallback content for minimal metadata', () => {

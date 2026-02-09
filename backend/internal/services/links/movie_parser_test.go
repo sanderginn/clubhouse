@@ -77,6 +77,12 @@ func TestParseMovieMetadataIMDbURL(t *testing.T) {
 	if metadata.Director != "Lana Wachowski" {
 		t.Fatalf("Director = %q, want Lana Wachowski", metadata.Director)
 	}
+	if metadata.TMDBID != 603 {
+		t.Fatalf("TMDBID = %d, want 603", metadata.TMDBID)
+	}
+	if metadata.TMDBMediaType != "movie" {
+		t.Fatalf("TMDBMediaType = %q, want movie", metadata.TMDBMediaType)
+	}
 	if metadata.TrailerKey != "trailer-key" {
 		t.Fatalf("TrailerKey = %q, want trailer-key", metadata.TrailerKey)
 	}
@@ -126,6 +132,12 @@ func TestParseMovieMetadataTMDBMovieURL(t *testing.T) {
 	}
 	if metadata.Director != "David Fincher" {
 		t.Fatalf("Director = %q, want David Fincher", metadata.Director)
+	}
+	if metadata.TMDBID != 550 {
+		t.Fatalf("TMDBID = %d, want 550", metadata.TMDBID)
+	}
+	if metadata.TMDBMediaType != "movie" {
+		t.Fatalf("TMDBMediaType = %q, want movie", metadata.TMDBMediaType)
 	}
 }
 
@@ -188,6 +200,12 @@ func TestParseMovieMetadataTMDBTVURL(t *testing.T) {
 	if metadata.Seasons[2].SeasonNumber != 2 {
 		t.Fatalf("season[2] = %+v, want season_number=2", metadata.Seasons[2])
 	}
+	if metadata.TMDBID != 1399 {
+		t.Fatalf("TMDBID = %d, want 1399", metadata.TMDBID)
+	}
+	if metadata.TMDBMediaType != "tv" {
+		t.Fatalf("TMDBMediaType = %q, want tv", metadata.TMDBMediaType)
+	}
 }
 
 func TestParseMovieMetadataTMDBTVURLWithoutSeasons(t *testing.T) {
@@ -225,6 +243,12 @@ func TestParseMovieMetadataTMDBTVURLWithoutSeasons(t *testing.T) {
 	}
 	if len(metadata.Seasons) != 0 {
 		t.Fatalf("Seasons len = %d, want 0", len(metadata.Seasons))
+	}
+	if metadata.TMDBID != 3036 {
+		t.Fatalf("TMDBID = %d, want 3036", metadata.TMDBID)
+	}
+	if metadata.TMDBMediaType != "tv" {
+		t.Fatalf("TMDBMediaType = %q, want tv", metadata.TMDBMediaType)
 	}
 }
 
@@ -268,6 +292,12 @@ func TestParseMovieMetadataLetterboxdURL(t *testing.T) {
 	}
 	if metadata.Title != "The Matrix" {
 		t.Fatalf("Title = %q, want The Matrix", metadata.Title)
+	}
+	if metadata.TMDBID != 603 {
+		t.Fatalf("TMDBID = %d, want 603", metadata.TMDBID)
+	}
+	if metadata.TMDBMediaType != "movie" {
+		t.Fatalf("TMDBMediaType = %q, want movie", metadata.TMDBMediaType)
 	}
 }
 

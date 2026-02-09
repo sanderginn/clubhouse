@@ -162,6 +162,8 @@ describe('mapApiPost', () => {
               director: 'Christopher Nolan',
               tmdb_rating: 8.6,
               trailer_key: 'zSWdZVtXT7E',
+              tmdb_id: '157336',
+              tmdb_media_type: 'movie',
               cast: [
                 { name: 'Matthew McConaughey', character: 'Cooper' },
                 { name: 'Anne Hathaway', character: 'Brand' },
@@ -183,6 +185,8 @@ describe('mapApiPost', () => {
     expect(movie?.director).toBe('Christopher Nolan');
     expect(movie?.tmdbRating).toBe(8.6);
     expect(movie?.trailerKey).toBe('zSWdZVtXT7E');
+    expect(movie?.tmdbId).toBe(157336);
+    expect(movie?.tmdbMediaType).toBe('movie');
     expect(movie?.cast).toEqual([
       { name: 'Matthew McConaughey', character: 'Cooper' },
       { name: 'Anne Hathaway', character: 'Brand' },
