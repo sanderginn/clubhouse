@@ -83,6 +83,164 @@ func TestFetchMetadataHTML(t *testing.T) {
 	}
 }
 
+func TestFetchMetadataMovieSectionIncludesMovieMetadata(t *testing.T) {
+	originalNewTMDBClientFromEnvFunc := newTMDBClientFromEnvFunc
+	originalParseMovieMetadataFunc := parseMovieMetadataFunc
+	t.Cleanup(func() {
+		newTMDBClientFromEnvFunc = originalNewTMDBClientFromEnvFunc
+		parseMovieMetadataFunc = originalParseMovieMetadataFunc
+	})
+
+	parseCalls := 0
+	newTMDBClientFromEnvFunc = func() (*TMDBClient, error) {
+		return &TMDBClient{}, nil
+	}
+	parseMovieMetadataFunc = func(ctx context.Context, rawURL string, client *TMDBClient) (*MovieData, error) {
+		parseCalls++
+		if rawURL != "https://www.imdb.com/title/tt0133093/" {
+			t.Fatalf("rawURL = %q, want imdb url", rawURL)
+		}
+		return &MovieData{Title: "The Matrix"}, nil
+	}
+
+	fetcher := NewFetcher(&http.Client{
+		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Status:     "200 OK",
+				Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
+				Body:       io.NopCloser(strings.NewReader(`<!doctype html><html><head><meta property="og:title" content="Fallback Title" /></head></html>`)),
+				Request:    r,
+			}, nil
+		}),
+	})
+	fetcher.resolver = fakeResolver{
+		addrs: map[string][]net.IPAddr{
+			"www.imdb.com": {{IP: net.ParseIP("93.184.216.34")}},
+		},
+	}
+
+	ctx := WithMetadataSectionType(context.Background(), "movie")
+	metadata, err := fetcher.Fetch(ctx, "https://www.imdb.com/title/tt0133093/")
+	if err != nil {
+		t.Fatalf("Fetch error: %v", err)
+	}
+
+	if parseCalls != 1 {
+		t.Fatalf("parseCalls = %d, want 1", parseCalls)
+	}
+
+	movie, ok := metadata["movie"].(*MovieData)
+	if !ok || movie == nil {
+		t.Fatalf("expected movie metadata to be present")
+	}
+	if movie.Title != "The Matrix" {
+		t.Fatalf("movie title = %q, want The Matrix", movie.Title)
+	}
+}
+
+func TestFetchMetadataGeneralSectionSkipsMovieMetadata(t *testing.T) {
+	originalNewTMDBClientFromEnvFunc := newTMDBClientFromEnvFunc
+	originalParseMovieMetadataFunc := parseMovieMetadataFunc
+	t.Cleanup(func() {
+		newTMDBClientFromEnvFunc = originalNewTMDBClientFromEnvFunc
+		parseMovieMetadataFunc = originalParseMovieMetadataFunc
+	})
+
+	parseCalls := 0
+	newTMDBClientFromEnvFunc = func() (*TMDBClient, error) {
+		return &TMDBClient{}, nil
+	}
+	parseMovieMetadataFunc = func(ctx context.Context, rawURL string, client *TMDBClient) (*MovieData, error) {
+		parseCalls++
+		return &MovieData{Title: "Should Not Be Used"}, nil
+	}
+
+	fetcher := NewFetcher(&http.Client{
+		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Status:     "200 OK",
+				Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
+				Body:       io.NopCloser(strings.NewReader(`<!doctype html><html><head><meta property="og:title" content="Fallback Title" /></head></html>`)),
+				Request:    r,
+			}, nil
+		}),
+	})
+	fetcher.resolver = fakeResolver{
+		addrs: map[string][]net.IPAddr{
+			"www.imdb.com": {{IP: net.ParseIP("93.184.216.34")}},
+		},
+	}
+
+	ctx := WithMetadataSectionType(context.Background(), "general")
+	metadata, err := fetcher.Fetch(ctx, "https://www.imdb.com/title/tt0133093/")
+	if err != nil {
+		t.Fatalf("Fetch error: %v", err)
+	}
+
+	if parseCalls != 0 {
+		t.Fatalf("parseCalls = %d, want 0", parseCalls)
+	}
+	if _, ok := metadata["movie"]; ok {
+		t.Fatalf("expected movie metadata to be absent")
+	}
+}
+
+func TestFetchMetadataMovieParserFailureFallsBackToHTMLMetadata(t *testing.T) {
+	originalNewTMDBClientFromEnvFunc := newTMDBClientFromEnvFunc
+	originalParseMovieMetadataFunc := parseMovieMetadataFunc
+	t.Cleanup(func() {
+		newTMDBClientFromEnvFunc = originalNewTMDBClientFromEnvFunc
+		parseMovieMetadataFunc = originalParseMovieMetadataFunc
+	})
+
+	newTMDBClientFromEnvFunc = func() (*TMDBClient, error) {
+		return &TMDBClient{}, nil
+	}
+	parseMovieMetadataFunc = func(ctx context.Context, rawURL string, client *TMDBClient) (*MovieData, error) {
+		return nil, errors.New("tmdb unavailable")
+	}
+
+	fetcher := NewFetcher(&http.Client{
+		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Status:     "200 OK",
+				Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
+				Body: io.NopCloser(strings.NewReader(`<!doctype html>
+					<html>
+					<head>
+						<meta property="og:title" content="Fallback Title" />
+						<meta property="og:description" content="Fallback Description" />
+					</head>
+					</html>`)),
+				Request: r,
+			}, nil
+		}),
+	})
+	fetcher.resolver = fakeResolver{
+		addrs: map[string][]net.IPAddr{
+			"www.imdb.com": {{IP: net.ParseIP("93.184.216.34")}},
+		},
+	}
+
+	ctx := WithMetadataSectionType(context.Background(), "movie")
+	metadata, err := fetcher.Fetch(ctx, "https://www.imdb.com/title/tt0133093/")
+	if err != nil {
+		t.Fatalf("Fetch error: %v", err)
+	}
+	if metadata["title"] != "Fallback Title" {
+		t.Fatalf("title = %v, want Fallback Title", metadata["title"])
+	}
+	if metadata["description"] != "Fallback Description" {
+		t.Fatalf("description = %v, want Fallback Description", metadata["description"])
+	}
+	if _, ok := metadata["movie"]; ok {
+		t.Fatalf("expected movie metadata to be absent when tmdb parsing fails")
+	}
+}
+
 func TestFetchMetadataTimeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()

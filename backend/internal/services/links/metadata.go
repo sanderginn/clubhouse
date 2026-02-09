@@ -24,6 +24,15 @@ const (
 	retryBackoffMax  = 300 * time.Millisecond
 )
 
+type metadataContextKey string
+
+const metadataSectionTypeContextKey metadataContextKey = "link_metadata_section_type"
+
+var (
+	newTMDBClientFromEnvFunc = NewTMDBClientFromEnv
+	parseMovieMetadataFunc   = ParseMovieMetadata
+)
+
 // Fetcher retrieves metadata for links.
 type Fetcher struct {
 	client   *http.Client
@@ -77,6 +86,15 @@ func SetFetchMetadataFuncForTests(fn func(context.Context, string) (map[string]i
 		return
 	}
 	fetchMetadataFunc = fn
+}
+
+// WithMetadataSectionType stores section type metadata used by extractor-specific logic.
+func WithMetadataSectionType(ctx context.Context, sectionType string) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	sectionType = strings.ToLower(strings.TrimSpace(sectionType))
+	return context.WithValue(ctx, metadataSectionTypeContextKey, sectionType)
 }
 
 // Fetch retrieves metadata for the provided URL.
@@ -179,6 +197,13 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 			metadata["embed"] = embed
 		}
 	}
+	if shouldExtractMovieMetadata(ctx) {
+		if tmdbClient, err := newTMDBClientFromEnvFunc(); err == nil {
+			if movie, movieErr := parseMovieMetadataFunc(ctx, rawURL, tmdbClient); movieErr == nil && movie != nil {
+				metadata["movie"] = movie
+			}
+		}
+	}
 
 	if _, ok := metadata["image"]; !ok && !isHTML && looksLikeImageURL(u) {
 		metadata["image"] = u.String()
@@ -193,6 +218,14 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	}
 
 	return metadata, nil
+}
+
+func shouldExtractMovieMetadata(ctx context.Context) bool {
+	if ctx == nil {
+		return false
+	}
+	sectionType, _ := ctx.Value(metadataSectionTypeContextKey).(string)
+	return sectionType == "movie" || sectionType == "series"
 }
 
 func (f *Fetcher) doRequestWithRetry(ctx context.Context, client *http.Client, u *url.URL) (*http.Response, error) {
