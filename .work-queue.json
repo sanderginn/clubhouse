@@ -53,7 +53,7 @@
     {
       "issue_number": 844,
       "title": "Fix movie stats not updating after save/rate actions until reload",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         843
       ],
@@ -62,7 +62,11 @@
         "frontend",
         "movies"
       ],
-      "priority": 53
+      "priority": 53,
+      "assigned_to": "agent-1770676933-80836",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770676933-80836",
+      "branch": "fix/issue-844-fix-movie-stats-not-updating-after-saver",
+      "claimed_at": "2026-02-09T22:42:13Z"
     },
     {
       "issue_number": 845,
