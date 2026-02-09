@@ -899,14 +899,18 @@
     {
       "issue_number": 835,
       "title": "IMDB link metadata fallback produces minimal data when TMDB enrichment fails",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "bug",
         "backend",
         "movies"
       ],
-      "priority": 48
+      "priority": 48,
+      "assigned_to": "agent-1770647645-61729",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770647645-61729",
+      "branch": "fix/issue-835-imdb-link-metadata-fallback-produces-min",
+      "claimed_at": "2026-02-09T14:34:05Z"
     },
     {
       "issue_number": 836,
