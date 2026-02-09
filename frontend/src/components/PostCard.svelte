@@ -80,6 +80,10 @@
     director?: string;
     tmdbRating?: number;
     tmdb_rating?: number;
+    rottenTomatoesScore?: number;
+    rotten_tomatoes_score?: number;
+    metacriticScore?: number;
+    metacritic_score?: number;
     trailerKey?: string;
     trailer_key?: string;
     tmdbId?: number;
@@ -107,6 +111,8 @@
     cast?: Array<{ name: string; character: string }>;
     director?: string;
     tmdbRating?: number;
+    rottenTomatoesScore?: number;
+    metacriticScore?: number;
     trailerKey?: string;
     tmdbId?: number;
     tmdbMediaType?: 'movie' | 'tv';
@@ -646,6 +652,18 @@
         : typeof movie.tmdb_rating === 'number'
           ? movie.tmdb_rating
           : undefined;
+    const normalizedRottenTomatoesScore =
+      typeof movie.rottenTomatoesScore === 'number'
+        ? movie.rottenTomatoesScore
+        : typeof movie.rotten_tomatoes_score === 'number'
+          ? movie.rotten_tomatoes_score
+          : undefined;
+    const normalizedMetacriticScore =
+      typeof movie.metacriticScore === 'number'
+        ? movie.metacriticScore
+        : typeof movie.metacritic_score === 'number'
+          ? movie.metacritic_score
+          : undefined;
     const normalizedRuntime =
       typeof movie.runtime === 'number' && Number.isFinite(movie.runtime) ? movie.runtime : undefined;
     const normalizedGenres =
@@ -738,6 +756,12 @@
       ...(normalizedCast ? { cast: normalizedCast } : {}),
       ...(normalizedDirector ? { director: normalizedDirector } : {}),
       ...(typeof normalizedRating === 'number' ? { tmdbRating: normalizedRating } : {}),
+      ...(typeof normalizedRottenTomatoesScore === 'number'
+        ? { rottenTomatoesScore: normalizedRottenTomatoesScore }
+        : {}),
+      ...(typeof normalizedMetacriticScore === 'number'
+        ? { metacriticScore: normalizedMetacriticScore }
+        : {}),
       ...(normalizedTrailerKey ? { trailerKey: normalizedTrailerKey } : {}),
       ...(typeof normalizedTMDBID === 'number' ? { tmdbId: normalizedTMDBID } : {}),
       ...(normalizedTMDBMediaType ? { tmdbMediaType: normalizedTMDBMediaType } : {}),

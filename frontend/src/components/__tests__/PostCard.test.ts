@@ -302,7 +302,7 @@ describe('PostCard', () => {
 
     expect(screen.getByTestId('movie-card')).toBeInTheDocument();
     expect(screen.getByTestId('movie-title')).toHaveTextContent('Interstellar');
-    expect(screen.getByTestId('movie-meta-line')).toHaveTextContent('★ 8.6 · 2h 49m');
+    expect(screen.getByTestId('movie-meta-line')).toHaveTextContent('★ 8.6· 2h 49m');
   });
 
   it('does not render movie components for non-movie sections', () => {

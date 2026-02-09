@@ -311,6 +311,10 @@ function normalizeMovieMetadata(rawMovie: unknown): MovieMetadata | undefined {
   const releaseDate = normalizeString(movie.release_date ?? movie.releaseDate);
   const director = normalizeString(movie.director);
   const tmdbRating = normalizeNumber(movie.tmdb_rating ?? movie.tmdbRating);
+  const rottenTomatoesScore = normalizeNumber(
+    movie.rotten_tomatoes_score ?? movie.rottenTomatoesScore
+  );
+  const metacriticScore = normalizeNumber(movie.metacritic_score ?? movie.metacriticScore);
   const trailerKey = normalizeString(movie.trailer_key ?? movie.trailerKey);
   const tmdbId = normalizeNumber(movie.tmdb_id ?? movie.tmdbId);
   const tmdbMediaType = normalizeTMDBMediaType(
@@ -351,6 +355,8 @@ function normalizeMovieMetadata(rawMovie: unknown): MovieMetadata | undefined {
     !!releaseDate ||
     !!director ||
     typeof tmdbRating === 'number' ||
+    typeof rottenTomatoesScore === 'number' ||
+    typeof metacriticScore === 'number' ||
     !!trailerKey ||
     typeof tmdbId === 'number' ||
     !!tmdbMediaType ||
@@ -372,6 +378,8 @@ function normalizeMovieMetadata(rawMovie: unknown): MovieMetadata | undefined {
     ...(cast ? { cast } : {}),
     ...(director ? { director } : {}),
     ...(typeof tmdbRating === 'number' ? { tmdbRating } : {}),
+    ...(typeof rottenTomatoesScore === 'number' ? { rottenTomatoesScore } : {}),
+    ...(typeof metacriticScore === 'number' ? { metacriticScore } : {}),
     ...(trailerKey ? { trailerKey } : {}),
     ...(typeof tmdbId === 'number' ? { tmdbId } : {}),
     ...(tmdbMediaType ? { tmdbMediaType } : {}),

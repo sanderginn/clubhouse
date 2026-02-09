@@ -161,6 +161,8 @@ describe('mapApiPost', () => {
               release_date: '2014-11-07',
               director: 'Christopher Nolan',
               tmdb_rating: 8.6,
+              rotten_tomatoes_score: '88',
+              metacriticScore: 73,
               trailer_key: 'zSWdZVtXT7E',
               tmdb_id: '157336',
               tmdb_media_type: 'movie',
@@ -200,6 +202,8 @@ describe('mapApiPost', () => {
     expect(movie?.releaseDate).toBe('2014-11-07');
     expect(movie?.director).toBe('Christopher Nolan');
     expect(movie?.tmdbRating).toBe(8.6);
+    expect(movie?.rottenTomatoesScore).toBe(88);
+    expect(movie?.metacriticScore).toBe(73);
     expect(movie?.trailerKey).toBe('zSWdZVtXT7E');
     expect(movie?.tmdbId).toBe(157336);
     expect(movie?.tmdbMediaType).toBe('movie');

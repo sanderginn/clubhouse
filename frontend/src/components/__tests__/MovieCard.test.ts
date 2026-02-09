@@ -14,6 +14,8 @@ type MovieMetadata = {
   cast?: { name: string; character: string }[];
   director?: string;
   tmdbRating?: number;
+  rottenTomatoesScore?: number;
+  metacriticScore?: number;
   trailerKey?: string;
   tmdbId?: number;
   tmdbMediaType?: 'movie' | 'tv';
@@ -93,7 +95,10 @@ describe('MovieCard', () => {
     render(MovieCard, { movie: fullMovie });
 
     expect(screen.getByTestId('movie-title')).toHaveTextContent('Interstellar (2014)');
-    expect(screen.getByTestId('movie-meta-line')).toHaveTextContent('★ 8.6 · 2h 49m');
+    expect(screen.getByTestId('movie-meta-line')).toHaveTextContent('★ 8.6· 2h 49m');
+    expect(screen.getByTestId('movie-rating-tmdb')).toHaveTextContent('★ 8.6');
+    expect(screen.queryByTestId('movie-rating-rotten-tomatoes')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('movie-rating-metacritic')).not.toBeInTheDocument();
     expect(screen.getByTestId('movie-director')).toHaveTextContent('Dir: Christopher Nolan');
     expect(screen.getByTestId('movie-genres')).toHaveTextContent('Sci-Fi');
     expect(screen.getByTestId('movie-genres')).toHaveTextContent('Drama');
@@ -106,13 +111,59 @@ describe('MovieCard', () => {
     expect(screen.queryByTestId('movie-expanded-content')).not.toBeInTheDocument();
   });
 
+  it('renders TMDB, Rotten Tomatoes, and Metacritic ratings when provided', () => {
+    render(MovieCard, {
+      movie: {
+        ...fullMovie,
+        rottenTomatoesScore: 88,
+        metacriticScore: 73,
+      },
+    });
+
+    expect(screen.getByTestId('movie-meta-line')).toHaveTextContent('★ 8.6· 🍅 88%· MC 73· 2h 49m');
+    expect(screen.getByTestId('movie-rating-rotten-tomatoes')).toHaveClass(
+      'text-emerald-800',
+      'bg-emerald-100'
+    );
+    expect(screen.getByTestId('movie-rating-metacritic')).toHaveTextContent('MC 73');
+  });
+
+  it('applies RT warning and rotten color states by score thresholds', async () => {
+    const { rerender } = render(MovieCard, {
+      movie: {
+        ...fullMovie,
+        tmdbRating: undefined,
+        rottenTomatoesScore: 52,
+      },
+    });
+
+    expect(screen.getByTestId('movie-rating-rotten-tomatoes')).toHaveClass(
+      'text-amber-800',
+      'bg-amber-100'
+    );
+    expect(screen.queryByTestId('movie-rating-fallback')).not.toBeInTheDocument();
+
+    await rerender({
+      movie: {
+        ...fullMovie,
+        tmdbRating: undefined,
+        rottenTomatoesScore: 31,
+      },
+    });
+
+    expect(screen.getByTestId('movie-rating-rotten-tomatoes')).toHaveClass(
+      'text-rose-800',
+      'bg-rose-100'
+    );
+  });
+
   it('renders season summary and expanded season list for series metadata', async () => {
     render(MovieCard, {
       movie: seriesWithSeasons,
       expanded: true,
     });
 
-    expect(screen.getByTestId('movie-meta-line')).toHaveTextContent('★ 8.9 · 47m · 3 Seasons');
+    expect(screen.getByTestId('movie-meta-line')).toHaveTextContent('★ 8.9· 47m· 3 Seasons');
     expect(screen.getByTestId('movie-seasons-section')).toBeInTheDocument();
     expect(screen.getByTestId('movie-seasons-list')).toBeInTheDocument();
     expect(screen.getByTestId('movie-season-number-0')).toHaveTextContent('S0');
@@ -166,7 +217,9 @@ describe('MovieCard', () => {
   it('renders fallback content for minimal metadata', () => {
     render(MovieCard, { movie: { title: 'Untitled' } });
 
-    expect(screen.getByTestId('movie-meta-line')).toHaveTextContent('★ N/A');
+    expect(screen.getByTestId('movie-meta-line')).toHaveTextContent('No rating');
+    expect(screen.getByTestId('movie-rating-fallback')).toHaveTextContent('No rating');
+    expect(screen.queryByTestId('movie-rating-tmdb')).not.toBeInTheDocument();
     expect(screen.getByTestId('movie-director')).toHaveTextContent('Dir: Unknown');
     expect(screen.getByTestId('movie-poster-fallback')).toBeInTheDocument();
     expect(screen.queryByTestId('movie-genres')).not.toBeInTheDocument();
@@ -187,7 +240,7 @@ describe('MovieCard', () => {
       expanded: true,
     });
 
-    expect(screen.getByTestId('movie-meta-line')).toHaveTextContent('★ 8.6 · 2h 49m');
+    expect(screen.getByTestId('movie-meta-line')).toHaveTextContent('★ 8.6· 2h 49m');
     expect(screen.queryByTestId('movie-seasons-section')).not.toBeInTheDocument();
   });
 

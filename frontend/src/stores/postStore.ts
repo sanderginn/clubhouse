@@ -85,6 +85,8 @@ export interface MovieMetadata {
   cast?: MovieCastMember[];
   director?: string;
   tmdbRating?: number;
+  rottenTomatoesScore?: number;
+  metacriticScore?: number;
   trailerKey?: string;
   tmdbId?: number;
   tmdbMediaType?: 'movie' | 'tv';
