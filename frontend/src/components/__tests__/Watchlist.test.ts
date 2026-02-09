@@ -1,10 +1,10 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WatchLog, WatchlistCategory, WatchlistItem } from '../../stores/movieStore';
 import type { ApiPost } from '../../stores/postMapper';
 import { mapApiPost } from '../../stores/postMapper';
-import { postStore } from '../../stores/postStore';
 import { movieStore } from '../../stores/movieStore';
+import { api } from '../../services/api';
 
 const pushPath = vi.fn();
 
@@ -160,13 +160,25 @@ const watchLogs: WatchLog[] = [
 ];
 
 beforeEach(() => {
-  postStore.reset();
   movieStore.reset();
 
-  postStore.setPosts([postOne, postTwo, postThree, nonMoviePost], null, false);
   movieStore.setCategories([...categories]);
   movieStore.setWatchlist(new Map(watchlistMap));
   movieStore.setWatchLogs([...watchLogs]);
+
+  vi.spyOn(api, 'getMoviePosts').mockImplementation(async (_limit?: number, cursor?: string) => {
+    if (cursor === 'cursor-page-2') {
+      return {
+        posts: [postThree],
+        hasMore: false,
+      };
+    }
+    return {
+      posts: [postOne, postTwo, nonMoviePost],
+      hasMore: true,
+      nextCursor: 'cursor-page-2',
+    };
+  });
 
   vi.spyOn(movieStore, 'loadWatchlistCategories').mockResolvedValue();
   vi.spyOn(movieStore, 'loadWatchlist').mockResolvedValue();
@@ -177,7 +189,6 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
   pushPath.mockReset();
-  postStore.reset();
   movieStore.reset();
 });
 
@@ -191,14 +202,15 @@ describe('Watchlist', () => {
     expect(screen.getByTestId('watchlist-watched-post-1')).toBeInTheDocument();
   });
 
-  it('renders All Movies tab, excludes non-movie posts, and supports sorting', async () => {
+  it('loads All Movies from API, paginates, and supports sorting', async () => {
     render(Watchlist);
 
     await fireEvent.click(screen.getByTestId('watchlist-tab-all'));
 
-    let items = screen.getAllByTestId(/watchlist-all-item-/);
-    expect(items).toHaveLength(3);
+    let items = await screen.findAllByTestId(/watchlist-all-item-/);
+    expect(items).toHaveLength(2);
     expect(screen.queryByTestId('watchlist-all-item-post-4')).not.toBeInTheDocument();
+    expect(api.getMoviePosts).toHaveBeenNthCalledWith(1, 20, undefined);
     expect(items[0]).toHaveTextContent('The Matrix');
 
     await fireEvent.change(screen.getByTestId('watchlist-sort'), {
@@ -208,10 +220,23 @@ describe('Watchlist', () => {
     items = screen.getAllByTestId(/watchlist-all-item-/);
     expect(items[0]).toHaveTextContent('Alien');
 
+    await fireEvent.click(screen.getByTestId('watchlist-all-load-more'));
+    await screen.findByTestId('watchlist-all-item-post-3');
+    expect(api.getMoviePosts).toHaveBeenNthCalledWith(2, 20, 'cursor-page-2');
+
     await fireEvent.change(screen.getByTestId('watchlist-sort'), {
       target: { value: 'watchlist_count' },
     });
 
+    items = screen.getAllByTestId(/watchlist-all-item-/);
+    expect(items[0]).toHaveTextContent('Severance');
+
+    await fireEvent.input(screen.getByTestId('watchlist-search'), {
+      target: { value: 'sever' },
+    });
+    await waitFor(() => {
+      expect(screen.getAllByTestId(/watchlist-all-item-/)).toHaveLength(1);
+    });
     items = screen.getAllByTestId(/watchlist-all-item-/);
     expect(items[0]).toHaveTextContent('Severance');
   });
@@ -227,7 +252,6 @@ describe('Watchlist', () => {
 
   it('shows empty states for no saved movies and empty selected category', async () => {
     movieStore.reset();
-    postStore.setPosts([], null, false);
 
     const { unmount } = render(Watchlist);
     expect(screen.getByText('No movies saved yet')).toBeInTheDocument();

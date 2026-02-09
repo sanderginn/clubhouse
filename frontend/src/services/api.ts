@@ -713,6 +713,24 @@ class ApiClient {
     return this.get(`/sections/${sectionId}/feed?${params}`);
   }
 
+  async getMoviePosts(
+    limit = 20,
+    cursor?: string
+  ): Promise<{ posts: Post[]; hasMore: boolean; nextCursor?: string }> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (cursor) params.set('cursor', cursor);
+    const response = await this.get<{
+      posts: ApiPost[];
+      has_more?: boolean;
+      next_cursor?: string | null;
+    }>(`/posts/movies?${params}`);
+    return {
+      posts: (response.posts ?? []).map(mapApiPost),
+      hasMore: response.has_more ?? false,
+      nextCursor: response.next_cursor ?? undefined,
+    };
+  }
+
   async getSectionLinks(
     sectionId: string,
     limit = 20,

@@ -339,6 +339,7 @@ func main() {
 		http.HandlerFunc(postHandler.CreatePost),
 	)
 	mux.Handle("/api/v1/posts", postCreateHandler)
+	mux.Handle("/api/v1/posts/movies", requireAuth(http.HandlerFunc(postHandler.GetMovieFeed)))
 
 	// Protected comment routes
 	commentCreateHandler := requireAuthCSRF(

@@ -351,6 +351,50 @@ func (h *PostHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetMovieFeed handles GET /api/v1/posts/movies
+func (h *PostHandler) GetMovieFeed(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		return
+	}
+
+	cursor := r.URL.Query().Get("cursor")
+	limitStr := r.URL.Query().Get("limit")
+
+	limit := 20
+	if limitStr != "" {
+		if parsedLimit, err := parseIntParam(limitStr); err == nil && parsedLimit > 0 {
+			limit = parsedLimit
+		}
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	var cursorPtr *string
+	if cursor != "" {
+		cursorPtr = &cursor
+	}
+
+	userID, _ := middleware.GetUserIDFromContext(r.Context())
+	feed, err := h.postService.GetMovieFeed(r.Context(), cursorPtr, limit, userID)
+	if err != nil {
+		writeError(r.Context(), w, http.StatusInternalServerError, "GET_MOVIE_FEED_FAILED", "Failed to get movie feed")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(feed); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode movie feed response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}
+
 // DeletePost handles DELETE /api/v1/posts/{id}
 func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {

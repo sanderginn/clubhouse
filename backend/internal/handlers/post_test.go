@@ -443,6 +443,100 @@ func TestGetFeedWithCursor(t *testing.T) {
 	}
 }
 
+func TestGetMovieFeedSuccess(t *testing.T) {
+	db, mock, err := setupMockDB(t)
+	if err != nil {
+		t.Fatalf("failed to setup mock db: %v", err)
+	}
+	defer db.Close()
+
+	handler := NewPostHandler(db, nil, nil)
+	postID := uuid.New()
+	userID := uuid.New()
+	sectionID := uuid.New()
+	now := time.Now()
+
+	mainRows := mock.NewRows([]string{
+		"id", "user_id", "section_id", "content",
+		"created_at", "updated_at", "deleted_at", "deleted_by_user_id",
+		"id", "username", "email", "profile_picture_url", "bio", "is_admin", "created_at",
+		"comment_count",
+	}).AddRow(
+		postID, userID, sectionID, "Movie post",
+		now, nil, nil, nil,
+		userID, "movieuser", "movie@example.com", nil, nil, false, now,
+		3,
+	)
+
+	mock.ExpectQuery("FROM posts p").WillReturnRows(mainRows)
+	mock.ExpectQuery("SELECT id, url, metadata, created_at").WithArgs(postID).
+		WillReturnRows(mock.NewRows([]string{"id", "url", "metadata", "created_at"}))
+	mock.ExpectQuery("SELECT id, image_url, position, caption, alt_text, created_at").WithArgs(postID).
+		WillReturnRows(mock.NewRows([]string{"id", "image_url", "position", "caption", "alt_text", "created_at"}))
+	mock.ExpectQuery("SELECT emoji, COUNT").WithArgs(postID).
+		WillReturnRows(mock.NewRows([]string{"emoji", "count"}))
+	mock.ExpectQuery("SELECT wi.post_id, COUNT\\(DISTINCT wi.id\\)").WithArgs(sqlmock.AnyArg(), uuid.Nil).
+		WillReturnRows(mock.NewRows([]string{"post_id", "watchlist_count", "viewer_watchlisted"}).AddRow(postID, 2, false))
+	mock.ExpectQuery("SELECT\\s+wl.post_id,").WithArgs(sqlmock.AnyArg(), uuid.Nil).
+		WillReturnRows(mock.NewRows([]string{"post_id", "watch_count", "avg_rating", "viewer_watched", "viewer_rating"}).AddRow(postID, 1, 4.5, false, nil))
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/posts/movies?limit=1", nil)
+	rr := httptest.NewRecorder()
+	handler.GetMovieFeed(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Fatalf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	var response models.FeedResponse
+	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if len(response.Posts) != 1 {
+		t.Fatalf("expected 1 post, got %d", len(response.Posts))
+	}
+	if response.Posts[0].MovieStats == nil {
+		t.Fatalf("expected movie_stats in response")
+	}
+	if response.Posts[0].MovieStats.WatchlistCount != 2 {
+		t.Fatalf("expected watchlist_count 2, got %d", response.Posts[0].MovieStats.WatchlistCount)
+	}
+	if response.Posts[0].MovieStats.WatchCount != 1 {
+		t.Fatalf("expected watch_count 1, got %d", response.Posts[0].MovieStats.WatchCount)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled expectations: %v", err)
+	}
+}
+
+func TestGetMovieFeedMethodNotAllowed(t *testing.T) {
+	db, _, err := setupMockDB(t)
+	if err != nil {
+		t.Fatalf("failed to setup mock db: %v", err)
+	}
+	defer db.Close()
+
+	handler := NewPostHandler(db, nil, nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/posts/movies", bytes.NewBufferString("{}"))
+	rr := httptest.NewRecorder()
+
+	handler.GetMovieFeed(rr, req)
+
+	if status := rr.Code; status != http.StatusMethodNotAllowed {
+		t.Fatalf("handler returned wrong status code: got %v want %v", status, http.StatusMethodNotAllowed)
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if response.Code != "METHOD_NOT_ALLOWED" {
+		t.Fatalf("expected code METHOD_NOT_ALLOWED, got %s", response.Code)
+	}
+}
+
 // TestGetFeedInvalidSectionID tests with invalid section ID format
 func TestGetFeedInvalidSectionID(t *testing.T) {
 	db, _, err := setupMockDB(t)
