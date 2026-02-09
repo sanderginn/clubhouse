@@ -9,6 +9,7 @@
     843,
     845,
     847,
+    848,
     852,
     853,
     854
@@ -126,7 +127,7 @@
     {
       "issue_number": 848,
       "title": "Display season information in MovieCard for series posts",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         847,
         845
@@ -140,7 +141,9 @@
       "assigned_to": "agent-1770676937-80847",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770676937-80847",
       "branch": "feat/issue-848-display-season-information-in-moviecard-",
-      "claimed_at": "2026-02-09T22:42:17Z"
+      "claimed_at": "2026-02-09T22:42:17Z",
+      "pr_number": 910,
+      "completed_at": "2026-02-09T22:52:26Z"
     },
     {
       "issue_number": 849,
