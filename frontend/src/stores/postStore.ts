@@ -74,6 +74,16 @@ export interface RecipeStats {
   averageRating: number | null;
 }
 
+export interface MovieStats {
+  watchlistCount: number;
+  watchCount: number;
+  averageRating: number | null;
+  viewerWatchlisted?: boolean;
+  viewerWatched?: boolean;
+  viewerRating?: number | null;
+  viewerCategories?: string[];
+}
+
 export interface Post {
   id: string;
   userId: string;
@@ -91,6 +101,8 @@ export interface Post {
   commentCount?: number;
   recipeStats?: RecipeStats;
   recipe_stats?: RecipeStats;
+  movieStats?: MovieStats;
+  movie_stats?: MovieStats;
   createdAt: string;
   updatedAt?: string;
 }

@@ -26,6 +26,7 @@
   };
 
   type MovieStatsLike = {
+    averageRating?: number | null;
     avgRating?: number | null;
     avg_rating?: number | null;
     watchCount?: number;
@@ -219,7 +220,14 @@
       }
     }
 
-    return post.links.find((link) => !!link.metadata) ?? null;
+    return null;
+  }
+
+  function isMovieOrSeriesPost(post: Post): boolean {
+    if (extractMovieStats(post)) {
+      return true;
+    }
+    return findMovieLink(post) !== null;
   }
 
   function extractMovieMetadata(link: Link | null): MovieMetadataLike | null {
@@ -255,6 +263,7 @@
     const movieMetadata = extractMovieMetadata(link ?? null);
 
     const statsRating =
+      stats?.averageRating ??
       stats?.avgRating ??
       stats?.avg_rating ??
       null;
@@ -318,19 +327,21 @@
     watchedIDs: Set<string>,
     fallbackCounts: Map<string, number>
   ): MovieListItem[] {
-    return postList.map((post) => {
-      const link = findMovieLink(post);
-      return {
-        postId: post.id,
-        title: buildMovieTitle(post, link),
-        poster: buildPoster(link),
-        rating: buildRating(post, link),
-        watchCount: buildWatchCount(post),
-        watchlistCount: buildWatchlistCount(post, fallbackCounts),
-        watched: watchedIDs.has(post.id),
-        createdAt: new Date(post.createdAt).getTime(),
-      };
-    });
+    return postList
+      .filter((post) => isMovieOrSeriesPost(post))
+      .map((post) => {
+        const link = findMovieLink(post);
+        return {
+          postId: post.id,
+          title: buildMovieTitle(post, link),
+          poster: buildPoster(link),
+          rating: buildRating(post, link),
+          watchCount: buildWatchCount(post),
+          watchlistCount: buildWatchlistCount(post, fallbackCounts),
+          watched: watchedIDs.has(post.id),
+          createdAt: new Date(post.createdAt).getTime(),
+        };
+      });
   }
 
   function filterMoviesBySearch(items: MovieListItem[], search: string): MovieListItem[] {

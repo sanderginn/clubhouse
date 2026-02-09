@@ -5,6 +5,7 @@ import type {
   PostImage,
   Highlight,
   RecipeStats,
+  MovieStats,
   EmbedData,
   RecipeMetadata,
 } from './postStore';
@@ -44,6 +45,8 @@ export interface ApiPost {
   viewer_reactions?: string[];
   recipe_stats?: ApiRecipeStats | null;
   recipeStats?: ApiRecipeStats | null;
+  movie_stats?: ApiMovieStats | null;
+  movieStats?: ApiMovieStats | null;
   created_at: string;
   updated_at?: string;
 }
@@ -57,6 +60,25 @@ export interface ApiRecipeStats {
   cookCount?: number | null;
   avgRating?: number | null;
   averageRating?: number | null;
+}
+
+export interface ApiMovieStats {
+  watchlist_count?: number | null;
+  watch_count?: number | null;
+  avg_rating?: number | null;
+  average_rating?: number | null;
+  viewer_watchlisted?: boolean | null;
+  viewer_watched?: boolean | null;
+  viewer_rating?: number | null;
+  viewer_categories?: string[] | null;
+  watchlistCount?: number | null;
+  watchCount?: number | null;
+  avgRating?: number | null;
+  averageRating?: number | null;
+  viewerWatchlisted?: boolean | null;
+  viewerWatched?: boolean | null;
+  viewerRating?: number | null;
+  viewerCategories?: string[] | null;
 }
 
 function normalizeString(value: unknown): string | undefined {
@@ -215,6 +237,50 @@ function normalizeRecipeStats(rawStats: unknown): RecipeStats | undefined {
     saveCount,
     cookCount,
     averageRating,
+  };
+}
+
+function normalizeMovieStats(rawStats: unknown): MovieStats | undefined {
+  if (!rawStats || typeof rawStats !== 'object') {
+    return undefined;
+  }
+
+  const record = rawStats as Record<string, unknown>;
+  const watchlistCount = normalizeNumber(record.watchlist_count ?? record.watchlistCount) ?? 0;
+  const watchCount = normalizeNumber(record.watch_count ?? record.watchCount) ?? 0;
+  const averageRating =
+    normalizeNumber(
+      record.avg_rating ??
+        record.avgRating ??
+        record.average_rating ??
+        record.averageRating
+    ) ?? null;
+
+  const viewerWatchlisted =
+    typeof record.viewer_watchlisted === 'boolean'
+      ? record.viewer_watchlisted
+      : typeof record.viewerWatchlisted === 'boolean'
+        ? record.viewerWatchlisted
+        : undefined;
+  const viewerWatched =
+    typeof record.viewer_watched === 'boolean'
+      ? record.viewer_watched
+      : typeof record.viewerWatched === 'boolean'
+        ? record.viewerWatched
+        : undefined;
+  const viewerRating = normalizeNumber(record.viewer_rating ?? record.viewerRating) ?? undefined;
+  const viewerCategories = normalizeStringArray(
+    record.viewer_categories ?? record.viewerCategories
+  );
+
+  return {
+    watchlistCount,
+    watchCount,
+    averageRating,
+    ...(typeof viewerWatchlisted === 'boolean' ? { viewerWatchlisted } : {}),
+    ...(typeof viewerWatched === 'boolean' ? { viewerWatched } : {}),
+    ...(typeof viewerRating === 'number' ? { viewerRating } : {}),
+    ...(viewerCategories ? { viewerCategories } : {}),
   };
 }
 
@@ -415,6 +481,7 @@ export function mapApiPost(apiPost: ApiPost): Post {
     reactionCounts: apiPost.reaction_counts ?? undefined,
     viewerReactions: apiPost.viewer_reactions,
     recipeStats: normalizeRecipeStats(apiPost.recipe_stats ?? apiPost.recipeStats),
+    movieStats: normalizeMovieStats(apiPost.movie_stats ?? apiPost.movieStats),
     createdAt: apiPost.created_at,
     updatedAt: apiPost.updated_at,
   };
