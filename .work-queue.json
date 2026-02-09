@@ -26,7 +26,8 @@
     777,
     786,
     787,
-    789
+    789,
+    791
   ],
   "issues": [
     {
@@ -467,7 +468,7 @@
     {
       "issue_number": 791,
       "title": "Create watch_logs table migration",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -479,7 +480,9 @@
       "assigned_to": "agent-1770625515-26591",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770625515-26591",
       "branch": "feat/issue-791-create-watchlogs-table-migration",
-      "claimed_at": "2026-02-09T08:25:15Z"
+      "claimed_at": "2026-02-09T08:25:15Z",
+      "pr_number": 815,
+      "completed_at": "2026-02-09T08:34:55Z"
     },
     {
       "issue_number": 792,
