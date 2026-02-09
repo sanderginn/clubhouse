@@ -6,6 +6,7 @@
   import MusicLinksContainer from './components/MusicLinksContainer.svelte';
   import ThreadView from './components/ThreadView.svelte';
   import UserProfile from './components/UserProfile.svelte';
+  import Watchlist from './components/movies/Watchlist.svelte';
   import Cookbook from './components/recipes/Cookbook.svelte';
   import { Login, Register, AdminPanel, PasswordReset, Settings } from './routes';
   import {
@@ -36,6 +37,7 @@
     getHistoryState,
     isAdminPath,
     isSettingsPath,
+    isWatchlistPath,
     parseStandaloneThreadPostId,
     parseSectionSlug,
     parseThreadCommentId,
@@ -98,6 +100,17 @@
       pendingThreadPostId = null;
       pendingAdminPath = false;
       highlightCommentId = null;
+      return;
+    }
+    if (isWatchlistPath(path)) {
+      unauthRoute = 'login';
+      resetToken = null;
+      threadRouteStore.clearTarget();
+      pendingSectionIdentifier = null;
+      pendingThreadPostId = null;
+      pendingAdminPath = false;
+      highlightCommentId = null;
+      uiStore.setActiveView('watchlist');
       return;
     }
     const profileUserId = parseProfileUserId(path);
@@ -273,6 +286,20 @@
       sectionNotFound = null;
     }
   }
+
+  $: if (
+    typeof window !== 'undefined' &&
+    isWatchlistPath(window.location.pathname) &&
+    $activeView !== 'watchlist'
+  ) {
+    threadRouteStore.clearTarget();
+    highlightCommentId = null;
+    uiStore.setActiveView('watchlist');
+  }
+
+  $: if (typeof document !== 'undefined') {
+    document.title = $activeView === 'watchlist' ? 'My Watchlist - Clubhouse' : 'Clubhouse';
+  }
 </script>
 
 <ErrorBoundary>
@@ -326,6 +353,14 @@
           {/if}
         {:else if $activeView === 'settings'}
           <Settings />
+        {:else if $activeView === 'watchlist'}
+          <div class="space-y-4">
+            <div>
+              <h1 class="text-2xl font-bold text-gray-900">My Watchlist</h1>
+              <p class="text-gray-600">Track and organize movies you want to watch.</p>
+            </div>
+            <Watchlist />
+          </div>
         {:else if sectionNotFound}
           <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h1 class="text-xl font-semibold text-gray-900 mb-2">Section not found</h1>
