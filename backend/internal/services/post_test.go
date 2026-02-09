@@ -44,6 +44,52 @@ func TestCreatePostWithoutLinks(t *testing.T) {
 	}
 }
 
+func TestCreatePostMovieSectionInitializesMovieStats(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	disableLinkMetadata(t)
+
+	userID := testutil.CreateTestUser(t, db, "moviestatsuser", "moviestatsuser@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Movies", "movie")
+
+	service := NewPostService(db)
+	req := &models.CreatePostRequest{
+		SectionID: sectionID,
+		Content:   "New movie post",
+	}
+
+	post, err := service.CreatePost(context.Background(), req, uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("CreatePost failed: %v", err)
+	}
+
+	if post.MovieStats == nil {
+		t.Fatal("expected movie stats to be initialized for movie section post")
+	}
+	if post.MovieStats.WatchlistCount != 0 {
+		t.Fatalf("expected watchlist count 0, got %d", post.MovieStats.WatchlistCount)
+	}
+	if post.MovieStats.WatchCount != 0 {
+		t.Fatalf("expected watch count 0, got %d", post.MovieStats.WatchCount)
+	}
+	if post.MovieStats.AvgRating != nil {
+		t.Fatalf("expected avg rating nil, got %v", post.MovieStats.AvgRating)
+	}
+	if post.MovieStats.ViewerWatchlisted {
+		t.Fatal("expected viewerWatchlisted false")
+	}
+	if post.MovieStats.ViewerWatched {
+		t.Fatal("expected viewerWatched false")
+	}
+	if post.MovieStats.ViewerRating != nil {
+		t.Fatalf("expected viewer rating nil, got %v", post.MovieStats.ViewerRating)
+	}
+	if len(post.MovieStats.ViewerCategories) != 0 {
+		t.Fatalf("expected no viewer categories, got %v", post.MovieStats.ViewerCategories)
+	}
+}
+
 func TestCreatePostWithLinks(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })

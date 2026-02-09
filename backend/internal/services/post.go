@@ -245,6 +245,10 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
+	if isMovieOrSeriesSectionType(sectionType) {
+		post.MovieStats = &models.MovieStats{}
+	}
+
 	for _, job := range jobs {
 		enqueueCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		if err := EnqueueMetadataJob(enqueueCtx, s.redis, job); err != nil {

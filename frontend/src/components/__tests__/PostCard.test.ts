@@ -206,6 +206,24 @@ describe('PostCard', () => {
     expect(screen.getByTestId('movie-stats-bar')).toBeInTheDocument();
   });
 
+  it('renders movie stats bar with default values when movie stats are missing', () => {
+    sectionStore.setSections([
+      {
+        id: 'section-1',
+        name: 'Movies',
+        type: 'movie',
+        icon: '🎬',
+        slug: 'movies',
+      },
+    ]);
+
+    render(PostCard, { post: basePost });
+
+    expect(screen.getByTestId('movie-stats-bar')).toBeInTheDocument();
+    expect(screen.getByText('Add to List')).toBeInTheDocument();
+    expect(screen.getByText('Mark Watched')).toBeInTheDocument();
+  });
+
   it('renders movie card for movie metadata links in movie sections', () => {
     sectionStore.setSections([
       {

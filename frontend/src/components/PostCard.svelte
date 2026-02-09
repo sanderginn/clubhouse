@@ -750,19 +750,19 @@
           : metadata?.embed?.provider;
   $: highlightSeekMessage = getSeekUnavailableMessage(highlightEmbedProvider);
   $: canSeekTimestamps = !!embedController?.supportsSeeking;
-  $: movieStatsForBar = movieStats
+  $: movieStatsForBar = isMovieSection
     ? {
-        watchlistCount: movieStats.watchlistCount ?? 0,
-        watchCount: movieStats.watchCount ?? 0,
-        ...(typeof movieStats.averageRating === 'number'
+        watchlistCount: movieStats?.watchlistCount ?? 0,
+        watchCount: movieStats?.watchCount ?? 0,
+        ...(typeof movieStats?.averageRating === 'number'
           ? { avgRating: movieStats.averageRating }
           : {}),
-        viewerWatchlisted: movieStats.viewerWatchlisted ?? false,
-        viewerWatched: movieStats.viewerWatched ?? false,
-        ...(typeof movieStats.viewerRating === 'number'
+        viewerWatchlisted: movieStats?.viewerWatchlisted ?? false,
+        viewerWatched: movieStats?.viewerWatched ?? false,
+        ...(typeof movieStats?.viewerRating === 'number'
           ? { viewerRating: movieStats.viewerRating }
           : {}),
-        ...(movieStats.viewerCategories ? { viewerCategories: movieStats.viewerCategories } : {}),
+        ...(movieStats?.viewerCategories ? { viewerCategories: movieStats.viewerCategories } : {}),
       }
     : null;
   $: {
