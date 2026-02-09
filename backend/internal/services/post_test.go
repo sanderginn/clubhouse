@@ -715,6 +715,131 @@ func TestGetFeedIncludesMovieStatsForMovieSection(t *testing.T) {
 	}
 }
 
+func TestGetMovieFeedIncludesMovieAndSeriesWithPagination(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	authorID := testutil.CreateTestUser(t, db, "moviefeedauthor", "moviefeedauthor@test.com", false, true)
+	viewerID := testutil.CreateTestUser(t, db, "moviefeedviewer", "moviefeedviewer@test.com", false, true)
+	movieSectionID := testutil.CreateTestSection(t, db, "Movies", "movie")
+	seriesSectionID := testutil.CreateTestSection(t, db, "Series", "series")
+	generalSectionID := testutil.CreateTestSection(t, db, "General", "general")
+
+	seriesPostID := uuid.New()
+	generalPostID := uuid.New()
+	moviePostID := uuid.New()
+
+	now := time.Now().UTC().Truncate(time.Second)
+
+	_, err := db.ExecContext(context.Background(), `
+		INSERT INTO posts (id, user_id, section_id, content, created_at)
+		VALUES ($1, $2, $3, $4, $5)
+	`, seriesPostID, uuid.MustParse(authorID), uuid.MustParse(seriesSectionID), "Newest series post", now)
+	if err != nil {
+		t.Fatalf("failed to insert series post: %v", err)
+	}
+
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO posts (id, user_id, section_id, content, created_at)
+		VALUES ($1, $2, $3, $4, $5)
+	`, generalPostID, uuid.MustParse(authorID), uuid.MustParse(generalSectionID), "General post", now.Add(-30*time.Minute))
+	if err != nil {
+		t.Fatalf("failed to insert general post: %v", err)
+	}
+
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO posts (id, user_id, section_id, content, created_at)
+		VALUES ($1, $2, $3, $4, $5)
+	`, moviePostID, uuid.MustParse(authorID), uuid.MustParse(movieSectionID), "Older movie post", now.Add(-1*time.Hour))
+	if err != nil {
+		t.Fatalf("failed to insert movie post: %v", err)
+	}
+
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO watchlist_items (id, user_id, post_id, category, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(viewerID), moviePostID, "Watch Soon")
+	if err != nil {
+		t.Fatalf("failed to insert movie watchlist item: %v", err)
+	}
+
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO watch_logs (id, user_id, post_id, rating, watched_at, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now(), now())
+	`, uuid.MustParse(viewerID), moviePostID, 4)
+	if err != nil {
+		t.Fatalf("failed to insert movie watch log: %v", err)
+	}
+
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO watch_logs (id, user_id, post_id, rating, watched_at, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now(), now())
+	`, uuid.MustParse(authorID), seriesPostID, 5)
+	if err != nil {
+		t.Fatalf("failed to insert series watch log: %v", err)
+	}
+
+	service := NewPostService(db)
+
+	firstPage, err := service.GetMovieFeed(context.Background(), nil, 1, uuid.MustParse(viewerID))
+	if err != nil {
+		t.Fatalf("GetMovieFeed first page failed: %v", err)
+	}
+
+	if len(firstPage.Posts) != 1 {
+		t.Fatalf("expected 1 post on first page, got %d", len(firstPage.Posts))
+	}
+	if !firstPage.HasMore {
+		t.Fatalf("expected has_more=true for first page")
+	}
+	if firstPage.NextCursor == nil || *firstPage.NextCursor == "" {
+		t.Fatalf("expected next_cursor on first page")
+	}
+
+	firstPost := firstPage.Posts[0]
+	if firstPost.ID != seriesPostID {
+		t.Fatalf("expected newest series post first, got %s", firstPost.ID)
+	}
+	if firstPost.MovieStats == nil {
+		t.Fatalf("expected movie stats on series post")
+	}
+	if firstPost.MovieStats.WatchCount != 1 {
+		t.Fatalf("expected series watch count 1, got %d", firstPost.MovieStats.WatchCount)
+	}
+
+	secondPage, err := service.GetMovieFeed(context.Background(), firstPage.NextCursor, 10, uuid.MustParse(viewerID))
+	if err != nil {
+		t.Fatalf("GetMovieFeed second page failed: %v", err)
+	}
+
+	if len(secondPage.Posts) != 1 {
+		t.Fatalf("expected 1 post on second page, got %d", len(secondPage.Posts))
+	}
+	if secondPage.HasMore {
+		t.Fatalf("expected has_more=false on second page")
+	}
+	if secondPage.NextCursor != nil {
+		t.Fatalf("expected no next_cursor on second page")
+	}
+
+	secondPost := secondPage.Posts[0]
+	if secondPost.ID != moviePostID {
+		t.Fatalf("expected movie post on second page, got %s", secondPost.ID)
+	}
+	if secondPost.MovieStats == nil {
+		t.Fatalf("expected movie stats on movie post")
+	}
+	if secondPost.MovieStats.WatchlistCount != 1 {
+		t.Fatalf("expected movie watchlist count 1, got %d", secondPost.MovieStats.WatchlistCount)
+	}
+	if secondPost.MovieStats.WatchCount != 1 {
+		t.Fatalf("expected movie watch count 1, got %d", secondPost.MovieStats.WatchCount)
+	}
+	if secondPost.MovieStats.ViewerRating == nil || *secondPost.MovieStats.ViewerRating != 4 {
+		t.Fatalf("expected viewer rating 4, got %v", secondPost.MovieStats.ViewerRating)
+	}
+}
+
 func TestGetPostsByUserIDIncludesMovieStatsForMovieAndSeries(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })

@@ -191,6 +191,45 @@ describe('api client', () => {
     expect(url).toContain('cursor=cursor-1');
   });
 
+  it('getMoviePosts builds query params and maps response', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({
+        posts: [
+          {
+            id: 'post-1',
+            user_id: 'user-1',
+            section_id: 'section-movie',
+            content: 'The Matrix',
+            created_at: '2026-01-02T00:00:00Z',
+            movie_stats: {
+              avg_rating: 4.8,
+              watch_count: 10,
+              watchlist_count: 3,
+            },
+          },
+        ],
+        has_more: true,
+        next_cursor: 'cursor-next',
+      }),
+    });
+
+    const response = await api.getMoviePosts(15, 'cursor-1');
+
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toContain('/posts/movies');
+    expect(url).toContain('limit=15');
+    expect(url).toContain('cursor=cursor-1');
+    expect(response.hasMore).toBe(true);
+    expect(response.nextCursor).toBe('cursor-next');
+    expect(response.posts).toHaveLength(1);
+    expect(response.posts[0]?.id).toBe('post-1');
+    expect(response.posts[0]?.movieStats?.averageRating).toBe(4.8);
+    expect(response.posts[0]?.movieStats?.watchCount).toBe(10);
+    expect(response.posts[0]?.movieStats?.watchlistCount).toBe(3);
+  });
+
   it('getThreadComments builds query params', async () => {
     fetchMock.mockResolvedValue({
       ok: true,

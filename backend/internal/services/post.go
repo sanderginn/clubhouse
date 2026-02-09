@@ -1339,6 +1339,142 @@ func isMovieOrSeriesSectionType(sectionType string) bool {
 	return sectionType == "movie" || sectionType == "series"
 }
 
+// GetMovieFeed retrieves a paginated feed of posts across movie and series sections.
+func (s *PostService) GetMovieFeed(ctx context.Context, cursor *string, limit int, userID uuid.UUID) (*models.FeedResponse, error) {
+	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.GetMovieFeed")
+	span.SetAttributes(
+		attribute.String("user_id", userID.String()),
+		attribute.Int("limit", limit),
+		attribute.Bool("has_cursor", cursor != nil && *cursor != ""),
+	)
+	defer span.End()
+
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+
+	query := `
+		SELECT
+			p.id, p.user_id, p.section_id, p.content,
+			p.created_at, p.updated_at, p.deleted_at, p.deleted_by_user_id,
+			u.id, u.username, COALESCE(u.email, '') as email, u.profile_picture_url, u.bio, u.is_admin, u.created_at,
+			COALESCE(COUNT(DISTINCT c.id), 0) as comment_count
+		FROM posts p
+		JOIN sections s ON p.section_id = s.id
+		JOIN users u ON p.user_id = u.id
+		LEFT JOIN comments c ON p.id = c.post_id AND c.deleted_at IS NULL
+		WHERE s.type IN ('movie', 'series') AND p.deleted_at IS NULL
+	`
+
+	args := make([]interface{}, 0, 3)
+	argIndex := 1
+
+	if cursor != nil && *cursor != "" {
+		query += fmt.Sprintf(" AND p.created_at < $%d", argIndex)
+		args = append(args, *cursor)
+		argIndex++
+	}
+
+	query += fmt.Sprintf(" GROUP BY p.id, u.id ORDER BY p.created_at DESC LIMIT $%d", argIndex)
+	args = append(args, limit+1)
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		recordSpanError(span, err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []*models.Post
+	for rows.Next() {
+		var post models.Post
+		var user models.User
+
+		err := rows.Scan(
+			&post.ID, &post.UserID, &post.SectionID, &post.Content,
+			&post.CreatedAt, &post.UpdatedAt, &post.DeletedAt, &post.DeletedByUserID,
+			&user.ID, &user.Username, &user.Email, &user.ProfilePictureURL, &user.Bio, &user.IsAdmin, &user.CreatedAt,
+			&post.CommentCount,
+		)
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+
+		post.User = &user
+
+		links, err := s.getPostLinks(ctx, post.ID, userID)
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+		post.Links = links
+
+		images, err := s.getPostImages(ctx, post.ID)
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+		post.Images = images
+
+		counts, viewerReactions, err := s.getPostReactions(ctx, post.ID, userID)
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+		post.ReactionCounts = counts
+		post.ViewerReactions = viewerReactions
+
+		posts = append(posts, &post)
+	}
+
+	if err = rows.Err(); err != nil {
+		recordSpanError(span, err)
+		return nil, err
+	}
+
+	hasMore := len(posts) > limit
+	if hasMore {
+		posts = posts[:limit]
+	}
+
+	var nextCursor *string
+	if hasMore && len(posts) > 0 {
+		lastPost := posts[len(posts)-1]
+		cursorStr := lastPost.CreatedAt.Format("2006-01-02T15:04:05.000Z07:00")
+		nextCursor = &cursorStr
+	}
+
+	if len(posts) > 0 {
+		postIDs := make([]uuid.UUID, 0, len(posts))
+		for _, post := range posts {
+			postIDs = append(postIDs, post.ID)
+		}
+
+		viewerID := &userID
+		if userID == uuid.Nil {
+			viewerID = nil
+		}
+
+		statsByPost, err := s.getMovieStatsForPosts(ctx, postIDs, viewerID)
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+		for _, post := range posts {
+			if stat, ok := statsByPost[post.ID]; ok {
+				post.MovieStats = stat
+			}
+		}
+	}
+
+	return &models.FeedResponse{
+		Posts:      posts,
+		HasMore:    hasMore,
+		NextCursor: nextCursor,
+	}, nil
+}
+
 // GetFeed retrieves a paginated feed of posts for a section using cursor-based pagination
 func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *string, limit int, userID uuid.UUID) (*models.FeedResponse, error) {
 	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.GetFeed")

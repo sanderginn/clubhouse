@@ -3,12 +3,12 @@
   import { get } from 'svelte/store';
   import type { Link, LinkMetadata, Post } from '../../stores/postStore';
   import type { WatchlistItem } from '../../stores/movieStore';
-  import { posts } from '../../stores/postStore';
   import {
     movieStore,
     sortedCategories,
     watchlistByCategory,
   } from '../../stores/movieStore';
+  import { api } from '../../services/api';
   import { buildStandaloneThreadHref, pushPath } from '../../services/routeNavigation';
 
   type TabKey = 'my' | 'all';
@@ -53,6 +53,7 @@
 
   const ALL_CATEGORY_VALUE = '__all__';
   const ALL_CATEGORY_LABEL = 'All';
+  const ALL_MOVIES_PAGE_SIZE = 20;
 
   const dispatch = createEventDispatcher<{
     createCategory: undefined;
@@ -64,6 +65,12 @@
   let selectedCategory = ALL_CATEGORY_VALUE;
   let sortKey: SortKey = 'rating';
   let searchTerm = '';
+  let allMoviePosts: Post[] = [];
+  let allMoviesHasMore = false;
+  let allMoviesNextCursor: string | null = null;
+  let allMoviesLoading = false;
+  let allMoviesAutoLoadAttempted = false;
+  let allMoviesError: string | null = null;
 
   const tabOptions: Array<{ key: TabKey; label: string }> = [
     { key: 'my', label: 'My List' },
@@ -111,9 +118,13 @@
   $: selectedWatchlistItems = getWatchlistItemsForCategory($watchlistByCategory, selectedCategory);
   $: myMovies = buildWatchlistMovieItems(selectedWatchlistItems, watchedPostIDs, postWatchlistCounts);
   $: allMovies = sortMovies(
-    filterMoviesBySearch(buildAllMovieItems($posts, watchedPostIDs, postWatchlistCounts), searchTerm),
+    filterMoviesBySearch(buildAllMovieItems(allMoviePosts, watchedPostIDs, postWatchlistCounts), searchTerm),
     sortKey
   );
+  $: if (activeTab === 'all' && !allMoviesAutoLoadAttempted && !allMoviesLoading) {
+    allMoviesAutoLoadAttempted = true;
+    void loadAllMovies(true);
+  }
 
   function buildCategoryCounts(map: Map<string, WatchlistItem[]>): Map<string, number> {
     const counts = new Map<string, number>();
@@ -342,6 +353,46 @@
           createdAt: new Date(post.createdAt).getTime(),
         };
       });
+  }
+
+  function mergeMovies(existing: Post[], incoming: Post[]): Post[] {
+    const byID = new Map<string, Post>();
+    for (const post of existing) {
+      byID.set(post.id, post);
+    }
+    for (const post of incoming) {
+      byID.set(post.id, post);
+    }
+    return Array.from(byID.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
+
+  async function loadAllMovies(reset = false): Promise<void> {
+    if (allMoviesLoading) {
+      return;
+    }
+
+    allMoviesLoading = true;
+    allMoviesError = null;
+
+    try {
+      const response = await api.getMoviePosts(
+        ALL_MOVIES_PAGE_SIZE,
+        reset ? undefined : (allMoviesNextCursor ?? undefined)
+      );
+
+      allMoviePosts = reset
+        ? response.posts
+        : mergeMovies(allMoviePosts, response.posts);
+      allMoviesHasMore = response.hasMore;
+      allMoviesNextCursor = response.nextCursor ?? null;
+      allMoviesError = null;
+    } catch (error) {
+      allMoviesError = error instanceof Error ? error.message : 'Failed to load movies';
+    } finally {
+      allMoviesLoading = false;
+    }
   }
 
   function filterMoviesBySearch(items: MovieListItem[], search: string): MovieListItem[] {
@@ -583,7 +634,32 @@
           </div>
         </div>
 
-        {#if allMovies.length === 0}
+        {#if allMoviesLoading && allMovies.length === 0}
+          <div
+            class="mt-3 rounded-xl border border-dashed border-gray-200 px-4 py-6 text-sm text-gray-500"
+            data-testid="watchlist-all-loading"
+          >
+            Loading movies...
+          </div>
+        {:else if allMoviesError && allMovies.length === 0}
+          <div
+            class="mt-3 rounded-xl border border-dashed border-red-200 bg-red-50 px-4 py-6 text-sm text-red-700"
+            data-testid="watchlist-all-error"
+          >
+            <p>{allMoviesError}</p>
+            <div class="mt-3">
+              <button
+                type="button"
+                class="rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100"
+                on:click={() => void loadAllMovies(true)}
+                disabled={allMoviesLoading}
+                data-testid="watchlist-all-retry"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        {:else if allMovies.length === 0}
           <div
             class="mt-3 rounded-xl border border-dashed border-gray-200 px-4 py-6 text-sm text-gray-500"
             data-testid="watchlist-all-empty"
@@ -637,6 +713,26 @@
               </button>
             {/each}
           </div>
+        {/if}
+
+        {#if allMoviesHasMore}
+          <div class="mt-4 flex justify-center">
+            <button
+              type="button"
+              class="rounded-lg border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+              on:click={() => void loadAllMovies(false)}
+              disabled={allMoviesLoading}
+              data-testid="watchlist-all-load-more"
+            >
+              {allMoviesLoading ? 'Loading...' : 'Load more'}
+            </button>
+          </div>
+        {/if}
+
+        {#if allMoviesError && allMovies.length > 0}
+          <p class="mt-3 text-center text-xs text-red-600" data-testid="watchlist-all-error-inline">
+            {allMoviesError}
+          </p>
         {/if}
       </div>
     {/if}
