@@ -144,7 +144,7 @@
     {
       "issue_number": 849,
       "title": "Add Rotten Tomatoes score via OMDb API",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         847
       ],
@@ -153,7 +153,11 @@
         "backend",
         "movies"
       ],
-      "priority": 58
+      "priority": 58,
+      "assigned_to": "agent-1770676939-80954",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770676939-80954",
+      "branch": "feat/issue-849-add-rotten-tomatoes-score-via-omdb-api",
+      "claimed_at": "2026-02-09T22:42:19Z"
     },
     {
       "issue_number": 850,
