@@ -424,7 +424,7 @@
     {
       "issue_number": 789,
       "title": "Create watchlist_categories table migration",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -432,7 +432,11 @@
         "movies",
         "database"
       ],
-      "priority": 26
+      "priority": 26,
+      "assigned_to": "agent-1770625193-19598",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770625193-19598",
+      "branch": "feat/issue-789-create-watchlistcategories-table-migrati",
+      "claimed_at": "2026-02-09T08:19:53Z"
     },
     {
       "issue_number": 790,
