@@ -67,7 +67,38 @@ type AddToWatchlistRequest struct {
 	Categories []string `json:"categories,omitempty"`
 }
 
+// AddToWatchlistResponse represents the response for adding to watchlist.
+type AddToWatchlistResponse struct {
+	WatchlistItems []WatchlistItem `json:"watchlist_items"`
+}
+
 // WatchlistResponse represents watchlist items grouped by category.
 type WatchlistResponse struct {
 	Categories []WatchlistCategoryGroup `json:"categories"`
+}
+
+// CreateWatchlistCategoryRequest represents the request body for creating a watchlist category.
+type CreateWatchlistCategoryRequest struct {
+	Name string `json:"name"`
+}
+
+// UpdateWatchlistCategoryRequest represents the request body for updating a watchlist category.
+type UpdateWatchlistCategoryRequest struct {
+	Name     *string `json:"name,omitempty"`
+	Position *int    `json:"position,omitempty"`
+}
+
+// CreateWatchlistCategoryResponse represents the response for creating a watchlist category.
+type CreateWatchlistCategoryResponse struct {
+	Category WatchlistCategory `json:"category"`
+}
+
+// UpdateWatchlistCategoryResponse represents the response for updating a watchlist category.
+type UpdateWatchlistCategoryResponse struct {
+	Category WatchlistCategory `json:"category"`
+}
+
+// ListWatchlistCategoriesResponse represents the response for listing watchlist categories.
+type ListWatchlistCategoriesResponse struct {
+	Categories []WatchlistCategory `json:"categories"`
 }
