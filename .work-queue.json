@@ -13,6 +13,7 @@
     847,
     848,
     849,
+    850,
     852,
     853,
     854,
@@ -178,7 +179,7 @@
     {
       "issue_number": 850,
       "title": "Display Rotten Tomatoes score in MovieCard",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         849,
         848
@@ -192,7 +193,9 @@
       "assigned_to": "agent-1770678388-25753",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770678388-25753",
       "branch": "feat/issue-850-display-rotten-tomatoes-score-in-movieca",
-      "claimed_at": "2026-02-09T23:06:28Z"
+      "claimed_at": "2026-02-09T23:06:28Z",
+      "pr_number": 917,
+      "completed_at": "2026-02-09T23:17:39Z"
     },
     {
       "issue_number": 851,
