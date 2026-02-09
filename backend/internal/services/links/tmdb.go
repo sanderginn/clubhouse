@@ -320,7 +320,6 @@ func (c *TMDBClient) get(ctx context.Context, path string, query url.Values, out
 	if query == nil {
 		query = make(url.Values)
 	}
-	query.Set("api_key", c.apiKey)
 
 	base := strings.TrimSuffix(c.baseURL, "/")
 	requestURL := fmt.Sprintf("%s%s", base, path)
@@ -335,6 +334,7 @@ func (c *TMDBClient) get(ctx context.Context, path string, query url.Values, out
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", tmdbUserAgent)
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 
 	start := time.Now()
 	resp, err := c.httpClient.Do(req)

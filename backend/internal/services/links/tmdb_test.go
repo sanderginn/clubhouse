@@ -39,8 +39,8 @@ func TestTMDBClientSearchMovie(t *testing.T) {
 		if r.URL.Path != "/search/movie" {
 			t.Fatalf("path = %q, want /search/movie", r.URL.Path)
 		}
-		if r.URL.Query().Get("api_key") != "test-api-key" {
-			t.Fatalf("api_key = %q", r.URL.Query().Get("api_key"))
+		if got := r.Header.Get("Authorization"); got != "Bearer test-api-key" {
+			t.Fatalf("Authorization = %q, want Bearer test-api-key", got)
 		}
 		if r.URL.Query().Get("query") != "The Matrix" {
 			t.Fatalf("query = %q", r.URL.Query().Get("query"))
