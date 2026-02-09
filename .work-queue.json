@@ -191,7 +191,7 @@
     {
       "issue_number": 851,
       "title": "Separate Watchlist by section type and display in Series section",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         846
       ],
@@ -201,7 +201,11 @@
         "backend",
         "movies"
       ],
-      "priority": 56
+      "priority": 56,
+      "assigned_to": "agent-1770678385-25581",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770678385-25581",
+      "branch": "feat/issue-851-separate-watchlist-by-section-type-and-d",
+      "claimed_at": "2026-02-09T23:06:25Z"
     },
     {
       "issue_number": 852,
