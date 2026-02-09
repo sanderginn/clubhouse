@@ -664,7 +664,7 @@
     {
       "issue_number": 800,
       "title": "Add watchlist and watch log API client functions",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         795,
         796
@@ -674,7 +674,11 @@
         "frontend",
         "movies"
       ],
-      "priority": 37
+      "priority": 37,
+      "assigned_to": "agent-1770630435-93914",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770630435-93914",
+      "branch": "feat/issue-800-add-watchlist-and-watch-log-api-client-f",
+      "claimed_at": "2026-02-09T09:47:15Z"
     },
     {
       "issue_number": 801,
