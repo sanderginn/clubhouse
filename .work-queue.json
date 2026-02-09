@@ -288,7 +288,7 @@
     {
       "issue_number": 856,
       "title": "[Books] Create read_logs table migration",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -296,7 +296,11 @@
         "books",
         "database"
       ],
-      "priority": 64
+      "priority": 64,
+      "assigned_to": "agent-1770678390-25915",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770678390-25915",
+      "branch": "feat/issue-856-books-create-readlogs-table-migration",
+      "claimed_at": "2026-02-09T23:06:30Z"
     },
     {
       "issue_number": 857,
