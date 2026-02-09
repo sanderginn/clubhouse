@@ -7,6 +7,7 @@ import {
   type WatchLog as ApiWatchLog,
   type WatchLogWithPost as ApiWatchLogWithPost,
 } from '../services/api';
+import { currentUser } from './authStore';
 import { mapApiPost, type ApiPost } from './postMapper';
 import type { Post } from './postStore';
 
@@ -244,80 +245,10 @@ function extractCategoryName(payload: unknown): string | null {
   return typeof category === 'string' && category.length > 0 ? category : null;
 }
 
-function extractCategories(payload: unknown): string[] {
-  if (!payload || typeof payload !== 'object') {
-    return [];
-  }
-
-  const record = payload as Record<string, unknown>;
-  const raw = record.categories;
-  if (!Array.isArray(raw)) {
-    return [];
-  }
-
-  return raw.filter((entry): entry is string => typeof entry === 'string' && entry.length > 0);
-}
-
-function extractRating(payload: unknown): number | null {
-  if (!payload || typeof payload !== 'object') {
-    return null;
-  }
-
-  const record = payload as Record<string, unknown>;
-  const rating = record.rating;
-  if (typeof rating !== 'number' || !Number.isFinite(rating)) {
-    return null;
-  }
-
-  return rating;
-}
-
-function extractWatchedAt(payload: unknown): string | null {
-  if (!payload || typeof payload !== 'object') {
-    return null;
-  }
-
-  const record = payload as Record<string, unknown>;
-  const watchedAt = record.watched_at ?? record.watchedAt;
-  return typeof watchedAt === 'string' && watchedAt.length > 0 ? watchedAt : null;
-}
-
-function buildWatchlistItemsFromEvent(payload: unknown): WatchlistItem[] {
-  const postId = extractPostId(payload);
-  if (!postId) {
-    return [];
-  }
-
-  const userId = extractUserId(payload) ?? '';
-  const categories = extractCategories(payload);
-  if (categories.length === 0) {
-    return [];
-  }
-
-  const createdAt = new Date().toISOString();
-  return categories.map((category) => ({
-    id: `event-${postId}-${category}`,
-    userId,
-    postId,
-    category,
-    createdAt,
-  }));
-}
-
-function buildWatchLogFromEvent(payload: unknown): WatchLog | null {
-  const postId = extractPostId(payload);
-  const rating = extractRating(payload);
-  if (!postId || rating === null) {
-    return null;
-  }
-
-  return {
-    id: `event-${postId}`,
-    userId: extractUserId(payload) ?? '',
-    postId,
-    rating,
-    watchedAt: extractWatchedAt(payload) ?? new Date().toISOString(),
-  };
+function shouldHandleCurrentUserEvent(payload: unknown): boolean {
+  const actingUserID = extractUserId(payload);
+  const currentUserID = get(currentUser)?.id;
+  return !!actingUserID && !!currentUserID && actingUserID === currentUserID;
 }
 
 const initialState: MovieStoreState = {
@@ -570,14 +501,22 @@ export const sortedCategories = derived(movieStore, ($store) =>
 );
 
 export function handleMovieWatchlistedEvent(payload: unknown): void {
-  const eventItems = extractWatchlistItems(payload).map(mapApiWatchlistItem);
-  const watchlistItems = eventItems.length > 0 ? eventItems : buildWatchlistItemsFromEvent(payload);
-  if (watchlistItems.length > 0) {
-    movieStore.applyWatchlistItems(watchlistItems);
+  if (!shouldHandleCurrentUserEvent(payload)) {
+    return;
   }
+
+  const watchlistItems = extractWatchlistItems(payload).map(mapApiWatchlistItem);
+  if (watchlistItems.length === 0) {
+    return;
+  }
+  movieStore.applyWatchlistItems(watchlistItems);
 }
 
 export function handleMovieUnwatchlistedEvent(payload: unknown): void {
+  if (!shouldHandleCurrentUserEvent(payload)) {
+    return;
+  }
+
   const postId = extractPostId(payload);
   if (!postId) {
     return;
@@ -587,20 +526,22 @@ export function handleMovieUnwatchlistedEvent(payload: unknown): void {
 }
 
 export function handleMovieWatchedEvent(payload: unknown): void {
-  const watchLog = extractWatchLog(payload);
-  if (watchLog) {
-    movieStore.applyWatchLog(mapApiWatchLog(watchLog));
+  if (!shouldHandleCurrentUserEvent(payload)) {
     return;
   }
 
-  const eventLog = buildWatchLogFromEvent(payload);
-  if (!eventLog) {
+  const watchLog = extractWatchLog(payload);
+  if (!watchLog) {
     return;
   }
-  movieStore.applyWatchLog(eventLog);
+  movieStore.applyWatchLog(mapApiWatchLog(watchLog));
 }
 
 export function handleMovieWatchRemovedEvent(payload: unknown): void {
+  if (!shouldHandleCurrentUserEvent(payload)) {
+    return;
+  }
+
   const postId = extractPostId(payload);
   if (!postId) {
     return;

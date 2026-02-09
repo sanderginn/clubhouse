@@ -38,9 +38,17 @@ const {
   handleMovieWatchedEvent,
   handleMovieWatchRemovedEvent,
 } = await import('../movieStore');
+const { authStore } = await import('../authStore');
 
 beforeEach(() => {
   movieStore.reset();
+  authStore.setUser({
+    id: 'user-1',
+    username: 'movie-user',
+    email: 'movie@example.com',
+    isAdmin: false,
+    totpEnabled: false,
+  });
   apiGetMyWatchlist.mockReset();
   apiGetWatchlistCategories.mockReset();
   apiAddToWatchlist.mockReset();
@@ -214,25 +222,102 @@ describe('movieStore', () => {
 
   it('websocket handlers apply movie events to local state', () => {
     handleMovieWatchlistedEvent({
-      post_id: 'post-ws',
       user_id: 'user-1',
-      categories: ['Favorites'],
+      watchlist_item: {
+        id: 'watch-ws',
+        userId: 'user-1',
+        postId: 'post-ws',
+        category: 'Favorites',
+        createdAt: '2026-01-02T00:00:00Z',
+      },
     });
     handleMovieWatchedEvent({
-      post_id: 'post-ws',
       user_id: 'user-1',
-      rating: 5,
+      watch_log: {
+        id: 'log-ws',
+        userId: 'user-1',
+        postId: 'post-ws',
+        rating: 5,
+        watchedAt: '2026-01-02T00:00:00Z',
+      },
     });
 
     let state = get(movieStore);
     expect(state.watchlist.get('Favorites')).toHaveLength(1);
     expect(state.watchLogs).toHaveLength(1);
 
-    handleMovieUnwatchlistedEvent({ post_id: 'post-ws' });
-    handleMovieWatchRemovedEvent({ post_id: 'post-ws' });
+    handleMovieUnwatchlistedEvent({ post_id: 'post-ws', user_id: 'user-1', category: 'Favorites' });
+    handleMovieWatchRemovedEvent({ post_id: 'post-ws', user_id: 'user-1' });
 
     state = get(movieStore);
     expect(state.watchlist.get('Favorites')).toBeUndefined();
     expect(state.watchLogs).toHaveLength(0);
+  });
+
+  it('websocket handlers ignore events from other users and sparse self payloads', () => {
+    movieStore.applyWatchlistItems([
+      {
+        id: 'watch-own',
+        userId: 'user-1',
+        postId: 'post-own',
+        category: 'Favorites',
+        createdAt: '2026-01-01T00:00:00Z',
+      },
+    ]);
+    movieStore.applyWatchLog({
+      id: 'log-own',
+      userId: 'user-1',
+      postId: 'post-own',
+      rating: 4,
+      watchedAt: '2026-01-01T00:00:00Z',
+    });
+
+    handleMovieWatchlistedEvent({
+      user_id: 'user-2',
+      watchlist_item: {
+        id: 'watch-other',
+        userId: 'user-2',
+        postId: 'post-other',
+        category: 'Favorites',
+        createdAt: '2026-01-03T00:00:00Z',
+      },
+    });
+    handleMovieWatchedEvent({
+      user_id: 'user-2',
+      watch_log: {
+        id: 'log-other',
+        userId: 'user-2',
+        postId: 'post-other',
+        rating: 2,
+        watchedAt: '2026-01-03T00:00:00Z',
+      },
+    });
+    handleMovieUnwatchlistedEvent({
+      post_id: 'post-own',
+      user_id: 'user-2',
+      category: 'Favorites',
+    });
+    handleMovieWatchRemovedEvent({
+      post_id: 'post-own',
+      user_id: 'user-2',
+    });
+
+    handleMovieWatchlistedEvent({
+      post_id: 'post-sparse',
+      user_id: 'user-1',
+      categories: ['Favorites'],
+    });
+    handleMovieWatchedEvent({
+      post_id: 'post-sparse',
+      user_id: 'user-1',
+      rating: 5,
+    });
+
+    const state = get(movieStore);
+    const favorites = state.watchlist.get('Favorites') ?? [];
+    expect(favorites).toHaveLength(1);
+    expect(favorites[0].postId).toBe('post-own');
+    expect(state.watchLogs).toHaveLength(1);
+    expect(state.watchLogs[0].postId).toBe('post-own');
   });
 });
