@@ -42,12 +42,22 @@
     cast?: CastMember[];
     director?: string;
     tmdbRating?: number;
+    rottenTomatoesScore?: number;
+    rotten_tomatoes_score?: number;
+    metacriticScore?: number;
+    metacritic_score?: number;
     trailerKey?: string;
     tmdbId?: number;
     tmdb_id?: number;
     tmdbMediaType?: string;
     tmdb_media_type?: string;
     seasons?: SeasonMetadata[];
+  };
+
+  type MetaLinePart = {
+    label: string;
+    className: string;
+    testId?: string;
   };
 
   export let movie: MovieMetadata = { title: '' };
@@ -74,10 +84,11 @@
   $: title = movie.title?.trim() || 'Untitled movie';
   $: releaseYear = formatReleaseYear(movie.releaseDate);
   $: runtimeLabel = formatRuntime(movie.runtime);
-  $: ratingLabel =
-    typeof movie.tmdbRating === 'number' && Number.isFinite(movie.tmdbRating)
-      ? movie.tmdbRating.toFixed(1)
-      : 'N/A';
+  $: tmdbRatingLabel = formatTMDBRating(movie.tmdbRating);
+  $: rottenTomatoesScore = normalizePercentScore(
+    movie.rottenTomatoesScore ?? movie.rotten_tomatoes_score
+  );
+  $: metacriticScore = normalizePercentScore(movie.metacriticScore ?? movie.metacritic_score);
   $: visibleGenres = (movie.genres ?? []).filter(Boolean).slice(0, 3);
   $: remainingGenres = Math.max((movie.genres?.length ?? 0) - visibleGenres.length, 0);
   $: directorLabel = movie.director?.trim() || 'Unknown';
@@ -90,12 +101,59 @@
   $: seasonCount = seasons.length;
   $: isSeriesContent = tmdbMediaType === 'tv' || (tmdbMediaType !== 'movie' && seasonCount > 0);
   $: seasonCountLabel = seasonCount > 0 ? formatSeasonCount(seasonCount) : null;
-  $: metaLineParts = [
-    `★ ${ratingLabel}`,
+  $: ratingMetaLineParts = [
+    ...(tmdbRatingLabel
+      ? ([
+          {
+            label: `★ ${tmdbRatingLabel}`,
+            className: 'font-medium text-slate-700',
+            testId: 'movie-rating-tmdb',
+          },
+        ] as MetaLinePart[])
+      : []),
+    ...(typeof rottenTomatoesScore === 'number'
+      ? ([
+          {
+            label: `🍅 ${rottenTomatoesScore}%`,
+            className: `rounded px-1.5 py-0.5 text-xs font-semibold ${getRottenTomatoesClasses(
+              rottenTomatoesScore
+            )}`,
+            testId: 'movie-rating-rotten-tomatoes',
+          },
+        ] as MetaLinePart[])
+      : []),
+    ...(typeof metacriticScore === 'number'
+      ? ([
+          {
+            label: `MC ${metacriticScore}`,
+            className: 'rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-800',
+            testId: 'movie-rating-metacritic',
+          },
+        ] as MetaLinePart[])
+      : []),
+  ] as MetaLinePart[];
+  $: detailMetaLineParts = [
     runtimeLabel,
     isSeriesContent && seasonCountLabel ? seasonCountLabel : null,
-  ].filter((value): value is string => typeof value === 'string' && value.length > 0);
-  $: metaLine = metaLineParts.join(' · ');
+  ]
+    .filter((value): value is string => typeof value === 'string' && value.length > 0)
+    .map(
+      (label): MetaLinePart => ({
+        label,
+        className: 'text-slate-700',
+      })
+    );
+  $: metaLineParts =
+    ratingMetaLineParts.length > 0
+      ? [...ratingMetaLineParts, ...detailMetaLineParts]
+      : [
+          {
+            label: 'No rating',
+            className: 'font-medium text-slate-500',
+            testId: 'movie-rating-fallback',
+          },
+          ...detailMetaLineParts,
+        ];
   $: seasonPosterState = seasons
     .map((season) => `${season.seasonNumber}:${season.poster ?? ''}`)
     .join('|');
@@ -125,6 +183,34 @@
       return `${hours}h`;
     }
     return `${hours}h ${minutes}m`;
+  }
+
+  function formatTMDBRating(value?: number): string | null {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      return null;
+    }
+    return value.toFixed(1);
+  }
+
+  function normalizePercentScore(value?: number): number | null {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      return null;
+    }
+    const rounded = Math.round(value);
+    if (rounded < 0 || rounded > 100) {
+      return null;
+    }
+    return rounded;
+  }
+
+  function getRottenTomatoesClasses(score: number): string {
+    if (score >= 60) {
+      return 'bg-emerald-100 text-emerald-800';
+    }
+    if (score >= 40) {
+      return 'bg-amber-100 text-amber-800';
+    }
+    return 'bg-rose-100 text-rose-800';
   }
 
   function formatReleaseYear(date?: string): string | null {
@@ -425,7 +511,21 @@
               <span class="text-slate-500">({releaseYear})</span>
             {/if}
           </h3>
-          <p class="mt-1 text-sm text-slate-700" data-testid="movie-meta-line">{metaLine}</p>
+          <p
+            class="mt-1 flex flex-wrap items-center gap-y-1 text-sm text-slate-700"
+            data-testid="movie-meta-line"
+          >
+            {#each metaLineParts as part, index}
+              {#if index > 0}
+                <span class="text-slate-400" aria-hidden="true"> · </span>
+              {/if}
+              {#if part.testId}
+                <span class={part.className} data-testid={part.testId}>{part.label}</span>
+              {:else}
+                <span class={part.className}>{part.label}</span>
+              {/if}
+            {/each}
+          </p>
           {#if tmdbUrl}
             <a
               href={tmdbUrl}
