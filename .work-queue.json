@@ -30,7 +30,8 @@
     789,
     790,
     791,
-    792
+    792,
+    806
   ],
   "issues": [
     {
@@ -715,7 +716,7 @@
     {
       "issue_number": 806,
       "title": "Create MovieCard component",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         792
       ],
@@ -728,7 +729,9 @@
       "assigned_to": "agent-1770626808-49515",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770626808-49515",
       "branch": "feat/issue-806-create-moviecard-component",
-      "claimed_at": "2026-02-09T08:46:48Z"
+      "claimed_at": "2026-02-09T08:46:48Z",
+      "pr_number": 819,
+      "completed_at": "2026-02-09T08:59:51Z"
     },
     {
       "issue_number": 807,
