@@ -1091,6 +1091,506 @@
         "movies"
       ],
       "priority": 56
+    },
+    {
+      "issue_number": 852,
+      "title": "[Books] Create BookData model and types",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "books"
+      ],
+      "priority": 60
+    },
+    {
+      "issue_number": 853,
+      "title": "[Books] Create Open Library API client",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "books"
+      ],
+      "priority": 61
+    },
+    {
+      "issue_number": 854,
+      "title": "[Books] Create bookshelf_categories table migration",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "books",
+        "database"
+      ],
+      "priority": 62
+    },
+    {
+      "issue_number": 855,
+      "title": "[Books] Create bookshelf_items table migration",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "books",
+        "database"
+      ],
+      "priority": 63
+    },
+    {
+      "issue_number": 856,
+      "title": "[Books] Create read_logs table migration",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "books",
+        "database"
+      ],
+      "priority": 64
+    },
+    {
+      "issue_number": 857,
+      "title": "[Books] Create book metadata parser",
+      "status": "available",
+      "dependencies": [
+        852,
+        853
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "books"
+      ],
+      "priority": 65
+    },
+    {
+      "issue_number": 858,
+      "title": "[Books] Register book parser in metadata pipeline",
+      "status": "available",
+      "dependencies": [
+        857
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "books"
+      ],
+      "priority": 66
+    },
+    {
+      "issue_number": 859,
+      "title": "[Books] Create Bookshelf and ReadLog models",
+      "status": "available",
+      "dependencies": [
+        852
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "books"
+      ],
+      "priority": 67
+    },
+    {
+      "issue_number": 860,
+      "title": "[Books] Create bookshelf service",
+      "status": "available",
+      "dependencies": [
+        854,
+        855,
+        859
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "books"
+      ],
+      "priority": 68
+    },
+    {
+      "issue_number": 861,
+      "title": "[Books] Create read log service",
+      "status": "available",
+      "dependencies": [
+        856,
+        859
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "books"
+      ],
+      "priority": 69
+    },
+    {
+      "issue_number": 862,
+      "title": "[Books] Create bookshelf handler",
+      "status": "available",
+      "dependencies": [
+        860
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "books"
+      ],
+      "priority": 70
+    },
+    {
+      "issue_number": 863,
+      "title": "[Books] Create read log handler",
+      "status": "available",
+      "dependencies": [
+        861
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "books"
+      ],
+      "priority": 71
+    },
+    {
+      "issue_number": 864,
+      "title": "[Books] Add book stats to post responses",
+      "status": "available",
+      "dependencies": [
+        860,
+        861
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "books"
+      ],
+      "priority": 72
+    },
+    {
+      "issue_number": 865,
+      "title": "[Books] Register bookshelf and read log routes",
+      "status": "available",
+      "dependencies": [
+        862,
+        863
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "books"
+      ],
+      "priority": 73
+    },
+    {
+      "issue_number": 866,
+      "title": "[Books] Add bookshelf and read log API client functions",
+      "status": "available",
+      "dependencies": [
+        862,
+        863
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "books"
+      ],
+      "priority": 74
+    },
+    {
+      "issue_number": 867,
+      "title": "[Books] Create bookStore",
+      "status": "available",
+      "dependencies": [
+        866
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "books"
+      ],
+      "priority": 75
+    },
+    {
+      "issue_number": 868,
+      "title": "[Books] Create BookCard component",
+      "status": "available",
+      "dependencies": [
+        858
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "books"
+      ],
+      "priority": 76
+    },
+    {
+      "issue_number": 869,
+      "title": "[Books] Create BookshelfSaveButton component",
+      "status": "available",
+      "dependencies": [
+        867
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "books"
+      ],
+      "priority": 77
+    },
+    {
+      "issue_number": 870,
+      "title": "[Books] Create ReadButton component",
+      "status": "available",
+      "dependencies": [
+        867
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "books"
+      ],
+      "priority": 78
+    },
+    {
+      "issue_number": 871,
+      "title": "[Books] Create BookStatsBar component",
+      "status": "available",
+      "dependencies": [
+        869,
+        870
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "books"
+      ],
+      "priority": 79
+    },
+    {
+      "issue_number": 872,
+      "title": "[Books] Create Bookshelf view component",
+      "status": "available",
+      "dependencies": [
+        867,
+        868
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "books"
+      ],
+      "priority": 80
+    },
+    {
+      "issue_number": 873,
+      "title": "[Books] Integrate BookStatsBar and BookCard into PostCard",
+      "status": "available",
+      "dependencies": [
+        868,
+        871,
+        864
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "books"
+      ],
+      "priority": 81
+    },
+    {
+      "issue_number": 874,
+      "title": "[Books] Add Bookshelf route and navigation",
+      "status": "available",
+      "dependencies": [
+        872
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "books"
+      ],
+      "priority": 82
+    },
+    {
+      "issue_number": 875,
+      "title": "[Books] Create books component index",
+      "status": "available",
+      "dependencies": [
+        868,
+        869,
+        870,
+        871,
+        872
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "books"
+      ],
+      "priority": 83
+    },
+    {
+      "issue_number": 876,
+      "title": "[Books] Create book_quotes table migration",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "books",
+        "database"
+      ],
+      "priority": 84
+    },
+    {
+      "issue_number": 877,
+      "title": "[Books] Create BookQuote model and types",
+      "status": "available",
+      "dependencies": [
+        876
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "books"
+      ],
+      "priority": 85
+    },
+    {
+      "issue_number": 878,
+      "title": "[Books] Create book quote service",
+      "status": "available",
+      "dependencies": [
+        877
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "books"
+      ],
+      "priority": 86
+    },
+    {
+      "issue_number": 879,
+      "title": "[Books] Create book quote handler and register routes",
+      "status": "available",
+      "dependencies": [
+        878,
+        865
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "books"
+      ],
+      "priority": 87
+    },
+    {
+      "issue_number": 880,
+      "title": "[Books] Add book quote API client functions and store",
+      "status": "available",
+      "dependencies": [
+        879,
+        866
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "books"
+      ],
+      "priority": 88
+    },
+    {
+      "issue_number": 881,
+      "title": "[Books] Create QuoteCard and QuoteForm components",
+      "status": "available",
+      "dependencies": [
+        880
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "books"
+      ],
+      "priority": 89
+    },
+    {
+      "issue_number": 882,
+      "title": "[Books] Create QuoteList and integrate into book thread",
+      "status": "available",
+      "dependencies": [
+        881,
+        873
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "books"
+      ],
+      "priority": 90
+    },
+    {
+      "issue_number": 883,
+      "title": "[Books] Add spoiler flag to comments migration",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "books",
+        "database"
+      ],
+      "priority": 91
+    },
+    {
+      "issue_number": 884,
+      "title": "[Books] Add spoiler field to comment model and service",
+      "status": "available",
+      "dependencies": [
+        883
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "books"
+      ],
+      "priority": 92
+    },
+    {
+      "issue_number": 885,
+      "title": "[Books] Create SpoilerToggle and SpoilerWrapper components",
+      "status": "available",
+      "dependencies": [
+        884
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "books"
+      ],
+      "priority": 93
+    },
+    {
+      "issue_number": 886,
+      "title": "[Books] Integrate spoiler UI in comment composer for book section",
+      "status": "available",
+      "dependencies": [
+        885,
+        873
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "books"
+      ],
+      "priority": 94
     }
   ]
 }
