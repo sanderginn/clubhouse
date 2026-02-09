@@ -16,7 +16,8 @@
     852,
     853,
     854,
-    855
+    855,
+    856
   ],
   "issues": [
     {
@@ -288,7 +289,7 @@
     {
       "issue_number": 856,
       "title": "[Books] Create read_logs table migration",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -300,7 +301,9 @@
       "assigned_to": "agent-1770678390-25915",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770678390-25915",
       "branch": "feat/issue-856-books-create-readlogs-table-migration",
-      "claimed_at": "2026-02-09T23:06:30Z"
+      "claimed_at": "2026-02-09T23:06:30Z",
+      "pr_number": 915,
+      "completed_at": "2026-02-09T23:11:04Z"
     },
     {
       "issue_number": 857,
