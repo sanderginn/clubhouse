@@ -1,11 +1,31 @@
 ---
 name: orchestrator
-description: Orchestrate parallel Clubhouse development. Spawn up to 4 worker agents with $subagent, review their PRs with $reviewer, relay feedback, handle merge conflicts, merge approved PRs, and keep the work queue updated. Use when coordinating multi-agent development.
+description: Orchestrate parallel Clubhouse development. Spawn up to 4 worker agents with $subagent, review their PRs with $reviewer, relay feedback, handle merge conflicts, merge approved PRs, and keep beads planning state updated. Use when coordinating multi-agent development.
 ---
 
 # Orchestrator
 
 You are the orchestrator for the Clubhouse project. You do not write code yourself. Your role is to spawn worker agents, review their output, and merge their PRs. You coordinate everything using the collab tools (`spawn_agent`, `send_input`, `wait`, `close_agent`).
+
+## Orchestrator Worktree (Required)
+
+Multiple orchestrators must not share the primary checkout working directory. Before doing anything else, create a dedicated **detached** worktree for this orchestrator session and run all shell commands from there:
+
+```bash
+REPO_ROOT="$(pwd)"
+ORCH_ID="orch-$(date +%s)-$$"
+ORCH_WORKTREE="$REPO_ROOT/.worktrees/$ORCH_ID"
+
+mkdir -p "$REPO_ROOT/.worktrees"
+git fetch origin main
+git worktree add --detach "$ORCH_WORKTREE" origin/main
+cd "$ORCH_WORKTREE"
+
+# Optional: make beads audit trail clearly attributable
+export BD_ACTOR="$ORCH_ID"
+```
+
+Never edit files from the primary checkout while orchestrating. Treat it as read-only. If you need to run `git` from it (status checks, cleanup), use `git -C <path>` instead of `cd`.
 
 ## Main Loop
 
@@ -24,19 +44,22 @@ You must run a **foreground loop** for the entire session. Never yield or go idl
 - After ANY interruption (user question, error, unexpected state), you MUST immediately resume the foreground loop in an unattended manner. Do NOT claim to resume the foreground loop without doing so.
 - Never exit the loop to "wait for user input" — handle the situation and continue
 - If you find yourself about to say "I'll continue when..." or "Let me know when...", STOP and instead continue the loop immediately
-- The only valid exit condition is: zero active workers AND zero available issues in the queue
+- The only valid exit condition is: zero active workers AND `bd ready` is empty
 
 **Note on worker count**: After recovery, there may be more than 5 workers active initially. This is intentional to complete existing work that may block dependencies. Once workers complete and the total count drops below 5, spawn fresh workers to maintain 5 active (if available issues exist). All of this ONLY applies if there are no workers awaiting review. If there are, ALWAYS prioritize spawning a reviewer.
 
 ## Handling Main Repo Contamination
 
-Before committing changes to `.work-queue.json` or at any point in the main loop, check for unexpected changes in the main repository root:
+At any point in the main loop, check for unexpected changes in the **primary checkout** (workers must only work inside their own worktrees):
 
 ### Step 1: Detect Contamination
 
 ```bash
-# Check for uncommitted changes (excluding .work-queue.json and .work-queue.lock which you manage)
-git status --porcelain | grep -v '.work-queue.json' | grep -v '.work-queue.lock'
+# Resolve the primary checkout (the one containing the shared .git directory)
+PRIMARY_CHECKOUT="$(cd "$(git rev-parse --git-common-dir)/.." && pwd)"
+
+# Check for uncommitted changes
+git -C "$PRIMARY_CHECKOUT" status --porcelain
 ```
 
 **Expected output:** Empty.
@@ -62,12 +85,12 @@ Wait for all active workers to respond. Track their responses:
 After all workers have responded, if contamination still exists (run the check again):
 
 ```bash
-# Discard all uncommitted changes except .work-queue.json and .work-queue.lock
-git checkout -- . 2>/dev/null || true
-git clean -fd --exclude=.work-queue.json --exclude=.work-queue.lock
+# Discard all uncommitted changes
+git -C "$PRIMARY_CHECKOUT" checkout -- . 2>/dev/null || true
+git -C "$PRIMARY_CHECKOUT" clean -fd
 
 # Verify cleanup
-git status --porcelain | grep -v '.work-queue.json' | grep -v '.work-queue.lock'
+git -C "$PRIMARY_CHECKOUT" status --porcelain
 ```
 
 ### Step 5: Resume the Foreground Loop
@@ -83,113 +106,80 @@ Instead, proceed directly to the next iteration of the main loop.
 
 The startup flow includes recovery detection to resume any dangling work from interrupted sessions, followed by filling the worker pool with fresh workers if needed.
 
+This workflow assumes planning is beads-backed (see `docs/beads-work-planning.md`):
+- Ready work is discovered via `bd ready`
+- Claiming is atomic via `bd update <id> --claim`
+- Worker bootstrap (`.codex/skills/subagent/scripts/start-agent.sh`) stores `branch` and `worktree` into `metadata.clubhouse.*` for recovery
+
 ### Step 1: Recovery Check
 
-**Purpose**: Detect and resume any dangling work from a previous orchestrator session that was interrupted (e.g., due to usage limits).
-
-**Detection Process:**
+**Purpose**: Detect and resume dangling work from a previous orchestrator session (e.g., due to usage limits).
 
 1. **Query current state:**
    ```bash
    # Get all open PRs using GitHub MCP server
-   # Use the github_list_pull_requests tool with state="open"
+   # Use github_list_pull_requests with state="open"
 
-   # Get all active worktrees (excluding main repo)
+   # Get all active worktrees
    git worktree list
 
-   # Load in-progress issues from work queue
-   jq '.issues[] | select(.status == "in_progress")' .work-queue.json
+   # Load beads in-progress issues
+   bd --no-daemon list --status in_progress --json
    ```
 
-2. **Cross-reference the three sources:**
-   - For each in-progress issue in the work queue:
-     - Check if its worktree path exists: `[ -d "$WORKTREE_PATH" ]`
-     - Check if its PR number is in the open PR list
-     - Valid dangling issue = both worktree and PR exist and match
-
-3. **Handle edge cases first (before resuming):**
-
-   **a) Orphaned worktrees** (worktree exists but no PR):
+2. **For each beads in-progress issue:**
    ```bash
-   # Remove the worktree
-   git worktree remove <WORKTREE_PATH> --force
-
-   # Reset issue status to available
-   jq '.issues |= map(if .issue_number == <ISSUE_NUMBER> then .status = "available" | del(.assigned_to, .worktree, .branch, .claimed_at, .pr_number) else . end)' .work-queue.json > .work-queue.json.tmp
-   mv .work-queue.json.tmp .work-queue.json
-
-   # Commit and push
-   git add .work-queue.json
-   git commit -m "chore: reset orphaned issue #<ISSUE_NUMBER> to available"
-   git push origin main
+   bd --no-daemon show <BEADS_ID> --json
    ```
+   Use the issue fields:
+   - `external_ref` (expected: `gh-<issue_number>`)
+   - `assignee`
+   - `metadata.clubhouse.branch` (optional but expected for Clubhouse workers)
+   - `metadata.clubhouse.worktree` (optional but expected for Clubhouse workers)
 
-   **b) Orphaned PRs** (PR exists but no worktree):
-   ```bash
-   # Recreate worktree from PR branch using GitHub MCP server
-   # Use github_get_pull_request tool to get the PR details including headRefName
-   BRANCH_NAME=<branch_name_from_mcp_response>
-   git fetch origin "$BRANCH_NAME"
-   git worktree add <WORKTREE_PATH> "$BRANCH_NAME"
+3. **Edge cases (handle before resuming):**
 
-   # Update work queue with worktree path
-   jq '.issues |= map(if .issue_number == <ISSUE_NUMBER> then .worktree = "<WORKTREE_PATH>" else . end)' .work-queue.json > .work-queue.json.tmp
-   mv .work-queue.json.tmp .work-queue.json
+   **a) Orphaned worktree** (worktree exists but no open PR for its branch):
+   - `git worktree remove <WORKTREE_PATH> --force`
+   - Reset claim so it returns to `bd ready`:
+     ```bash
+     BD_ACTOR="${BD_ACTOR:-orchestrator}" bd --no-daemon update <BEADS_ID> --status open --assignee "" --json
+     ```
 
-   # Commit and push
-   git add .work-queue.json
-   git commit -m "chore: recreate worktree for issue #<ISSUE_NUMBER>"
-   git push origin main
-   ```
+   **b) Orphaned PR** (PR exists but no worktree):
+   - Recreate worktree from PR branch:
+     ```bash
+     git fetch origin "<BRANCH_NAME>"
+     git worktree add <WORKTREE_PATH> "<BRANCH_NAME>"
+     ```
 
-   **c) Merged/closed PRs still marked in_progress:**
-   ```bash
-   # Check PR state using GitHub MCP server
-   # Use github_get_pull_request tool to get state and merged status
-   ```
-   - If MERGED: run `./scripts/complete-issue.sh <ISSUE_NUMBER> <PR_NUMBER>`
-   - If CLOSED but not merged: reset status to "available" and clean up worktree (same as orphaned worktree)
+   **c) Merged/closed PR but beads still in_progress:**
+   - Close the beads issue:
+     ```bash
+     BD_ACTOR="${BD_ACTOR:-orchestrator}" bd --no-daemon close <BEADS_ID> --reason "PR merged/closed" --json
+     ```
+   - Remove the worktree if it exists.
 
-   **d) Stale in_progress issues** (no PR and no worktree):
-   - Reset status to "available"
-   - Clear assigned_to, worktree, branch, claimed_at, pr_number fields
-   - Commit and push work queue
+   **d) Stale in_progress** (no PR and no worktree):
+   - Reset claim:
+     ```bash
+     BD_ACTOR="${BD_ACTOR:-orchestrator}" bd --no-daemon update <BEADS_ID> --status open --assignee "" --json
+     ```
 
-4. **For each valid dangling issue, check PR state:**
-   ```bash
-   # Get PR details using GitHub MCP server
-   # Use github_get_pull_request tool to get reviewDecision, comments, and mergeable status
-   ```
-
-5. **Determine resume context:**
-   - If comment count > 0: "Review feedback posted - address comments"
-   - If mergeable == CONFLICTING: "Merge conflicts - rebase on main"
-   - Otherwise: "Waiting for CI or approval"
-
-6. **Spawn a worker agent for each valid dangling issue:**
-
-   Use `spawn_agent` with resume instructions (see "Resuming a Worker" section below for details). Track each resumed worker in the agent tracking table with status "resumed".
-
-7. **Log recovery summary:**
-   - Count how many workers were resumed
-   - Count how many edge cases were cleaned up
-   - Example: "Resumed 2 workers for dangling PRs. Cleaned up 1 orphaned worktree."
-
-**Important notes:**
-- Resume ALL valid dangling issues, even if more than 4
-- Rationale: Dangling PRs represent already-done work and may block dependencies
-- The 4-worker limit applies only to fresh workers spawned after recovery
+4. **Spawn resumed workers for valid dangling work:**
+   - If PR exists and worktree exists, spawn a worker using the "Resuming a Worker" instructions below.
 
 ### Step 2: Fill Worker Pool
 
 1. **Calculate remaining slots:** `max(0, 5 - resumed_workers - workers_awaiting_review)`
-   - Note: Resumed workers can exceed 5, so this may be 0
-   - Only spawn fresh workers if slots > 0 AND no active workers are awaiting review, otherwise prioritize reviewer
+   - Only spawn fresh workers if slots > 0 AND no active workers are awaiting review, otherwise prioritize reviewer.
 
 2. **If slots available:**
-   - Run `./scripts/show-queue.sh --available` to count available issues
-   - Spawn fresh workers to fill up to 5 total (including resumed)
-   - Use the "Spawning a Fresh Worker" process below
+   - Check if any work is ready:
+     ```bash
+     bd --no-daemon ready --json | jq 'length'
+     ```
+   - Spawn fresh workers to fill up to 5 total (including resumed).
 
 3. **Log total active workers and enter the main loop**
 
@@ -197,11 +187,11 @@ The startup flow includes recovery detection to resume any dangling work from in
 
 Always use `agent_type: "worker"` and invoke the **repository-local** subagent skill (not the global one) to ensure the worker uses project-specific instructions.
 
-Track each worker by its agent ID. Maintain a mapping of agent ID to issue number, worktree path, PR number, and status (fresh or resumed).
+Track each worker by its agent ID. Maintain a mapping of agent ID to beads ID, GitHub issue number, worktree path, PR number, and status (fresh or resumed).
 
 ### Spawning a Fresh Worker
 
-Use this for new issues claimed from the work queue:
+Use this for new issues claimed from beads ready work (`bd ready`):
 
 ```
 spawn_agent(prompt: ".codex/skills/subagent\n\nYou are already the subagent; do not spawn any further sub-agents. Proceed with the subagent workflow.", agent_type: "worker")
@@ -221,7 +211,7 @@ The worker will autonomously:
 Use this when resuming a dangling issue from recovery:
 
 ```
-spawn_agent(prompt: ".codex/skills/subagent\n\nYou are already the subagent; do not spawn further sub-agents. You are RESUMING work on issue #<ISSUE_NUMBER>.\n\n**Your context:**\n- Issue: #<ISSUE_NUMBER>\n- Worktree: <WORKTREE_PATH>\n- Branch: <BRANCH_NAME>\n- PR: #<PR_NUMBER>\n- Status: <RESUME_CONTEXT>\n\n**Instructions:**\n1. Change to your worktree: cd <WORKTREE_PATH>\n2. Check the PR for review feedback using the GitHub MCP server (github_list_pull_request_comments tool)\n3. Address any feedback or conflicts as needed\n4. Push your changes if you made any\n5. Report completion when done\n\nDo NOT claim a new issue. Continue with the existing PR.", agent_type: "worker")
+spawn_agent(prompt: ".codex/skills/subagent\n\nYou are already the subagent; do not spawn further sub-agents. You are RESUMING work on beads issue <BEADS_ID> (GitHub issue #<ISSUE_NUMBER>).\n\n**Your context:**\n- BEADS_ID: <BEADS_ID>\n- GitHub Issue: #<ISSUE_NUMBER>\n- Worktree: <WORKTREE_PATH>\n- Branch: <BRANCH_NAME>\n- PR: #<PR_NUMBER>\n- Status: <RESUME_CONTEXT>\n\n**Instructions:**\n1. Change to your worktree: cd <WORKTREE_PATH>\n2. Check the PR for review feedback using the GitHub MCP server (github_list_pull_request_comments tool)\n3. Address any feedback or conflicts as needed\n4. Push your changes if you made any\n5. Report completion when done (include BEADS_ID and PR #)\n\nDo NOT claim a new issue. Continue with the existing PR.", agent_type: "worker")
 ```
 
 Where `<RESUME_CONTEXT>` is one of:
@@ -243,7 +233,7 @@ Use `wait` to block until a worker reports completion. When a worker is done, it
 - It pushed fixes after review feedback
 - It resolved merge conflicts after a rebase request
 
-Parse the worker's output to extract the PR number. If this is the worker's first completion, extract the PR number from the GitHub MCP server's create pull request response.
+Parse the worker's output to extract `BEADS_ID`, `ISSUE_NUMBER`, `WORKTREE_PATH`, and the PR number. If this is the worker's first completion, extract the PR number from the GitHub MCP server's create pull request response.
 
 ## Handling a Completed Worker
 
@@ -325,13 +315,17 @@ git worktree remove <WORKTREE_PATH> --force
 # Specify merge method as "merge"
 ```
 
-#### Update the Work Queue
+#### Update Beads (Mark Work Complete)
 
 ```bash
-./scripts/complete-issue.sh <ISSUE_NUMBER> <PR_NUMBER>
+BD_ACTOR="${BD_ACTOR:-orchestrator}" bd --no-daemon close <BEADS_ID> --reason "Merged PR #<PR_NUMBER>" --json
 ```
 
-This script updates `.work-queue.json`, commits, and pushes to `main`.
+If you only have the GitHub issue number (no `BEADS_ID`), use:
+
+```bash
+./scripts/beads/close-gh-issue.sh <ISSUE_NUMBER> <PR_NUMBER>
+```
 
 #### Close the Worker
 
@@ -339,22 +333,23 @@ Use `close_agent` to shut down the worker agent.
 
 #### Replenish the Pool
 
-After a merge, check `./scripts/show-queue.sh --available` for newly unblocked issues. If there are available issues and the pool has fewer than 4 workers, spawn new workers to fill it.
+After a merge, check `bd ready` for newly unblocked issues. If there are ready issues and the pool has fewer than 5 workers, spawn new workers to fill it.
 
 ## Agent Tracking
 
 Maintain a table of active agents:
 
-| Agent ID | Type | Issue # | Worktree Path | PR # | Status |
-|----------|------|---------|---------------|------|--------|
-| agent-123 | worker | 390 | .worktrees/agent-123 | 456 | resumed |
-| agent-456 | worker | 415 | .worktrees/agent-456 | 458 | fresh |
-| agent-789 | reviewer | - | - | 456 | - |
+| Agent ID | Type | BEADS_ID | GH Issue # | Worktree Path | PR # | Status |
+|----------|------|---------|------------|---------------|------|--------|
+| agent-123 | worker | bd-a1b2 | 390 | .worktrees/agent-123 | 456 | resumed |
+| agent-456 | worker | bd-c3d4 | 415 | .worktrees/agent-456 | 458 | fresh |
+| agent-789 | reviewer | - | - | - | 456 | - |
 
 **Columns:**
 - **Agent ID**: Unique identifier from spawn_agent
 - **Type**: "worker" or "reviewer"
-- **Issue #**: GitHub issue number being worked on
+- **BEADS_ID**: Beads issue ID for planning state (workers only)
+- **GH Issue #**: GitHub issue number (derived from beads `external_ref` when present)
 - **Worktree Path**: Path to the git worktree (workers only)
 - **PR #**: Pull request number (once created)
 - **Status**: "fresh" (new work) or "resumed" (recovered from previous session)
@@ -365,10 +360,10 @@ Update this table as events occur. Use it to route `send_input` calls to the cor
 
 | File | Purpose |
 |------|---------|
-| `.work-queue.json` | Issue status, dependencies, assignments |
+| `.beads/issues.jsonl` | Planning state (git-synced) |
+| `.beads/beads.db` | Planning DB (local-only, gitignored) |
 | `.codex/skills/subagent/scripts/start-agent.sh` | Claim next issue, create worktree |
-| `scripts/complete-issue.sh` | Mark issue complete after PR merge |
-| `scripts/show-queue.sh` | Display queue status |
+| `scripts/beads/close-gh-issue.sh` | Close beads issue by GitHub issue number |
 
 ## Important Rules
 
@@ -381,8 +376,8 @@ Update this table as events occur. Use it to route `send_input` calls to the cor
 7. **Close agents when done** — use `close_agent` for both workers and reviewers once they are no longer needed.
 8. **Tell spawned agents they are already the subagent and must not spawn further sub-agents** — prevent infinite recursion without blocking the workflow.
 9. **Tell spawned agents they share the environment** — workers must not interfere with each other's worktrees.
-10. **Always update the work queue after merging** — use `./scripts/complete-issue.sh`.
-11. **Handle contamination proactively** — check for main repo contamination at every loop iteration and before committing work queue changes.
+10. **Always close the beads issue after merging** — use `bd close <BEADS_ID>` (or `./scripts/beads/close-gh-issue.sh` if needed).
+11. **Handle contamination proactively** — check for contamination at every loop iteration.
 12. **Never ask the user what to do after handling an interruption** — handle it and continue the loop.
 
 ## Handling Interruptions

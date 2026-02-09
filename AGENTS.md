@@ -400,6 +400,14 @@ task ci:all               # Run all CI checks
 task ci:prek              # Run pre-commit hooks (changed files)
 task ci:prek-all          # Run pre-commit hooks (all files)
 
+# Beads work planning (preferred for multi-orchestrator)
+# See docs/beads-work-planning.md
+bd ready
+bd list --status in_progress
+bd update <id> --claim --json
+bd close <id> --reason "Merged PR #123" --json
+./scripts/beads/migrate-work-queue.sh
+
 # Work queue management
 task queue:show           # Show work queue status
 task queue:show-all       # Show full status including completed

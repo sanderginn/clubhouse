@@ -10,7 +10,7 @@
 #
 # This script:
 # 1. Finds the next best available issue whose dependencies are all complete
-# 2. Atomically claims it (updates work queue with lock file)
+# 2. Atomically claims it (prefers beads `bd update --claim` when configured; otherwise uses the legacy work queue lock file)
 # 3. Creates or reuses a git worktree for the agent
 # 4. Outputs the issue number and worktree path
 #
@@ -175,7 +175,165 @@ create_branch_name() {
     echo "${prefix}/issue-${issue_number}-${slug}"
 }
 
-main() {
+have_beads() {
+    command -v bd >/dev/null 2>&1 && [[ -d "$REPO_ROOT/.beads" ]] && [[ -f "$REPO_ROOT/.beads/beads.db" ]]
+}
+
+create_branch_name_beads() {
+    local issue_number="$1"
+    local beads_id="$2"
+    local title="$3"
+    local issue_type="$4"
+
+    local prefix="feat"
+    if [[ "$issue_type" == "bug" ]]; then
+        prefix="fix"
+    fi
+
+    local base_ref="bead-${beads_id}"
+    if [[ -n "${issue_number:-}" && "$issue_number" != "0" ]]; then
+        base_ref="issue-${issue_number}"
+    fi
+
+    # Convert title to kebab-case, remove special chars
+    local slug
+    slug="$(echo "$title" \
+        | sed 's/^Bug:[[:space:]]*//; s/^Phase [0-9]*:[[:space:]]*//' \
+        | tr '[:upper:]' '[:lower:]' \
+        | sed 's/[^a-z0-9 ]//g' \
+        | sed 's/  */ /g' \
+        | sed 's/ /-/g' \
+        | cut -c1-40)"
+
+    echo "${prefix}/${base_ref}-${slug}"
+}
+
+beads_main() {
+    log_info "Starting Clubhouse Agent (beads mode)..."
+
+    cd "$REPO_ROOT"
+
+    log_info "Fetching origin/main..."
+    git fetch origin main >/dev/null 2>&1 || true
+
+    AGENT_ID="$(generate_agent_id)"
+
+    log_info "Querying ready beads work..."
+    READY_JSON="$(bd --no-daemon ready --json 2>/dev/null || true)"
+    if [[ -z "${READY_JSON:-}" ]]; then
+        log_error "Failed to query beads ready work. Is beads initialized (bd init ...)?"
+        exit 1
+    fi
+
+    # Prefer bugs, then legacy ordering label (queue_prio:<n>), then beads priority, then created_at.
+    CANDIDATE_IDS="$(
+        echo "$READY_JSON" | jq -r '
+          map(select(.external_ref != null and (.external_ref | test("^gh-[0-9]+$"))))
+          | map(
+              . as $i
+              | ($i.labels // []) as $labels
+              | ($labels | map(select(startswith("queue_prio:"))) | .[0] // "") as $q
+              | ($q | sub("^queue_prio:";"") | tonumber? // 999999) as $qprio
+              | (($i.issue_type == "bug") or ($labels | index("bug") != null)) as $isBug
+              | {
+                  id: $i.id,
+                  bug_group: (if $isBug then 0 else 1 end),
+                  qprio: $qprio,
+                  prio: ($i.priority // 999),
+                  created_at: ($i.created_at // "")
+                }
+            )
+          | sort_by(.bug_group, .qprio, .prio, .created_at)
+          | .[].id
+        '
+    )"
+
+    if [[ -z "${CANDIDATE_IDS:-}" ]]; then
+        log_warning "No ready beads issues."
+        exit 0
+    fi
+
+    log_info "Claiming next beads issue..."
+    CLAIMED_ID=""
+    while IFS= read -r candidate_id; do
+        [[ -z "$candidate_id" ]] && continue
+        if BD_ACTOR="$AGENT_ID" bd --no-daemon update "$candidate_id" --claim --json >/dev/null 2>&1; then
+            CLAIMED_ID="$candidate_id"
+            break
+        fi
+    done <<<"$CANDIDATE_IDS"
+
+    if [[ -z "${CLAIMED_ID:-}" ]]; then
+        log_warning "No ready beads issues were claimable (race with other agents)."
+        exit 0
+    fi
+
+    ISSUE_JSON="$(bd --no-daemon show "$CLAIMED_ID" --json)"
+    ISSUE_TITLE="$(jq -r '.title' <<<"$ISSUE_JSON")"
+    ISSUE_TYPE="$(jq -r '.issue_type // "task"' <<<"$ISSUE_JSON")"
+    EXTERNAL_REF="$(jq -r '.external_ref // empty' <<<"$ISSUE_JSON")"
+
+    ISSUE_NUMBER=""
+    if [[ "$EXTERNAL_REF" =~ ^gh-([0-9]+)$ ]]; then
+        ISSUE_NUMBER="${BASH_REMATCH[1]}"
+    fi
+    if [[ -z "${ISSUE_NUMBER:-}" ]]; then
+        log_error "Claimed issue ${CLAIMED_ID} but external_ref is not in expected format (gh-<n>): ${EXTERNAL_REF:-<empty>}"
+        log_error "Fix the issue external_ref in beads and retry."
+        exit 1
+    fi
+
+    if [[ "$ISSUE_TYPE" == "bug" ]]; then
+        log_success "Claimed BUG issue #$ISSUE_NUMBER as $CLAIMED_ID: $ISSUE_TITLE"
+    else
+        log_success "Claimed issue #$ISSUE_NUMBER as $CLAIMED_ID: $ISSUE_TITLE"
+    fi
+
+    BRANCH_NAME="$(create_branch_name_beads "$ISSUE_NUMBER" "$CLAIMED_ID" "$ISSUE_TITLE" "$ISSUE_TYPE")"
+    WORKTREE_PATH="$WORKTREES_DIR/$AGENT_ID"
+
+    log_info "Creating worktree at $WORKTREE_PATH..."
+    mkdir -p "$WORKTREES_DIR"
+
+    if git ls-remote --heads origin "$BRANCH_NAME" 2>/dev/null | grep -q "$BRANCH_NAME"; then
+        log_info "Branch $BRANCH_NAME exists, checking it out..."
+        git fetch origin "$BRANCH_NAME" >/dev/null 2>&1 || true
+        git worktree add "$WORKTREE_PATH" "$BRANCH_NAME" >/dev/null 2>&1 || \
+            git worktree add "$WORKTREE_PATH" -b "$BRANCH_NAME" "origin/$BRANCH_NAME" >/dev/null 2>&1
+    else
+        git worktree add "$WORKTREE_PATH" -b "$BRANCH_NAME" origin/main >/dev/null 2>&1
+    fi
+
+    log_success "Worktree created"
+
+    # Persist worktree/branch info for recovery (merge with existing metadata).
+    EXISTING_META="$(jq -c '.metadata // {}' <<<"$ISSUE_JSON")"
+    UPDATED_META="$(jq -c \
+      --argjson m "$EXISTING_META" \
+      --arg agent_id "$AGENT_ID" \
+      --arg branch "$BRANCH_NAME" \
+      --arg worktree "$WORKTREE_PATH" \
+      --arg ext "$EXTERNAL_REF" \
+      --arg issue_number "$ISSUE_NUMBER" \
+      '$m + {
+        clubhouse: (($m.clubhouse // {}) + {
+          agent_id: $agent_id,
+          branch: $branch,
+          worktree: $worktree,
+          external_ref: $ext,
+          gh_issue_number: ($issue_number | tonumber)
+        })
+      }' <<<"$ISSUE_JSON")"
+
+    BD_ACTOR="$AGENT_ID" bd --no-daemon update "$CLAIMED_ID" --metadata "$UPDATED_META" --json >/dev/null 2>&1 || true
+
+    # Output only machine-readable results (parse these values in the subagent workflow).
+    echo "BEADS_ID=$CLAIMED_ID"
+    echo "ISSUE_NUMBER=$ISSUE_NUMBER"
+    echo "WORKTREE_PATH=$WORKTREE_PATH"
+}
+
+legacy_main() {
     log_info "Starting Clubhouse Agent..."
 
     cd "$REPO_ROOT"
@@ -253,6 +411,14 @@ main() {
     # Output only machine-readable results
     echo "ISSUE_NUMBER=$ISSUE_NUMBER"
     echo "WORKTREE_PATH=$WORKTREE_PATH"
+}
+
+main() {
+    if have_beads; then
+        beads_main "$@"
+        return 0
+    fi
+    legacy_main "$@"
 }
 
 main "$@"

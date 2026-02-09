@@ -9,7 +9,7 @@ You are a subagent for the Clubhouse project. Your job is to claim an issue, imp
 
 ## Step 1: Claim an Issue and Create a Worktree
 
-From the **main repository root**, run the start script:
+From the repository root of your current worktree, run the start script:
 
 ```bash
 .codex/skills/subagent/scripts/start-agent.sh
@@ -17,11 +17,12 @@ From the **main repository root**, run the start script:
 
 The script will:
 1. Find the next available issue (dependencies satisfied, bugs prioritized)
-2. Atomically claim it in the work queue
+2. Atomically claim it (prefers beads if configured; otherwise uses the legacy `.work-queue.json`)
 3. Create a dedicated git worktree
 
-It outputs two lines:
+It outputs machine-readable lines:
 ```
+BEADS_ID=<beads-id>           # present when beads is enabled
 ISSUE_NUMBER=<number>
 WORKTREE_PATH=<path>
 ```
@@ -307,14 +308,14 @@ If you discover a useful command or workflow that could benefit other developers
 From your worktree, check for changes in the main repository root:
 
 ```bash
-# Get the main repo root (parent of .worktrees)
-MAIN_REPO=$(dirname $(dirname <WORKTREE_PATH>))
+# Resolve the primary checkout (the one containing the shared .git directory)
+PRIMARY_CHECKOUT="$(cd "$(git rev-parse --git-common-dir)/.." && pwd)"
 
-# Check for any uncommitted changes in main repo (excluding orchestrator-managed files)
-git -C "$MAIN_REPO" status --porcelain | grep -v '.work-queue.json' | grep -v '.work-queue.lock'
+# Check for any uncommitted changes in the primary checkout
+git -C "$PRIMARY_CHECKOUT" status --porcelain
 ```
 
-**Expected output:** Empty. (`.work-queue.json` and `.work-queue.lock` are managed by the orchestrator and can be ignored.)
+**Expected output:** Empty.
 
 **If you see other files listed**, you have contaminated the main repo. Proceed to Step 2.
 
@@ -323,8 +324,8 @@ git -C "$MAIN_REPO" status --porcelain | grep -v '.work-queue.json' | grep -v '.
 Determine which contaminated files belong to your issue:
 
 ```bash
-# List the contaminated files (excluding orchestrator-managed files)
-git -C "$MAIN_REPO" status --porcelain | grep -v '.work-queue.json' | grep -v '.work-queue.lock'
+# List the contaminated files
+git -C "$PRIMARY_CHECKOUT" status --porcelain
 ```
 
 ### Step 3: Move Changes to Your Worktree
@@ -332,9 +333,9 @@ git -C "$MAIN_REPO" status --porcelain | grep -v '.work-queue.json' | grep -v '.
 For each contaminated file that belongs to your issue:
 
 ```bash
-# Example: if you accidentally created backend/internal/handlers/foo.go in main repo
+# Example: if you accidentally created backend/internal/handlers/foo.go in the primary checkout
 # Move it to your worktree
-mv "$MAIN_REPO/backend/internal/handlers/foo.go" "<WORKTREE_PATH>/backend/internal/handlers/foo.go"
+mv "$PRIMARY_CHECKOUT/backend/internal/handlers/foo.go" "<WORKTREE_PATH>/backend/internal/handlers/foo.go"
 ```
 
 ### Step 4: Discard Remaining Contamination
@@ -342,17 +343,16 @@ mv "$MAIN_REPO/backend/internal/handlers/foo.go" "<WORKTREE_PATH>/backend/intern
 After moving your files, discard any remaining contamination (files that don't belong to your issue):
 
 ```bash
-# Discard all uncommitted changes in main repo (except orchestrator-managed files)
-cd "$MAIN_REPO"
-git checkout -- . 2>/dev/null || true
-git clean -fd --exclude=.work-queue.json --exclude=.work-queue.lock
+# Discard all uncommitted changes in the primary checkout
+git -C "$PRIMARY_CHECKOUT" checkout -- . 2>/dev/null || true
+git -C "$PRIMARY_CHECKOUT" clean -fd
 ```
 
 ### Step 5: Verify Cleanup
 
 ```bash
-# Should show empty (or only .work-queue.json/.work-queue.lock which are filtered out)
-git -C "$MAIN_REPO" status --porcelain | grep -v '.work-queue.json' | grep -v '.work-queue.lock'
+# Should show empty
+git -C "$PRIMARY_CHECKOUT" status --porcelain
 ```
 
 ### When the Orchestrator Asks About Contamination
@@ -367,12 +367,13 @@ If the orchestrator asks whether you accidentally made changes outside your work
 
 ### Lock timeout
 ```bash
-rm .work-queue.lock
+rm .work-queue.lock  # legacy work queue only
 ```
 
 ### No available issues
 ```bash
-./scripts/show-queue.sh --blocked
+bd ready
+bd list --status blocked
 ```
 
 ### Merge conflicts during rebase
