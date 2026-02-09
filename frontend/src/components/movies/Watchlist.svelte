@@ -69,7 +69,7 @@
   let allMoviesHasMore = false;
   let allMoviesNextCursor: string | null = null;
   let allMoviesLoading = false;
-  let allMoviesLoaded = false;
+  let allMoviesAutoLoadAttempted = false;
   let allMoviesError: string | null = null;
 
   const tabOptions: Array<{ key: TabKey; label: string }> = [
@@ -121,7 +121,8 @@
     filterMoviesBySearch(buildAllMovieItems(allMoviePosts, watchedPostIDs, postWatchlistCounts), searchTerm),
     sortKey
   );
-  $: if (activeTab === 'all' && !allMoviesLoaded && !allMoviesLoading) {
+  $: if (activeTab === 'all' && !allMoviesAutoLoadAttempted && !allMoviesLoading) {
+    allMoviesAutoLoadAttempted = true;
     void loadAllMovies(true);
   }
 
@@ -386,7 +387,6 @@
         : mergeMovies(allMoviePosts, response.posts);
       allMoviesHasMore = response.hasMore;
       allMoviesNextCursor = response.nextCursor ?? null;
-      allMoviesLoaded = true;
       allMoviesError = null;
     } catch (error) {
       allMoviesError = error instanceof Error ? error.message : 'Failed to load movies';
@@ -646,7 +646,18 @@
             class="mt-3 rounded-xl border border-dashed border-red-200 bg-red-50 px-4 py-6 text-sm text-red-700"
             data-testid="watchlist-all-error"
           >
-            {allMoviesError}
+            <p>{allMoviesError}</p>
+            <div class="mt-3">
+              <button
+                type="button"
+                class="rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100"
+                on:click={() => void loadAllMovies(true)}
+                disabled={allMoviesLoading}
+                data-testid="watchlist-all-retry"
+              >
+                Retry
+              </button>
+            </div>
           </div>
         {:else if allMovies.length === 0}
           <div

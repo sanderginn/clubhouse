@@ -241,6 +241,27 @@ describe('Watchlist', () => {
     expect(items[0]).toHaveTextContent('Severance');
   });
 
+  it('does not auto-retry movie feed after failure without user action', async () => {
+    vi.mocked(api.getMoviePosts).mockRejectedValueOnce(new Error('Movie feed failed'));
+
+    render(Watchlist);
+    await fireEvent.click(screen.getByTestId('watchlist-tab-all'));
+
+    await screen.findByTestId('watchlist-all-error');
+    await waitFor(() => {
+      expect(api.getMoviePosts).toHaveBeenCalledTimes(1);
+    });
+
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(api.getMoviePosts).toHaveBeenCalledTimes(1);
+
+    await fireEvent.click(screen.getByTestId('watchlist-all-retry'));
+    await waitFor(() => {
+      expect(api.getMoviePosts).toHaveBeenCalledTimes(2);
+    });
+  });
+
   it('filters My List by selected category', async () => {
     render(Watchlist);
 
