@@ -153,6 +153,10 @@ func TestTMDBClientGetTVDetails(t *testing.T) {
 			"episode_run_time":[57],
 			"genres":[{"id":18,"name":"Drama"}],
 			"first_air_date":"2011-04-17",
+			"seasons":[
+				{"season_number":1,"episode_count":10,"air_date":"2011-04-17","name":"Season 1","overview":"Houses rise.","poster_path":"/season1.jpg"},
+				{"season_number":0,"episode_count":3,"air_date":"2010-12-05","name":"Specials","overview":"Bonus episodes.","poster_path":"/specials.jpg"}
+			],
 			"vote_average":8.5,
 			"credits":{
 				"cast":[{"id":239019,"name":"Emilia Clarke","character":"Daenerys Targaryen","order":1}],
@@ -176,6 +180,15 @@ func TestTMDBClientGetTVDetails(t *testing.T) {
 	}
 	if details.Runtime != 57 {
 		t.Fatalf("runtime = %d, want 57", details.Runtime)
+	}
+	if len(details.Seasons) != 2 {
+		t.Fatalf("seasons len = %d, want 2", len(details.Seasons))
+	}
+	if details.Seasons[0].SeasonNumber != 1 {
+		t.Fatalf("seasons[0].season_number = %d, want 1", details.Seasons[0].SeasonNumber)
+	}
+	if details.Seasons[1].SeasonNumber != 0 {
+		t.Fatalf("seasons[1].season_number = %d, want 0", details.Seasons[1].SeasonNumber)
 	}
 	if details.Director != "Miguel Sapochnik" {
 		t.Fatalf("director = %q, want Miguel Sapochnik", details.Director)

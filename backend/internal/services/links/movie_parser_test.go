@@ -144,6 +144,11 @@ func TestParseMovieMetadataTMDBTVURL(t *testing.T) {
 			"runtime":57,
 			"genres":[{"id":18,"name":"Drama"}],
 			"first_air_date":"2011-04-17",
+			"seasons":[
+				{"season_number":2,"episode_count":10,"air_date":"2012-04-01","name":"Season 2","overview":"War begins.","poster_path":"/season2.jpg"},
+				{"season_number":0,"episode_count":3,"air_date":"2010-12-05","name":"Specials","overview":"Bonus episodes.","poster_path":"/specials.jpg"},
+				{"season_number":1,"episode_count":10,"air_date":"2011-04-17","name":"Season 1","overview":"Houses rise.","poster_path":"/season1.jpg"}
+			],
 			"vote_average":8.5,
 			"credits":{"cast":[{"id":239019,"name":"Emilia Clarke","character":"Daenerys Targaryen","order":1}],"crew":[{"id":9813,"name":"Miguel Sapochnik","job":"Director","department":"Directing"}]},
 			"videos":{"results":[{"id":"def456","key":"KPLWWIOCOOQ","name":"Teaser","site":"YouTube","type":"Teaser","official":true}]}
@@ -167,6 +172,59 @@ func TestParseMovieMetadataTMDBTVURL(t *testing.T) {
 	}
 	if metadata.Runtime != 57 {
 		t.Fatalf("Runtime = %d, want 57", metadata.Runtime)
+	}
+	if len(metadata.Seasons) != 3 {
+		t.Fatalf("Seasons len = %d, want 3", len(metadata.Seasons))
+	}
+	if metadata.Seasons[0].SeasonNumber != 0 || metadata.Seasons[0].Name != "Specials" {
+		t.Fatalf("season[0] = %+v, want season_number=0 name=Specials", metadata.Seasons[0])
+	}
+	if metadata.Seasons[0].Poster != "https://image.tmdb.org/t/p/w500/specials.jpg" {
+		t.Fatalf("season[0].Poster = %q", metadata.Seasons[0].Poster)
+	}
+	if metadata.Seasons[1].SeasonNumber != 1 || metadata.Seasons[1].EpisodeCount != 10 {
+		t.Fatalf("season[1] = %+v, want season_number=1 episode_count=10", metadata.Seasons[1])
+	}
+	if metadata.Seasons[2].SeasonNumber != 2 {
+		t.Fatalf("season[2] = %+v, want season_number=2", metadata.Seasons[2])
+	}
+}
+
+func TestParseMovieMetadataTMDBTVURLWithoutSeasons(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/tv/3036" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"id":3036,
+			"name":"Fringe",
+			"overview":"FBI fringe division investigations.",
+			"poster_path":"/c4m9QfA6fFQvA4A7YxCdBxyWf6f.jpg",
+			"backdrop_path":"/2ji4B4N9qI9fVf7rI8lBv9aB8eN.jpg",
+			"runtime":46,
+			"genres":[{"id":18,"name":"Drama"}],
+			"first_air_date":"2008-09-09",
+			"vote_average":8.1,
+			"credits":{"cast":[],"crew":[]},
+			"videos":{"results":[]}
+		}`))
+	}))
+	defer server.Close()
+
+	client := newTestTMDBClient(t, server.URL)
+	metadata, err := ParseMovieMetadata(context.Background(), "https://www.themoviedb.org/tv/3036-fringe", client)
+	if err != nil {
+		t.Fatalf("ParseMovieMetadata error: %v", err)
+	}
+	if metadata == nil {
+		t.Fatal("expected metadata")
+	}
+	if metadata.Title != "Fringe" {
+		t.Fatalf("Title = %q, want Fringe", metadata.Title)
+	}
+	if len(metadata.Seasons) != 0 {
+		t.Fatalf("Seasons len = %d, want 0", len(metadata.Seasons))
 	}
 }
 
