@@ -31,6 +31,7 @@
     790,
     791,
     792,
+    794,
     797,
     806
   ],
@@ -536,7 +537,7 @@
     {
       "issue_number": 794,
       "title": "Create watch log service",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         787,
         791
@@ -550,7 +551,9 @@
       "assigned_to": "agent-1770626213-37477",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770626213-37477",
       "branch": "feat/issue-794-create-watch-log-service",
-      "claimed_at": "2026-02-09T08:36:53Z"
+      "claimed_at": "2026-02-09T08:36:53Z",
+      "pr_number": 818,
+      "completed_at": "2026-02-09T09:12:30Z"
     },
     {
       "issue_number": 795,
