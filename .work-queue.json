@@ -815,7 +815,7 @@
     {
       "issue_number": 807,
       "title": "Integrate MovieStatsBar and MovieCard into PostCard",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         804,
         806
@@ -825,7 +825,11 @@
         "frontend",
         "movies"
       ],
-      "priority": 44
+      "priority": 44,
+      "assigned_to": "agent-1770634710-36795",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770634710-36795",
+      "branch": "feat/issue-807-integrate-moviestatsbar-and-moviecard-in",
+      "claimed_at": "2026-02-09T10:58:30Z"
     },
     {
       "issue_number": 808,
