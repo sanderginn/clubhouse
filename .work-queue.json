@@ -879,6 +879,54 @@
       "claimed_at": "2026-02-09T10:58:39Z",
       "pr_number": 832,
       "completed_at": "2026-02-09T11:03:39Z"
+    },
+    {
+      "issue_number": 834,
+      "title": "Add TMDB_API_KEY to docker-compose configuration",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "backend",
+        "movies"
+      ],
+      "priority": 47
+    },
+    {
+      "issue_number": 835,
+      "title": "IMDB link metadata fallback produces minimal data when TMDB enrichment fails",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "backend",
+        "movies"
+      ],
+      "priority": 48
+    },
+    {
+      "issue_number": 836,
+      "title": "Watchlist \"All Movies\" tab always shows \"No movies available\"",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "movies"
+      ],
+      "priority": 49
+    },
+    {
+      "issue_number": 837,
+      "title": "WatchlistSaveButton \"Create category\" closes dropdown instead of showing inline input",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "movies"
+      ],
+      "priority": 50
     }
   ]
 }
