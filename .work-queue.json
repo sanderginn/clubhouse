@@ -40,6 +40,7 @@
     799,
     800,
     801,
+    805,
     806
   ],
   "issues": [
@@ -761,7 +762,7 @@
     {
       "issue_number": 805,
       "title": "Create Watchlist view component",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         801
       ],
@@ -774,7 +775,9 @@
       "assigned_to": "agent-1770632592-11240",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770632592-11240",
       "branch": "feat/issue-805-create-watchlist-view-component",
-      "claimed_at": "2026-02-09T10:23:12Z"
+      "claimed_at": "2026-02-09T10:23:12Z",
+      "pr_number": 828,
+      "completed_at": "2026-02-09T10:44:00Z"
     },
     {
       "issue_number": 806,
