@@ -54,12 +54,22 @@ func NewWatchLogService(db *sql.DB, deps *WatchLogServiceDependencies) *WatchLog
 
 // LogWatch creates or restores a watch log for a movie or series post.
 func (s *WatchLogService) LogWatch(ctx context.Context, userID, postID uuid.UUID, rating int, notes string) (*models.WatchLog, error) {
+	return s.logWatch(ctx, userID, postID, rating, notes, nil)
+}
+
+// LogWatchAt creates or restores a watch log with an explicit watched_at time.
+func (s *WatchLogService) LogWatchAt(ctx context.Context, userID, postID uuid.UUID, rating int, notes string, watchedAt *time.Time) (*models.WatchLog, error) {
+	return s.logWatch(ctx, userID, postID, rating, notes, watchedAt)
+}
+
+func (s *WatchLogService) logWatch(ctx context.Context, userID, postID uuid.UUID, rating int, notes string, watchedAt *time.Time) (*models.WatchLog, error) {
 	ctx, span := otel.Tracer("clubhouse.watch_logs").Start(ctx, "WatchLogService.LogWatch")
 	span.SetAttributes(
 		attribute.String("user_id", userID.String()),
 		attribute.String("post_id", postID.String()),
 		attribute.Int("rating", rating),
 		attribute.Bool("has_notes", strings.TrimSpace(notes) != ""),
+		attribute.Bool("has_watched_at", watchedAt != nil && !watchedAt.IsZero()),
 	)
 	defer span.End()
 
@@ -81,7 +91,7 @@ func (s *WatchLogService) LogWatch(ctx context.Context, userID, postID uuid.UUID
 
 	if existing != nil {
 		if existing.DeletedAt != nil {
-			watchLog, err := s.restoreWatchLog(ctx, existing.ID, rating, notes)
+			watchLog, err := s.restoreWatchLog(ctx, existing.ID, rating, notes, resolveWatchLogWatchedAt(watchedAt, s.now))
 			if err != nil {
 				recordSpanError(span, err)
 				return nil, err
@@ -100,7 +110,7 @@ func (s *WatchLogService) LogWatch(ctx context.Context, userID, postID uuid.UUID
 		return existing, nil
 	}
 
-	watchLog, err := s.createWatchLog(ctx, userID, postID, rating, notes)
+	watchLog, err := s.createWatchLog(ctx, userID, postID, rating, notes, resolveWatchLogWatchedAt(watchedAt, s.now))
 	if err != nil {
 		recordSpanError(span, err)
 		return nil, err
@@ -473,7 +483,7 @@ func (s *WatchLogService) getExistingWatchLog(ctx context.Context, userID, postI
 	return &log, nil
 }
 
-func (s *WatchLogService) createWatchLog(ctx context.Context, userID, postID uuid.UUID, rating int, notes string) (*models.WatchLog, error) {
+func (s *WatchLogService) createWatchLog(ctx context.Context, userID, postID uuid.UUID, rating int, notes string, watchedAt time.Time) (*models.WatchLog, error) {
 	query := `
 		INSERT INTO watch_logs (id, user_id, post_id, rating, notes, watched_at, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, now())
@@ -481,7 +491,6 @@ func (s *WatchLogService) createWatchLog(ctx context.Context, userID, postID uui
 	`
 
 	watchLogID := uuid.New()
-	watchedAt := s.now().UTC()
 	var log models.WatchLog
 	var note sql.NullString
 	var updatedAt sql.NullTime
@@ -505,7 +514,7 @@ func (s *WatchLogService) createWatchLog(ctx context.Context, userID, postID uui
 	return &log, nil
 }
 
-func (s *WatchLogService) restoreWatchLog(ctx context.Context, watchLogID uuid.UUID, rating int, notes string) (*models.WatchLog, error) {
+func (s *WatchLogService) restoreWatchLog(ctx context.Context, watchLogID uuid.UUID, rating int, notes string, watchedAt time.Time) (*models.WatchLog, error) {
 	query := `
 		UPDATE watch_logs
 		SET deleted_at = NULL,
@@ -517,7 +526,6 @@ func (s *WatchLogService) restoreWatchLog(ctx context.Context, watchLogID uuid.U
 		RETURNING id, user_id, post_id, rating, notes, watched_at, created_at, updated_at, deleted_at
 	`
 
-	watchedAt := s.now().UTC()
 	var log models.WatchLog
 	var note sql.NullString
 	var updatedAt sql.NullTime
@@ -665,6 +673,13 @@ func normalizeWatchLogNote(note string) interface{} {
 		return nil
 	}
 	return trimmed
+}
+
+func resolveWatchLogWatchedAt(watchedAt *time.Time, now func() time.Time) time.Time {
+	if watchedAt == nil || watchedAt.IsZero() {
+		return now().UTC()
+	}
+	return watchedAt.UTC()
 }
 
 func scanWatchLogWithPost(rows *sql.Rows) (*models.WatchLog, *models.Post, error) {

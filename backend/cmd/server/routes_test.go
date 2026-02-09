@@ -617,6 +617,163 @@ func TestPostRouteHandlerGetCookLogsRequiresAuth(t *testing.T) {
 	}
 }
 
+func TestPostRouteHandlerLogWatchUsesCSRFAuth(t *testing.T) {
+	authCalled := false
+	logCalled := false
+
+	requireAuth := func(next http.Handler) http.Handler {
+		return next
+	}
+	requireAuthCSRF := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authCalled = true
+			next.ServeHTTP(w, r)
+		})
+	}
+
+	deps := postRouteDeps{
+		getThread: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getThread should not be called")
+		},
+		restorePost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("restorePost should not be called")
+		},
+		addReactionToPost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("addReactionToPost should not be called")
+		},
+		removeReactionFromPost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("removeReactionFromPost should not be called")
+		},
+		saveRecipe: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("saveRecipe should not be called")
+		},
+		unsaveRecipe: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("unsaveRecipe should not be called")
+		},
+		getPostSaves: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPostSaves should not be called")
+		},
+		logCook: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("logCook should not be called")
+		},
+		updateCookLog: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("updateCookLog should not be called")
+		},
+		removeCookLog: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("removeCookLog should not be called")
+		},
+		getCookLogs: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getCookLogs should not be called")
+		},
+		logWatch: func(w http.ResponseWriter, r *http.Request) {
+			logCalled = true
+			w.WriteHeader(http.StatusOK)
+		},
+		getPost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPost should not be called")
+		},
+		updatePost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("updatePost should not be called")
+		},
+		deletePost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("deletePost should not be called")
+		},
+	}
+
+	handler := newPostRouteHandler(requireAuth, requireAuthCSRF, deps)
+	postID := uuid.New()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/posts/"+postID.String()+"/watch-log", nil)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Fatalf("expected status %v, got %v", http.StatusOK, status)
+	}
+
+	if !authCalled {
+		t.Fatal("expected CSRF auth middleware to be called")
+	}
+
+	if !logCalled {
+		t.Fatal("expected watch log handler to be called")
+	}
+}
+
+func TestPostRouteHandlerGetWatchLogsRequiresAuth(t *testing.T) {
+	authCalled := false
+
+	requireAuth := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authCalled = true
+			w.WriteHeader(http.StatusUnauthorized)
+		})
+	}
+
+	deps := postRouteDeps{
+		getThread: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getThread should not be called")
+		},
+		restorePost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("restorePost should not be called")
+		},
+		addReactionToPost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("addReactionToPost should not be called")
+		},
+		removeReactionFromPost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("removeReactionFromPost should not be called")
+		},
+		saveRecipe: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("saveRecipe should not be called")
+		},
+		unsaveRecipe: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("unsaveRecipe should not be called")
+		},
+		getPostSaves: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPostSaves should not be called")
+		},
+		logCook: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("logCook should not be called")
+		},
+		updateCookLog: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("updateCookLog should not be called")
+		},
+		removeCookLog: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("removeCookLog should not be called")
+		},
+		getCookLogs: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getCookLogs should not be called")
+		},
+		getWatchLogs: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getWatchLogs should not be called without auth")
+		},
+		getPost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPost should not be called")
+		},
+		updatePost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("updatePost should not be called")
+		},
+		deletePost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("deletePost should not be called")
+		},
+	}
+
+	handler := newPostRouteHandler(requireAuth, requireAuth, deps)
+	postID := uuid.New()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/posts/"+postID.String()+"/watch-logs", nil)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusUnauthorized {
+		t.Fatalf("expected status %v, got %v", http.StatusUnauthorized, status)
+	}
+
+	if !authCalled {
+		t.Fatal("expected auth middleware to be called")
+	}
+}
+
 func TestSectionRouteHandlerFeedRequiresAuth(t *testing.T) {
 	authCalled := false
 
