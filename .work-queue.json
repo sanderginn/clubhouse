@@ -883,14 +883,18 @@
     {
       "issue_number": 834,
       "title": "Add TMDB_API_KEY to docker-compose configuration",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "bug",
         "backend",
         "movies"
       ],
-      "priority": 47
+      "priority": 47,
+      "assigned_to": "agent-1770647642-61648",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770647642-61648",
+      "branch": "fix/issue-834-add-tmdbapikey-to-dockercompose-configur",
+      "claimed_at": "2026-02-09T14:34:02Z"
     },
     {
       "issue_number": 835,
