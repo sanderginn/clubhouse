@@ -12,7 +12,8 @@
     848,
     852,
     853,
-    854
+    854,
+    855
   ],
   "issues": [
     {
@@ -251,7 +252,7 @@
     {
       "issue_number": 855,
       "title": "[Books] Create bookshelf_items table migration",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -263,7 +264,9 @@
       "assigned_to": "agent-1770677260-90298",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770677260-90298",
       "branch": "feat/issue-855-books-create-bookshelfitems-table-migrat",
-      "claimed_at": "2026-02-09T22:47:40Z"
+      "claimed_at": "2026-02-09T22:47:40Z",
+      "pr_number": 911,
+      "completed_at": "2026-02-09T22:54:32Z"
     },
     {
       "issue_number": 856,
