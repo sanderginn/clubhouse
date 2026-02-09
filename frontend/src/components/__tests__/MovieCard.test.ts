@@ -17,6 +17,13 @@ type MovieMetadata = {
   trailerKey?: string;
   tmdbId?: number;
   tmdbMediaType?: 'movie' | 'tv';
+  seasons?: Array<{
+    seasonNumber: number;
+    episodeCount?: number;
+    airDate?: string;
+    name?: string;
+    poster?: string;
+  }>;
 };
 
 const fullMovie: MovieMetadata = {
@@ -42,6 +49,41 @@ const fullMovie: MovieMetadata = {
   tmdbMediaType: 'movie',
 };
 
+const seriesWithSeasons: MovieMetadata = {
+  title: 'Breaking Bad',
+  overview: 'A chemistry teacher turns to making meth.',
+  poster: 'https://example.com/breaking-bad.jpg',
+  runtime: 47,
+  genres: ['Drama', 'Crime', 'Thriller'],
+  releaseDate: '2008-01-20',
+  tmdbRating: 8.9,
+  tmdbId: 1396,
+  tmdbMediaType: 'tv',
+  seasons: [
+    {
+      seasonNumber: 0,
+      episodeCount: 4,
+      airDate: '2009-02-17',
+      name: 'Specials',
+      poster: 'https://example.com/specials.jpg',
+    },
+    {
+      seasonNumber: 1,
+      episodeCount: 7,
+      airDate: '2008-01-20',
+      name: 'Season 1',
+      poster: 'https://example.com/s1.jpg',
+    },
+    {
+      seasonNumber: 2,
+      episodeCount: 13,
+      airDate: '2009-03-08',
+      name: 'Season 2',
+      poster: 'https://example.com/s2.jpg',
+    },
+  ],
+};
+
 afterEach(() => {
   cleanup();
 });
@@ -62,6 +104,37 @@ describe('MovieCard', () => {
       'https://www.themoviedb.org/movie/157336'
     );
     expect(screen.queryByTestId('movie-expanded-content')).not.toBeInTheDocument();
+  });
+
+  it('renders season summary and expanded season list for series metadata', async () => {
+    render(MovieCard, {
+      movie: seriesWithSeasons,
+      expanded: true,
+    });
+
+    expect(screen.getByTestId('movie-meta-line')).toHaveTextContent('★ 8.9 · 47m · 3 Seasons');
+    expect(screen.getByTestId('movie-seasons-section')).toBeInTheDocument();
+    expect(screen.getByTestId('movie-seasons-list')).toBeInTheDocument();
+    expect(screen.getByTestId('movie-season-number-0')).toHaveTextContent('S0');
+    expect(screen.getByTestId('movie-season-name-1')).toHaveTextContent('Season 1');
+    expect(screen.getByTestId('movie-season-details-2')).toHaveTextContent('13 episodes · 2009');
+
+    const seasonsToggle = screen.getByTestId('movie-seasons-toggle');
+    await fireEvent.click(seasonsToggle);
+    expect(screen.queryByTestId('movie-seasons-list')).not.toBeInTheDocument();
+    expect(seasonsToggle).toHaveTextContent('Show 3 Seasons');
+  });
+
+  it('shows season poster fallback when a season thumbnail fails to load', async () => {
+    render(MovieCard, {
+      movie: seriesWithSeasons,
+      expanded: true,
+    });
+
+    const seasonPoster = screen.getByTestId('movie-season-poster-1');
+    await fireEvent.error(seasonPoster);
+
+    expect(screen.getByTestId('movie-season-poster-fallback-1')).toBeInTheDocument();
   });
 
   it('renders a secure TMDB link for TV metadata', () => {
@@ -97,6 +170,25 @@ describe('MovieCard', () => {
     expect(screen.getByTestId('movie-director')).toHaveTextContent('Dir: Unknown');
     expect(screen.getByTestId('movie-poster-fallback')).toBeInTheDocument();
     expect(screen.queryByTestId('movie-genres')).not.toBeInTheDocument();
+  });
+
+  it('does not render season information for movie metadata', async () => {
+    render(MovieCard, {
+      movie: {
+        ...fullMovie,
+        seasons: [
+          {
+            seasonNumber: 1,
+            episodeCount: 10,
+            airDate: '2014-01-01',
+          },
+        ],
+      },
+      expanded: true,
+    });
+
+    expect(screen.getByTestId('movie-meta-line')).toHaveTextContent('★ 8.6 · 2h 49m');
+    expect(screen.queryByTestId('movie-seasons-section')).not.toBeInTheDocument();
   });
 
   it('shows poster fallback when poster loading fails', async () => {

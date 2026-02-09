@@ -10,6 +10,7 @@ import type {
   RecipeMetadata,
   MovieMetadata,
   MovieCastMember,
+  MovieSeason,
 } from './postStore';
 
 export interface ApiUser {
@@ -129,6 +130,47 @@ function normalizeTMDBMediaType(value: unknown): 'movie' | 'tv' | undefined {
     return 'tv';
   }
   return undefined;
+}
+
+function normalizeMovieSeasons(rawSeasons: unknown): MovieSeason[] | undefined {
+  if (!Array.isArray(rawSeasons)) {
+    return undefined;
+  }
+
+  const seasons = rawSeasons
+    .map((season): MovieSeason | null => {
+      if (!season || typeof season !== 'object' || Array.isArray(season)) {
+        return null;
+      }
+
+      const record = season as Record<string, unknown>;
+      const seasonNumber = normalizeNumber(record.season_number ?? record.seasonNumber);
+      if (typeof seasonNumber !== 'number') {
+        return null;
+      }
+
+      const episodeCount = normalizeNumber(record.episode_count ?? record.episodeCount);
+      const airDate = normalizeString(record.air_date ?? record.airDate);
+      const name = normalizeString(record.name);
+      const overview = normalizeString(record.overview);
+      const poster =
+        normalizeString(record.poster) ??
+        normalizeString(record.poster_url) ??
+        normalizeString(record.posterUrl);
+
+      return {
+        seasonNumber: Math.trunc(seasonNumber),
+        ...(typeof episodeCount === 'number' ? { episodeCount: Math.trunc(episodeCount) } : {}),
+        ...(airDate ? { airDate } : {}),
+        ...(name ? { name } : {}),
+        ...(overview ? { overview } : {}),
+        ...(poster ? { poster } : {}),
+      };
+    })
+    .filter((season): season is MovieSeason => season !== null)
+    .sort((a, b) => a.seasonNumber - b.seasonNumber);
+
+  return seasons.length > 0 ? seasons : undefined;
 }
 
 function normalizeRecipeMetadata(rawRecipe: unknown): RecipeMetadata | undefined {
@@ -274,6 +316,7 @@ function normalizeMovieMetadata(rawMovie: unknown): MovieMetadata | undefined {
   const tmdbMediaType = normalizeTMDBMediaType(
     movie.tmdb_media_type ?? movie.tmdbMediaType
   );
+  const seasons = normalizeMovieSeasons(movie.seasons);
 
   const cast = Array.isArray(movie.cast)
     ? movie.cast
@@ -311,6 +354,7 @@ function normalizeMovieMetadata(rawMovie: unknown): MovieMetadata | undefined {
     !!trailerKey ||
     typeof tmdbId === 'number' ||
     !!tmdbMediaType ||
+    !!(seasons && seasons.length > 0) ||
     !!(cast && cast.length > 0);
 
   if (!hasMovieMetadata) {
@@ -331,6 +375,7 @@ function normalizeMovieMetadata(rawMovie: unknown): MovieMetadata | undefined {
     ...(trailerKey ? { trailerKey } : {}),
     ...(typeof tmdbId === 'number' ? { tmdbId } : {}),
     ...(tmdbMediaType ? { tmdbMediaType } : {}),
+    ...(seasons ? { seasons } : {}),
   };
 }
 
