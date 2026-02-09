@@ -572,7 +572,7 @@
     {
       "issue_number": 796,
       "title": "Create watch log handler",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         794
       ],
@@ -581,7 +581,11 @@
         "backend",
         "movies"
       ],
-      "priority": 33
+      "priority": 33,
+      "assigned_to": "agent-1770628385-72645",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770628385-72645",
+      "branch": "feat/issue-796-create-watch-log-handler",
+      "claimed_at": "2026-02-09T09:13:05Z"
     },
     {
       "issue_number": 797,
