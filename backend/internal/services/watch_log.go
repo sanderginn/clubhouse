@@ -14,7 +14,10 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-const watchLogCursorLayout = "2006-01-02T15:04:05.000Z07:00"
+const (
+	watchLogLegacyCursorLayout = "2006-01-02T15:04:05.000Z07:00"
+	watchLogCursorSeparator    = "|"
+)
 
 // WatchLogServiceDependencies holds optional dependencies for WatchLogService.
 type WatchLogServiceDependencies struct {
@@ -266,9 +269,22 @@ func (s *WatchLogService) GetUserWatchLogs(ctx context.Context, userID uuid.UUID
 	args := []interface{}{userID}
 	argIndex := 2
 	if cursor != nil && strings.TrimSpace(*cursor) != "" {
-		query += fmt.Sprintf(" AND wl.watched_at < $%d", argIndex)
-		args = append(args, strings.TrimSpace(*cursor))
-		argIndex++
+		cursorWatchedAt, cursorLogID, hasLogID, err := parseWatchLogCursor(strings.TrimSpace(*cursor))
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, nil, err
+		}
+
+		if hasLogID {
+			query += fmt.Sprintf(" AND (wl.watched_at < $%d OR (wl.watched_at = $%d AND wl.id < $%d))", argIndex, argIndex, argIndex+1)
+			args = append(args, cursorWatchedAt, cursorLogID)
+			argIndex += 2
+		} else {
+			// Backward compatibility for legacy cursor format that only encoded watched_at.
+			query += fmt.Sprintf(" AND wl.watched_at < $%d", argIndex)
+			args = append(args, cursorWatchedAt)
+			argIndex++
+		}
 	}
 
 	query += fmt.Sprintf(" ORDER BY wl.watched_at DESC, wl.id DESC LIMIT $%d", argIndex)
@@ -306,7 +322,7 @@ func (s *WatchLogService) GetUserWatchLogs(ctx context.Context, userID uuid.UUID
 
 	var nextCursor *string
 	if hasMore && len(logs) > 0 {
-		cursorValue := logs[len(logs)-1].WatchedAt.Format(watchLogCursorLayout)
+		cursorValue := buildWatchLogCursor(logs[len(logs)-1].WatchedAt, logs[len(logs)-1].ID)
 		nextCursor = &cursorValue
 	}
 
@@ -613,6 +629,34 @@ func (s *WatchLogService) logWatchAudit(ctx context.Context, action string, user
 		return fmt.Errorf("failed to create watch log audit log: %w", err)
 	}
 	return nil
+}
+
+func buildWatchLogCursor(watchedAt time.Time, watchLogID uuid.UUID) string {
+	return watchedAt.UTC().Format(time.RFC3339Nano) + watchLogCursorSeparator + watchLogID.String()
+}
+
+func parseWatchLogCursor(cursor string) (time.Time, uuid.UUID, bool, error) {
+	parts := strings.Split(cursor, watchLogCursorSeparator)
+	if len(parts) == 2 {
+		watchedAt, err := time.Parse(time.RFC3339Nano, parts[0])
+		if err != nil {
+			return time.Time{}, uuid.Nil, false, errors.New("invalid cursor")
+		}
+
+		watchLogID, err := uuid.Parse(parts[1])
+		if err != nil {
+			return time.Time{}, uuid.Nil, false, errors.New("invalid cursor")
+		}
+
+		return watchedAt.UTC(), watchLogID, true, nil
+	}
+
+	// Backward compatibility for existing timestamp-only cursors.
+	watchedAt, err := time.Parse(watchLogLegacyCursorLayout, cursor)
+	if err != nil {
+		return time.Time{}, uuid.Nil, false, errors.New("invalid cursor")
+	}
+	return watchedAt.UTC(), uuid.Nil, false, nil
 }
 
 func normalizeWatchLogNote(note string) interface{} {

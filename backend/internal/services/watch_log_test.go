@@ -354,6 +354,63 @@ func TestGetUserWatchLogsPagination(t *testing.T) {
 	}
 }
 
+func TestGetUserWatchLogsPaginationWithIdenticalWatchedAt(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "watchsamecursor", "watchsamecursor@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Movies", "movie")
+	postID1 := testutil.CreateTestPost(t, db, userID, sectionID, "Movie post one")
+	postID2 := testutil.CreateTestPost(t, db, userID, sectionID, "Movie post two")
+
+	service := NewWatchLogService(db, nil)
+	log1, err := service.LogWatch(context.Background(), uuid.MustParse(userID), uuid.MustParse(postID1), 3, "")
+	if err != nil {
+		t.Fatalf("LogWatch failed: %v", err)
+	}
+	log2, err := service.LogWatch(context.Background(), uuid.MustParse(userID), uuid.MustParse(postID2), 5, "")
+	if err != nil {
+		t.Fatalf("LogWatch failed: %v", err)
+	}
+
+	sharedWatchedAt := time.Now().Add(-30 * time.Minute)
+	if _, err := db.ExecContext(context.Background(), `UPDATE watch_logs SET watched_at = $1 WHERE id = $2`, sharedWatchedAt, log1.ID); err != nil {
+		t.Fatalf("failed to update watched_at: %v", err)
+	}
+	if _, err := db.ExecContext(context.Background(), `UPDATE watch_logs SET watched_at = $1 WHERE id = $2`, sharedWatchedAt, log2.ID); err != nil {
+		t.Fatalf("failed to update watched_at: %v", err)
+	}
+
+	page1, nextCursor, err := service.GetUserWatchLogs(context.Background(), uuid.MustParse(userID), 1, nil)
+	if err != nil {
+		t.Fatalf("GetUserWatchLogs page 1 failed: %v", err)
+	}
+	if len(page1) != 1 {
+		t.Fatalf("expected 1 log on page 1, got %d", len(page1))
+	}
+	if nextCursor == nil {
+		t.Fatalf("expected next cursor for page 1")
+	}
+
+	page2, nextCursor, err := service.GetUserWatchLogs(context.Background(), uuid.MustParse(userID), 1, nextCursor)
+	if err != nil {
+		t.Fatalf("GetUserWatchLogs page 2 failed: %v", err)
+	}
+	if len(page2) != 1 {
+		t.Fatalf("expected 1 log on page 2, got %d", len(page2))
+	}
+	if nextCursor != nil {
+		t.Fatalf("expected no additional cursor after page 2")
+	}
+
+	if page1[0].Post == nil || page2[0].Post == nil {
+		t.Fatalf("expected posts to be included in paginated response")
+	}
+	if page1[0].Post.ID == page2[0].Post.ID {
+		t.Fatalf("expected unique logs across pages, got duplicate post %s", page1[0].Post.ID)
+	}
+}
+
 func TestWatchLogRatingValidation(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
