@@ -761,7 +761,7 @@
     {
       "issue_number": 805,
       "title": "Create Watchlist view component",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         801
       ],
@@ -770,7 +770,11 @@
         "frontend",
         "movies"
       ],
-      "priority": 42
+      "priority": 42,
+      "assigned_to": "agent-1770632592-11240",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770632592-11240",
+      "branch": "feat/issue-805-create-watchlist-view-component",
+      "claimed_at": "2026-02-09T10:23:12Z"
     },
     {
       "issue_number": 806,
