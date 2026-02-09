@@ -21,6 +21,7 @@ A self-hosted, lightweight social platform for sharing links within small-to-med
    ```bash
    cp .env.example .env
    ```
+   Set `TMDB_API_KEY` in `.env` if you want enriched movie metadata (poster, runtime, genres, cast, trailer) for IMDB/TMDB/Letterboxd links in Movies/Series sections. If unset, Clubhouse falls back to standard HTML metadata only.
 
 3. **Start all services:**
    ```bash
