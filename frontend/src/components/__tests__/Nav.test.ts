@@ -71,19 +71,7 @@ describe('Nav', () => {
     expect(screen.getByText('1')).toBeInTheDocument();
   });
 
-  it('shows and activates the watchlist navigation item', async () => {
-    const pushStateSpy = vi.spyOn(window.history, 'pushState');
-    render(Nav);
-
-    const watchlistButton = screen.getByRole('button', { name: 'My Movies' });
-    await fireEvent.click(watchlistButton);
-
-    expect(pushStateSpy).toHaveBeenCalledWith(null, '', '/watchlist');
-    expect(watchlistButton).toHaveAttribute('aria-current', 'page');
-  });
-
-  it('hides watchlist navigation when logged out', () => {
-    authStore.setUser(null);
+  it('does not render a standalone My Movies navigation entry', () => {
     render(Nav);
 
     expect(screen.queryByRole('button', { name: 'My Movies' })).not.toBeInTheDocument();

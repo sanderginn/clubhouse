@@ -3,6 +3,23 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/sv
 import * as stores from '../stores';
 import { movieStore } from '../stores/movieStore';
 
+const loadFeedMock = vi.hoisted(() => vi.fn());
+const loadMorePostsMock = vi.hoisted(() => vi.fn());
+const loadThreadTargetPostMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../stores/feedStore', () => ({
+  loadFeed: loadFeedMock,
+  loadMorePosts: loadMorePostsMock,
+}));
+
+vi.mock('../stores/threadRouteStore', async () => {
+  const actual = await vi.importActual('../stores/threadRouteStore');
+  return {
+    ...actual,
+    loadThreadTargetPost: loadThreadTargetPostMock,
+  };
+});
+
 const { default: App } = await import('../App.svelte');
 
 const defaultUser = {
@@ -14,6 +31,19 @@ const defaultUser = {
 };
 
 beforeEach(() => {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: vi.fn().mockImplementation(() => ({
+      matches: false,
+      media: '(max-width: 1023px)',
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
   vi.spyOn(stores.authStore, 'checkSession').mockResolvedValue(false);
   vi.spyOn(stores.websocketStore, 'init').mockImplementation(() => {});
   vi.spyOn(stores.websocketStore, 'cleanup').mockImplementation(() => {});
@@ -24,9 +54,15 @@ beforeEach(() => {
   vi.spyOn(stores, 'cleanupNotifications').mockImplementation(() => {});
   vi.spyOn(movieStore, 'loadWatchlist').mockResolvedValue();
   vi.spyOn(movieStore, 'loadWatchlistCategories').mockResolvedValue();
+  loadFeedMock.mockResolvedValue(undefined);
+  loadMorePostsMock.mockResolvedValue(undefined);
+  loadThreadTargetPostMock.mockResolvedValue(undefined);
 
   stores.authStore.setUser(null);
-  stores.sectionStore.setSections([]);
+  stores.sectionStore.setSections([
+    { id: 'section-movies', name: 'Movies', type: 'movie', icon: '🎬', slug: 'movies' },
+    { id: 'section-series', name: 'Series', type: 'series', icon: '📺', slug: 'series' },
+  ]);
   stores.uiStore.setActiveView('feed');
   stores.threadRouteStore.clearTarget();
   movieStore.reset();
@@ -39,7 +75,7 @@ afterEach(() => {
 });
 
 describe('App watchlist routing', () => {
-  it('renders watchlist route for authenticated users', async () => {
+  it('maps legacy /watchlist route into Movies section watchlist view for authenticated users', async () => {
     stores.authStore.setUser(defaultUser);
     window.history.replaceState(null, '', '/watchlist');
     expect(window.location.pathname).toBe('/watchlist');
@@ -50,8 +86,34 @@ describe('App watchlist routing', () => {
     await waitFor(() => {
       expect(screen.getByTestId('watchlist')).toBeInTheDocument();
     });
-    expect(screen.getByRole('heading', { name: 'My Watchlist' })).toBeInTheDocument();
-    expect(document.title).toBe('My Watchlist - Clubhouse');
+    expect(screen.getByRole('heading', { name: 'Movies' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Watchlist' })).toHaveAttribute('aria-selected', 'true');
+    expect(window.location.pathname).toMatch(/^\/watchlist$|^\/sections\/movies\/watchlist$/);
+    expect(document.title).toBe('Movies Watchlist - Clubhouse');
+  });
+
+  it('toggles between feed and watchlist tabs in Movies section', async () => {
+    stores.authStore.setUser(defaultUser);
+    window.history.replaceState(null, '', '/sections/movies');
+
+    render(App);
+
+    const watchlistTab = await screen.findByTestId('section-tab-watchlist');
+    const feedTab = screen.getByTestId('section-tab-feed');
+    expect(feedTab).toHaveAttribute('aria-selected', 'true');
+
+    await fireEvent.click(watchlistTab);
+    await waitFor(() => {
+      expect(screen.getByTestId('watchlist')).toBeInTheDocument();
+    });
+    expect(window.location.pathname).toBe('/sections/movies/watchlist');
+
+    await fireEvent.click(feedTab);
+    await waitFor(() => {
+      expect(screen.queryByTestId('watchlist')).not.toBeInTheDocument();
+    });
+    expect(window.location.pathname).toBe('/sections/movies');
+    expect(feedTab).toHaveAttribute('aria-selected', 'true');
   });
 
   it('renders login for unauthenticated users on watchlist route', async () => {
