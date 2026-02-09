@@ -23,6 +23,8 @@
   import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
   import RecipeCard from './recipes/RecipeCard.svelte';
   import RecipeStatsBar from './recipes/RecipeStatsBar.svelte';
+  import MovieCard from './movies/MovieCard.svelte';
+  import MovieStatsBar from './movies/MovieStatsBar.svelte';
   import BandcampEmbed from '../lib/components/embeds/BandcampEmbed.svelte';
   import SoundCloudEmbed from '../lib/components/embeds/SoundCloudEmbed.svelte';
   import SpotifyEmbed from '../lib/components/embeds/SpotifyEmbed.svelte';
@@ -48,6 +50,47 @@
     embedUrl: string;
     height?: number;
   };
+  type MovieCastMember = {
+    name: string;
+    character?: string;
+  };
+  type MovieMetadata = {
+    title?: string;
+    overview?: string;
+    poster?: string;
+    backdrop?: string;
+    runtime?: number;
+    genres?: string[];
+    releaseDate?: string;
+    release_date?: string;
+    cast?: MovieCastMember[];
+    director?: string;
+    tmdbRating?: number;
+    tmdb_rating?: number;
+    trailerKey?: string;
+    trailer_key?: string;
+  };
+  type MovieCardMetadata = {
+    title: string;
+    overview?: string;
+    poster?: string;
+    backdrop?: string;
+    runtime?: number;
+    genres?: string[];
+    releaseDate?: string;
+    cast?: Array<{ name: string; character: string }>;
+    director?: string;
+    tmdbRating?: number;
+    trailerKey?: string;
+  };
+  type LinkMetadataWithMovie = LinkMetadata & {
+    movie?: MovieMetadata;
+  };
+  type PostWithSectionType = Post & {
+    section?: {
+      type?: string;
+    };
+  };
 
   let soundCloudEmbedFromFrontend: SoundCloudEmbedData | null = null;
 
@@ -61,7 +104,10 @@
   $: userReactions = new Set(post.viewerReactions ?? []);
   $: sectionSlug = getSectionSlugById($sections, post.sectionId) ?? post.sectionId;
   $: sectionInfo = $sections.find((s) => s.id === post.sectionId) ?? null;
+  $: sectionType = sectionInfo?.type ?? ((post as PostWithSectionType).section?.type ?? null);
   $: recipeStats = post.recipeStats ?? post.recipe_stats ?? null;
+  $: movieStats = post.movieStats ?? post.movie_stats ?? null;
+  $: isMovieSection = sectionType === 'movie' || sectionType === 'series';
   let copiedLink = false;
   let copyTimeout: ReturnType<typeof setTimeout> | null = null;
   let isEditing = false;
@@ -548,6 +594,93 @@
     embedController = controller;
   };
 
+  function normalizeMovieMetadata(movie?: MovieMetadata): MovieCardMetadata | null {
+    if (!movie) {
+      return null;
+    }
+
+    const title = typeof movie.title === 'string' ? movie.title.trim() : '';
+    if (!title) {
+      return null;
+    }
+
+    const normalizedReleaseDate =
+      (typeof movie.releaseDate === 'string' ? movie.releaseDate : undefined) ??
+      (typeof movie.release_date === 'string' ? movie.release_date : undefined);
+    const normalizedDirector = typeof movie.director === 'string' ? movie.director : undefined;
+    const normalizedTrailerKey =
+      (typeof movie.trailerKey === 'string' ? movie.trailerKey : undefined) ??
+      (typeof movie.trailer_key === 'string' ? movie.trailer_key : undefined);
+    const normalizedRating =
+      typeof movie.tmdbRating === 'number'
+        ? movie.tmdbRating
+        : typeof movie.tmdb_rating === 'number'
+          ? movie.tmdb_rating
+          : undefined;
+    const normalizedRuntime =
+      typeof movie.runtime === 'number' && Number.isFinite(movie.runtime) ? movie.runtime : undefined;
+    const normalizedGenres =
+      Array.isArray(movie.genres) && movie.genres.length > 0
+        ? movie.genres.filter((genre): genre is string => typeof genre === 'string' && genre.trim().length > 0)
+        : undefined;
+    const normalizedCast =
+      Array.isArray(movie.cast) && movie.cast.length > 0
+        ? movie.cast
+            .filter(
+              (member): member is MovieCastMember =>
+                !!member && typeof member.name === 'string' && member.name.trim().length > 0
+            )
+            .map((member) => ({
+              name: member.name.trim(),
+              character: typeof member.character === 'string' ? member.character : '',
+            }))
+        : undefined;
+
+    return {
+      title,
+      ...(typeof movie.overview === 'string' ? { overview: movie.overview } : {}),
+      ...(typeof movie.poster === 'string' ? { poster: movie.poster } : {}),
+      ...(typeof movie.backdrop === 'string' ? { backdrop: movie.backdrop } : {}),
+      ...(typeof normalizedRuntime === 'number' ? { runtime: normalizedRuntime } : {}),
+      ...(normalizedGenres ? { genres: normalizedGenres } : {}),
+      ...(normalizedReleaseDate ? { releaseDate: normalizedReleaseDate } : {}),
+      ...(normalizedCast ? { cast: normalizedCast } : {}),
+      ...(normalizedDirector ? { director: normalizedDirector } : {}),
+      ...(typeof normalizedRating === 'number' ? { tmdbRating: normalizedRating } : {}),
+      ...(normalizedTrailerKey ? { trailerKey: normalizedTrailerKey } : {}),
+    };
+  }
+
+  function getMovieMetadataFromLink(link?: Link): MovieCardMetadata | null {
+    if (!link?.metadata) {
+      return null;
+    }
+
+    const metadataWithMovie = link.metadata as LinkMetadataWithMovie;
+    const normalizedMovie = normalizeMovieMetadata(metadataWithMovie.movie);
+    if (normalizedMovie) {
+      return normalizedMovie;
+    }
+
+    if (metadataWithMovie.type !== 'movie' && metadataWithMovie.type !== 'series') {
+      return null;
+    }
+
+    const fallbackTitle =
+      typeof metadataWithMovie.title === 'string' ? metadataWithMovie.title.trim() : '';
+    if (!fallbackTitle) {
+      return null;
+    }
+
+    return {
+      title: fallbackTitle,
+      ...(typeof metadataWithMovie.description === 'string'
+        ? { overview: metadataWithMovie.description }
+        : {}),
+      ...(typeof metadataWithMovie.image === 'string' ? { poster: metadataWithMovie.image } : {}),
+    };
+  }
+
   $: postImages = (post.images ?? []).slice().sort((a, b) => a.position - b.position);
   $: hasPostImages = postImages.length > 0;
   $: imageLinks = (post.links ?? []).filter((item) => Boolean(getImageLinkUrl(item)));
@@ -569,6 +702,11 @@
   $: primaryLink = post.links?.[0];
   $: primaryLinkIsImage = primaryLink ? Boolean(getImageLinkUrl(primaryLink)) : false;
   $: metadata = primaryLink?.metadata;
+  $: primaryMovieMetadata = getMovieMetadataFromLink(primaryLink);
+  $: movieLinks = isMovieSection
+    ? (post.links ?? []).filter((link) => Boolean(getMovieMetadataFromLink(link)))
+    : [];
+  $: secondaryMovieLinks = movieLinks.filter((link) => link !== primaryLink);
   $: bandcampEmbed =
     metadata?.embed &&
     (metadata.embed.provider ?? '').toLowerCase() === 'bandcamp' &&
@@ -612,6 +750,21 @@
           : metadata?.embed?.provider;
   $: highlightSeekMessage = getSeekUnavailableMessage(highlightEmbedProvider);
   $: canSeekTimestamps = !!embedController?.supportsSeeking;
+  $: movieStatsForBar = movieStats
+    ? {
+        watchlistCount: movieStats.watchlistCount ?? 0,
+        watchCount: movieStats.watchCount ?? 0,
+        ...(typeof movieStats.averageRating === 'number'
+          ? { avgRating: movieStats.averageRating }
+          : {}),
+        viewerWatchlisted: movieStats.viewerWatchlisted ?? false,
+        viewerWatched: movieStats.viewerWatched ?? false,
+        ...(typeof movieStats.viewerRating === 'number'
+          ? { viewerRating: movieStats.viewerRating }
+          : {}),
+        ...(movieStats.viewerCategories ? { viewerCategories: movieStats.viewerCategories } : {}),
+      }
+    : null;
   $: {
     if (embedController && (!highlightEmbedProvider || embedController.provider !== highlightEmbedProvider)) {
       embedController = null;
@@ -1504,6 +1657,8 @@
           />
         {:else if primaryLink && bandcampEmbed}
           <BandcampEmbed embed={bandcampEmbed} linkUrl={primaryLink.url} title={metadata?.title} />
+        {:else if primaryLink && isMovieSection && primaryMovieMetadata}
+          <MovieCard movie={primaryMovieMetadata} />
         {:else if primaryLink && metadata?.recipe}
           <RecipeCard
             recipe={metadata.recipe}
@@ -1577,6 +1732,8 @@
           />
         {:else if bandcampEmbed}
           <BandcampEmbed embed={bandcampEmbed} linkUrl={primaryLink.url} title={metadata?.title} />
+        {:else if isMovieSection && primaryMovieMetadata}
+          <MovieCard movie={primaryMovieMetadata} />
         {:else if metadata.recipe}
           <RecipeCard
             recipe={metadata.recipe}
@@ -1648,6 +1805,17 @@
         </a>
       {/if}
 
+      {#if isMovieSection}
+        {#each secondaryMovieLinks as link, index (link.id ?? `${link.url}-${index}`)}
+          {@const secondaryMovieMetadata = getMovieMetadataFromLink(link)}
+          {#if secondaryMovieMetadata}
+            <div class="mt-3">
+              <MovieCard movie={secondaryMovieMetadata} />
+            </div>
+          {/if}
+        {/each}
+      {/if}
+
       {#if !isEditing && primaryLink?.highlights?.length}
         <div class="mt-2">
           <HighlightDisplay
@@ -1673,7 +1841,7 @@
         />
       </div>
 
-      {#if sectionInfo?.type === 'recipe'}
+      {#if sectionType === 'recipe'}
         <div class="mt-3">
           <RecipeStatsBar
             postId={post.id}
@@ -1682,6 +1850,11 @@
             averageRating={recipeStats?.averageRating ?? null}
             showEmpty
           />
+        </div>
+      {/if}
+      {#if isMovieSection && movieStatsForBar}
+        <div class="mt-3">
+          <MovieStatsBar postId={post.id} stats={movieStatsForBar} />
         </div>
       {/if}
 
@@ -1697,7 +1870,7 @@
           imageReplyTarget={imageReplyTarget}
           onClearImageReply={clearImageReplyTarget}
           onImageReferenceClick={handleImageReferenceNavigate}
-          sectionType={sectionInfo?.type ?? null}
+          sectionType={sectionType}
           onTimestampSeek={canSeekTimestamps ? handleHighlightSeek : null}
         />
       </div>
