@@ -47,7 +47,8 @@
     806,
     807,
     808,
-    809
+    809,
+    834
   ],
   "issues": [
     {
@@ -883,7 +884,7 @@
     {
       "issue_number": 834,
       "title": "Add TMDB_API_KEY to docker-compose configuration",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -894,7 +895,9 @@
       "assigned_to": "agent-1770647642-61648",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770647642-61648",
       "branch": "fix/issue-834-add-tmdbapikey-to-dockercompose-configur",
-      "claimed_at": "2026-02-09T14:34:02Z"
+      "claimed_at": "2026-02-09T14:34:02Z",
+      "pr_number": 838,
+      "completed_at": "2026-02-09T14:40:48Z"
     },
     {
       "issue_number": 835,
