@@ -54,6 +54,19 @@
     name: string;
     character?: string;
   };
+  type MovieSeason = {
+    seasonNumber?: number;
+    season_number?: number;
+    episodeCount?: number;
+    episode_count?: number;
+    airDate?: string;
+    air_date?: string;
+    name?: string;
+    overview?: string;
+    poster?: string;
+    poster_url?: string;
+    posterUrl?: string;
+  };
   type MovieMetadata = {
     title?: string;
     overview?: string;
@@ -73,6 +86,15 @@
     tmdb_id?: number;
     tmdbMediaType?: string;
     tmdb_media_type?: string;
+    seasons?: MovieSeason[];
+  };
+  type MovieCardSeason = {
+    seasonNumber: number;
+    episodeCount?: number;
+    airDate?: string;
+    name?: string;
+    overview?: string;
+    poster?: string;
   };
   type MovieCardMetadata = {
     title: string;
@@ -88,6 +110,7 @@
     trailerKey?: string;
     tmdbId?: number;
     tmdbMediaType?: 'movie' | 'tv';
+    seasons?: MovieCardSeason[];
   };
   type LinkMetadataWithMovie = LinkMetadata & {
     movie?: MovieMetadata;
@@ -657,6 +680,52 @@
             rawTMDBMediaType?.trim().toLowerCase() === 'series'
           ? 'tv'
           : undefined;
+    const normalizedSeasons =
+      Array.isArray(movie.seasons) && movie.seasons.length > 0
+        ? movie.seasons
+            .map((season): MovieCardSeason | null => {
+              if (!season || typeof season !== 'object') {
+                return null;
+              }
+
+              const seasonNumberValue =
+                typeof season.seasonNumber === 'number'
+                  ? season.seasonNumber
+                  : typeof season.season_number === 'number'
+                    ? season.season_number
+                    : null;
+              if (seasonNumberValue === null || !Number.isFinite(seasonNumberValue)) {
+                return null;
+              }
+
+              const episodeCountValue =
+                typeof season.episodeCount === 'number'
+                  ? season.episodeCount
+                  : typeof season.episode_count === 'number'
+                    ? season.episode_count
+                    : undefined;
+              const airDateValue =
+                (typeof season.airDate === 'string' ? season.airDate : undefined) ??
+                (typeof season.air_date === 'string' ? season.air_date : undefined);
+              const posterValue =
+                (typeof season.poster === 'string' ? season.poster : undefined) ??
+                (typeof season.poster_url === 'string' ? season.poster_url : undefined) ??
+                (typeof season.posterUrl === 'string' ? season.posterUrl : undefined);
+
+              return {
+                seasonNumber: Math.trunc(seasonNumberValue),
+                ...(typeof episodeCountValue === 'number' && Number.isFinite(episodeCountValue)
+                  ? { episodeCount: Math.trunc(episodeCountValue) }
+                  : {}),
+                ...(airDateValue ? { airDate: airDateValue } : {}),
+                ...(typeof season.name === 'string' ? { name: season.name } : {}),
+                ...(typeof season.overview === 'string' ? { overview: season.overview } : {}),
+                ...(posterValue ? { poster: posterValue } : {}),
+              };
+            })
+            .filter((season): season is MovieCardSeason => season !== null)
+            .sort((a, b) => a.seasonNumber - b.seasonNumber)
+        : undefined;
 
     return {
       title,
@@ -672,6 +741,7 @@
       ...(normalizedTrailerKey ? { trailerKey: normalizedTrailerKey } : {}),
       ...(typeof normalizedTMDBID === 'number' ? { tmdbId: normalizedTMDBID } : {}),
       ...(normalizedTMDBMediaType ? { tmdbMediaType: normalizedTMDBMediaType } : {}),
+      ...(normalizedSeasons && normalizedSeasons.length > 0 ? { seasons: normalizedSeasons } : {}),
     };
   }
 

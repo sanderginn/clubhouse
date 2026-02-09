@@ -164,6 +164,22 @@ describe('mapApiPost', () => {
               trailer_key: 'zSWdZVtXT7E',
               tmdb_id: '157336',
               tmdb_media_type: 'movie',
+              seasons: [
+                {
+                  season_number: 0,
+                  episode_count: 2,
+                  air_date: '2014-01-01',
+                  name: 'Specials',
+                  poster_url: 'https://example.com/specials.jpg',
+                },
+                {
+                  season_number: 1,
+                  episode_count: '10',
+                  air_date: '2015-01-01',
+                  name: 'Season 1',
+                  poster: 'https://example.com/season-1.jpg',
+                },
+              ],
               cast: [
                 { name: 'Matthew McConaughey', character: 'Cooper' },
                 { name: 'Anne Hathaway', character: 'Brand' },
@@ -187,6 +203,22 @@ describe('mapApiPost', () => {
     expect(movie?.trailerKey).toBe('zSWdZVtXT7E');
     expect(movie?.tmdbId).toBe(157336);
     expect(movie?.tmdbMediaType).toBe('movie');
+    expect(movie?.seasons).toEqual([
+      {
+        seasonNumber: 0,
+        episodeCount: 2,
+        airDate: '2014-01-01',
+        name: 'Specials',
+        poster: 'https://example.com/specials.jpg',
+      },
+      {
+        seasonNumber: 1,
+        episodeCount: 10,
+        airDate: '2015-01-01',
+        name: 'Season 1',
+        poster: 'https://example.com/season-1.jpg',
+      },
+    ]);
     expect(movie?.cast).toEqual([
       { name: 'Matthew McConaughey', character: 'Cooper' },
       { name: 'Anne Hathaway', character: 'Brand' },

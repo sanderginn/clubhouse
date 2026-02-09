@@ -65,6 +65,15 @@ export interface MovieCastMember {
   character?: string;
 }
 
+export interface MovieSeason {
+  seasonNumber: number;
+  episodeCount?: number;
+  airDate?: string;
+  name?: string;
+  overview?: string;
+  poster?: string;
+}
+
 export interface MovieMetadata {
   title?: string;
   overview?: string;
@@ -79,6 +88,7 @@ export interface MovieMetadata {
   trailerKey?: string;
   tmdbId?: number;
   tmdbMediaType?: 'movie' | 'tv';
+  seasons?: MovieSeason[];
 }
 
 export interface PostImage {
