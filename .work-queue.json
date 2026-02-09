@@ -617,7 +617,7 @@
     {
       "issue_number": 798,
       "title": "Add movie stats to post responses",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         793,
         794
@@ -627,7 +627,11 @@
         "backend",
         "movies"
       ],
-      "priority": 35
+      "priority": 35,
+      "assigned_to": "agent-1770628626-75198",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770628626-75198",
+      "branch": "feat/issue-798-add-movie-stats-to-post-responses",
+      "claimed_at": "2026-02-09T09:17:06Z"
     },
     {
       "issue_number": 799,
