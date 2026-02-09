@@ -617,6 +617,133 @@ func TestPostRouteHandlerGetCookLogsRequiresAuth(t *testing.T) {
 	}
 }
 
+func TestPostRouteHandlerAddToWatchlistUsesCSRFAuth(t *testing.T) {
+	authCalled := false
+	handlerCalled := false
+
+	requireAuth := func(next http.Handler) http.Handler {
+		return next
+	}
+	requireAuthCSRF := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authCalled = true
+			next.ServeHTTP(w, r)
+		})
+	}
+
+	deps := postRouteDeps{
+		addToWatchlist: func(w http.ResponseWriter, r *http.Request) {
+			handlerCalled = true
+			w.WriteHeader(http.StatusOK)
+		},
+		getPost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPost should not be called")
+		},
+	}
+
+	handler := newPostRouteHandler(requireAuth, requireAuthCSRF, deps)
+	postID := uuid.New()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/posts/"+postID.String()+"/watchlist", nil)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Fatalf("expected status %v, got %v", http.StatusOK, status)
+	}
+
+	if !authCalled {
+		t.Fatal("expected CSRF auth middleware to be called")
+	}
+
+	if !handlerCalled {
+		t.Fatal("expected addToWatchlist handler to be called")
+	}
+}
+
+func TestPostRouteHandlerRemoveFromWatchlistUsesCSRFAuth(t *testing.T) {
+	authCalled := false
+	handlerCalled := false
+
+	requireAuth := func(next http.Handler) http.Handler {
+		return next
+	}
+	requireAuthCSRF := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authCalled = true
+			next.ServeHTTP(w, r)
+		})
+	}
+
+	deps := postRouteDeps{
+		removeFromWatchlist: func(w http.ResponseWriter, r *http.Request) {
+			handlerCalled = true
+			w.WriteHeader(http.StatusNoContent)
+		},
+		getPost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPost should not be called")
+		},
+	}
+
+	handler := newPostRouteHandler(requireAuth, requireAuthCSRF, deps)
+	postID := uuid.New()
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/posts/"+postID.String()+"/watchlist", nil)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusNoContent {
+		t.Fatalf("expected status %v, got %v", http.StatusNoContent, status)
+	}
+
+	if !authCalled {
+		t.Fatal("expected CSRF auth middleware to be called")
+	}
+
+	if !handlerCalled {
+		t.Fatal("expected removeFromWatchlist handler to be called")
+	}
+}
+
+func TestPostRouteHandlerGetPostWatchlistInfoRequiresAuth(t *testing.T) {
+	authCalled := false
+
+	requireAuth := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authCalled = true
+			w.WriteHeader(http.StatusUnauthorized)
+		})
+	}
+
+	requireAuthCSRF := func(next http.Handler) http.Handler {
+		return next
+	}
+
+	deps := postRouteDeps{
+		getPostWatchlistInfo: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPostWatchlistInfo should not be called without auth")
+		},
+		getPost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPost should not be called")
+		},
+	}
+
+	handler := newPostRouteHandler(requireAuth, requireAuthCSRF, deps)
+	postID := uuid.New()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/posts/"+postID.String()+"/watchlist-info", nil)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusUnauthorized {
+		t.Fatalf("expected status %v, got %v", http.StatusUnauthorized, status)
+	}
+
+	if !authCalled {
+		t.Fatal("expected auth middleware to be called")
+	}
+}
+
 func TestPostRouteHandlerLogWatchUsesCSRFAuth(t *testing.T) {
 	authCalled := false
 	logCalled := false
