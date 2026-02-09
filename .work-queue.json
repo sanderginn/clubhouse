@@ -17,7 +17,8 @@
     853,
     854,
     855,
-    856
+    856,
+    859
   ],
   "issues": [
     {
@@ -341,7 +342,7 @@
     {
       "issue_number": 859,
       "title": "[Books] Create Bookshelf and ReadLog models",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         852
       ],
@@ -354,7 +355,9 @@
       "assigned_to": "agent-1770678395-25839",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770678395-25839",
       "branch": "feat/issue-859-books-create-bookshelf-and-readlog-model",
-      "claimed_at": "2026-02-09T23:06:35Z"
+      "claimed_at": "2026-02-09T23:06:35Z",
+      "pr_number": 916,
+      "completed_at": "2026-02-09T23:13:45Z"
     },
     {
       "issue_number": 860,
