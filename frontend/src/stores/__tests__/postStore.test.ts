@@ -182,6 +182,105 @@ describe('postStore', () => {
     expect(state.posts[0].links?.[0].metadata).toBeUndefined();
   });
 
+  it('setMovieWatchlistState updates viewer flags and watchlist count', () => {
+    postStore.setPosts(
+      [
+        {
+          ...basePost,
+          movieStats: {
+            watchlistCount: 3,
+            watchCount: 1,
+            averageRating: 4,
+            viewerWatchlisted: false,
+            viewerWatched: false,
+            viewerRating: null,
+            viewerCategories: [],
+          },
+        },
+      ],
+      null,
+      true
+    );
+
+    postStore.setMovieWatchlistState('post-1', true, ['Favorites']);
+    let state = get(postStore);
+    expect(state.posts[0].movieStats?.watchlistCount).toBe(4);
+    expect(state.posts[0].movieStats?.viewerWatchlisted).toBe(true);
+    expect(state.posts[0].movieStats?.viewerCategories).toEqual(['Favorites']);
+
+    postStore.setMovieWatchlistState('post-1', false, []);
+    state = get(postStore);
+    expect(state.posts[0].movieStats?.watchlistCount).toBe(3);
+    expect(state.posts[0].movieStats?.viewerWatchlisted).toBe(false);
+    expect(state.posts[0].movieStats?.viewerCategories).toEqual([]);
+  });
+
+  it('setMovieWatchState updates watch count and average rating', () => {
+    postStore.setPosts(
+      [
+        {
+          ...basePost,
+          movieStats: {
+            watchlistCount: 2,
+            watchCount: 2,
+            averageRating: 4,
+            viewerWatchlisted: false,
+            viewerWatched: false,
+            viewerRating: null,
+            viewerCategories: [],
+          },
+        },
+      ],
+      null,
+      true
+    );
+
+    postStore.setMovieWatchState('post-1', true, 5);
+    let state = get(postStore);
+    expect(state.posts[0].movieStats?.watchCount).toBe(3);
+    expect(state.posts[0].movieStats?.averageRating).toBeCloseTo(4.333, 3);
+    expect(state.posts[0].movieStats?.viewerWatched).toBe(true);
+    expect(state.posts[0].movieStats?.viewerRating).toBe(5);
+
+    postStore.setMovieWatchState('post-1', true, 3);
+    state = get(postStore);
+    expect(state.posts[0].movieStats?.watchCount).toBe(3);
+    expect(state.posts[0].movieStats?.averageRating).toBeCloseTo(3.667, 3);
+    expect(state.posts[0].movieStats?.viewerRating).toBe(3);
+
+    postStore.setMovieWatchState('post-1', false, null);
+    state = get(postStore);
+    expect(state.posts[0].movieStats?.watchCount).toBe(2);
+    expect(state.posts[0].movieStats?.averageRating).toBe(4);
+    expect(state.posts[0].movieStats?.viewerWatched).toBe(false);
+    expect(state.posts[0].movieStats?.viewerRating).toBeNull();
+  });
+
+  it('setMovieStats overwrites reconciled movie aggregate fields', () => {
+    postStore.setPosts([basePost], null, true);
+
+    postStore.setMovieStats('post-1', {
+      watchlistCount: 6,
+      watchCount: 4,
+      averageRating: 4.5,
+      viewerWatchlisted: true,
+      viewerWatched: true,
+      viewerRating: 5,
+      viewerCategories: ['Top Picks'],
+    });
+
+    const state = get(postStore);
+    expect(state.posts[0].movieStats).toMatchObject({
+      watchlistCount: 6,
+      watchCount: 4,
+      averageRating: 4.5,
+      viewerWatchlisted: true,
+      viewerWatched: true,
+      viewerRating: 5,
+      viewerCategories: ['Top Picks'],
+    });
+  });
+
   it('reset restores defaults', () => {
     postStore.setPosts([basePost], 'cursor-1', false);
     postStore.reset();

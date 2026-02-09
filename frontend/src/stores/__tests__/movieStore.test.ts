@@ -12,6 +12,8 @@ const apiGetMyWatchLogs = vi.hoisted(() => vi.fn());
 const apiLogWatch = vi.hoisted(() => vi.fn());
 const apiUpdateWatchLog = vi.hoisted(() => vi.fn());
 const apiRemoveWatchLog = vi.hoisted(() => vi.fn());
+const apiGetPostWatchlistInfo = vi.hoisted(() => vi.fn());
+const apiGetPostWatchLogs = vi.hoisted(() => vi.fn());
 
 vi.mock('../../services/api', () => ({
   api: {
@@ -26,6 +28,8 @@ vi.mock('../../services/api', () => ({
     logWatch: apiLogWatch,
     updateWatchLog: apiUpdateWatchLog,
     removeWatchLog: apiRemoveWatchLog,
+    getPostWatchlistInfo: apiGetPostWatchlistInfo,
+    getPostWatchLogs: apiGetPostWatchLogs,
   },
 }));
 
@@ -39,6 +43,7 @@ const {
   handleMovieWatchRemovedEvent,
 } = await import('../movieStore');
 const { authStore } = await import('../authStore');
+const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 beforeEach(() => {
   movieStore.reset();
@@ -60,6 +65,21 @@ beforeEach(() => {
   apiLogWatch.mockReset();
   apiUpdateWatchLog.mockReset();
   apiRemoveWatchLog.mockReset();
+  apiGetPostWatchlistInfo.mockReset();
+  apiGetPostWatchLogs.mockReset();
+  apiGetPostWatchlistInfo.mockResolvedValue({
+    saveCount: 1,
+    users: [],
+    viewerSaved: false,
+    viewerCategories: [],
+  });
+  apiGetPostWatchLogs.mockResolvedValue({
+    watchCount: 1,
+    avgRating: 4.2,
+    logs: [],
+    viewerWatched: false,
+    viewerRating: undefined,
+  });
 });
 
 describe('movieStore', () => {
@@ -220,7 +240,7 @@ describe('movieStore', () => {
     expect(sorted[0].name).toBe('Alpha');
   });
 
-  it('websocket handlers apply movie events to local state', () => {
+  it('websocket handlers apply movie events to local state', async () => {
     handleMovieWatchlistedEvent({
       user_id: 'user-1',
       watchlist_item: {
@@ -249,12 +269,16 @@ describe('movieStore', () => {
     handleMovieUnwatchlistedEvent({ post_id: 'post-ws', user_id: 'user-1', category: 'Favorites' });
     handleMovieWatchRemovedEvent({ post_id: 'post-ws', user_id: 'user-1' });
 
+    await flushPromises();
+
     state = get(movieStore);
     expect(state.watchlist.get('Favorites')).toBeUndefined();
     expect(state.watchLogs).toHaveLength(0);
+    expect(apiGetPostWatchlistInfo).toHaveBeenCalledWith('post-ws');
+    expect(apiGetPostWatchLogs).toHaveBeenCalledWith('post-ws');
   });
 
-  it('websocket handlers ignore events from other users and sparse self payloads', () => {
+  it('websocket handlers ignore payload writes for other users but handle sparse self payloads', async () => {
     movieStore.applyWatchlistItems([
       {
         id: 'watch-own',
@@ -313,11 +337,19 @@ describe('movieStore', () => {
       rating: 5,
     });
 
+    await flushPromises();
+
     const state = get(movieStore);
     const favorites = state.watchlist.get('Favorites') ?? [];
-    expect(favorites).toHaveLength(1);
-    expect(favorites[0].postId).toBe('post-own');
-    expect(state.watchLogs).toHaveLength(1);
-    expect(state.watchLogs[0].postId).toBe('post-own');
+    expect(favorites).toHaveLength(2);
+    expect(favorites.some((item) => item.postId === 'post-own')).toBe(true);
+    expect(favorites.some((item) => item.postId === 'post-sparse')).toBe(true);
+    expect(state.watchLogs).toHaveLength(2);
+    expect(state.watchLogs.some((item) => item.postId === 'post-own')).toBe(true);
+    expect(state.watchLogs.some((item) => item.postId === 'post-sparse')).toBe(true);
+    expect(apiGetPostWatchlistInfo).toHaveBeenCalledWith('post-own');
+    expect(apiGetPostWatchlistInfo).toHaveBeenCalledWith('post-sparse');
+    expect(apiGetPostWatchLogs).toHaveBeenCalledWith('post-own');
+    expect(apiGetPostWatchLogs).toHaveBeenCalledWith('post-sparse');
   });
 });

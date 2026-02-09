@@ -55,6 +55,12 @@ const storeRefs = {
     handleRecipeCategoryUpdatedEvent: vi.fn(),
     handleRecipeCategoryDeletedEvent: vi.fn(),
   },
+  movieHandlers: {
+    handleMovieWatchlistedEvent: vi.fn(),
+    handleMovieUnwatchlistedEvent: vi.fn(),
+    handleMovieWatchedEvent: vi.fn(),
+    handleMovieWatchRemovedEvent: vi.fn(),
+  },
   postStore: {
     upsertPost: vi.fn(),
     incrementCommentCount: vi.fn(),
@@ -125,6 +131,17 @@ vi.mock('../recipeStore', () => ({
     storeRefs.recipeHandlers.handleRecipeCategoryDeletedEvent(payload),
 }));
 
+vi.mock('../movieStore', () => ({
+  handleMovieWatchlistedEvent: (payload: unknown) =>
+    storeRefs.movieHandlers.handleMovieWatchlistedEvent(payload),
+  handleMovieUnwatchlistedEvent: (payload: unknown) =>
+    storeRefs.movieHandlers.handleMovieUnwatchlistedEvent(payload),
+  handleMovieWatchedEvent: (payload: unknown) =>
+    storeRefs.movieHandlers.handleMovieWatchedEvent(payload),
+  handleMovieWatchRemovedEvent: (payload: unknown) =>
+    storeRefs.movieHandlers.handleMovieWatchRemovedEvent(payload),
+}));
+
 vi.mock('../../services/api', () => ({
   api: storeRefs.api,
 }));
@@ -165,6 +182,10 @@ beforeEach(() => {
   storeRefs.recipeHandlers.handleRecipeCategoryCreatedEvent.mockReset();
   storeRefs.recipeHandlers.handleRecipeCategoryUpdatedEvent.mockReset();
   storeRefs.recipeHandlers.handleRecipeCategoryDeletedEvent.mockReset();
+  storeRefs.movieHandlers.handleMovieWatchlistedEvent.mockReset();
+  storeRefs.movieHandlers.handleMovieUnwatchlistedEvent.mockReset();
+  storeRefs.movieHandlers.handleMovieWatchedEvent.mockReset();
+  storeRefs.movieHandlers.handleMovieWatchRemovedEvent.mockReset();
   storeRefs.commentStore.setState({});
 
   (globalThis as any).WebSocket = MockWebSocket;
@@ -308,6 +329,39 @@ describe('websocketStore', () => {
 
     expect(storeRefs.recipeHandlers.handleRecipeSavedEvent).toHaveBeenCalledWith(payload);
     expect(storeRefs.recipeHandlers.handleCookLogRemovedEvent).toHaveBeenCalledWith({ post_id: 'post-9' });
+  });
+
+  it('handles movie realtime events', async () => {
+    storeRefs.isAuthenticated.set(true);
+    const { websocketStore } = await import('../websocketStore');
+
+    websocketStore.init();
+    const socket = MockWebSocket.instances[0];
+    socket.open();
+
+    socket.emit('message', {
+      data: JSON.stringify({
+        type: 'movie_watchlisted',
+        data: { post_id: 'post-44', user_id: 'user-2', categories: ['Classics'] },
+      }),
+    });
+
+    socket.emit('message', {
+      data: JSON.stringify({
+        type: 'movie_watch_removed',
+        data: { post_id: 'post-44', user_id: 'user-2' },
+      }),
+    });
+
+    expect(storeRefs.movieHandlers.handleMovieWatchlistedEvent).toHaveBeenCalledWith({
+      post_id: 'post-44',
+      user_id: 'user-2',
+      categories: ['Classics'],
+    });
+    expect(storeRefs.movieHandlers.handleMovieWatchRemovedEvent).toHaveBeenCalledWith({
+      post_id: 'post-44',
+      user_id: 'user-2',
+    });
   });
 
   it('handles new_comment and avoids double count when already present', async () => {

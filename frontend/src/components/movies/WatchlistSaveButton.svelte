@@ -13,6 +13,7 @@
     type WatchlistCategory as StoreWatchlistCategory,
     type WatchlistItem as StoreWatchlistItem,
   } from '../../stores/movieStore';
+  import { postStore } from '../../stores/postStore';
   import { currentUser } from '../../stores/authStore';
 
   export let postId: string;
@@ -249,6 +250,7 @@
       localSaveCount = Math.max(0, localSaveCount - 1);
     }
 
+    postStore.setMovieWatchlistState(postId, willBeSaved, setToArray(next));
     updateFallbackState(next);
   }
 
@@ -272,6 +274,7 @@
       localSaveCount = Math.max(0, localSaveCount + 1);
     }
 
+    postStore.setMovieWatchlistState(postId, previous.size > 0, setToArray(previous));
     updateFallbackState(previous);
   }
 

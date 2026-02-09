@@ -146,6 +146,30 @@ interface PostState {
   hasMore: boolean;
 }
 
+function clampMovieCount(value: number): number {
+  return Math.max(0, Number.isFinite(value) ? value : 0);
+}
+
+function normalizeMovieRating(value: number | null | undefined): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return null;
+  }
+  return Math.min(5, Math.max(0, value));
+}
+
+function getMovieStats(post: Post): MovieStats {
+  const current = post.movieStats ?? post.movie_stats;
+  return {
+    watchlistCount: clampMovieCount(current?.watchlistCount ?? 0),
+    watchCount: clampMovieCount(current?.watchCount ?? 0),
+    averageRating: normalizeMovieRating(current?.averageRating ?? null),
+    viewerWatchlisted: Boolean(current?.viewerWatchlisted),
+    viewerWatched: Boolean(current?.viewerWatched),
+    viewerRating: normalizeMovieRating(current?.viewerRating ?? null),
+    viewerCategories: current?.viewerCategories ?? [],
+  };
+}
+
 function createPostStore() {
   const { subscribe, set, update } = writable<PostState>({
     posts: [],
@@ -300,6 +324,144 @@ function createPostStore() {
             ...post,
             recipeStats: nextStats,
             recipe_stats: nextStats,
+          };
+        }),
+      })),
+    setMovieStats: (postId: string, stats: Partial<MovieStats>) =>
+      update((state) => ({
+        ...state,
+        posts: state.posts.map((post) => {
+          if (post.id !== postId) {
+            return post;
+          }
+
+          const currentStats = getMovieStats(post);
+          const nextStats: MovieStats = { ...currentStats };
+
+          if ('watchlistCount' in stats) {
+            nextStats.watchlistCount = clampMovieCount(stats.watchlistCount ?? 0);
+          }
+          if ('watchCount' in stats) {
+            nextStats.watchCount = clampMovieCount(stats.watchCount ?? 0);
+          }
+          if ('averageRating' in stats) {
+            nextStats.averageRating = normalizeMovieRating(stats.averageRating ?? null);
+          }
+          if ('viewerWatchlisted' in stats) {
+            nextStats.viewerWatchlisted = Boolean(stats.viewerWatchlisted);
+          }
+          if ('viewerWatched' in stats) {
+            nextStats.viewerWatched = Boolean(stats.viewerWatched);
+          }
+          if ('viewerRating' in stats) {
+            nextStats.viewerRating = normalizeMovieRating(stats.viewerRating ?? null);
+          }
+          if ('viewerCategories' in stats) {
+            nextStats.viewerCategories = Array.isArray(stats.viewerCategories)
+              ? stats.viewerCategories
+              : [];
+          }
+
+          return {
+            ...post,
+            movieStats: nextStats,
+            movie_stats: nextStats,
+          };
+        }),
+      })),
+    setMovieWatchlistState: (
+      postId: string,
+      viewerWatchlisted: boolean,
+      viewerCategories: string[] = []
+    ) =>
+      update((state) => ({
+        ...state,
+        posts: state.posts.map((post) => {
+          if (post.id !== postId) {
+            return post;
+          }
+
+          const currentStats = getMovieStats(post);
+          let nextWatchlistCount = currentStats.watchlistCount;
+
+          if (!currentStats.viewerWatchlisted && viewerWatchlisted) {
+            nextWatchlistCount = clampMovieCount(nextWatchlistCount + 1);
+          } else if (currentStats.viewerWatchlisted && !viewerWatchlisted) {
+            nextWatchlistCount = clampMovieCount(nextWatchlistCount - 1);
+          }
+
+          const normalizedCategories = viewerWatchlisted
+            ? viewerCategories
+                .map((category) => category.trim())
+                .filter((category) => category.length > 0)
+            : [];
+
+          const nextStats: MovieStats = {
+            ...currentStats,
+            watchlistCount: nextWatchlistCount,
+            viewerWatchlisted,
+            viewerCategories: normalizedCategories,
+          };
+
+          return {
+            ...post,
+            movieStats: nextStats,
+            movie_stats: nextStats,
+          };
+        }),
+      })),
+    setMovieWatchState: (
+      postId: string,
+      viewerWatched: boolean,
+      viewerRating: number | null = null
+    ) =>
+      update((state) => ({
+        ...state,
+        posts: state.posts.map((post) => {
+          if (post.id !== postId) {
+            return post;
+          }
+
+          const currentStats = getMovieStats(post);
+          const previousWatchCount = clampMovieCount(currentStats.watchCount);
+          const previousViewerRating = normalizeMovieRating(currentStats.viewerRating ?? null);
+          const nextViewerRating = viewerWatched ? normalizeMovieRating(viewerRating) : null;
+
+          let nextWatchCount = previousWatchCount;
+          let ratingTotal =
+            previousWatchCount > 0 && currentStats.averageRating !== null
+              ? currentStats.averageRating * previousWatchCount
+              : 0;
+
+          if (!currentStats.viewerWatched && viewerWatched) {
+            nextWatchCount = clampMovieCount(previousWatchCount + 1);
+            ratingTotal += nextViewerRating ?? 0;
+          } else if (currentStats.viewerWatched && !viewerWatched) {
+            nextWatchCount = clampMovieCount(previousWatchCount - 1);
+            ratingTotal -= previousViewerRating ?? 0;
+          } else if (
+            currentStats.viewerWatched &&
+            viewerWatched &&
+            previousViewerRating !== null &&
+            nextViewerRating !== null
+          ) {
+            ratingTotal += nextViewerRating - previousViewerRating;
+          }
+
+          const nextAverageRating = nextWatchCount <= 0 ? null : ratingTotal / nextWatchCount;
+
+          const nextStats: MovieStats = {
+            ...currentStats,
+            watchCount: nextWatchCount,
+            averageRating: nextAverageRating,
+            viewerWatched,
+            viewerRating: nextViewerRating,
+          };
+
+          return {
+            ...post,
+            movieStats: nextStats,
+            movie_stats: nextStats,
           };
         }),
       })),
