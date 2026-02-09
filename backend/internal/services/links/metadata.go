@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/net/html"
@@ -34,6 +35,10 @@ var (
 	newTMDBClientFromEnvFunc = NewTMDBClientFromEnv
 	newOMDBClientFromEnvFunc = NewOMDBClientFromEnv
 	parseMovieMetadataFunc   = ParseMovieMetadata
+
+	omdbClientFromEnvOnce sync.Once
+	omdbClientFromEnv     *OMDBClient
+	omdbClientFromEnvErr  error
 )
 
 // Fetcher retrieves metadata for links.
@@ -203,7 +208,7 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	if shouldExtractMovieMetadata(ctx) {
 		if tmdbClient, err := newTMDBClientFromEnvFunc(); err == nil {
 			var omdbClient *OMDBClient
-			if omdb, omdbErr := newOMDBClientFromEnvFunc(); omdbErr == nil {
+			if omdb, omdbErr := getOMDBClientFromEnv(); omdbErr == nil {
 				omdbClient = omdb
 			}
 
@@ -226,6 +231,20 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	}
 
 	return metadata, nil
+}
+
+func getOMDBClientFromEnv() (*OMDBClient, error) {
+	omdbClientFromEnvOnce.Do(func() {
+		omdbClientFromEnv, omdbClientFromEnvErr = newOMDBClientFromEnvFunc()
+	})
+	return omdbClientFromEnv, omdbClientFromEnvErr
+}
+
+// resetOMDBClientFromEnvCacheForTests resets cached OMDb client state. Use only in tests.
+func resetOMDBClientFromEnvCacheForTests() {
+	omdbClientFromEnvOnce = sync.Once{}
+	omdbClientFromEnv = nil
+	omdbClientFromEnvErr = nil
 }
 
 func shouldExtractMovieMetadata(ctx context.Context) bool {
