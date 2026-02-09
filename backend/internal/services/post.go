@@ -572,17 +572,27 @@ func (s *PostService) GetPostByID(ctx context.Context, postID uuid.UUID, userID 
 	post.ReactionCounts = counts
 	post.ViewerReactions = viewerReactions
 
+	viewerID := &userID
+	if userID == uuid.Nil {
+		viewerID = nil
+	}
+
 	if sectionType == "recipe" {
-		viewerID := &userID
-		if userID == uuid.Nil {
-			viewerID = nil
-		}
 		recipeStats, err := s.getRecipeStats(ctx, postID, viewerID)
 		if err != nil {
 			recordSpanError(span, err)
 			return nil, err
 		}
 		post.RecipeStats = recipeStats
+	}
+
+	if isMovieOrSeriesSectionType(sectionType) {
+		movieStats, err := s.getMovieStats(ctx, postID, viewerID)
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+		post.MovieStats = movieStats
 	}
 
 	return &post, nil
@@ -1178,6 +1188,157 @@ func (s *PostService) getRecipeStatsForPosts(ctx context.Context, postIDs []uuid
 	return stats, nil
 }
 
+func (s *PostService) getMovieStats(ctx context.Context, postID uuid.UUID, viewerID *uuid.UUID) (*models.MovieStats, error) {
+	statsByPost, err := s.getMovieStatsForPosts(ctx, []uuid.UUID{postID}, viewerID)
+	if err != nil {
+		return nil, err
+	}
+	stats, ok := statsByPost[postID]
+	if !ok {
+		return &models.MovieStats{}, nil
+	}
+	return stats, nil
+}
+
+func (s *PostService) getMovieStatsForPosts(ctx context.Context, postIDs []uuid.UUID, viewerID *uuid.UUID) (map[uuid.UUID]*models.MovieStats, error) {
+	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.getMovieStatsForPosts")
+	span.SetAttributes(
+		attribute.Int("post_count", len(postIDs)),
+		attribute.Bool("has_viewer_id", viewerID != nil),
+	)
+	if viewerID != nil {
+		span.SetAttributes(attribute.String("viewer_id", viewerID.String()))
+	}
+	defer span.End()
+
+	stats := make(map[uuid.UUID]*models.MovieStats, len(postIDs))
+	for _, postID := range postIDs {
+		stats[postID] = &models.MovieStats{}
+	}
+
+	if len(postIDs) == 0 {
+		return stats, nil
+	}
+
+	viewerIDValue := uuid.Nil
+	if viewerID != nil {
+		viewerIDValue = *viewerID
+	}
+
+	watchlistRows, err := s.db.QueryContext(ctx, `
+		SELECT wi.post_id, COUNT(DISTINCT wi.id) AS watchlist_count, bool_or(wi.user_id = $2) AS viewer_watchlisted
+		FROM watchlist_items wi
+		WHERE wi.post_id = ANY($1) AND wi.deleted_at IS NULL
+		GROUP BY wi.post_id
+	`, pq.Array(postIDs), viewerIDValue)
+	if err != nil {
+		recordSpanError(span, err)
+		return nil, err
+	}
+	for watchlistRows.Next() {
+		var postID uuid.UUID
+		var watchlistCount int
+		var viewerWatchlisted bool
+		if err := watchlistRows.Scan(&postID, &watchlistCount, &viewerWatchlisted); err != nil {
+			_ = watchlistRows.Close()
+			recordSpanError(span, err)
+			return nil, err
+		}
+		if stat, ok := stats[postID]; ok {
+			stat.WatchlistCount = watchlistCount
+			stat.ViewerWatchlisted = viewerWatchlisted
+		}
+	}
+	if err := watchlistRows.Err(); err != nil {
+		_ = watchlistRows.Close()
+		recordSpanError(span, err)
+		return nil, err
+	}
+	_ = watchlistRows.Close()
+
+	watchRows, err := s.db.QueryContext(ctx, `
+		SELECT
+			wl.post_id,
+			COUNT(*) AS watch_count,
+			ROUND(AVG(wl.rating)::numeric, 1) AS avg_rating,
+			bool_or(wl.user_id = $2) AS viewer_watched,
+			MAX(CASE WHEN wl.user_id = $2 THEN wl.rating END) AS viewer_rating
+		FROM watch_logs wl
+		WHERE wl.post_id = ANY($1) AND wl.deleted_at IS NULL
+		GROUP BY wl.post_id
+	`, pq.Array(postIDs), viewerIDValue)
+	if err != nil {
+		recordSpanError(span, err)
+		return nil, err
+	}
+	for watchRows.Next() {
+		var postID uuid.UUID
+		var watchCount int
+		var avgRating sql.NullFloat64
+		var viewerWatched bool
+		var viewerRating sql.NullInt64
+		if err := watchRows.Scan(&postID, &watchCount, &avgRating, &viewerWatched, &viewerRating); err != nil {
+			_ = watchRows.Close()
+			recordSpanError(span, err)
+			return nil, err
+		}
+		if stat, ok := stats[postID]; ok {
+			stat.WatchCount = watchCount
+			stat.ViewerWatched = viewerWatched
+			if avgRating.Valid {
+				stat.AvgRating = &avgRating.Float64
+			}
+			if viewerRating.Valid {
+				rating := int(viewerRating.Int64)
+				stat.ViewerRating = &rating
+			}
+		}
+	}
+	if err := watchRows.Err(); err != nil {
+		_ = watchRows.Close()
+		recordSpanError(span, err)
+		return nil, err
+	}
+	_ = watchRows.Close()
+
+	if viewerID != nil {
+		categoryRows, err := s.db.QueryContext(ctx, `
+			SELECT post_id, category
+			FROM watchlist_items
+			WHERE post_id = ANY($1) AND user_id = $2 AND deleted_at IS NULL
+			ORDER BY category ASC
+		`, pq.Array(postIDs), *viewerID)
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+		for categoryRows.Next() {
+			var postID uuid.UUID
+			var category string
+			if err := categoryRows.Scan(&postID, &category); err != nil {
+				_ = categoryRows.Close()
+				recordSpanError(span, err)
+				return nil, err
+			}
+			if stat, ok := stats[postID]; ok {
+				stat.ViewerCategories = append(stat.ViewerCategories, category)
+			}
+		}
+		if err := categoryRows.Err(); err != nil {
+			_ = categoryRows.Close()
+			recordSpanError(span, err)
+			return nil, err
+		}
+		_ = categoryRows.Close()
+	}
+
+	return stats, nil
+}
+
+func isMovieOrSeriesSectionType(sectionType string) bool {
+	return sectionType == "movie" || sectionType == "series"
+}
+
 // GetFeed retrieves a paginated feed of posts for a section using cursor-based pagination
 func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *string, limit int, userID uuid.UUID) (*models.FeedResponse, error) {
 	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.GetFeed")
@@ -1299,23 +1460,40 @@ func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *
 		nextCursor = &cursorStr
 	}
 
-	if sectionType == "recipe" && len(posts) > 0 {
+	if len(posts) > 0 && (sectionType == "recipe" || isMovieOrSeriesSectionType(sectionType)) {
 		postIDs := make([]uuid.UUID, 0, len(posts))
 		for _, post := range posts {
 			postIDs = append(postIDs, post.ID)
 		}
+
 		viewerID := &userID
 		if userID == uuid.Nil {
 			viewerID = nil
 		}
-		statsByPost, err := s.getRecipeStatsForPosts(ctx, postIDs, viewerID)
-		if err != nil {
-			recordSpanError(span, err)
-			return nil, err
+
+		if sectionType == "recipe" {
+			statsByPost, err := s.getRecipeStatsForPosts(ctx, postIDs, viewerID)
+			if err != nil {
+				recordSpanError(span, err)
+				return nil, err
+			}
+			for _, post := range posts {
+				if stat, ok := statsByPost[post.ID]; ok {
+					post.RecipeStats = stat
+				}
+			}
 		}
-		for _, post := range posts {
-			if stat, ok := statsByPost[post.ID]; ok {
-				post.RecipeStats = stat
+
+		if isMovieOrSeriesSectionType(sectionType) {
+			statsByPost, err := s.getMovieStatsForPosts(ctx, postIDs, viewerID)
+			if err != nil {
+				recordSpanError(span, err)
+				return nil, err
+			}
+			for _, post := range posts {
+				if stat, ok := statsByPost[post.ID]; ok {
+					post.MovieStats = stat
+				}
 			}
 		}
 	}
@@ -1589,6 +1767,7 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, targetUserID uuid.UU
 
 	var posts []*models.Post
 	var recipePostIDs []uuid.UUID
+	var moviePostIDs []uuid.UUID
 	for rows.Next() {
 		var post models.Post
 		var user models.User
@@ -1635,6 +1814,9 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, targetUserID uuid.UU
 		if sectionType == "recipe" {
 			recipePostIDs = append(recipePostIDs, post.ID)
 		}
+		if isMovieOrSeriesSectionType(sectionType) {
+			moviePostIDs = append(moviePostIDs, post.ID)
+		}
 
 		posts = append(posts, &post)
 	}
@@ -1672,6 +1854,23 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, targetUserID uuid.UU
 		for _, post := range posts {
 			if stat, ok := statsByPost[post.ID]; ok {
 				post.RecipeStats = stat
+			}
+		}
+	}
+
+	if len(moviePostIDs) > 0 {
+		viewerIDPtr := &viewerID
+		if viewerID == uuid.Nil {
+			viewerIDPtr = nil
+		}
+		statsByPost, err := s.getMovieStatsForPosts(ctx, moviePostIDs, viewerIDPtr)
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+		for _, post := range posts {
+			if stat, ok := statsByPost[post.ID]; ok {
+				post.MovieStats = stat
 			}
 		}
 	}
