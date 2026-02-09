@@ -511,7 +511,7 @@
     {
       "issue_number": 793,
       "title": "Create watchlist service",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         786,
         789,
@@ -522,7 +522,11 @@
         "backend",
         "movies"
       ],
-      "priority": 30
+      "priority": 30,
+      "assigned_to": "agent-1770626210-37376",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770626210-37376",
+      "branch": "feat/issue-793-create-watchlist-service",
+      "claimed_at": "2026-02-09T08:36:50Z"
     },
     {
       "issue_number": 794,
