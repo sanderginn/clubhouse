@@ -177,6 +177,7 @@ func main() {
 	pushHandler := handlers.NewPushHandler(dbConn, pushService)
 	uploadHandler := handlers.NewUploadHandler()
 	savedRecipeHandler := handlers.NewSavedRecipeHandler(dbConn, redisConn)
+	watchlistHandler := handlers.NewWatchlistHandler(dbConn, redisConn)
 	requireAuth := middleware.RequireAuth(redisConn, dbConn)
 	requireCSRF := middleware.RequireCSRF(redisConn)
 	requireAuthCSRF := func(h http.Handler) http.Handler {
@@ -315,6 +316,9 @@ func main() {
 		saveRecipe:              savedRecipeHandler.SaveRecipe,
 		unsaveRecipe:            savedRecipeHandler.UnsaveRecipe,
 		getPostSaves:            savedRecipeHandler.GetPostSaves,
+		addToWatchlist:          watchlistHandler.AddToWatchlist,
+		removeFromWatchlist:     watchlistHandler.RemoveFromWatchlist,
+		getPostWatchlistInfo:    watchlistHandler.GetPostWatchlistInfo,
 		logCook:                 cookLogHandler.LogCook,
 		updateCookLog:           cookLogHandler.UpdateCookLog,
 		removeCookLog:           cookLogHandler.RemoveCookLog,
@@ -357,6 +361,31 @@ func main() {
 		}
 		if r.Method == http.MethodDelete {
 			requireAuthCSRF(http.HandlerFunc(savedRecipeHandler.DeleteRecipeCategory)).ServeHTTP(w, r)
+			return
+		}
+		writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+	}))
+
+	// Watchlist routes (protected)
+	mux.Handle("/api/v1/me/watchlist", requireAuth(http.HandlerFunc(watchlistHandler.ListWatchlist)))
+	mux.Handle("/api/v1/me/watchlist-categories", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			requireAuth(http.HandlerFunc(watchlistHandler.ListWatchlistCategories)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodPost {
+			requireAuthCSRF(http.HandlerFunc(watchlistHandler.CreateWatchlistCategory)).ServeHTTP(w, r)
+			return
+		}
+		writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+	}))
+	mux.Handle("/api/v1/me/watchlist-categories/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPatch {
+			requireAuthCSRF(http.HandlerFunc(watchlistHandler.UpdateWatchlistCategory)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodDelete {
+			requireAuthCSRF(http.HandlerFunc(watchlistHandler.DeleteWatchlistCategory)).ServeHTTP(w, r)
 			return
 		}
 		writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))

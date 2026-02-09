@@ -21,6 +21,9 @@ type postRouteDeps struct {
 	saveRecipe              http.HandlerFunc
 	unsaveRecipe            http.HandlerFunc
 	getPostSaves            http.HandlerFunc
+	addToWatchlist          http.HandlerFunc
+	removeFromWatchlist     http.HandlerFunc
+	getPostWatchlistInfo    http.HandlerFunc
 	logCook                 http.HandlerFunc
 	updateCookLog           http.HandlerFunc
 	removeCookLog           http.HandlerFunc
@@ -75,6 +78,21 @@ func newPostRouteHandler(requireAuth authMiddleware, requireAuthCSRF authMiddlew
 		if r.Method == http.MethodGet && strings.HasSuffix(strings.TrimSuffix(r.URL.Path, "/"), "/saves") {
 			// GET /api/v1/posts/{id}/saves
 			requireAuth(http.HandlerFunc(deps.getPostSaves)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodPost && strings.HasSuffix(strings.TrimSuffix(r.URL.Path, "/"), "/watchlist") {
+			// POST /api/v1/posts/{id}/watchlist
+			requireAuthCSRF(http.HandlerFunc(deps.addToWatchlist)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodDelete && strings.HasSuffix(strings.TrimSuffix(r.URL.Path, "/"), "/watchlist") {
+			// DELETE /api/v1/posts/{id}/watchlist
+			requireAuthCSRF(http.HandlerFunc(deps.removeFromWatchlist)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodGet && strings.HasSuffix(strings.TrimSuffix(r.URL.Path, "/"), "/watchlist-info") {
+			// GET /api/v1/posts/{id}/watchlist-info
+			requireAuth(http.HandlerFunc(deps.getPostWatchlistInfo)).ServeHTTP(w, r)
 			return
 		}
 		if r.Method == http.MethodDelete && strings.Contains(r.URL.Path, "/reactions/") {

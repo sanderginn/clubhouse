@@ -82,6 +82,18 @@ type recipeCookRemovedEventData struct {
 	UserID uuid.UUID `json:"user_id"`
 }
 
+type movieWatchlistedEventData struct {
+	PostID     uuid.UUID `json:"post_id"`
+	UserID     uuid.UUID `json:"user_id"`
+	Username   string    `json:"username"`
+	Categories []string  `json:"categories"`
+}
+
+type movieUnwatchlistedEventData struct {
+	PostID uuid.UUID `json:"post_id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
 func publishEvent(ctx context.Context, redisClient *redis.Client, channel string, eventType string, data any) error {
 	if redisClient == nil {
 		return nil
