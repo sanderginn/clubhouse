@@ -302,6 +302,50 @@ func TestDeleteCategoryHandlesOverlappingUncategorizedItems(t *testing.T) {
 	}
 }
 
+func TestUpdateCategoryRenameToUncategorizedHandlesOverlap(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "watchlistrenameoverlap", "watchlistrenameoverlap@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Movies", "movie")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Movie post")
+
+	service := NewWatchlistService(db)
+	category, err := service.CreateCategory(context.Background(), uuid.MustParse(userID), "To Watch")
+	if err != nil {
+		t.Fatalf("CreateCategory failed: %v", err)
+	}
+
+	_, err = service.AddToWatchlist(context.Background(), uuid.MustParse(userID), uuid.MustParse(postID), []string{"To Watch"})
+	if err != nil {
+		t.Fatalf("AddToWatchlist To Watch failed: %v", err)
+	}
+	_, err = service.AddToWatchlist(context.Background(), uuid.MustParse(userID), uuid.MustParse(postID), nil)
+	if err != nil {
+		t.Fatalf("AddToWatchlist uncategorized failed: %v", err)
+	}
+
+	newName := defaultWatchlistCategory
+	if err := service.UpdateCategory(context.Background(), uuid.MustParse(userID), category.ID, &newName, nil); err != nil {
+		t.Fatalf("UpdateCategory failed: %v", err)
+	}
+
+	var remaining int
+	if err := db.QueryRowContext(
+		context.Background(),
+		`SELECT COUNT(*) FROM watchlist_items
+		WHERE user_id = $1 AND post_id = $2 AND category = $3 AND deleted_at IS NULL`,
+		uuid.MustParse(userID),
+		uuid.MustParse(postID),
+		defaultWatchlistCategory,
+	).Scan(&remaining); err != nil {
+		t.Fatalf("failed to count remaining uncategorized rows: %v", err)
+	}
+	if remaining != 1 {
+		t.Fatalf("expected one remaining uncategorized row, got %d", remaining)
+	}
+}
+
 func TestGetUserWatchlistGroupsByCategoryAndIncludesPost(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
