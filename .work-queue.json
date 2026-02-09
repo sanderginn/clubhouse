@@ -408,14 +408,18 @@
     {
       "issue_number": 788,
       "title": "Create TMDB client library",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
         "backend",
         "movies"
       ],
-      "priority": 25
+      "priority": 25,
+      "assigned_to": "agent-1770625192-19506",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770625192-19506",
+      "branch": "feat/issue-788-create-tmdb-client-library",
+      "claimed_at": "2026-02-09T08:19:52Z"
     },
     {
       "issue_number": 789,
