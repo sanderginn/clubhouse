@@ -77,6 +77,8 @@ export interface MovieMetadata {
   director?: string;
   tmdbRating?: number;
   trailerKey?: string;
+  tmdbId?: number;
+  tmdbMediaType?: 'movie' | 'tv';
 }
 
 export interface PostImage {
