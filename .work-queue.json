@@ -6,6 +6,7 @@
   },
   "completed_issues": [
     842,
+    843,
     847,
     852
   ],
@@ -31,7 +32,7 @@
     {
       "issue_number": 843,
       "title": "Fix movie stats not appearing on newly created posts until reload",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -43,7 +44,9 @@
       "assigned_to": "agent-1770675775-48692",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770675775-48692",
       "branch": "fix/issue-843-fix-movie-stats-not-appearing-on-newly-c",
-      "claimed_at": "2026-02-09T22:22:55Z"
+      "claimed_at": "2026-02-09T22:22:55Z",
+      "pr_number": 907,
+      "completed_at": "2026-02-09T22:39:04Z"
     },
     {
       "issue_number": 844,
