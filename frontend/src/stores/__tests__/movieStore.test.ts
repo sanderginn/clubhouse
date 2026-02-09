@@ -67,6 +67,7 @@ beforeEach(() => {
   apiRemoveWatchLog.mockReset();
   apiGetPostWatchlistInfo.mockReset();
   apiGetPostWatchLogs.mockReset();
+  apiGetMyWatchlist.mockResolvedValue({ categories: [] });
   apiGetPostWatchlistInfo.mockResolvedValue({
     saveCount: 1,
     users: [],
@@ -351,5 +352,56 @@ describe('movieStore', () => {
     expect(apiGetPostWatchlistInfo).toHaveBeenCalledWith('post-sparse');
     expect(apiGetPostWatchLogs).toHaveBeenCalledWith('post-own');
     expect(apiGetPostWatchLogs).toHaveBeenCalledWith('post-sparse');
+  });
+
+  it('reloads watchlist for self unwatchlist events without category instead of clearing all categories', async () => {
+    movieStore.applyWatchlistItems([
+      {
+        id: 'watch-fav',
+        userId: 'user-1',
+        postId: 'post-multi',
+        category: 'Favorites',
+        createdAt: '2026-01-01T00:00:00Z',
+      },
+      {
+        id: 'watch-weekend',
+        userId: 'user-1',
+        postId: 'post-multi',
+        category: 'Weekend',
+        createdAt: '2026-01-01T00:00:00Z',
+      },
+    ]);
+
+    apiGetMyWatchlist.mockResolvedValue({
+      categories: [
+        {
+          name: 'Weekend',
+          items: [
+            {
+              id: 'watch-weekend',
+              userId: 'user-1',
+              postId: 'post-multi',
+              category: 'Weekend',
+              createdAt: '2026-01-01T00:00:00Z',
+            },
+          ],
+        },
+      ],
+    });
+
+    handleMovieUnwatchlistedEvent({
+      post_id: 'post-multi',
+      user_id: 'user-1',
+    });
+
+    await flushPromises();
+    await flushPromises();
+
+    const state = get(movieStore);
+    expect(state.watchlist.get('Favorites')).toBeUndefined();
+    const weekend = state.watchlist.get('Weekend') ?? [];
+    expect(weekend).toHaveLength(1);
+    expect(weekend[0].postId).toBe('post-multi');
+    expect(apiGetMyWatchlist).toHaveBeenCalledTimes(1);
   });
 });

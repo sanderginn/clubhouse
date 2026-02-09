@@ -642,8 +642,14 @@ export function handleMovieUnwatchlistedEvent(payload: unknown): void {
   }
 
   if (shouldHandleCurrentUserEvent(payload)) {
-    const category = extractCategoryName(payload) ?? undefined;
-    movieStore.applyUnwatchlist(postId, category);
+    const category = extractCategoryName(payload);
+    if (category) {
+      movieStore.applyUnwatchlist(postId, category);
+    } else {
+      // Backend movie_unwatchlisted events currently omit category.
+      // Reload the watchlist to avoid clearing all categories locally for this post.
+      void movieStore.loadWatchlist();
+    }
   }
 
   void refreshPostMovieStats(postId);
