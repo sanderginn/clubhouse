@@ -351,7 +351,7 @@ func parseGoodreadsBookID(segments []string) (string, bool) {
 }
 
 func parseAmazonASIN(segments []string) (string, bool) {
-	if len(segments) < 3 {
+	if len(segments) < 2 {
 		return "", false
 	}
 

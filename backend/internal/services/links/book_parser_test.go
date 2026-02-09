@@ -132,6 +132,44 @@ func TestParseBookMetadataAmazonURL(t *testing.T) {
 	}
 }
 
+func TestParseBookMetadataAmazonCanonicalDPURL(t *testing.T) {
+	originalFetchTitle := fetchBookPageTitleFunc
+	fetchBookPageTitleFunc = func(ctx context.Context, rawURL string) (string, error) {
+		t.Fatalf("unexpected title fetch for URL: %s", rawURL)
+		return "", nil
+	}
+	defer func() {
+		fetchBookPageTitleFunc = originalFetchTitle
+	}()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/isbn/B00TEST123.json" {
+			t.Fatalf("path = %q, want /isbn/B00TEST123.json", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"title":"Amazon Book",
+			"publish_date":"2020",
+			"number_of_pages":320,
+			"isbn_13":["9780441569595"],
+			"covers":[54321]
+		}`))
+	}))
+	defer server.Close()
+
+	client := newTestOpenLibraryClient(t, server.URL)
+	metadata, err := ParseBookMetadata(context.Background(), "https://www.amazon.com/dp/B00TEST123", client)
+	if err != nil {
+		t.Fatalf("ParseBookMetadata error: %v", err)
+	}
+	if metadata == nil {
+		t.Fatal("expected metadata")
+	}
+	if metadata.Title != "Amazon Book" {
+		t.Fatalf("Title = %q, want Amazon Book", metadata.Title)
+	}
+}
+
 func TestParseBookMetadataOpenLibraryWorkURL(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/works/OL45883W.json" {
