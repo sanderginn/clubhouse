@@ -23,7 +23,8 @@
     774,
     775,
     776,
-    777
+    777,
+    789
   ],
   "issues": [
     {
@@ -424,7 +425,7 @@
     {
       "issue_number": 789,
       "title": "Create watchlist_categories table migration",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -436,7 +437,9 @@
       "assigned_to": "agent-1770625193-19598",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770625193-19598",
       "branch": "feat/issue-789-create-watchlistcategories-table-migrati",
-      "claimed_at": "2026-02-09T08:19:53Z"
+      "claimed_at": "2026-02-09T08:19:53Z",
+      "pr_number": 810,
+      "completed_at": "2026-02-09T08:24:39Z"
     },
     {
       "issue_number": 790,
