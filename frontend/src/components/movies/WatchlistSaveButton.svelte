@@ -45,7 +45,9 @@
   const TOGGLE_DEBOUNCE_MS = 180;
 
   $: storeSavedCategoryNames = getSavedCategories($watchlistByCategory, postId);
-  $: storeReady = hasWatchlistLoadSettled || $watchlistByCategory.size > 0;
+  $: storeReady =
+    $watchlistByCategory.size > 0 ||
+    (hasWatchlistLoadSettled && !$movieStore.isLoadingWatchlist && !$movieStore.error);
   $: effectiveSavedCategories = storeReady ? storeSavedCategoryNames : Array.from(fallbackSelection);
   $: isSaved = storeReady ? storeSavedCategoryNames.length > 0 : fallbackSaved;
   $: categoryNames = buildCategoryList($sortedCategories, effectiveSavedCategories);

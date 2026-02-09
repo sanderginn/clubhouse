@@ -137,6 +137,24 @@ describe('WatchlistSaveButton', () => {
     expect(screen.getByLabelText('Classics')).toBeChecked();
   });
 
+  it('keeps initial saved state when initial watchlist load fails', async () => {
+    apiGetMyWatchlist.mockRejectedValue(new Error('Load failed'));
+
+    render(WatchlistSaveButton, {
+      postId: 'post-5',
+      initialSaved: true,
+      initialCategories: ['Favorites'],
+      saveCount: 2,
+    });
+
+    await tick();
+    await tick();
+
+    expect(screen.getByText('In List')).toBeInTheDocument();
+    expect(screen.queryByText('Add to List')).not.toBeInTheDocument();
+    expect(screen.getByTestId('watchlist-save-count')).toHaveTextContent('2');
+  });
+
   it('shows toast and reverts optimistic state on apply error', async () => {
     movieStore.setCategories([
       {
