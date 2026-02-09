@@ -461,7 +461,7 @@
     {
       "issue_number": 791,
       "title": "Create watch_logs table migration",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -469,7 +469,11 @@
         "movies",
         "database"
       ],
-      "priority": 28
+      "priority": 28,
+      "assigned_to": "agent-1770625515-26591",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770625515-26591",
+      "branch": "feat/issue-791-create-watchlogs-table-migration",
+      "claimed_at": "2026-02-09T08:25:15Z"
     },
     {
       "issue_number": 792,
