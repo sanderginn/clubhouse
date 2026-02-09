@@ -1591,6 +1591,239 @@
         "books"
       ],
       "priority": 94
+    },
+    {
+      "issue_number": 887,
+      "title": "[Podcasts] Add podcast section seed and ordering",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "backend",
+        "podcasts",
+        "database"
+      ],
+      "priority": 95
+    },
+    {
+      "issue_number": 888,
+      "title": "[Podcasts] Add podcast metadata model and validation for post links",
+      "status": "available",
+      "dependencies": [
+        887
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "podcasts"
+      ],
+      "priority": 96
+    },
+    {
+      "issue_number": 889,
+      "title": "[Podcasts] Implement show/episode auto-detection with explicit-selection fallback",
+      "status": "available",
+      "dependencies": [
+        888
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "podcasts"
+      ],
+      "priority": 97
+    },
+    {
+      "issue_number": 890,
+      "title": "[Podcasts] Persist and return podcast metadata in create/update/get feed flows",
+      "status": "available",
+      "dependencies": [
+        889
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "podcasts"
+      ],
+      "priority": 98
+    },
+    {
+      "issue_number": 891,
+      "title": "[Podcasts] Add podcast_saves table migration",
+      "status": "available",
+      "dependencies": [
+        887
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "podcasts",
+        "database"
+      ],
+      "priority": 99
+    },
+    {
+      "issue_number": 892,
+      "title": "[Podcasts] Create PodcastSave service with section guard and audit logging",
+      "status": "available",
+      "dependencies": [
+        891,
+        890
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "podcasts"
+      ],
+      "priority": 100
+    },
+    {
+      "issue_number": 893,
+      "title": "[Podcasts] Add podcast save handlers and register routes",
+      "status": "available",
+      "dependencies": [
+        892
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "podcasts"
+      ],
+      "priority": 101
+    },
+    {
+      "issue_number": 894,
+      "title": "[Podcasts] Add recent podcasts section endpoint",
+      "status": "available",
+      "dependencies": [
+        890
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "podcasts"
+      ],
+      "priority": 102
+    },
+    {
+      "issue_number": 895,
+      "title": "[Podcasts] Add frontend section type/icon and app-level podcasts container mount",
+      "status": "available",
+      "dependencies": [
+        887
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "podcasts"
+      ],
+      "priority": 103
+    },
+    {
+      "issue_number": 896,
+      "title": "[Podcasts] Extend frontend API/post mapper for podcast metadata and detection errors",
+      "status": "available",
+      "dependencies": [
+        889,
+        890
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "podcasts"
+      ],
+      "priority": 104
+    },
+    {
+      "issue_number": 897,
+      "title": "[Podcasts] Add podcast fields to PostForm (kind selector + highlight episodes editor)",
+      "status": "available",
+      "dependencies": [
+        896
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "podcasts"
+      ],
+      "priority": 105
+    },
+    {
+      "issue_number": 898,
+      "title": "[Podcasts] Render podcast metadata in PostCard",
+      "status": "available",
+      "dependencies": [
+        896
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "podcasts"
+      ],
+      "priority": 106
+    },
+    {
+      "issue_number": 899,
+      "title": "[Podcasts] Add podcast save API client and podcastStore",
+      "status": "available",
+      "dependencies": [
+        893
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "podcasts"
+      ],
+      "priority": 107
+    },
+    {
+      "issue_number": 900,
+      "title": "[Podcasts] Add save-for-later button to podcast posts",
+      "status": "available",
+      "dependencies": [
+        898,
+        899
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "podcasts"
+      ],
+      "priority": 108
+    },
+    {
+      "issue_number": 901,
+      "title": "[Podcasts] Build Podcasts top widget (mixed recent + section saved view)",
+      "status": "available",
+      "dependencies": [
+        894,
+        895,
+        899
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "podcasts"
+      ],
+      "priority": 109
+    },
+    {
+      "issue_number": 902,
+      "title": "[Podcasts] Add integration and E2E coverage for podcast workflows",
+      "status": "available",
+      "dependencies": [
+        897,
+        900,
+        901
+      ],
+      "labels": [
+        "enhancement",
+        "backend",
+        "frontend",
+        "podcasts",
+        "testing"
+      ],
+      "priority": 110
     }
   ]
 }
