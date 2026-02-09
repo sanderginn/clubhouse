@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, fireEvent, screen, cleanup } from '@testing-library/svelte';
-import { authStore, notificationStore, sectionStore } from '../../stores';
+import { authStore, notificationStore, sectionStore, uiStore } from '../../stores';
 
 const { default: Nav } = await import('../Nav.svelte');
 
 beforeEach(() => {
+  uiStore.setActiveView('feed');
   sectionStore.setSections([
     { id: 'section-1', name: 'Music', type: 'music', icon: '🎵', slug: 'music' },
     { id: 'section-2', name: 'Books', type: 'book', icon: '📚', slug: 'books' },
@@ -68,5 +69,23 @@ describe('Nav', () => {
 
     expect(screen.getByLabelText('Pending registrations')).toBeInTheDocument();
     expect(screen.getByText('1')).toBeInTheDocument();
+  });
+
+  it('shows and activates the watchlist navigation item', async () => {
+    const pushStateSpy = vi.spyOn(window.history, 'pushState');
+    render(Nav);
+
+    const watchlistButton = screen.getByRole('button', { name: 'My Movies' });
+    await fireEvent.click(watchlistButton);
+
+    expect(pushStateSpy).toHaveBeenCalledWith(null, '', '/watchlist');
+    expect(watchlistButton).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('hides watchlist navigation when logged out', () => {
+    authStore.setUser(null);
+    render(Nav);
+
+    expect(screen.queryByRole('button', { name: 'My Movies' })).not.toBeInTheDocument();
   });
 });

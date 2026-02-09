@@ -5,9 +5,11 @@ import {
   buildSectionHref,
   buildStandaloneThreadHref,
   buildSettingsHref,
+  buildWatchlistHref,
   buildThreadHref,
   isAdminPath,
   isSettingsPath,
+  isWatchlistPath,
   parseStandaloneThreadPostId,
   parseSectionSlug,
   parseThreadCommentId,
@@ -61,6 +63,13 @@ describe('routeNavigation', () => {
     expect(isSettingsPath('/settings')).toBe(true);
     expect(isSettingsPath('/settings/profile')).toBe(true);
     expect(isSettingsPath('/admin')).toBe(false);
+  });
+
+  it('builds watchlist hrefs and recognizes watchlist paths', () => {
+    expect(buildWatchlistHref()).toBe('/watchlist');
+    expect(isWatchlistPath('/watchlist')).toBe(true);
+    expect(isWatchlistPath('/watchlist/favorites')).toBe(true);
+    expect(isWatchlistPath('/sections/movies')).toBe(false);
   });
 
   it('builds feed hrefs from section slugs', () => {

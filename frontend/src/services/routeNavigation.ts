@@ -3,6 +3,7 @@ const THREAD_ROOT_PATH = '/posts/';
 const THREAD_PATH_SEGMENT = '/posts/';
 const ADMIN_PATH = '/admin';
 const SETTINGS_PATH = '/settings';
+const WATCHLIST_PATH = '/watchlist';
 
 export type SearchHistoryState = {
   query: string;
@@ -78,12 +79,20 @@ export function buildSettingsHref(): string {
   return SETTINGS_PATH;
 }
 
+export function buildWatchlistHref(): string {
+  return WATCHLIST_PATH;
+}
+
 export function isAdminPath(pathname: string): boolean {
   return pathname === ADMIN_PATH || pathname.startsWith(`${ADMIN_PATH}/`);
 }
 
 export function isSettingsPath(pathname: string): boolean {
   return pathname === SETTINGS_PATH || pathname.startsWith(`${SETTINGS_PATH}/`);
+}
+
+export function isWatchlistPath(pathname: string): boolean {
+  return pathname === WATCHLIST_PATH || pathname.startsWith(`${WATCHLIST_PATH}/`);
 }
 
 export function buildFeedHref(sectionSlug?: string | null): string {
