@@ -549,6 +549,301 @@ func TestGetFeedIncludesRecipeStatsForRecipeSection(t *testing.T) {
 	}
 }
 
+func TestGetPostByIDIncludesMovieStats(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	viewerID := testutil.CreateTestUser(t, db, "moviestatsviewer", "moviestatsviewer@test.com", false, true)
+	otherID := testutil.CreateTestUser(t, db, "moviestatsother", "moviestatsother@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Movies", "movie")
+	postID := testutil.CreateTestPost(t, db, viewerID, sectionID, "Movie content")
+
+	_, err := db.ExecContext(context.Background(), `
+		INSERT INTO watchlist_items (id, user_id, post_id, category, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(viewerID), uuid.MustParse(postID), "Favorites")
+	if err != nil {
+		t.Fatalf("failed to insert watchlist item: %v", err)
+	}
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO watchlist_items (id, user_id, post_id, category, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(viewerID), uuid.MustParse(postID), "Weekend")
+	if err != nil {
+		t.Fatalf("failed to insert watchlist item: %v", err)
+	}
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO watchlist_items (id, user_id, post_id, category, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(otherID), uuid.MustParse(postID), "Queue")
+	if err != nil {
+		t.Fatalf("failed to insert watchlist item: %v", err)
+	}
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO watch_logs (id, user_id, post_id, rating, watched_at, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now(), now())
+	`, uuid.MustParse(viewerID), uuid.MustParse(postID), 4)
+	if err != nil {
+		t.Fatalf("failed to insert watch log: %v", err)
+	}
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO watch_logs (id, user_id, post_id, rating, watched_at, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now(), now())
+	`, uuid.MustParse(otherID), uuid.MustParse(postID), 5)
+	if err != nil {
+		t.Fatalf("failed to insert watch log: %v", err)
+	}
+
+	service := NewPostService(db)
+	post, err := service.GetPostByID(context.Background(), uuid.MustParse(postID), uuid.MustParse(viewerID))
+	if err != nil {
+		t.Fatalf("GetPostByID failed: %v", err)
+	}
+
+	if post.MovieStats == nil {
+		t.Fatalf("expected movie stats to be populated")
+	}
+	if post.MovieStats.WatchlistCount != 3 {
+		t.Fatalf("expected watchlist count 3, got %d", post.MovieStats.WatchlistCount)
+	}
+	if post.MovieStats.WatchCount != 2 {
+		t.Fatalf("expected watch count 2, got %d", post.MovieStats.WatchCount)
+	}
+	if post.MovieStats.AvgRating == nil || *post.MovieStats.AvgRating != 4.5 {
+		t.Fatalf("expected avg rating 4.5, got %v", post.MovieStats.AvgRating)
+	}
+	if !post.MovieStats.ViewerWatchlisted {
+		t.Fatalf("expected viewer_watchlisted true")
+	}
+	if !post.MovieStats.ViewerWatched {
+		t.Fatalf("expected viewer_watched true")
+	}
+	if post.MovieStats.ViewerRating == nil || *post.MovieStats.ViewerRating != 4 {
+		t.Fatalf("expected viewer rating 4, got %v", post.MovieStats.ViewerRating)
+	}
+	if len(post.MovieStats.ViewerCategories) != 2 {
+		t.Fatalf("expected 2 viewer categories, got %d", len(post.MovieStats.ViewerCategories))
+	}
+	if post.MovieStats.ViewerCategories[0] != "Favorites" || post.MovieStats.ViewerCategories[1] != "Weekend" {
+		t.Fatalf("expected viewer categories [Favorites Weekend], got %v", post.MovieStats.ViewerCategories)
+	}
+}
+
+func TestGetPostByIDNonMovieOmitsMovieStats(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "nonmovieuser", "nonmovieuser@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "General", "general")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "General content")
+
+	service := NewPostService(db)
+	post, err := service.GetPostByID(context.Background(), uuid.MustParse(postID), uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("GetPostByID failed: %v", err)
+	}
+
+	if post.MovieStats != nil {
+		t.Fatalf("expected movie stats to be omitted for non-movie posts")
+	}
+}
+
+func TestGetFeedIncludesMovieStatsForMovieSection(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	viewerID := testutil.CreateTestUser(t, db, "feedmovieviewer", "feedmovieviewer@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Movies", "movie")
+	postIDWithStats := testutil.CreateTestPost(t, db, viewerID, sectionID, "Movie with stats")
+	postIDNoStats := testutil.CreateTestPost(t, db, viewerID, sectionID, "Movie without stats")
+
+	_, err := db.ExecContext(context.Background(), `
+		INSERT INTO watchlist_items (id, user_id, post_id, category, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(viewerID), uuid.MustParse(postIDWithStats), "Watch Soon")
+	if err != nil {
+		t.Fatalf("failed to insert watchlist item: %v", err)
+	}
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO watch_logs (id, user_id, post_id, rating, watched_at, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now(), now())
+	`, uuid.MustParse(viewerID), uuid.MustParse(postIDWithStats), 5)
+	if err != nil {
+		t.Fatalf("failed to insert watch log: %v", err)
+	}
+
+	service := NewPostService(db)
+	feed, err := service.GetFeed(context.Background(), uuid.MustParse(sectionID), nil, 10, uuid.MustParse(viewerID))
+	if err != nil {
+		t.Fatalf("GetFeed failed: %v", err)
+	}
+
+	postByID := make(map[string]*models.Post)
+	for _, post := range feed.Posts {
+		postByID[post.ID.String()] = post
+	}
+
+	movieWithStats := postByID[postIDWithStats]
+	if movieWithStats == nil || movieWithStats.MovieStats == nil {
+		t.Fatalf("expected movie stats for post with stats")
+	}
+	if movieWithStats.MovieStats.WatchlistCount != 1 {
+		t.Fatalf("expected watchlist count 1, got %d", movieWithStats.MovieStats.WatchlistCount)
+	}
+	if movieWithStats.MovieStats.WatchCount != 1 {
+		t.Fatalf("expected watch count 1, got %d", movieWithStats.MovieStats.WatchCount)
+	}
+	if movieWithStats.MovieStats.AvgRating == nil || *movieWithStats.MovieStats.AvgRating != 5 {
+		t.Fatalf("expected avg rating 5, got %v", movieWithStats.MovieStats.AvgRating)
+	}
+	if len(movieWithStats.MovieStats.ViewerCategories) != 1 || movieWithStats.MovieStats.ViewerCategories[0] != "Watch Soon" {
+		t.Fatalf("expected viewer categories [Watch Soon], got %v", movieWithStats.MovieStats.ViewerCategories)
+	}
+
+	movieNoStats := postByID[postIDNoStats]
+	if movieNoStats == nil || movieNoStats.MovieStats == nil {
+		t.Fatalf("expected movie stats for post without stats")
+	}
+	if movieNoStats.MovieStats.WatchlistCount != 0 || movieNoStats.MovieStats.WatchCount != 0 {
+		t.Fatalf("expected zero stats for post without stats, got %+v", movieNoStats.MovieStats)
+	}
+	if movieNoStats.MovieStats.AvgRating != nil {
+		t.Fatalf("expected nil avg rating for post without stats, got %v", movieNoStats.MovieStats.AvgRating)
+	}
+	if movieNoStats.MovieStats.ViewerRating != nil {
+		t.Fatalf("expected nil viewer rating for post without stats, got %v", movieNoStats.MovieStats.ViewerRating)
+	}
+}
+
+func TestGetPostsByUserIDIncludesMovieStatsForMovieAndSeries(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	authorID := testutil.CreateTestUser(t, db, "movieauthor", "movieauthor@test.com", false, true)
+	viewerID := testutil.CreateTestUser(t, db, "movieviewer", "movieviewer@test.com", false, true)
+	movieSectionID := testutil.CreateTestSection(t, db, "Movies", "movie")
+	seriesSectionID := testutil.CreateTestSection(t, db, "Series", "series")
+	generalSectionID := testutil.CreateTestSection(t, db, "General", "general")
+
+	moviePostID := testutil.CreateTestPost(t, db, authorID, movieSectionID, "Movie post")
+	seriesPostID := testutil.CreateTestPost(t, db, authorID, seriesSectionID, "Series post")
+	generalPostID := testutil.CreateTestPost(t, db, authorID, generalSectionID, "General post")
+
+	_, err := db.ExecContext(context.Background(), `
+		INSERT INTO watchlist_items (id, user_id, post_id, category, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(viewerID), uuid.MustParse(moviePostID), "Top Picks")
+	if err != nil {
+		t.Fatalf("failed to insert movie watchlist item: %v", err)
+	}
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO watchlist_items (id, user_id, post_id, category, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(viewerID), uuid.MustParse(moviePostID), "Weekend")
+	if err != nil {
+		t.Fatalf("failed to insert movie watchlist item: %v", err)
+	}
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO watchlist_items (id, user_id, post_id, category, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(authorID), uuid.MustParse(seriesPostID), "Bingeworthy")
+	if err != nil {
+		t.Fatalf("failed to insert series watchlist item: %v", err)
+	}
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO watch_logs (id, user_id, post_id, rating, watched_at, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now(), now())
+	`, uuid.MustParse(viewerID), uuid.MustParse(moviePostID), 4)
+	if err != nil {
+		t.Fatalf("failed to insert movie watch log: %v", err)
+	}
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO watch_logs (id, user_id, post_id, rating, watched_at, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now(), now())
+	`, uuid.MustParse(authorID), uuid.MustParse(moviePostID), 5)
+	if err != nil {
+		t.Fatalf("failed to insert movie watch log: %v", err)
+	}
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO watch_logs (id, user_id, post_id, rating, watched_at, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now(), now())
+	`, uuid.MustParse(viewerID), uuid.MustParse(seriesPostID), 3)
+	if err != nil {
+		t.Fatalf("failed to insert series watch log: %v", err)
+	}
+
+	service := NewPostService(db)
+	feed, err := service.GetPostsByUserID(context.Background(), uuid.MustParse(authorID), nil, 10, uuid.MustParse(viewerID))
+	if err != nil {
+		t.Fatalf("GetPostsByUserID failed: %v", err)
+	}
+
+	postByID := make(map[string]*models.Post)
+	for _, post := range feed.Posts {
+		postByID[post.ID.String()] = post
+	}
+
+	moviePost := postByID[moviePostID]
+	if moviePost == nil || moviePost.MovieStats == nil {
+		t.Fatalf("expected movie stats for movie post")
+	}
+	if moviePost.MovieStats.WatchlistCount != 2 {
+		t.Fatalf("expected movie watchlist count 2, got %d", moviePost.MovieStats.WatchlistCount)
+	}
+	if moviePost.MovieStats.WatchCount != 2 {
+		t.Fatalf("expected movie watch count 2, got %d", moviePost.MovieStats.WatchCount)
+	}
+	if moviePost.MovieStats.AvgRating == nil || *moviePost.MovieStats.AvgRating != 4.5 {
+		t.Fatalf("expected movie avg rating 4.5, got %v", moviePost.MovieStats.AvgRating)
+	}
+	if !moviePost.MovieStats.ViewerWatchlisted {
+		t.Fatalf("expected movie viewer_watchlisted true")
+	}
+	if !moviePost.MovieStats.ViewerWatched {
+		t.Fatalf("expected movie viewer_watched true")
+	}
+	if moviePost.MovieStats.ViewerRating == nil || *moviePost.MovieStats.ViewerRating != 4 {
+		t.Fatalf("expected movie viewer rating 4, got %v", moviePost.MovieStats.ViewerRating)
+	}
+	if len(moviePost.MovieStats.ViewerCategories) != 2 || moviePost.MovieStats.ViewerCategories[0] != "Top Picks" || moviePost.MovieStats.ViewerCategories[1] != "Weekend" {
+		t.Fatalf("expected movie viewer categories [Top Picks Weekend], got %v", moviePost.MovieStats.ViewerCategories)
+	}
+
+	seriesPost := postByID[seriesPostID]
+	if seriesPost == nil || seriesPost.MovieStats == nil {
+		t.Fatalf("expected movie stats for series post")
+	}
+	if seriesPost.MovieStats.WatchlistCount != 1 {
+		t.Fatalf("expected series watchlist count 1, got %d", seriesPost.MovieStats.WatchlistCount)
+	}
+	if seriesPost.MovieStats.WatchCount != 1 {
+		t.Fatalf("expected series watch count 1, got %d", seriesPost.MovieStats.WatchCount)
+	}
+	if seriesPost.MovieStats.AvgRating == nil || *seriesPost.MovieStats.AvgRating != 3 {
+		t.Fatalf("expected series avg rating 3, got %v", seriesPost.MovieStats.AvgRating)
+	}
+	if seriesPost.MovieStats.ViewerWatchlisted {
+		t.Fatalf("expected series viewer_watchlisted false")
+	}
+	if !seriesPost.MovieStats.ViewerWatched {
+		t.Fatalf("expected series viewer_watched true")
+	}
+	if seriesPost.MovieStats.ViewerRating == nil || *seriesPost.MovieStats.ViewerRating != 3 {
+		t.Fatalf("expected series viewer rating 3, got %v", seriesPost.MovieStats.ViewerRating)
+	}
+	if len(seriesPost.MovieStats.ViewerCategories) != 0 {
+		t.Fatalf("expected no series viewer categories, got %v", seriesPost.MovieStats.ViewerCategories)
+	}
+
+	generalPost := postByID[generalPostID]
+	if generalPost == nil {
+		t.Fatalf("expected general post in response")
+	}
+	if generalPost.MovieStats != nil {
+		t.Fatalf("expected movie stats omitted for non-movie/series post")
+	}
+}
+
 func TestCreatePostRequiresContentOrLinks(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })

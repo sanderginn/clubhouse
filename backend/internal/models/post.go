@@ -27,6 +27,7 @@ type Post struct {
 	ReactionCounts  map[string]int `json:"reaction_counts,omitempty"`
 	ViewerReactions []string       `json:"viewer_reactions,omitempty"`
 	RecipeStats     *RecipeStats   `json:"recipe_stats,omitempty"`
+	MovieStats      *MovieStats    `json:"movie_stats,omitempty"`
 }
 
 type RecipeStats struct {
@@ -36,6 +37,16 @@ type RecipeStats struct {
 	ViewerSaved      bool     `json:"viewer_saved"`
 	ViewerCooked     bool     `json:"viewer_cooked"`
 	ViewerCategories []string `json:"viewer_categories,omitempty"`
+}
+
+type MovieStats struct {
+	WatchlistCount    int      `json:"watchlist_count"`
+	WatchCount        int      `json:"watch_count"`
+	AvgRating         *float64 `json:"avg_rating,omitempty"`
+	ViewerWatchlisted bool     `json:"viewer_watchlisted"`
+	ViewerWatched     bool     `json:"viewer_watched"`
+	ViewerRating      *int     `json:"viewer_rating,omitempty"`
+	ViewerCategories  []string `json:"viewer_categories,omitempty"`
 }
 
 // Link represents metadata for a URL
