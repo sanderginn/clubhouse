@@ -94,6 +94,18 @@ type movieUnwatchlistedEventData struct {
 	UserID uuid.UUID `json:"user_id"`
 }
 
+type movieWatchedEventData struct {
+	PostID   uuid.UUID `json:"post_id"`
+	UserID   uuid.UUID `json:"user_id"`
+	Username string    `json:"username"`
+	Rating   int       `json:"rating"`
+}
+
+type movieWatchRemovedEventData struct {
+	PostID uuid.UUID `json:"post_id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
 func publishEvent(ctx context.Context, redisClient *redis.Client, channel string, eventType string, data any) error {
 	if redisClient == nil {
 		return nil

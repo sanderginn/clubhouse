@@ -32,6 +32,16 @@ type UpdateWatchLogRequest struct {
 	Notes  *string `json:"notes,omitempty"`
 }
 
+// CreateWatchLogResponse represents the response for creating a watch log.
+type CreateWatchLogResponse struct {
+	WatchLog WatchLog `json:"watch_log"`
+}
+
+// UpdateWatchLogResponse represents the response for updating a watch log.
+type UpdateWatchLogResponse struct {
+	WatchLog WatchLog `json:"watch_log"`
+}
+
 // WatchLogUser represents user information attached to a watch log response.
 type WatchLogUser struct {
 	ID                uuid.UUID `json:"id"`
@@ -58,4 +68,10 @@ type PostWatchLogsResponse struct {
 	Logs          []WatchLogResponse `json:"logs"`
 	ViewerWatched bool               `json:"viewer_watched"`
 	ViewerRating  *int               `json:"viewer_rating,omitempty"`
+}
+
+// ListWatchLogsResponse represents the response for listing a user's watch logs.
+type ListWatchLogsResponse struct {
+	WatchLogs  []WatchLogWithPost `json:"watch_logs"`
+	NextCursor *string            `json:"next_cursor,omitempty"`
 }
