@@ -14,6 +14,12 @@ import {
   handleRecipeSavedEvent,
   handleRecipeUnsavedEvent,
 } from './recipeStore';
+import {
+  handleMovieWatchedEvent,
+  handleMovieWatchlistedEvent,
+  handleMovieWatchRemovedEvent,
+  handleMovieUnwatchlistedEvent,
+} from './movieStore';
 import { api } from '../services/api';
 import { mapApiComment } from './commentMapper';
 import { mapApiPost, normalizeLinkMetadata, type ApiPost } from './postMapper';
@@ -378,6 +384,22 @@ function connect() {
       }
       case 'recipe_category_deleted': {
         handleRecipeCategoryDeletedEvent(parsed.data);
+        break;
+      }
+      case 'movie_watchlisted': {
+        handleMovieWatchlistedEvent(parsed.data);
+        break;
+      }
+      case 'movie_unwatchlisted': {
+        handleMovieUnwatchlistedEvent(parsed.data);
+        break;
+      }
+      case 'movie_watched': {
+        handleMovieWatchedEvent(parsed.data);
+        break;
+      }
+      case 'movie_watch_removed': {
+        handleMovieWatchRemovedEvent(parsed.data);
         break;
       }
       default:

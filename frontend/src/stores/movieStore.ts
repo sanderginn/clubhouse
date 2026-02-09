@@ -9,7 +9,7 @@ import {
 } from '../services/api';
 import { currentUser } from './authStore';
 import { mapApiPost, type ApiPost } from './postMapper';
-import type { Post } from './postStore';
+import { postStore, type Post } from './postStore';
 
 const DEFAULT_WATCHLIST_CATEGORY = 'Uncategorized';
 
@@ -222,7 +222,21 @@ function extractPostId(payload: unknown): string | null {
 
   const record = payload as Record<string, unknown>;
   const postId = record.post_id ?? record.postId;
-  return typeof postId === 'string' && postId.length > 0 ? postId : null;
+  if (typeof postId === 'string' && postId.length > 0) {
+    return postId;
+  }
+
+  const nestedWatchlistItem =
+    record.watchlist_item ?? record.watchlistItem ?? record.watch_log ?? record.watchLog ?? record.log;
+  if (nestedWatchlistItem && typeof nestedWatchlistItem === 'object') {
+    const nestedRecord = nestedWatchlistItem as Record<string, unknown>;
+    const nestedPostID = nestedRecord.post_id ?? nestedRecord.postId;
+    if (typeof nestedPostID === 'string' && nestedPostID.length > 0) {
+      return nestedPostID;
+    }
+  }
+
+  return null;
 }
 
 function extractUserId(payload: unknown): string | null {
@@ -245,10 +259,108 @@ function extractCategoryName(payload: unknown): string | null {
   return typeof category === 'string' && category.length > 0 ? category : null;
 }
 
+function extractCategories(payload: unknown): string[] {
+  if (!payload || typeof payload !== 'object') {
+    return [];
+  }
+
+  const record = payload as Record<string, unknown>;
+  if (Array.isArray(record.categories)) {
+    return record.categories
+      .filter((value): value is string => typeof value === 'string')
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
+  }
+
+  const category = extractCategoryName(payload);
+  return category ? [category] : [];
+}
+
+function extractRating(payload: unknown): number | null {
+  if (!payload || typeof payload !== 'object') {
+    return null;
+  }
+
+  const record = payload as Record<string, unknown>;
+  const rating = record.rating;
+  return typeof rating === 'number' && Number.isFinite(rating) ? rating : null;
+}
+
 function shouldHandleCurrentUserEvent(payload: unknown): boolean {
   const actingUserID = extractUserId(payload);
   const currentUserID = get(currentUser)?.id;
   return !!actingUserID && !!currentUserID && actingUserID === currentUserID;
+}
+
+function buildWatchlistItemsFromCategories(payload: unknown): WatchlistItem[] {
+  const postId = extractPostId(payload);
+  const actingUserID = extractUserId(payload);
+  const currentUserID = get(currentUser)?.id;
+  if (!postId || !actingUserID || !currentUserID || actingUserID !== currentUserID) {
+    return [];
+  }
+
+  const categories = extractCategories(payload);
+  if (categories.length === 0) {
+    return [];
+  }
+
+  const createdAt = new Date().toISOString();
+  return categories.map((category) => ({
+    id: `ws-${postId}-${category}-${Date.now()}`,
+    userId: currentUserID,
+    postId,
+    category,
+    createdAt,
+  }));
+}
+
+function buildWatchLogFromPayload(payload: unknown): WatchLog | null {
+  const postId = extractPostId(payload);
+  const actingUserID = extractUserId(payload);
+  const currentUserID = get(currentUser)?.id;
+  const rating = extractRating(payload);
+  if (!postId || !actingUserID || !currentUserID || actingUserID !== currentUserID) {
+    return null;
+  }
+  if (rating === null) {
+    return null;
+  }
+
+  return {
+    id: `ws-watch-${postId}-${Date.now()}`,
+    userId: currentUserID,
+    postId,
+    rating,
+    watchedAt: new Date().toISOString(),
+  };
+}
+
+async function refreshPostMovieStats(postId: string): Promise<void> {
+  try {
+    const [watchlistInfo, watchLogInfo] = await Promise.all([
+      api.getPostWatchlistInfo(postId),
+      api.getPostWatchLogs(postId),
+    ]);
+
+    postStore.setMovieStats(postId, {
+      watchlistCount: watchlistInfo.saveCount ?? 0,
+      watchCount: watchLogInfo.watchCount ?? 0,
+      averageRating:
+        typeof watchLogInfo.avgRating === 'number' && Number.isFinite(watchLogInfo.avgRating)
+          ? watchLogInfo.avgRating
+          : null,
+      viewerWatchlisted: watchlistInfo.viewerSaved ?? false,
+      viewerWatched: watchLogInfo.viewerWatched ?? false,
+      viewerRating:
+        typeof watchLogInfo.viewerRating === 'number' && Number.isFinite(watchLogInfo.viewerRating)
+          ? watchLogInfo.viewerRating
+          : null,
+      viewerCategories: watchlistInfo.viewerCategories ?? [],
+    });
+  } catch {
+    // Ignore transient refresh errors; future events or feed refresh will reconcile.
+  }
 }
 
 const initialState: MovieStoreState = {
@@ -407,6 +519,7 @@ function createMovieStore() {
       try {
         const response = await api.addToWatchlist(postId, categories);
         movieStore.applyWatchlistItems((response.watchlistItems ?? []).map(mapApiWatchlistItem));
+        void refreshPostMovieStats(postId);
       } catch (error) {
         movieStore.setError(error instanceof Error ? error.message : 'Failed to add to watchlist');
       }
@@ -415,6 +528,7 @@ function createMovieStore() {
       try {
         await api.removeFromWatchlist(postId, category);
         movieStore.applyUnwatchlist(postId, category);
+        void refreshPostMovieStats(postId);
       } catch (error) {
         movieStore.setError(
           error instanceof Error ? error.message : 'Failed to remove from watchlist'
@@ -464,6 +578,7 @@ function createMovieStore() {
       try {
         const response = await api.logWatch(postId, rating, notes);
         movieStore.applyWatchLog(mapApiWatchLog(response.watchLog));
+        void refreshPostMovieStats(postId);
       } catch (error) {
         movieStore.setError(error instanceof Error ? error.message : 'Failed to log watch');
       }
@@ -472,6 +587,7 @@ function createMovieStore() {
       try {
         const response = await api.updateWatchLog(postId, { rating, notes });
         movieStore.applyWatchLog(mapApiWatchLog(response.watchLog));
+        void refreshPostMovieStats(postId);
       } catch (error) {
         movieStore.setError(error instanceof Error ? error.message : 'Failed to update watch log');
       }
@@ -480,6 +596,7 @@ function createMovieStore() {
       try {
         await api.removeWatchLog(postId);
         movieStore.applyWatchLogRemoval(postId);
+        void refreshPostMovieStats(postId);
       } catch (error) {
         movieStore.setError(error instanceof Error ? error.message : 'Failed to remove watch log');
       }
@@ -501,50 +618,69 @@ export const sortedCategories = derived(movieStore, ($store) =>
 );
 
 export function handleMovieWatchlistedEvent(payload: unknown): void {
-  if (!shouldHandleCurrentUserEvent(payload)) {
+  const postId = extractPostId(payload);
+  if (!postId) {
     return;
   }
 
-  const watchlistItems = extractWatchlistItems(payload).map(mapApiWatchlistItem);
-  if (watchlistItems.length === 0) {
-    return;
+  if (shouldHandleCurrentUserEvent(payload)) {
+    const watchlistItems = extractWatchlistItems(payload).map(mapApiWatchlistItem);
+    const fallbackItems =
+      watchlistItems.length > 0 ? watchlistItems : buildWatchlistItemsFromCategories(payload);
+    if (fallbackItems.length > 0) {
+      movieStore.applyWatchlistItems(fallbackItems);
+    }
   }
-  movieStore.applyWatchlistItems(watchlistItems);
+
+  void refreshPostMovieStats(postId);
 }
 
 export function handleMovieUnwatchlistedEvent(payload: unknown): void {
-  if (!shouldHandleCurrentUserEvent(payload)) {
-    return;
-  }
-
   const postId = extractPostId(payload);
   if (!postId) {
     return;
   }
-  const category = extractCategoryName(payload) ?? undefined;
-  movieStore.applyUnwatchlist(postId, category);
+
+  if (shouldHandleCurrentUserEvent(payload)) {
+    const category = extractCategoryName(payload);
+    if (category) {
+      movieStore.applyUnwatchlist(postId, category);
+    } else {
+      // Backend movie_unwatchlisted events currently omit category.
+      // Reload the watchlist to avoid clearing all categories locally for this post.
+      void movieStore.loadWatchlist();
+    }
+  }
+
+  void refreshPostMovieStats(postId);
 }
 
 export function handleMovieWatchedEvent(payload: unknown): void {
-  if (!shouldHandleCurrentUserEvent(payload)) {
-    return;
-  }
-
-  const watchLog = extractWatchLog(payload);
-  if (!watchLog) {
-    return;
-  }
-  movieStore.applyWatchLog(mapApiWatchLog(watchLog));
-}
-
-export function handleMovieWatchRemovedEvent(payload: unknown): void {
-  if (!shouldHandleCurrentUserEvent(payload)) {
-    return;
-  }
-
   const postId = extractPostId(payload);
   if (!postId) {
     return;
   }
-  movieStore.applyWatchLogRemoval(postId);
+
+  if (shouldHandleCurrentUserEvent(payload)) {
+    const watchLog = extractWatchLog(payload);
+    const mappedWatchLog = watchLog ? mapApiWatchLog(watchLog) : buildWatchLogFromPayload(payload);
+    if (mappedWatchLog) {
+      movieStore.applyWatchLog(mappedWatchLog);
+    }
+  }
+
+  void refreshPostMovieStats(postId);
+}
+
+export function handleMovieWatchRemovedEvent(payload: unknown): void {
+  const postId = extractPostId(payload);
+  if (!postId) {
+    return;
+  }
+
+  if (shouldHandleCurrentUserEvent(payload)) {
+    movieStore.applyWatchLogRemoval(postId);
+  }
+
+  void refreshPostMovieStats(postId);
 }

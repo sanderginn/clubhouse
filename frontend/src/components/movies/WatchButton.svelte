@@ -2,6 +2,7 @@
   import { onDestroy, tick } from 'svelte';
   import { get } from 'svelte/store';
   import { movieStore, type WatchLog } from '../../stores/movieStore';
+  import { postStore } from '../../stores/postStore';
   import RatingStars from '../recipes/RatingStars.svelte';
 
   export let postId: string;
@@ -124,9 +125,12 @@
     formError = '';
 
     const previous = activeWatchLog;
+    const previousWatched = Boolean(previous);
+    const previousRating = previous?.rating ?? null;
     const notes = notesValue.trim();
 
     optimisticWatchLog = buildOptimisticLog();
+    postStore.setMovieWatchState(postId, true, ratingValue);
     movieStore.setError(null);
 
     try {
@@ -139,6 +143,7 @@
       const { error } = get(movieStore);
       if (error) {
         optimisticWatchLog = previous ?? null;
+        postStore.setMovieWatchState(postId, previousWatched, previousRating);
         formError = error;
         showToast(error);
       } else {
@@ -160,7 +165,9 @@
     formError = '';
 
     const previous = activeWatchLog;
+    const previousRating = previous.rating ?? null;
     optimisticWatchLog = null;
+    postStore.setMovieWatchState(postId, false, null);
     movieStore.setError(null);
 
     try {
@@ -169,6 +176,7 @@
       const { error } = get(movieStore);
       if (error) {
         optimisticWatchLog = previous;
+        postStore.setMovieWatchState(postId, true, previousRating);
         formError = error;
         showToast(error);
       } else {
