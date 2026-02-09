@@ -931,14 +931,18 @@
     {
       "issue_number": 837,
       "title": "WatchlistSaveButton \"Create category\" closes dropdown instead of showing inline input",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "bug",
         "frontend",
         "movies"
       ],
-      "priority": 50
+      "priority": 50,
+      "assigned_to": "agent-1770647649-61912",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770647649-61912",
+      "branch": "fix/issue-837-watchlistsavebutton-create-category-clos",
+      "claimed_at": "2026-02-09T14:34:09Z"
     }
   ]
 }
