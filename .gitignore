@@ -1,6 +1,7 @@
 .worktrees/
 tmp/
 .env.production
+.env
 clubhouse-server
 uploads/
 .agents
