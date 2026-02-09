@@ -39,6 +39,7 @@
     798,
     799,
     800,
+    801,
     806
   ],
   "issues": [
@@ -689,7 +690,7 @@
     {
       "issue_number": 801,
       "title": "Create movieStore",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         800
       ],
@@ -702,7 +703,9 @@
       "assigned_to": "agent-1770631208-199",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770631208-199",
       "branch": "feat/issue-801-create-moviestore",
-      "claimed_at": "2026-02-09T10:00:08Z"
+      "claimed_at": "2026-02-09T10:00:08Z",
+      "pr_number": 826,
+      "completed_at": "2026-02-09T10:22:30Z"
     },
     {
       "issue_number": 802,
