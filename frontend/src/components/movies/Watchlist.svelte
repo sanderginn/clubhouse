@@ -2,12 +2,8 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import { get } from 'svelte/store';
   import type { Link, LinkMetadata, Post } from '../../stores/postStore';
-  import type { WatchlistItem } from '../../stores/movieStore';
-  import {
-    movieStore,
-    sortedCategories,
-    watchlistByCategory,
-  } from '../../stores/movieStore';
+  import type { WatchlistCategory, WatchlistItem } from '../../stores/movieStore';
+  import { movieStore, sortedCategories, watchlistByCategory } from '../../stores/movieStore';
   import { api } from '../../services/api';
   import { buildStandaloneThreadHref, pushPath } from '../../services/routeNavigation';
 
@@ -47,18 +43,13 @@
     movie?: MovieMetadataLike;
   };
 
-  type CategoryAction = {
-    categoryName: string;
-  };
-
   const ALL_CATEGORY_VALUE = '__all__';
   const ALL_CATEGORY_LABEL = 'All';
   const ALL_MOVIES_PAGE_SIZE = 20;
+  const DEFAULT_WATCHLIST_CATEGORY = 'Uncategorized';
 
   const dispatch = createEventDispatcher<{
     createCategory: undefined;
-    editCategory: CategoryAction;
-    deleteCategory: CategoryAction;
   }>();
 
   let activeTab: TabKey = 'my';
@@ -71,6 +62,12 @@
   let allMoviesLoading = false;
   let allMoviesAutoLoadAttempted = false;
   let allMoviesError: string | null = null;
+  let editingCategoryId: string | null = null;
+  let editingCategoryName = '';
+  let deleteCategoryId: string | null = null;
+  let deleteCategoryName = '';
+  let isCategoryActionBusy = false;
+  let localCategoryError: string | null = null;
 
   const tabOptions: Array<{ key: TabKey; label: string }> = [
     { key: 'my', label: 'My List' },
@@ -102,11 +99,22 @@
 
   $: categoryCounts = buildCategoryCounts($watchlistByCategory);
   $: postWatchlistCounts = buildPostWatchlistCounts($watchlistByCategory);
-  $: totalSavedCount = Array.from(categoryCounts.values()).reduce((total, count) => total + count, 0);
+  $: totalSavedCount = Array.from(categoryCounts.values()).reduce(
+    (total, count) => total + count,
+    0
+  );
+  $: editableCategoriesByName = new Map<string, WatchlistCategory>(
+    $sortedCategories.map((category) => [category.name, category])
+  );
+  $: editableCategoriesByID = new Map<string, WatchlistCategory>(
+    $sortedCategories.map((category) => [category.id, category])
+  );
+  $: displayCategoryError = localCategoryError ?? $movieStore.error;
   $: watchedPostIDs = new Set($movieStore.watchLogs.map((log) => log.postId));
   $: categoryOptions = buildCategoryOptions($sortedCategories, $watchlistByCategory);
   $: selectedCategoryLabel =
-    categoryOptions.find((option) => option.value === selectedCategory)?.label ?? ALL_CATEGORY_LABEL;
+    categoryOptions.find((option) => option.value === selectedCategory)?.label ??
+    ALL_CATEGORY_LABEL;
 
   $: if (
     selectedCategory !== ALL_CATEGORY_VALUE &&
@@ -116,9 +124,16 @@
   }
 
   $: selectedWatchlistItems = getWatchlistItemsForCategory($watchlistByCategory, selectedCategory);
-  $: myMovies = buildWatchlistMovieItems(selectedWatchlistItems, watchedPostIDs, postWatchlistCounts);
+  $: myMovies = buildWatchlistMovieItems(
+    selectedWatchlistItems,
+    watchedPostIDs,
+    postWatchlistCounts
+  );
   $: allMovies = sortMovies(
-    filterMoviesBySearch(buildAllMovieItems(allMoviePosts, watchedPostIDs, postWatchlistCounts), searchTerm),
+    filterMoviesBySearch(
+      buildAllMovieItems(allMoviePosts, watchedPostIDs, postWatchlistCounts),
+      searchTerm
+    ),
     sortKey
   );
   $: if (activeTab === 'all' && !allMoviesAutoLoadAttempted && !allMoviesLoading) {
@@ -160,7 +175,9 @@
     return options;
   }
 
-  function buildPostWatchlistCounts(watchlistMap: Map<string, WatchlistItem[]>): Map<string, number> {
+  function buildPostWatchlistCounts(
+    watchlistMap: Map<string, WatchlistItem[]>
+  ): Map<string, number> {
     const counts = new Map<string, number>();
     for (const items of watchlistMap.values()) {
       for (const item of items) {
@@ -254,12 +271,7 @@
     const metadata = link?.metadata as MetadataWithMovie | undefined;
     const movieMetadata = extractMovieMetadata(link ?? null);
 
-    return (
-      movieMetadata?.title ??
-      metadata?.title ??
-      post?.content?.trim() ??
-      'Movie'
-    );
+    return movieMetadata?.title ?? metadata?.title ?? post?.content?.trim() ?? 'Movie';
   }
 
   function buildPoster(link?: Link | null): string | null {
@@ -273,11 +285,7 @@
     const stats = extractMovieStats(post);
     const movieMetadata = extractMovieMetadata(link ?? null);
 
-    const statsRating =
-      stats?.averageRating ??
-      stats?.avgRating ??
-      stats?.avg_rating ??
-      null;
+    const statsRating = stats?.averageRating ?? stats?.avgRating ?? stats?.avg_rating ?? null;
 
     if (typeof statsRating === 'number' && Number.isFinite(statsRating)) {
       return statsRating;
@@ -296,7 +304,10 @@
     return normalizeNumber(stats?.watchCount ?? stats?.watch_count, 0);
   }
 
-  function buildWatchlistCount(post: Post | undefined, fallbackCounts: Map<string, number>): number {
+  function buildWatchlistCount(
+    post: Post | undefined,
+    fallbackCounts: Map<string, number>
+  ): number {
     const stats = extractMovieStats(post);
     const fromStats = normalizeNumber(stats?.watchlistCount ?? stats?.watchlist_count, -1);
 
@@ -382,9 +393,7 @@
         reset ? undefined : (allMoviesNextCursor ?? undefined)
       );
 
-      allMoviePosts = reset
-        ? response.posts
-        : mergeMovies(allMoviePosts, response.posts);
+      allMoviePosts = reset ? response.posts : mergeMovies(allMoviePosts, response.posts);
       allMoviesHasMore = response.hasMore;
       allMoviesNextCursor = response.nextCursor ?? null;
       allMoviesError = null;
@@ -411,7 +420,9 @@
       case 'watch_count':
         return next.sort((a, b) => b.watchCount - a.watchCount || b.createdAt - a.createdAt);
       case 'watchlist_count':
-        return next.sort((a, b) => b.watchlistCount - a.watchlistCount || b.createdAt - a.createdAt);
+        return next.sort(
+          (a, b) => b.watchlistCount - a.watchlistCount || b.createdAt - a.createdAt
+        );
       case 'date':
         return next.sort((a, b) => b.createdAt - a.createdAt);
       case 'rating':
@@ -432,12 +443,142 @@
     dispatch('createCategory', undefined);
   }
 
-  function handleEditCategory(categoryName: string) {
-    dispatch('editCategory', { categoryName });
+  function clearCategoryError() {
+    localCategoryError = null;
   }
 
-  function handleDeleteCategory(categoryName: string) {
-    dispatch('deleteCategory', { categoryName });
+  function findEditableCategory(categoryName: string): WatchlistCategory | null {
+    return editableCategoriesByName.get(categoryName) ?? null;
+  }
+
+  function resetCategoryActionState() {
+    editingCategoryId = null;
+    editingCategoryName = '';
+    deleteCategoryId = null;
+    deleteCategoryName = '';
+  }
+
+  async function refreshWatchlistView(): Promise<void> {
+    await Promise.all([movieStore.loadWatchlistCategories(), movieStore.loadWatchlist()]);
+  }
+
+  function startEditCategory(categoryName: string) {
+    const category = findEditableCategory(categoryName);
+    if (!category || isCategoryActionBusy) {
+      return;
+    }
+
+    deleteCategoryId = null;
+    deleteCategoryName = '';
+    editingCategoryId = category.id;
+    editingCategoryName = category.name;
+    clearCategoryError();
+  }
+
+  function cancelEditCategory() {
+    editingCategoryId = null;
+    editingCategoryName = '';
+    clearCategoryError();
+  }
+
+  async function confirmEditCategory() {
+    if (!editingCategoryId) {
+      return;
+    }
+
+    const trimmedName = editingCategoryName.trim();
+    if (!trimmedName) {
+      localCategoryError = 'Category name is required.';
+      return;
+    }
+
+    const existing = editableCategoriesByID.get(editingCategoryId) ?? null;
+    if (existing && existing.name === trimmedName) {
+      cancelEditCategory();
+      return;
+    }
+
+    isCategoryActionBusy = true;
+    clearCategoryError();
+    try {
+      await movieStore.updateCategory(editingCategoryId, { name: trimmedName });
+      const updateError = get(movieStore).error;
+      if (updateError) {
+        localCategoryError = updateError;
+        return;
+      }
+
+      await refreshWatchlistView();
+      const refreshError = get(movieStore).error;
+      if (refreshError) {
+        localCategoryError = refreshError;
+        return;
+      }
+
+      if (existing && selectedCategory === existing.name) {
+        selectedCategory = trimmedName;
+      }
+
+      resetCategoryActionState();
+      clearCategoryError();
+    } finally {
+      isCategoryActionBusy = false;
+    }
+  }
+
+  function startDeleteCategory(categoryName: string) {
+    const category = findEditableCategory(categoryName);
+    if (!category || isCategoryActionBusy) {
+      return;
+    }
+
+    editingCategoryId = null;
+    editingCategoryName = '';
+    deleteCategoryId = category.id;
+    deleteCategoryName = category.name;
+    clearCategoryError();
+  }
+
+  function cancelDeleteCategory() {
+    deleteCategoryId = null;
+    deleteCategoryName = '';
+    clearCategoryError();
+  }
+
+  async function confirmDeleteCategory() {
+    if (!deleteCategoryId) {
+      return;
+    }
+
+    const existing = editableCategoriesByID.get(deleteCategoryId) ?? null;
+    const deletedCategoryName = deleteCategoryName || existing?.name || '';
+
+    isCategoryActionBusy = true;
+    clearCategoryError();
+    try {
+      await movieStore.deleteCategory(deleteCategoryId);
+      const deleteError = get(movieStore).error;
+      if (deleteError) {
+        localCategoryError = deleteError;
+        return;
+      }
+
+      await refreshWatchlistView();
+      const refreshError = get(movieStore).error;
+      if (refreshError) {
+        localCategoryError = refreshError;
+        return;
+      }
+
+      if (deletedCategoryName && selectedCategory === deletedCategoryName) {
+        selectedCategory = ALL_CATEGORY_VALUE;
+      }
+
+      resetCategoryActionState();
+      clearCategoryError();
+    } finally {
+      isCategoryActionBusy = false;
+    }
   }
 </script>
 
@@ -445,7 +586,9 @@
   <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-4 py-3">
     <div>
       <h2 class="text-base font-semibold text-gray-900">Watchlist</h2>
-      <p class="text-xs text-gray-500">Track what you want to watch and what your club is rating.</p>
+      <p class="text-xs text-gray-500">
+        Track what you want to watch and what your club is rating.
+      </p>
     </div>
 
     <div class="flex items-center gap-2" role="tablist" aria-label="Watchlist views">
@@ -478,48 +621,135 @@
 
             <div class="mt-3 space-y-1">
               {#each categoryOptions as option}
-                <div class="group flex items-center gap-1">
-                  <button
-                    type="button"
-                    class={`flex flex-1 items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
-                      selectedCategory === option.value
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'text-gray-600 hover:bg-gray-100'
-                    }`}
-                    on:click={() => (selectedCategory = option.value)}
-                    data-testid={`watchlist-category-${option.value}`}
-                  >
-                    <span>{option.label}</span>
-                    <span class="rounded-full bg-white px-2 py-0.5 text-[11px] text-gray-500">
-                      {option.value === ALL_CATEGORY_VALUE
-                        ? totalSavedCount
-                        : categoryCounts.get(option.value) ?? 0}
-                    </span>
-                  </button>
+                {@const editableCategory = findEditableCategory(option.value)}
+                <div
+                  class="group rounded-lg"
+                  data-testid={`watchlist-category-row-${option.value}`}
+                >
+                  {#if editingCategoryId === editableCategory?.id}
+                    <div
+                      class="flex flex-wrap items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2"
+                    >
+                      <input
+                        class="min-w-[8rem] flex-1 rounded-md border border-blue-300 px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                        type="text"
+                        bind:value={editingCategoryName}
+                        placeholder="Category name"
+                        data-testid="watchlist-category-edit-input"
+                      />
+                      <button
+                        type="button"
+                        class="rounded-md bg-blue-600 px-2 py-1 text-xs font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        on:click={confirmEditCategory}
+                        disabled={isCategoryActionBusy}
+                        data-testid="watchlist-category-edit-save"
+                      >
+                        {isCategoryActionBusy ? 'Saving...' : 'Save'}
+                      </button>
+                      <button
+                        type="button"
+                        class="rounded-md border border-blue-200 px-2 py-1 text-xs text-blue-700 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        on:click={cancelEditCategory}
+                        disabled={isCategoryActionBusy}
+                        data-testid="watchlist-category-edit-cancel"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  {:else}
+                    <div class="flex items-center gap-1">
+                      <button
+                        type="button"
+                        class={`flex flex-1 items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
+                          selectedCategory === option.value
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'text-gray-600 hover:bg-gray-100'
+                        }`}
+                        on:click={() => (selectedCategory = option.value)}
+                        data-testid={`watchlist-category-${option.value}`}
+                      >
+                        <span>{option.label}</span>
+                        <span class="rounded-full bg-white px-2 py-0.5 text-[11px] text-gray-500">
+                          {option.value === ALL_CATEGORY_VALUE
+                            ? totalSavedCount
+                            : (categoryCounts.get(option.value) ?? 0)}
+                        </span>
+                      </button>
 
-                  {#if option.value !== ALL_CATEGORY_VALUE}
-                    <div class="hidden items-center gap-1 group-hover:flex" data-testid={`watchlist-category-actions-${option.value}`}>
-                      <button
-                        type="button"
-                        class="rounded-md border border-gray-200 px-1.5 py-1 text-[11px] text-gray-500 hover:bg-gray-50"
-                        aria-label={`Edit ${option.label}`}
-                        on:click={() => handleEditCategory(option.label)}
-                      >
-                        ⚙
-                      </button>
-                      <button
-                        type="button"
-                        class="rounded-md border border-gray-200 px-1.5 py-1 text-[11px] text-gray-500 hover:bg-gray-50"
-                        aria-label={`Delete ${option.label}`}
-                        on:click={() => handleDeleteCategory(option.label)}
-                      >
-                        ×
-                      </button>
+                      {#if editableCategory}
+                        <div
+                          class="hidden items-center gap-1 group-hover:flex"
+                          data-testid={`watchlist-category-actions-${editableCategory.id}`}
+                        >
+                          <button
+                            type="button"
+                            class="rounded-md border border-gray-200 px-1.5 py-1 text-[11px] text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            aria-label={`Edit ${editableCategory.name}`}
+                            on:click={() => startEditCategory(editableCategory.name)}
+                            disabled={isCategoryActionBusy}
+                            data-testid={`watchlist-category-edit-${editableCategory.id}`}
+                          >
+                            ⚙
+                          </button>
+                          <button
+                            type="button"
+                            class="rounded-md border border-gray-200 px-1.5 py-1 text-[11px] text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            aria-label={`Delete ${editableCategory.name}`}
+                            on:click={() => startDeleteCategory(editableCategory.name)}
+                            disabled={isCategoryActionBusy}
+                            data-testid={`watchlist-category-delete-${editableCategory.id}`}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      {/if}
+                    </div>
+                  {/if}
+
+                  {#if deleteCategoryId === editableCategory?.id}
+                    <div
+                      class="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+                      data-testid="watchlist-category-delete-confirm"
+                    >
+                      <p>
+                        Delete <span class="font-semibold">{deleteCategoryName}</span>? Saved items
+                        will move to
+                        <span class="font-semibold"> {DEFAULT_WATCHLIST_CATEGORY}</span>.
+                      </p>
+                      <div class="mt-2 flex items-center gap-2">
+                        <button
+                          type="button"
+                          class="rounded-md bg-amber-600 px-2 py-1 text-xs font-semibold text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          on:click={confirmDeleteCategory}
+                          disabled={isCategoryActionBusy}
+                          data-testid="watchlist-category-delete-confirm-button"
+                        >
+                          {isCategoryActionBusy ? 'Deleting...' : 'Delete'}
+                        </button>
+                        <button
+                          type="button"
+                          class="rounded-md border border-amber-200 px-2 py-1 text-xs text-amber-900 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                          on:click={cancelDeleteCategory}
+                          disabled={isCategoryActionBusy}
+                          data-testid="watchlist-category-delete-cancel-button"
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </div>
                   {/if}
                 </div>
               {/each}
             </div>
+
+            {#if displayCategoryError}
+              <div
+                class="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700"
+                data-testid="watchlist-category-error"
+              >
+                {displayCategoryError}
+              </div>
+            {/if}
 
             <button
               type="button"
@@ -577,9 +807,16 @@
 
                   <div class="aspect-[2/3] w-full overflow-hidden bg-gray-100">
                     {#if movie.poster}
-                      <img src={movie.poster} alt={movie.title} class="h-full w-full object-cover" loading="lazy" />
+                      <img
+                        src={movie.poster}
+                        alt={movie.title}
+                        class="h-full w-full object-cover"
+                        loading="lazy"
+                      />
                     {:else}
-                      <div class="flex h-full w-full items-center justify-center px-3 text-center text-xs text-gray-400">
+                      <div
+                        class="flex h-full w-full items-center justify-center px-3 text-center text-xs text-gray-400"
+                      >
                         No poster
                       </div>
                     {/if}
@@ -606,7 +843,9 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 class="text-sm font-semibold text-gray-900">All Movies</h3>
-            <p class="text-xs text-gray-500">Browse everything shared in movie and series sections.</p>
+            <p class="text-xs text-gray-500">
+              Browse everything shared in movie and series sections.
+            </p>
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
@@ -689,9 +928,16 @@
 
                 <div class="aspect-[2/3] w-full overflow-hidden bg-gray-100">
                   {#if movie.poster}
-                    <img src={movie.poster} alt={movie.title} class="h-full w-full object-cover" loading="lazy" />
+                    <img
+                      src={movie.poster}
+                      alt={movie.title}
+                      class="h-full w-full object-cover"
+                      loading="lazy"
+                    />
                   {:else}
-                    <div class="flex h-full w-full items-center justify-center px-3 text-center text-xs text-gray-400">
+                    <div
+                      class="flex h-full w-full items-center justify-center px-3 text-center text-xs text-gray-400"
+                    >
                       No poster
                     </div>
                   {/if}
