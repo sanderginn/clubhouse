@@ -9,7 +9,8 @@
     843,
     845,
     847,
-    852
+    852,
+    853
   ],
   "issues": [
     {
@@ -193,7 +194,7 @@
     {
       "issue_number": 853,
       "title": "[Books] Create Open Library API client",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -204,7 +205,9 @@
       "assigned_to": "agent-1770676211-64526",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770676211-64526",
       "branch": "feat/issue-853-books-create-open-library-api-client",
-      "claimed_at": "2026-02-09T22:30:11Z"
+      "claimed_at": "2026-02-09T22:30:11Z",
+      "pr_number": 908,
+      "completed_at": "2026-02-09T22:41:30Z"
     },
     {
       "issue_number": 854,
