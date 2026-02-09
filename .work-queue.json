@@ -8,6 +8,7 @@
     842,
     843,
     845,
+    846,
     847,
     848,
     852,
@@ -92,7 +93,7 @@
     {
       "issue_number": 846,
       "title": "Move Watchlist from standalone nav to Movies section header",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         842
       ],
@@ -105,7 +106,9 @@
       "assigned_to": "agent-1770676935-81010",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770676935-81010",
       "branch": "feat/issue-846-move-watchlist-from-standalone-nav-to-mo",
-      "claimed_at": "2026-02-09T22:42:15Z"
+      "claimed_at": "2026-02-09T22:42:15Z",
+      "pr_number": 914,
+      "completed_at": "2026-02-09T22:58:19Z"
     },
     {
       "issue_number": 847,
