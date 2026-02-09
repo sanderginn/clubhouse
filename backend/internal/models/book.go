@@ -1,5 +1,11 @@
 package models
 
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
+
 // BookData represents normalized book metadata.
 type BookData struct {
 	Title          string   `json:"title"`
@@ -25,9 +31,43 @@ type BookStats struct {
 	ViewerRating      *int     `json:"viewer_rating,omitempty"`
 }
 
+type BookshelfItem struct {
+	ID         uuid.UUID  `json:"id"`
+	UserID     uuid.UUID  `json:"user_id"`
+	PostID     uuid.UUID  `json:"post_id"`
+	CategoryID *uuid.UUID `json:"category_id,omitempty"`
+	CreatedAt  time.Time  `json:"created_at"`
+	DeletedAt  *time.Time `json:"deleted_at,omitempty"`
+}
+
+type BookshelfCategory struct {
+	ID        uuid.UUID `json:"id"`
+	UserID    uuid.UUID `json:"user_id"`
+	Name      string    `json:"name"`
+	Position  int       `json:"position"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type BookshelfUserInfo struct {
+	ID                uuid.UUID `json:"id"`
+	Username          string    `json:"username"`
+	ProfilePictureUrl *string   `json:"profile_picture_url,omitempty"`
+}
+
 type BookshelfCategoryGroup struct {
 	Name  string `json:"name"`
 	Posts []Post `json:"posts"`
+}
+
+// CreateBookshelfCategoryRequest represents the request body for creating a bookshelf category.
+type CreateBookshelfCategoryRequest struct {
+	Name string `json:"name"`
+}
+
+// UpdateBookshelfCategoryRequest represents the request body for updating a bookshelf category.
+type UpdateBookshelfCategoryRequest struct {
+	Name     string `json:"name"`
+	Position int    `json:"position"`
 }
 
 // AddToBookshelfRequest represents the request body for adding a post to a bookshelf.
@@ -42,8 +82,37 @@ type BookshelfResponse struct {
 
 // PostBookshelfInfo represents bookshelf tooltip data for a post.
 type PostBookshelfInfo struct {
-	SaveCount        int            `json:"save_count"`
-	Users            []ReactionUser `json:"users"`
-	ViewerSaved      bool           `json:"viewer_saved"`
-	ViewerCategories []string       `json:"viewer_categories,omitempty"`
+	SaveCount        int                 `json:"save_count"`
+	Users            []BookshelfUserInfo `json:"users"`
+	ViewerSaved      bool                `json:"viewer_saved"`
+	ViewerCategories []string            `json:"viewer_categories,omitempty"`
+}
+
+type ReadLog struct {
+	ID        uuid.UUID  `json:"id"`
+	UserID    uuid.UUID  `json:"user_id"`
+	PostID    uuid.UUID  `json:"post_id"`
+	Rating    *int       `json:"rating,omitempty"`
+	CreatedAt time.Time  `json:"created_at"`
+	DeletedAt *time.Time `json:"deleted_at,omitempty"`
+}
+
+type ReadLogUserInfo struct {
+	ID                uuid.UUID `json:"id"`
+	Username          string    `json:"username"`
+	ProfilePictureUrl *string   `json:"profile_picture_url,omitempty"`
+	Rating            *int      `json:"rating,omitempty"`
+}
+
+type PostReadLogsResponse struct {
+	ReadCount     int               `json:"read_count"`
+	AverageRating float64           `json:"average_rating"`
+	ViewerRead    bool              `json:"viewer_read"`
+	ViewerRating  *int              `json:"viewer_rating,omitempty"`
+	Readers       []ReadLogUserInfo `json:"readers"`
+}
+
+// LogReadRequest represents the request body for creating a read log.
+type LogReadRequest struct {
+	Rating *int `json:"rating,omitempty"`
 }
