@@ -31,6 +31,7 @@
     790,
     791,
     792,
+    797,
     806
   ],
   "issues": [
@@ -582,7 +583,7 @@
     {
       "issue_number": 797,
       "title": "Register movie extractor in metadata pipeline",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         792
       ],
@@ -595,7 +596,9 @@
       "assigned_to": "agent-1770626805-49290",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770626805-49290",
       "branch": "feat/issue-797-register-movie-extractor-in-metadata-pip",
-      "claimed_at": "2026-02-09T08:46:45Z"
+      "claimed_at": "2026-02-09T08:46:45Z",
+      "pr_number": 820,
+      "completed_at": "2026-02-09T09:05:29Z"
     },
     {
       "issue_number": 798,
