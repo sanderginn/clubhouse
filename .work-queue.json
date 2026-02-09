@@ -4,7 +4,9 @@
     "version": "2.0",
     "description": "Work queue for parallel issue assignment with dependency tracking"
   },
-  "completed_issues": [],
+  "completed_issues": [
+    852
+  ],
   "issues": [
     {
       "issue_number": 842,
@@ -25,7 +27,7 @@
     {
       "issue_number": 843,
       "title": "Fix movie stats not appearing on newly created posts until reload",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "bug",
@@ -33,7 +35,11 @@
         "backend",
         "movies"
       ],
-      "priority": 52
+      "priority": 52,
+      "assigned_to": "agent-1770675775-48692",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770675775-48692",
+      "branch": "fix/issue-843-fix-movie-stats-not-appearing-on-newly-c",
+      "claimed_at": "2026-02-09T22:22:55Z"
     },
     {
       "issue_number": 844,
@@ -52,14 +58,18 @@
     {
       "issue_number": 845,
       "title": "Add link to TMDB page in MovieCard",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
         "frontend",
         "movies"
       ],
-      "priority": 54
+      "priority": 54,
+      "assigned_to": "agent-1770675776-48698",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770675776-48698",
+      "branch": "feat/issue-845-add-link-to-tmdb-page-in-moviecard",
+      "claimed_at": "2026-02-09T22:22:56Z"
     },
     {
       "issue_number": 846,
@@ -78,14 +88,18 @@
     {
       "issue_number": 847,
       "title": "Fetch and store season data from TMDB for series",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
         "backend",
         "movies"
       ],
-      "priority": 56
+      "priority": 56,
+      "assigned_to": "agent-1770675777-48792",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770675777-48792",
+      "branch": "feat/issue-847-fetch-and-store-season-data-from-tmdb-fo",
+      "claimed_at": "2026-02-09T22:22:57Z"
     },
     {
       "issue_number": 848,
@@ -149,14 +163,20 @@
     {
       "issue_number": 852,
       "title": "[Books] Create BookData model and types",
-      "status": "available",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
         "backend",
         "books"
       ],
-      "priority": 60
+      "priority": 60,
+      "assigned_to": "agent-1770675779-49019",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770675779-49019",
+      "branch": "feat/issue-852-books-create-bookdata-model-and-types",
+      "claimed_at": "2026-02-09T22:22:59Z",
+      "pr_number": 903,
+      "completed_at": "2026-02-09T22:29:32Z"
     },
     {
       "issue_number": 853,
