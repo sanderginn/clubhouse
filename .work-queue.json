@@ -305,7 +305,7 @@
     {
       "issue_number": 857,
       "title": "[Books] Create book metadata parser",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         852,
         853
@@ -315,7 +315,11 @@
         "backend",
         "books"
       ],
-      "priority": 65
+      "priority": 65,
+      "assigned_to": "agent-1770678392-25914",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770678392-25914",
+      "branch": "feat/issue-857-books-create-book-metadata-parser",
+      "claimed_at": "2026-02-09T23:06:32Z"
     },
     {
       "issue_number": 858,
