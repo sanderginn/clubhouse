@@ -1259,7 +1259,7 @@
     {
       "issue_number": 901,
       "title": "[Podcasts] Build Podcasts top widget (mixed recent + section saved view)",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         894,
         895,
@@ -1270,7 +1270,11 @@
         "frontend",
         "podcasts"
       ],
-      "priority": 109
+      "priority": 109,
+      "assigned_to": "agent-1770717118-71149",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770717118-71149",
+      "branch": "feat/issue-901-podcasts-build-podcasts-top-widget-mixed",
+      "claimed_at": "2026-02-10T09:51:58Z"
     },
     {
       "issue_number": 902,
