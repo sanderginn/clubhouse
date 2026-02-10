@@ -7,6 +7,7 @@
   import ThreadView from './components/ThreadView.svelte';
   import UserProfile from './components/UserProfile.svelte';
   import Watchlist from './components/movies/Watchlist.svelte';
+  import PodcastsTopContainer from './components/podcasts/PodcastsTopContainer.svelte';
   import Cookbook from './components/recipes/Cookbook.svelte';
   import { Login, Register, AdminPanel, PasswordReset, Settings } from './routes';
   import {
@@ -547,6 +548,10 @@
               <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                 <Cookbook />
               </div>
+            {/if}
+
+            {#if $activeSection.type === 'podcast'}
+              <PodcastsTopContainer />
             {/if}
 
             <MusicLinksContainer />
