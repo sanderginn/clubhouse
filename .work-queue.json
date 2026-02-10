@@ -86,7 +86,8 @@
     985,
     1000,
     1002,
-    1005
+    1005,
+    1007
   ],
   "issues": [
     {
@@ -203,7 +204,7 @@
     {
       "issue_number": 1007,
       "title": "[Music] Fix tracks/sets filter affecting main feed instead of Recent Music Links component",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -213,7 +214,9 @@
       "assigned_to": "agent-1770739046-78547",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770739046-78547",
       "branch": "fix/issue-1007-music-fix-trackssets-filter-affecting-ma",
-      "claimed_at": "2026-02-10T15:57:26Z"
+      "claimed_at": "2026-02-10T15:57:26Z",
+      "pr_number": 1008,
+      "completed_at": "2026-02-10T16:18:17Z"
     },
     {
       "issue_number": 842,
