@@ -1067,7 +1067,7 @@
     {
       "issue_number": 894,
       "title": "[Podcasts] Add recent podcasts section endpoint",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         890
       ],
@@ -1076,7 +1076,11 @@
         "backend",
         "podcasts"
       ],
-      "priority": 102
+      "priority": 102,
+      "assigned_to": "agent-1770713166-84728",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770713166-84728",
+      "branch": "feat/issue-894-podcasts-add-recent-podcasts-section-end",
+      "claimed_at": "2026-02-10T08:46:06Z"
     },
     {
       "issue_number": 895,
