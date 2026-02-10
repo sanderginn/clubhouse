@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup, fireEvent } from '@testing-library/svelte';
+import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/svelte';
 import type { Post } from '../../stores/postStore';
 import { authStore, uiStore } from '../../stores';
 import { sectionStore } from '../../stores/sectionStore';
@@ -11,6 +11,7 @@ const loadMoreThreadComments = vi.hoisted(() => vi.fn());
 const apiUpdatePost = vi.hoisted(() => vi.fn());
 const apiUploadImage = vi.hoisted(() => vi.fn());
 const apiDeletePost = vi.hoisted(() => vi.fn());
+const apiGetPostQuotes = vi.hoisted(() => vi.fn());
 
 vi.mock('../../stores/commentFeedStore', () => ({
   loadThreadComments,
@@ -22,6 +23,7 @@ vi.mock('../../services/api', () => ({
     updatePost: apiUpdatePost,
     uploadImage: apiUploadImage,
     deletePost: apiDeletePost,
+    getPostQuotes: apiGetPostQuotes,
   },
 }));
 
@@ -83,6 +85,11 @@ const basePost: Post = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  apiGetPostQuotes.mockResolvedValue({
+    quotes: [],
+    nextCursor: null,
+    hasMore: false,
+  });
   authStore.setUser(null);
   uiStore.setActiveView('feed');
   sectionStore.setSections([]);
@@ -93,6 +100,7 @@ afterEach(() => {
   apiUpdatePost.mockReset();
   apiUploadImage.mockReset();
   apiDeletePost.mockReset();
+  apiGetPostQuotes.mockReset();
 });
 
 describe('PostCard', () => {
@@ -445,6 +453,7 @@ describe('PostCard', () => {
   });
 
   it('does not render book components for non-book sections', () => {
+    uiStore.setActiveView('thread');
     sectionStore.setSections([
       {
         id: 'section-1',
@@ -483,6 +492,27 @@ describe('PostCard', () => {
 
     expect(screen.queryByTestId('book-card')).not.toBeInTheDocument();
     expect(screen.queryByTestId('book-stats-bar')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('quote-list')).not.toBeInTheDocument();
+  });
+
+  it('renders quote list for book posts in thread view', async () => {
+    uiStore.setActiveView('thread');
+    sectionStore.setSections([
+      {
+        id: 'section-1',
+        name: 'Books',
+        type: 'book',
+        icon: '📚',
+        slug: 'books',
+      },
+    ]);
+
+    render(PostCard, { post: basePost });
+
+    expect(screen.getByTestId('quote-list')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(apiGetPostQuotes).toHaveBeenCalledWith('post-1', undefined, 20);
+    });
   });
 
   it('uses compact BookCard mode in feed view and full mode in thread view', () => {

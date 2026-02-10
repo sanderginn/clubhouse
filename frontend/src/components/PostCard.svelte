@@ -25,6 +25,7 @@
   import RecipeStatsBar from './recipes/RecipeStatsBar.svelte';
   import BookCard from './books/BookCard.svelte';
   import BookStatsBar from './books/BookStatsBar.svelte';
+  import QuoteList from './books/QuoteList.svelte';
   import MovieCard from './movies/MovieCard.svelte';
   import MovieStatsBar from './movies/MovieStatsBar.svelte';
   import BandcampEmbed from '../lib/components/embeds/BandcampEmbed.svelte';
@@ -2164,6 +2165,11 @@
       {#if isBookSection && bookStatsForBar}
         <div class="mt-3">
           <BookStatsBar postId={post.id} bookStats={bookStatsForBar} />
+        </div>
+      {/if}
+      {#if isBookSection && isThreadView}
+        <div class="mt-3">
+          <QuoteList postId={post.id} currentUserId={$currentUser?.id ?? ''} isAdmin={$isAdmin} />
         </div>
       {/if}
       {#if isMovieSection && movieStatsForBar}
