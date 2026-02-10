@@ -950,7 +950,7 @@
     {
       "issue_number": 886,
       "title": "[Books] Integrate spoiler UI in comment composer for book section",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         885,
         873
@@ -960,7 +960,11 @@
         "frontend",
         "books"
       ],
-      "priority": 94
+      "priority": 94,
+      "assigned_to": "agent-1770715915-40974",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770715915-40974",
+      "branch": "feat/issue-886-books-integrate-spoiler-ui-in-comment-co",
+      "claimed_at": "2026-02-10T09:31:55Z"
     },
     {
       "issue_number": 887,
