@@ -90,7 +90,7 @@ func (s *BookQuoteService) CreateQuote(
 		nullableString(chapter),
 		nullableString(note),
 	)
-	quote, err := scanBookQuoteWithUser(row)
+	createdQuote, err := scanBookQuote(row)
 	if err != nil {
 		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to create book quote: %w", err)
@@ -101,8 +101,7 @@ func (s *BookQuoteService) CreateQuote(
 		recordSpanError(span, err)
 		return nil, err
 	}
-	quote.Username = username
-	quote.DisplayName = displayName
+	quote := withBookQuoteUser(createdQuote, username, displayName)
 
 	metadata := map[string]interface{}{
 		"quote_id":        quote.ID.String(),
@@ -133,7 +132,7 @@ func (s *BookQuoteService) CreateQuote(
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	return quote, nil
+	return &quote, nil
 }
 
 // UpdateQuote updates an existing quote.
@@ -223,7 +222,7 @@ func (s *BookQuoteService) UpdateQuote(
 		nullableString(note),
 	)
 
-	updatedQuote, err := scanBookQuoteWithUser(row)
+	updatedBookQuote, err := scanBookQuote(row)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			notFoundErr := errors.New("book quote not found")
@@ -234,13 +233,12 @@ func (s *BookQuoteService) UpdateQuote(
 		return nil, fmt.Errorf("failed to update book quote: %w", err)
 	}
 
-	username, displayName, err := getBookQuoteUserSummary(ctx, tx, updatedQuote.UserID)
+	username, displayName, err := getBookQuoteUserSummary(ctx, tx, updatedBookQuote.UserID)
 	if err != nil {
 		recordSpanError(span, err)
 		return nil, err
 	}
-	updatedQuote.Username = username
-	updatedQuote.DisplayName = displayName
+	updatedQuote := withBookQuoteUser(updatedBookQuote, username, displayName)
 
 	metadata := map[string]interface{}{
 		"quote_id":            updatedQuote.ID.String(),
@@ -272,7 +270,7 @@ func (s *BookQuoteService) UpdateQuote(
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	return updatedQuote, nil
+	return &updatedQuote, nil
 }
 
 // DeleteQuote soft deletes an existing quote.
@@ -653,6 +651,14 @@ func scanBookQuoteWithUser(scanner interface {
 	quote.DisplayName = username
 
 	return &quote, nil
+}
+
+func withBookQuoteUser(quote *models.BookQuote, username, displayName string) models.BookQuoteWithUser {
+	return models.BookQuoteWithUser{
+		BookQuote:   *quote,
+		Username:    username,
+		DisplayName: displayName,
+	}
 }
 
 func buildBookQuoteCursor(createdAt time.Time, quoteID uuid.UUID) string {
