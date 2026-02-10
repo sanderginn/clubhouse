@@ -68,6 +68,24 @@ type LinkMetadataWithBookForTest = NonNullable<
   book_data?: BookDataForTest;
 };
 
+type PodcastHighlightEpisodeForTest = {
+  title?: string;
+  url?: string;
+  note?: string;
+};
+
+type PodcastMetadataForTest = {
+  kind?: 'show' | 'episode';
+  highlightEpisodes?: PodcastHighlightEpisodeForTest[];
+  highlight_episodes?: PodcastHighlightEpisodeForTest[];
+};
+
+type LinkMetadataWithPodcastForTest = NonNullable<
+  NonNullable<Post['links']>[number]['metadata']
+> & {
+  podcast?: PodcastMetadataForTest;
+};
+
 const basePost: Post = {
   id: 'post-1',
   userId: 'user-1',
@@ -565,6 +583,140 @@ describe('PostCard', () => {
     expect(screen.queryByTestId('movie-stats-bar')).not.toBeInTheDocument();
   });
 
+  it('renders podcast show badge and highlighted episode list in podcast sections', () => {
+    sectionStore.setSections([
+      {
+        id: 'section-1',
+        name: 'Podcasts',
+        type: 'podcast',
+        icon: '🎙️',
+        slug: 'podcasts',
+      },
+    ]);
+
+    const metadataWithPodcast: LinkMetadataWithPodcastForTest = {
+      url: 'https://podcasts.apple.com/us/podcast/example/id123456789',
+      title: 'Example Show',
+      podcast: {
+        kind: 'show',
+        highlightEpisodes: [
+          {
+            title: 'Pilot Episode',
+            url: 'https://example.com/episodes/pilot',
+            note: 'Best place to start',
+          },
+          {
+            title: 'Deep Dive',
+            url: 'https://example.com/episodes/deep-dive',
+          },
+        ],
+      },
+    };
+
+    const podcastShowPost: Post = {
+      ...basePost,
+      links: [
+        {
+          url: 'https://podcasts.apple.com/us/podcast/example/id123456789',
+          metadata: metadataWithPodcast,
+        },
+      ],
+    };
+
+    render(PostCard, { post: podcastShowPost });
+
+    expect(screen.getByTestId('podcast-kind-badge')).toHaveTextContent('Show');
+    expect(screen.getByTestId('podcast-highlight-episodes')).toBeInTheDocument();
+    expect(screen.getByText('Pilot Episode')).toBeInTheDocument();
+    expect(screen.getByText('Best place to start')).toBeInTheDocument();
+    expect(screen.getAllByTestId('podcast-highlight-episode')).toHaveLength(2);
+    expect(screen.getByRole('link', { name: 'Pilot Episode' })).toHaveAttribute(
+      'href',
+      'https://example.com/episodes/pilot'
+    );
+  });
+
+  it('renders podcast episode badge without show-only highlighted episode list', () => {
+    sectionStore.setSections([
+      {
+        id: 'section-1',
+        name: 'Podcasts',
+        type: 'podcast',
+        icon: '🎙️',
+        slug: 'podcasts',
+      },
+    ]);
+
+    const metadataWithPodcastEpisode: LinkMetadataWithPodcastForTest = {
+      url: 'https://open.spotify.com/episode/123',
+      title: 'Example Episode',
+      podcast: {
+        kind: 'episode',
+        highlightEpisodes: [
+          {
+            title: 'Should Not Render',
+            url: 'https://example.com/episodes/should-not-render',
+          },
+        ],
+      },
+    };
+
+    const podcastEpisodePost: Post = {
+      ...basePost,
+      links: [
+        {
+          url: 'https://open.spotify.com/episode/123',
+          metadata: metadataWithPodcastEpisode,
+        },
+      ],
+    };
+
+    render(PostCard, { post: podcastEpisodePost });
+
+    expect(screen.getByTestId('podcast-kind-badge')).toHaveTextContent('Episode');
+    expect(screen.queryByTestId('podcast-highlight-episodes')).not.toBeInTheDocument();
+    expect(screen.queryByText('Should Not Render')).not.toBeInTheDocument();
+  });
+
+  it('does not render podcast metadata block outside podcast sections', () => {
+    sectionStore.setSections([
+      {
+        id: 'section-1',
+        name: 'General',
+        type: 'general',
+        icon: '💬',
+        slug: 'general',
+      },
+    ]);
+
+    const generalPostWithPodcastMetadata: Post = {
+      ...basePost,
+      links: [
+        {
+          url: 'https://podcasts.apple.com/us/podcast/example/id123456789',
+          metadata: {
+            url: 'https://podcasts.apple.com/us/podcast/example/id123456789',
+            title: 'Example Show',
+            podcast: {
+              kind: 'show',
+              highlightEpisodes: [
+                {
+                  title: 'Pilot Episode',
+                  url: 'https://example.com/episodes/pilot',
+                },
+              ],
+            },
+          } as LinkMetadataWithPodcastForTest,
+        },
+      ],
+    };
+
+    render(PostCard, { post: generalPostWithPodcastMetadata });
+
+    expect(screen.queryByTestId('podcast-metadata-block')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('podcast-kind-badge')).not.toBeInTheDocument();
+  });
+
   it('keeps recipe section rendering intact', () => {
     sectionStore.setSections([
       {
@@ -607,6 +759,7 @@ describe('PostCard', () => {
     expect(screen.getByText('Tomato Soup')).toBeInTheDocument();
     expect(screen.getByTestId('recipe-stats-bar')).toBeInTheDocument();
     expect(screen.queryByTestId('movie-card')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('podcast-kind-badge')).not.toBeInTheDocument();
   });
 
   it('renders highlights when link includes them', () => {
