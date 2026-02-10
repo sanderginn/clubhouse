@@ -35,6 +35,7 @@ var (
 	newTMDBClientFromEnvFunc = NewTMDBClientFromEnv
 	newOMDBClientFromEnvFunc = NewOMDBClientFromEnv
 	parseMovieMetadataFunc   = ParseMovieMetadata
+	parseBookMetadataFunc    = ParseBookMetadata
 
 	omdbClientFromEnvOnce sync.Once
 	omdbClientFromEnv     *OMDBClient
@@ -217,6 +218,12 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 			}
 		}
 	}
+	if shouldExtractBookMetadata(rawURL) {
+		bookClient := NewOpenLibraryClient(openLibraryDefaultTimeout)
+		if bookData, bookErr := parseBookMetadataFunc(ctx, rawURL, bookClient); bookErr == nil && bookData != nil {
+			metadata["book_data"] = bookData
+		}
+	}
 
 	if _, ok := metadata["image"]; !ok && !isHTML && looksLikeImageURL(u) {
 		metadata["image"] = u.String()
@@ -253,6 +260,37 @@ func shouldExtractMovieMetadata(ctx context.Context) bool {
 	}
 	sectionType, _ := ctx.Value(metadataSectionTypeContextKey).(string)
 	return sectionType == "movie" || sectionType == "series"
+}
+
+func shouldExtractBookMetadata(rawURL string) bool {
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		return false
+	}
+
+	host := strings.ToLower(strings.TrimSpace(parsedURL.Hostname()))
+	segments := splitURLPath(parsedURL.Path)
+
+	switch {
+	case isGoodreadsHost(host):
+		_, ok := parseGoodreadsBookID(segments)
+		return ok
+	case isAmazonHost(host):
+		_, ok := parseAmazonASIN(segments)
+		return ok
+	case isOpenLibraryHost(host):
+		if _, ok := parseOpenLibraryWorkKey(segments); ok {
+			return true
+		}
+		if _, ok := parseOpenLibraryEditionKey(segments); ok {
+			return true
+		}
+		_, ok := extractISBNFromSegments(segments)
+		return ok
+	default:
+		_, ok := extractISBNFromSegments(segments)
+		return ok
+	}
 }
 
 func (f *Fetcher) doRequestWithRetry(ctx context.Context, client *http.Client, u *url.URL) (*http.Response, error) {

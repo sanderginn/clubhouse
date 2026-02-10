@@ -392,6 +392,203 @@ func TestFetchMetadataMovieSectionReusesCachedOMDBClient(t *testing.T) {
 	}
 }
 
+func TestShouldExtractBookMetadata(t *testing.T) {
+	tests := []struct {
+		name string
+		url  string
+		want bool
+	}{
+		{
+			name: "goodreads book url",
+			url:  "https://www.goodreads.com/book/show/22328-neuromancer",
+			want: true,
+		},
+		{
+			name: "amazon dp url",
+			url:  "https://www.amazon.com/Some-Book/dp/B00TEST123",
+			want: true,
+		},
+		{
+			name: "open library work url",
+			url:  "https://openlibrary.org/works/OL45883W",
+			want: true,
+		},
+		{
+			name: "open library edition url",
+			url:  "https://openlibrary.org/books/OL7353617M",
+			want: true,
+		},
+		{
+			name: "isbn in generic url",
+			url:  "https://example.com/books/isbn-9780441569595/details",
+			want: true,
+		},
+		{
+			name: "non book url",
+			url:  "https://example.com/posts/123",
+			want: false,
+		},
+		{
+			name: "invalid url",
+			url:  "://bad-url",
+			want: false,
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if got := shouldExtractBookMetadata(tc.url); got != tc.want {
+				t.Fatalf("shouldExtractBookMetadata(%q) = %v, want %v", tc.url, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestFetchMetadataBookURLIncludesBookMetadata(t *testing.T) {
+	originalParseBookMetadataFunc := parseBookMetadataFunc
+	t.Cleanup(func() {
+		parseBookMetadataFunc = originalParseBookMetadataFunc
+	})
+
+	parseCalls := 0
+	parseBookMetadataFunc = func(ctx context.Context, rawURL string, client *OpenLibraryClient) (*BookData, error) {
+		parseCalls++
+		if rawURL != "https://www.goodreads.com/book/show/22328-neuromancer" {
+			t.Fatalf("rawURL = %q, want goodreads book url", rawURL)
+		}
+		if client == nil {
+			t.Fatal("expected open library client to be provided")
+		}
+		return &BookData{Title: "Neuromancer"}, nil
+	}
+
+	fetcher := NewFetcher(&http.Client{
+		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Status:     "200 OK",
+				Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
+				Body:       io.NopCloser(strings.NewReader(`<!doctype html><html><head><meta property="og:title" content="Fallback Title" /></head></html>`)),
+				Request:    r,
+			}, nil
+		}),
+	})
+	fetcher.resolver = fakeResolver{
+		addrs: map[string][]net.IPAddr{
+			"www.goodreads.com": {{IP: net.ParseIP("93.184.216.34")}},
+		},
+	}
+
+	metadata, err := fetcher.Fetch(context.Background(), "https://www.goodreads.com/book/show/22328-neuromancer")
+	if err != nil {
+		t.Fatalf("Fetch error: %v", err)
+	}
+
+	if parseCalls != 1 {
+		t.Fatalf("parseCalls = %d, want 1", parseCalls)
+	}
+
+	bookData, ok := metadata["book_data"].(*BookData)
+	if !ok || bookData == nil {
+		t.Fatalf("expected book metadata to be present")
+	}
+	if bookData.Title != "Neuromancer" {
+		t.Fatalf("book title = %q, want Neuromancer", bookData.Title)
+	}
+}
+
+func TestFetchMetadataNonBookURLSkipsBookMetadata(t *testing.T) {
+	originalParseBookMetadataFunc := parseBookMetadataFunc
+	t.Cleanup(func() {
+		parseBookMetadataFunc = originalParseBookMetadataFunc
+	})
+
+	parseCalls := 0
+	parseBookMetadataFunc = func(ctx context.Context, rawURL string, client *OpenLibraryClient) (*BookData, error) {
+		parseCalls++
+		return &BookData{Title: "Should Not Be Used"}, nil
+	}
+
+	fetcher := NewFetcher(&http.Client{
+		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Status:     "200 OK",
+				Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
+				Body:       io.NopCloser(strings.NewReader(`<!doctype html><html><head><meta property="og:title" content="Fallback Title" /></head></html>`)),
+				Request:    r,
+			}, nil
+		}),
+	})
+	fetcher.resolver = fakeResolver{
+		addrs: map[string][]net.IPAddr{
+			"example.com": {{IP: net.ParseIP("93.184.216.34")}},
+		},
+	}
+
+	metadata, err := fetcher.Fetch(context.Background(), "https://example.com/posts/123")
+	if err != nil {
+		t.Fatalf("Fetch error: %v", err)
+	}
+
+	if parseCalls != 0 {
+		t.Fatalf("parseCalls = %d, want 0", parseCalls)
+	}
+	if _, ok := metadata["book_data"]; ok {
+		t.Fatalf("expected book metadata to be absent")
+	}
+}
+
+func TestFetchMetadataBookParserFailureFallsBackToHTMLMetadata(t *testing.T) {
+	originalParseBookMetadataFunc := parseBookMetadataFunc
+	t.Cleanup(func() {
+		parseBookMetadataFunc = originalParseBookMetadataFunc
+	})
+
+	parseBookMetadataFunc = func(ctx context.Context, rawURL string, client *OpenLibraryClient) (*BookData, error) {
+		return nil, errors.New("open library unavailable")
+	}
+
+	fetcher := NewFetcher(&http.Client{
+		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Status:     "200 OK",
+				Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
+				Body: io.NopCloser(strings.NewReader(`<!doctype html>
+					<html>
+					<head>
+						<title>Fallback Title</title>
+						<meta property="og:title" content="Fallback Title" />
+						<meta property="og:description" content="Fallback Description" />
+					</head>
+					</html>`)),
+				Request: r,
+			}, nil
+		}),
+	})
+	fetcher.resolver = fakeResolver{
+		addrs: map[string][]net.IPAddr{
+			"www.goodreads.com": {{IP: net.ParseIP("93.184.216.34")}},
+		},
+	}
+
+	metadata, err := fetcher.Fetch(context.Background(), "https://www.goodreads.com/book/show/22328-neuromancer")
+	if err != nil {
+		t.Fatalf("Fetch error: %v", err)
+	}
+	if metadata["title"] != "Fallback Title" {
+		t.Fatalf("title = %v, want Fallback Title", metadata["title"])
+	}
+	if metadata["description"] != "Fallback Description" {
+		t.Fatalf("description = %v, want Fallback Description", metadata["description"])
+	}
+	if _, ok := metadata["book_data"]; ok {
+		t.Fatalf("expected book metadata to be absent when parsing fails")
+	}
+}
+
 func TestFetchMetadataTimeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
