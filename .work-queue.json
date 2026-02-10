@@ -63,6 +63,7 @@
     897,
     898,
     899,
+    900,
     948,
     949,
     950,
@@ -1240,7 +1241,7 @@
     {
       "issue_number": 900,
       "title": "[Podcasts] Add save-for-later button to podcast posts",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         898,
         899
@@ -1254,7 +1255,9 @@
       "assigned_to": "agent-1770717110-70973",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770717110-70973",
       "branch": "feat/issue-900-podcasts-add-saveforlater-button-to-podc",
-      "claimed_at": "2026-02-10T09:51:50Z"
+      "claimed_at": "2026-02-10T09:51:50Z",
+      "pr_number": 969,
+      "completed_at": "2026-02-10T10:05:45Z"
     },
     {
       "issue_number": 901,
