@@ -808,7 +808,7 @@
     {
       "issue_number": 881,
       "title": "[Books] Create QuoteCard and QuoteForm components",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         880
       ],
@@ -817,7 +817,11 @@
         "frontend",
         "books"
       ],
-      "priority": 89
+      "priority": 89,
+      "assigned_to": "agent-1770709390-37307",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770709390-37307",
+      "branch": "feat/issue-881-books-create-quotecard-and-quoteform-com",
+      "claimed_at": "2026-02-10T07:43:10Z"
     },
     {
       "issue_number": 882,
