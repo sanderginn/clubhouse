@@ -6,23 +6,33 @@
     isLoadingSectionLinks,
     hasMoreSectionLinks,
     sectionLinksStore,
-    musicLengthFilter,
   } from '../stores';
   import { loadSectionLinks, loadMoreSectionLinks } from '../stores/sectionLinksFeedStore';
   import type { SectionLink } from '../stores/sectionLinksStore';
+  import {
+    extractDurationSeconds,
+    matchesMusicLengthFilter,
+    type MusicLengthFilter,
+  } from '../stores/musicFilterStore';
   import { looksLikeImageUrl } from '../services/linkUtils';
   import RelativeTime from './RelativeTime.svelte';
 
   let isExpanded = true;
   let lastSectionId: string | null = null;
+  let lengthFilter: MusicLengthFilter = 'all';
 
   $: isMusicSection = $activeSection?.type === 'music';
   $: linkCount = $sectionLinks.length;
-  $: lengthFilter = $musicLengthFilter;
+  $: filteredSectionLinks = $sectionLinks.filter((link) =>
+    matchesMusicLengthFilter(extractDurationSeconds(link.metadata), lengthFilter)
+  );
+  $: activeFilterLabel =
+    lengthFilter === 'tracks' ? 'tracks' : lengthFilter === 'sets' ? 'sets/mixes' : '';
 
   $: if (isMusicSection && $activeSection?.id && $activeSection.id !== lastSectionId) {
     lastSectionId = $activeSection.id;
     isExpanded = true;
+    lengthFilter = 'all';
     loadSectionLinks($activeSection.id);
   }
 
@@ -46,7 +56,12 @@
   ] as const;
 
   function setLengthFilter(value: (typeof lengthFilters)[number]['value']) {
-    musicLengthFilter.set(value);
+    if (value === 'all') {
+      lengthFilter = 'all';
+      return;
+    }
+
+    lengthFilter = lengthFilter === value ? 'all' : value;
   }
 
   function getThumbnailUrl(link: SectionLink): string | null {
@@ -163,9 +178,11 @@
           </div>
         {:else if $sectionLinks.length === 0}
           <p class="text-sm text-gray-500">No music links yet.</p>
+        {:else if filteredSectionLinks.length === 0}
+          <p class="text-sm text-gray-500">No {activeFilterLabel} links in recent shares yet.</p>
         {:else}
           <ul class="space-y-2 max-h-64 overflow-y-auto pr-1">
-            {#each $sectionLinks as link (link.id || link.url)}
+            {#each filteredSectionLinks as link (link.id || link.url)}
               {@const thumbnailUrl = getThumbnailUrl(link)}
               {@const title = getTitle(link)}
               <li>
