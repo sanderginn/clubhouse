@@ -152,12 +152,13 @@ function upsertBookshelfItem(
   source: Map<string, BookshelfItem[]>,
   item: BookshelfItem,
   categoryMap: Map<string, string>,
-  fallbackCategory?: string
+  fallbackCategory?: string,
+  placement: 'prepend' | 'append' = 'prepend'
 ): Map<string, BookshelfItem[]> {
   const category = resolveCategoryKey(item, categoryMap, fallbackCategory);
   const next = removeBookshelfPost(source, item.postId);
   const existing = next.get(category) ?? [];
-  next.set(category, [item, ...existing]);
+  next.set(category, placement === 'append' ? [...existing, item] : [item, ...existing]);
   return next;
 }
 
@@ -165,12 +166,13 @@ function mergeBookshelfItems(
   source: Map<string, BookshelfItem[]>,
   items: BookshelfItem[],
   categories: BookshelfCategory[],
-  fallbackCategory?: string
+  fallbackCategory?: string,
+  placement: 'prepend' | 'append' = 'append'
 ): Map<string, BookshelfItem[]> {
   const categoryMap = buildCategoryIdToName(categories);
   let next = source;
   for (const item of items) {
-    next = upsertBookshelfItem(next, item, categoryMap, fallbackCategory);
+    next = upsertBookshelfItem(next, item, categoryMap, fallbackCategory, placement);
   }
   return next;
 }
@@ -196,10 +198,10 @@ function moveCategoryItems(
   return next;
 }
 
-function upsertReadLog(logs: ReadLog[], nextLog: ReadLog): ReadLog[] {
+function upsertReadLog(logs: ReadLog[], nextLog: ReadLog, placement: 'prepend' | 'append' = 'prepend'): ReadLog[] {
   const index = logs.findIndex((entry) => entry.postId === nextLog.postId);
   if (index === -1) {
-    return [nextLog, ...logs];
+    return placement === 'append' ? [...logs, nextLog] : [nextLog, ...logs];
   }
   const updated = [...logs];
   updated[index] = {
@@ -497,10 +499,16 @@ async function loadMyBookshelf(category?: string, cursor?: string): Promise<stri
     const categories = get(bookshelfCategories);
     if (cursor) {
       myBookshelf.update((current) =>
-        mergeBookshelfItems(current, response.bookshelfItems ?? [], categories, category)
+        mergeBookshelfItems(current, response.bookshelfItems ?? [], categories, category, 'append')
       );
     } else {
-      const grouped = mergeBookshelfItems(new Map(), response.bookshelfItems ?? [], categories, category);
+      const grouped = mergeBookshelfItems(
+        new Map(),
+        response.bookshelfItems ?? [],
+        categories,
+        category,
+        'append'
+      );
       myBookshelf.set(grouped);
     }
     setCursor('myBookshelf', response.nextCursor);
@@ -519,10 +527,16 @@ async function loadAllBookshelf(category?: string, cursor?: string): Promise<str
     const categories = get(bookshelfCategories);
     if (cursor) {
       allBookshelf.update((current) =>
-        mergeBookshelfItems(current, response.bookshelfItems ?? [], categories, category)
+        mergeBookshelfItems(current, response.bookshelfItems ?? [], categories, category, 'append')
       );
     } else {
-      const grouped = mergeBookshelfItems(new Map(), response.bookshelfItems ?? [], categories, category);
+      const grouped = mergeBookshelfItems(
+        new Map(),
+        response.bookshelfItems ?? [],
+        categories,
+        category,
+        'append'
+      );
       allBookshelf.set(grouped);
     }
     setCursor('allBookshelf', response.nextCursor);
@@ -542,7 +556,7 @@ async function loadReadHistory(cursor?: string): Promise<string | undefined> {
       readHistory.update((current) => {
         let next = current;
         for (const log of response.readLogs ?? []) {
-          next = upsertReadLog(next, log);
+          next = upsertReadLog(next, log, 'append');
         }
         return next;
       });

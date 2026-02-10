@@ -338,18 +338,6 @@ describe('bookStore', () => {
       .mockResolvedValueOnce({
         bookshelfItems: [
           {
-            id: 'item-1',
-            userId: 'user-1',
-            postId: 'post-1',
-            categoryId: 'cat-1',
-            createdAt: '2026-01-01T00:00:00Z',
-          },
-        ],
-        nextCursor: 'cursor-1',
-      })
-      .mockResolvedValueOnce({
-        bookshelfItems: [
-          {
             id: 'item-2',
             userId: 'user-1',
             postId: 'post-2',
@@ -357,33 +345,46 @@ describe('bookStore', () => {
             createdAt: '2026-01-02T00:00:00Z',
           },
         ],
-        nextCursor: 'cursor-2',
-      });
-    apiGetAllBookshelfItems.mockResolvedValueOnce({
-      bookshelfItems: [
-        {
-          id: 'all-1',
-          userId: 'user-2',
-          postId: 'post-3',
-          categoryId: 'cat-1',
-          createdAt: '2026-01-03T00:00:00Z',
-        },
-      ],
-      nextCursor: 'all-cursor-1',
-    });
-    apiGetReadHistory
+        nextCursor: 'cursor-1',
+      })
       .mockResolvedValueOnce({
-        readLogs: [
+        bookshelfItems: [
           {
-            id: 'read-1',
+            id: 'item-1',
             userId: 'user-1',
             postId: 'post-1',
-            rating: 4,
+            categoryId: 'cat-1',
             createdAt: '2026-01-01T00:00:00Z',
           },
         ],
-        nextCursor: 'read-cursor-1',
+        nextCursor: 'cursor-2',
+      });
+    apiGetAllBookshelfItems
+      .mockResolvedValueOnce({
+        bookshelfItems: [
+          {
+            id: 'all-2',
+            userId: 'user-2',
+            postId: 'post-4',
+            categoryId: 'cat-1',
+            createdAt: '2026-01-04T00:00:00Z',
+          },
+        ],
+        nextCursor: 'all-cursor-1',
       })
+      .mockResolvedValueOnce({
+        bookshelfItems: [
+          {
+            id: 'all-1',
+            userId: 'user-2',
+            postId: 'post-3',
+            categoryId: 'cat-1',
+            createdAt: '2026-01-03T00:00:00Z',
+          },
+        ],
+        nextCursor: 'all-cursor-2',
+      });
+    apiGetReadHistory
       .mockResolvedValueOnce({
         readLogs: [
           {
@@ -394,29 +395,49 @@ describe('bookStore', () => {
             createdAt: '2026-01-02T00:00:00Z',
           },
         ],
+        nextCursor: 'read-cursor-1',
+      })
+      .mockResolvedValueOnce({
+        readLogs: [
+          {
+            id: 'read-1',
+            userId: 'user-1',
+            postId: 'post-1',
+            rating: 4,
+            createdAt: '2026-01-01T00:00:00Z',
+          },
+        ],
         nextCursor: 'read-cursor-2',
       });
 
     const firstMyCursor = await bookStore.loadMyBookshelf(undefined);
     const secondMyCursor = await bookStore.loadMyBookshelf(undefined, firstMyCursor);
-    const allCursor = await bookStore.loadAllBookshelf('Favorites');
+    const firstAllCursor = await bookStore.loadAllBookshelf('Favorites');
+    const secondAllCursor = await bookStore.loadAllBookshelf('Favorites', firstAllCursor);
     const firstReadCursor = await bookStore.loadReadHistory();
     const secondReadCursor = await bookStore.loadReadHistory(firstReadCursor);
 
     expect(apiGetMyBookshelf).toHaveBeenNthCalledWith(1, undefined, undefined, 20);
     expect(apiGetMyBookshelf).toHaveBeenNthCalledWith(2, undefined, 'cursor-1', 20);
-    expect(apiGetAllBookshelfItems).toHaveBeenCalledWith('Favorites', undefined, 20);
+    expect(apiGetAllBookshelfItems).toHaveBeenNthCalledWith(1, 'Favorites', undefined, 20);
+    expect(apiGetAllBookshelfItems).toHaveBeenNthCalledWith(2, 'Favorites', 'all-cursor-1', 20);
     expect(apiGetReadHistory).toHaveBeenNthCalledWith(1, undefined, 20);
     expect(apiGetReadHistory).toHaveBeenNthCalledWith(2, 'read-cursor-1', 20);
 
     const myGrouped = get(myBookshelf);
     const allGrouped = get(allBookshelf);
+    const myFavorites = myGrouped.get('Favorites') ?? [];
+    const allFavorites = allGrouped.get('Favorites') ?? [];
+    const history = get(readHistory);
     expect(myGrouped.get('Favorites')).toHaveLength(2);
-    expect(allGrouped.get('Favorites')).toHaveLength(1);
-    expect(get(readHistory)).toHaveLength(2);
+    expect(allGrouped.get('Favorites')).toHaveLength(2);
+    expect(history).toHaveLength(2);
+    expect(myFavorites.map((item) => item.postId)).toEqual(['post-2', 'post-1']);
+    expect(allFavorites.map((item) => item.postId)).toEqual(['post-4', 'post-3']);
+    expect(history.map((log) => log.postId)).toEqual(['post-2', 'post-1']);
 
     expect(secondMyCursor).toBe('cursor-2');
-    expect(allCursor).toBe('all-cursor-1');
+    expect(secondAllCursor).toBe('all-cursor-2');
     expect(secondReadCursor).toBe('read-cursor-2');
     expect(get(bookStoreMeta).cursors.readHistory).toBe('read-cursor-2');
   });
