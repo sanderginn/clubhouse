@@ -430,6 +430,38 @@ describe('PostCard', () => {
     expect(screen.getByTestId('book-title')).toHaveTextContent('Neuromancer');
   });
 
+  it('renders plain URL fallback for book sections when book metadata is unavailable', () => {
+    sectionStore.setSections([
+      {
+        id: 'section-1',
+        name: 'Books',
+        type: 'book',
+        icon: '📚',
+        slug: 'books',
+      },
+    ]);
+
+    const fallbackUrl = 'https://www.goodreads.com/book/show/22328-neuromancer';
+    const bookPostWithoutBookData: Post = {
+      ...basePost,
+      links: [
+        {
+          url: fallbackUrl,
+          metadata: {
+            url: fallbackUrl,
+            provider: 'goodreads',
+          },
+        },
+      ],
+    };
+
+    render(PostCard, { post: bookPostWithoutBookData });
+
+    expect(screen.queryByTestId('book-card')).not.toBeInTheDocument();
+    const fallbackLinkText = screen.getByText(fallbackUrl);
+    expect(fallbackLinkText.closest('a')).toHaveAttribute('href', fallbackUrl);
+  });
+
   it('renders book stats bar for book sections when book stats are present', () => {
     sectionStore.setSections([
       {
