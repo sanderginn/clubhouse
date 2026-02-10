@@ -112,20 +112,34 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 		return nil, errors.New("context is required")
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, fetchTimeout)
+	fetchCtx, cancel := context.WithTimeout(ctx, fetchTimeout)
 	defer cancel()
 
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return nil, fmt.Errorf("parse url: %w", err)
 	}
-	if err := f.validateURL(ctx, u); err != nil {
+	if err := f.validateURL(fetchCtx, u); err != nil {
 		return nil, err
 	}
 
 	// Use azuretls-client for Bandcamp to bypass their WAF
 	if isBandcampHost(u.Hostname()) {
-		return fetchBandcampMetadata(ctx, rawURL)
+		return fetchBandcampMetadata(fetchCtx, rawURL)
+	}
+
+	var movieMetadata *MovieData
+	movieMetadataLoaded := false
+	getMovieMetadata := func() *MovieData {
+		if movieMetadataLoaded {
+			return movieMetadata
+		}
+		movieMetadataLoaded = true
+
+		movieCtx, movieCancel := context.WithTimeout(ctx, fetchTimeout)
+		defer movieCancel()
+		movieMetadata = fetchMovieMetadata(movieCtx, rawURL)
+		return movieMetadata
 	}
 
 	client := f.client
@@ -133,15 +147,21 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 		client = &http.Client{Timeout: fetchTimeout}
 	}
 	clientCopy := *client
-	clientCopy.CheckRedirect = f.redirectValidator(ctx, client.CheckRedirect)
+	clientCopy.CheckRedirect = f.redirectValidator(fetchCtx, client.CheckRedirect)
 
-	resp, err := f.doRequestWithRetry(ctx, &clientCopy, u)
+	resp, err := f.doRequestWithRetry(fetchCtx, &clientCopy, u)
 	if err != nil {
+		if fallback := fallbackMetadataForMovieURL(ctx, u, getMovieMetadata()); fallback != nil {
+			return fallback, nil
+		}
 		return nil, fmt.Errorf("fetch url: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
+		if fallback := fallbackMetadataForMovieURL(ctx, u, getMovieMetadata()); fallback != nil {
+			return fallback, nil
+		}
 		return nil, fmt.Errorf("unexpected status: %s", resp.Status)
 	}
 
@@ -150,6 +170,9 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	isHTML := strings.Contains(contentTypeLower, "text/html")
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBodyBytes))
 	if err != nil {
+		if fallback := fallbackMetadataForMovieURL(ctx, u, getMovieMetadata()); fallback != nil {
+			return fallback, nil
+		}
 		return nil, fmt.Errorf("read response: %w", err)
 	}
 
@@ -202,21 +225,12 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 			}
 			metadata["recipe"] = recipe
 		}
-		if embed := extractEmbed(ctx, rawURL, body, metaTags); embed != nil {
+		if embed := extractEmbed(fetchCtx, rawURL, body, metaTags); embed != nil {
 			metadata["embed"] = embed
 		}
 	}
-	if shouldExtractMovieMetadata(ctx) {
-		if tmdbClient, err := newTMDBClientFromEnvFunc(); err == nil {
-			var omdbClient *OMDBClient
-			if omdb, omdbErr := getOMDBClientFromEnv(); omdbErr == nil {
-				omdbClient = omdb
-			}
-
-			if movie, movieErr := parseMovieMetadataFunc(ctx, rawURL, tmdbClient, omdbClient); movieErr == nil && movie != nil {
-				metadata["movie"] = movie
-			}
-		}
+	if movie := getMovieMetadata(); movie != nil {
+		metadata["movie"] = movie
 	}
 	if shouldExtractBookMetadata(rawURL) {
 		bookClient := NewOpenLibraryClient(openLibraryDefaultTimeout)
@@ -260,6 +274,45 @@ func shouldExtractMovieMetadata(ctx context.Context) bool {
 	}
 	sectionType, _ := ctx.Value(metadataSectionTypeContextKey).(string)
 	return sectionType == "movie" || sectionType == "series"
+}
+
+func fetchMovieMetadata(ctx context.Context, rawURL string) *MovieData {
+	if !shouldExtractMovieMetadata(ctx) {
+		return nil
+	}
+
+	tmdbClient, err := newTMDBClientFromEnvFunc()
+	if err != nil {
+		return nil
+	}
+
+	var omdbClient *OMDBClient
+	if omdb, omdbErr := getOMDBClientFromEnv(); omdbErr == nil {
+		omdbClient = omdb
+	}
+
+	movie, movieErr := parseMovieMetadataFunc(ctx, rawURL, tmdbClient, omdbClient)
+	if movieErr != nil || movie == nil {
+		return nil
+	}
+
+	return movie
+}
+
+func fallbackMetadataForMovieURL(ctx context.Context, u *url.URL, movie *MovieData) map[string]interface{} {
+	if !shouldExtractMovieMetadata(ctx) || movie == nil || u == nil {
+		return nil
+	}
+
+	provider := detectProvider(u.Hostname())
+	if provider == "" {
+		provider = u.Hostname()
+	}
+
+	return map[string]interface{}{
+		"movie":    movie,
+		"provider": provider,
+	}
 }
 
 func shouldExtractBookMetadata(rawURL string) bool {

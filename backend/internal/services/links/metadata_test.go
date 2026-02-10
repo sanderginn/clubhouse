@@ -201,6 +201,170 @@ func TestFetchMetadataMovieSectionPassesOMDBClientWhenConfigured(t *testing.T) {
 	}
 }
 
+func TestFetchMetadataMovieSectionFallbacksWhenRequestFails(t *testing.T) {
+	originalNewTMDBClientFromEnvFunc := newTMDBClientFromEnvFunc
+	originalNewOMDBClientFromEnvFunc := newOMDBClientFromEnvFunc
+	originalParseMovieMetadataFunc := parseMovieMetadataFunc
+	resetOMDBClientFromEnvCacheForTests()
+	t.Cleanup(func() {
+		newTMDBClientFromEnvFunc = originalNewTMDBClientFromEnvFunc
+		newOMDBClientFromEnvFunc = originalNewOMDBClientFromEnvFunc
+		parseMovieMetadataFunc = originalParseMovieMetadataFunc
+		resetOMDBClientFromEnvCacheForTests()
+	})
+
+	newTMDBClientFromEnvFunc = func() (*TMDBClient, error) {
+		return &TMDBClient{}, nil
+	}
+	parseMovieMetadataFunc = func(ctx context.Context, rawURL string, client *TMDBClient, omdbClient *OMDBClient) (*MovieData, error) {
+		return &MovieData{
+			Title:               "The Matrix",
+			TMDBID:              603,
+			TMDBMediaType:       "movie",
+			RottenTomatoesScore: intPtr(88),
+		}, nil
+	}
+
+	fetcher := NewFetcher(&http.Client{
+		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			return nil, errors.New("network unreachable")
+		}),
+	})
+	fetcher.resolver = fakeResolver{
+		addrs: map[string][]net.IPAddr{
+			"www.rottentomatoes.com": {{IP: net.ParseIP("151.101.65.91")}},
+		},
+	}
+
+	ctx := WithMetadataSectionType(context.Background(), "movie")
+	metadata, err := fetcher.Fetch(ctx, "https://www.rottentomatoes.com/m/the_matrix")
+	if err != nil {
+		t.Fatalf("Fetch error: %v", err)
+	}
+
+	movie, ok := metadata["movie"].(*MovieData)
+	if !ok || movie == nil {
+		t.Fatalf("expected movie metadata fallback")
+	}
+	if movie.Title != "The Matrix" {
+		t.Fatalf("movie title = %q, want The Matrix", movie.Title)
+	}
+	if movie.RottenTomatoesScore == nil || *movie.RottenTomatoesScore != 88 {
+		t.Fatalf("rotten tomatoes score = %+v, want 88", movie.RottenTomatoesScore)
+	}
+	if provider, ok := metadata["provider"].(string); !ok || provider == "" {
+		t.Fatalf("expected provider to be set")
+	}
+}
+
+func TestFetchMetadataMovieSectionFallbacksOnHTTPStatusError(t *testing.T) {
+	originalNewTMDBClientFromEnvFunc := newTMDBClientFromEnvFunc
+	originalNewOMDBClientFromEnvFunc := newOMDBClientFromEnvFunc
+	originalParseMovieMetadataFunc := parseMovieMetadataFunc
+	resetOMDBClientFromEnvCacheForTests()
+	t.Cleanup(func() {
+		newTMDBClientFromEnvFunc = originalNewTMDBClientFromEnvFunc
+		newOMDBClientFromEnvFunc = originalNewOMDBClientFromEnvFunc
+		parseMovieMetadataFunc = originalParseMovieMetadataFunc
+		resetOMDBClientFromEnvCacheForTests()
+	})
+
+	newTMDBClientFromEnvFunc = func() (*TMDBClient, error) {
+		return &TMDBClient{}, nil
+	}
+	parseMovieMetadataFunc = func(ctx context.Context, rawURL string, client *TMDBClient, omdbClient *OMDBClient) (*MovieData, error) {
+		return &MovieData{Title: "The Matrix"}, nil
+	}
+
+	fetcher := NewFetcher(&http.Client{
+		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusForbidden,
+				Status:     "403 Forbidden",
+				Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
+				Body:       io.NopCloser(strings.NewReader("forbidden")),
+				Request:    r,
+			}, nil
+		}),
+	})
+	fetcher.resolver = fakeResolver{
+		addrs: map[string][]net.IPAddr{
+			"www.rottentomatoes.com": {{IP: net.ParseIP("151.101.1.91")}},
+		},
+	}
+
+	ctx := WithMetadataSectionType(context.Background(), "movie")
+	metadata, err := fetcher.Fetch(ctx, "https://www.rottentomatoes.com/m/the_matrix")
+	if err != nil {
+		t.Fatalf("Fetch error: %v", err)
+	}
+	if _, ok := metadata["movie"]; !ok {
+		t.Fatalf("expected movie metadata fallback")
+	}
+}
+
+func TestFetchMetadataMovieSectionReturnsHTMLWhenMovieParsingTimesOut(t *testing.T) {
+	originalNewTMDBClientFromEnvFunc := newTMDBClientFromEnvFunc
+	originalNewOMDBClientFromEnvFunc := newOMDBClientFromEnvFunc
+	originalParseMovieMetadataFunc := parseMovieMetadataFunc
+	resetOMDBClientFromEnvCacheForTests()
+	t.Cleanup(func() {
+		newTMDBClientFromEnvFunc = originalNewTMDBClientFromEnvFunc
+		newOMDBClientFromEnvFunc = originalNewOMDBClientFromEnvFunc
+		parseMovieMetadataFunc = originalParseMovieMetadataFunc
+		resetOMDBClientFromEnvCacheForTests()
+	})
+
+	newTMDBClientFromEnvFunc = func() (*TMDBClient, error) {
+		return &TMDBClient{}, nil
+	}
+	parseMovieMetadataFunc = func(ctx context.Context, rawURL string, client *TMDBClient, omdbClient *OMDBClient) (*MovieData, error) {
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}
+
+	fetcher := NewFetcher(&http.Client{
+		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Status:     "200 OK",
+				Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
+				Body: io.NopCloser(strings.NewReader(`<!doctype html>
+					<html>
+					<head>
+						<meta property="og:title" content="Fallback Title" />
+						<meta property="og:description" content="Fallback Description" />
+					</head>
+					</html>`)),
+				Request: r,
+			}, nil
+		}),
+	})
+	fetcher.resolver = fakeResolver{
+		addrs: map[string][]net.IPAddr{
+			"www.imdb.com": {{IP: net.ParseIP("93.184.216.34")}},
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(WithMetadataSectionType(context.Background(), "movie"), 20*time.Millisecond)
+	defer cancel()
+
+	metadata, err := fetcher.Fetch(ctx, "https://www.imdb.com/title/tt0133093/")
+	if err != nil {
+		t.Fatalf("Fetch error: %v", err)
+	}
+
+	if metadata["title"] != "Fallback Title" {
+		t.Fatalf("title = %v, want Fallback Title", metadata["title"])
+	}
+	if metadata["description"] != "Fallback Description" {
+		t.Fatalf("description = %v, want Fallback Description", metadata["description"])
+	}
+	if _, ok := metadata["movie"]; ok {
+		t.Fatalf("expected movie metadata to be absent when movie parsing times out")
+	}
+}
+
 func TestFetchMetadataGeneralSectionSkipsMovieMetadata(t *testing.T) {
 	originalNewTMDBClientFromEnvFunc := newTMDBClientFromEnvFunc
 	originalNewOMDBClientFromEnvFunc := newOMDBClientFromEnvFunc
