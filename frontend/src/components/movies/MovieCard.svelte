@@ -567,10 +567,17 @@
               href={tmdbUrl}
               target="_blank"
               rel="noopener noreferrer"
-              class="mt-1 inline-flex text-xs font-medium text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline"
+              class="mt-2 inline-flex items-center gap-2 rounded-md border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-sm font-semibold text-slate-800 transition-colors hover:border-slate-400 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500"
+              aria-label={`View ${title} on TMDB (opens in a new tab)`}
               data-testid="movie-tmdb-link"
             >
-              View on TMDB
+              <span
+                class="rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-800"
+                aria-hidden="true"
+              >
+                TMDB
+              </span>
+              <span>View on TMDB</span>
             </a>
           {/if}
         </div>
