@@ -584,7 +584,7 @@
     {
       "issue_number": 869,
       "title": "[Books] Create BookshelfSaveButton component",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         867
       ],
@@ -593,7 +593,11 @@
         "frontend",
         "books"
       ],
-      "priority": 77
+      "priority": 77,
+      "assigned_to": "agent-1770708511-18068",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770708511-18068",
+      "branch": "feat/issue-869-books-create-bookshelfsavebutton-compone",
+      "claimed_at": "2026-02-10T07:28:31Z"
     },
     {
       "issue_number": 870,
