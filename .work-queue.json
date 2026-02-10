@@ -1496,7 +1496,7 @@
     {
       "issue_number": 978,
       "title": "[Movies/Series] Add Rotten Tomatoes and IMDB links to MovieCard",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         977
       ],
@@ -1506,7 +1506,11 @@
         "backend",
         "movies"
       ],
-      "priority": 7
+      "priority": 7,
+      "assigned_to": "agent-1770729070-49715",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770729070-49715",
+      "branch": "feat/issue-978-moviesseries-add-rotten-tomatoes-and-imd",
+      "claimed_at": "2026-02-10T13:11:10Z"
     },
     {
       "issue_number": 979,
