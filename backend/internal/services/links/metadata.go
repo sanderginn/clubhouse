@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sanderginn/clubhouse/internal/observability"
 	"golang.org/x/net/html"
 )
 
@@ -142,6 +143,12 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 		return movieMetadata
 	}
 
+	provider := detectProvider(u.Hostname())
+	bookData, bookErr := f.extractBookMetadata(ctx, rawURL)
+	if bookErr != nil {
+		observability.LogWarn(ctx, "book metadata extraction failed", "url", rawURL, "error", bookErr.Error())
+	}
+
 	client := f.client
 	if client == nil {
 		client = &http.Client{Timeout: fetchTimeout}
@@ -151,6 +158,9 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 
 	resp, err := f.doRequestWithRetry(fetchCtx, &clientCopy, u)
 	if err != nil {
+		if bookData != nil {
+			return buildBookMetadataOnlyResponse(u, provider, bookData), nil
+		}
 		if fallback := fallbackMetadataForMovieURL(ctx, u, getMovieMetadata()); fallback != nil {
 			return fallback, nil
 		}
@@ -159,6 +169,9 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	defer resp.Body.Close()
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
+		if bookData != nil {
+			return buildBookMetadataOnlyResponse(u, provider, bookData), nil
+		}
 		if fallback := fallbackMetadataForMovieURL(ctx, u, getMovieMetadata()); fallback != nil {
 			return fallback, nil
 		}
@@ -177,7 +190,6 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	}
 
 	metadata := make(map[string]interface{})
-	provider := detectProvider(u.Hostname())
 
 	// Treat SVGs as images here; frontend renders via <img> to avoid inline SVG execution.
 	if strings.HasPrefix(contentTypeLower, "image/") {
@@ -232,11 +244,8 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	if movie := getMovieMetadata(); movie != nil {
 		metadata["movie"] = movie
 	}
-	if shouldExtractBookMetadata(rawURL) {
-		bookClient := NewOpenLibraryClient(openLibraryDefaultTimeout)
-		if bookData, bookErr := parseBookMetadataFunc(ctx, rawURL, bookClient); bookErr == nil && bookData != nil {
-			metadata["book_data"] = bookData
-		}
+	if bookData != nil {
+		metadata["book_data"] = bookData
 	}
 
 	if _, ok := metadata["image"]; !ok && !isHTML && looksLikeImageURL(u) {
@@ -252,6 +261,30 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	}
 
 	return metadata, nil
+}
+
+func (f *Fetcher) extractBookMetadata(ctx context.Context, rawURL string) (*BookData, error) {
+	if !shouldExtractBookMetadata(rawURL) {
+		return nil, nil
+	}
+
+	bookClient := NewOpenLibraryClient(openLibraryDefaultTimeout)
+	return parseBookMetadataFunc(ctx, rawURL, bookClient)
+}
+
+func buildBookMetadataOnlyResponse(u *url.URL, provider string, bookData *BookData) map[string]interface{} {
+	metadata := map[string]interface{}{
+		"book_data": bookData,
+	}
+
+	if provider == "" && u != nil {
+		provider = u.Hostname()
+	}
+	if provider != "" {
+		metadata["provider"] = provider
+	}
+
+	return metadata
 }
 
 func getOMDBClientFromEnv() (*OMDBClient, error) {
@@ -329,7 +362,10 @@ func shouldExtractBookMetadata(rawURL string) bool {
 		_, ok := parseGoodreadsBookID(segments)
 		return ok
 	case isAmazonHost(host):
-		_, ok := parseAmazonASIN(segments)
+		if _, ok := parseAmazonASIN(segments); ok {
+			return true
+		}
+		_, ok := extractISBNFromSegments(segments)
 		return ok
 	case isOpenLibraryHost(host):
 		if _, ok := parseOpenLibraryWorkKey(segments); ok {
