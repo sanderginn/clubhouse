@@ -51,6 +51,7 @@
     889,
     890,
     891,
+    892,
     894,
     895,
     948,
@@ -1050,7 +1051,7 @@
     {
       "issue_number": 892,
       "title": "[Podcasts] Create PodcastSave service with section guard and audit logging",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         891,
         890
@@ -1064,7 +1065,9 @@
       "assigned_to": "agent-1770713163-84512",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770713163-84512",
       "branch": "feat/issue-892-podcasts-create-podcastsave-service-with",
-      "claimed_at": "2026-02-10T08:46:03Z"
+      "claimed_at": "2026-02-10T08:46:03Z",
+      "pr_number": 958,
+      "completed_at": "2026-02-10T09:13:38Z"
     },
     {
       "issue_number": 893,
