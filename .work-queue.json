@@ -1421,14 +1421,18 @@
     {
       "issue_number": 974,
       "title": "[Books] Fix book stats (saved/read) not updating until page reload",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "bug",
         "frontend",
         "books"
       ],
-      "priority": 3
+      "priority": 3,
+      "assigned_to": "agent-1770727462-17129",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770727462-17129",
+      "branch": "fix/issue-974-books-fix-book-stats-savedread-not-updat",
+      "claimed_at": "2026-02-10T12:44:22Z"
     },
     {
       "issue_number": 975,
