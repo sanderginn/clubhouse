@@ -78,14 +78,15 @@
     };
   }
 
-  async function markAsRead() {
+  async function markAsRead(): Promise<boolean> {
     if (isSaving) {
-      return;
+      return false;
     }
 
     isSaving = true;
     const previous = activeReadLog;
     optimisticReadLog = buildOptimisticReadLog(displayedRating);
+    let didSucceed = false;
 
     try {
       await bookStore.logRead(postId, displayedRating ?? undefined);
@@ -95,9 +96,12 @@
         optimisticReadLog = previous ?? null;
       } else {
         optimisticReadLog = undefined;
+        didSucceed = true;
       }
       isSaving = false;
     }
+
+    return didSucceed;
   }
 
   async function updateRating(nextRating: number) {
@@ -153,7 +157,11 @@
     }
 
     if (!isRead) {
-      await markAsRead();
+      const didMarkAsRead = await markAsRead();
+      if (didMarkAsRead) {
+        isRemoveMenuOpen = false;
+        isRatingPopoverOpen = true;
+      }
       return;
     }
 
