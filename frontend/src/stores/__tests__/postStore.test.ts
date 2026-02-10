@@ -281,6 +281,80 @@ describe('postStore', () => {
     });
   });
 
+  it('setBookBookshelfState updates viewer bookshelf flags and count', () => {
+    postStore.setPosts(
+      [
+        {
+          ...basePost,
+          bookStats: {
+            bookshelfCount: 2,
+            readCount: 1,
+            averageRating: 4,
+            viewerOnBookshelf: false,
+            viewerCategories: [],
+            viewerRead: false,
+            viewerRating: null,
+          },
+        },
+      ],
+      null,
+      true
+    );
+
+    postStore.setBookBookshelfState('post-1', true, ['Favorites']);
+    let state = get(postStore);
+    expect(state.posts[0].bookStats?.bookshelfCount).toBe(3);
+    expect(state.posts[0].bookStats?.viewerOnBookshelf).toBe(true);
+    expect(state.posts[0].bookStats?.viewerCategories).toEqual(['Favorites']);
+
+    postStore.setBookBookshelfState('post-1', false, []);
+    state = get(postStore);
+    expect(state.posts[0].bookStats?.bookshelfCount).toBe(2);
+    expect(state.posts[0].bookStats?.viewerOnBookshelf).toBe(false);
+    expect(state.posts[0].bookStats?.viewerCategories).toEqual([]);
+  });
+
+  it('setBookReadState and setBookStats update read stats', () => {
+    postStore.setPosts(
+      [
+        {
+          ...basePost,
+          bookStats: {
+            bookshelfCount: 1,
+            readCount: 1,
+            averageRating: 3,
+            viewerOnBookshelf: true,
+            viewerCategories: ['Favorites'],
+            viewerRead: false,
+            viewerRating: null,
+          },
+        },
+      ],
+      null,
+      true
+    );
+
+    postStore.setBookReadState('post-1', true, 4);
+    let state = get(postStore);
+    expect(state.posts[0].bookStats?.readCount).toBe(2);
+    expect(state.posts[0].bookStats?.viewerRead).toBe(true);
+    expect(state.posts[0].bookStats?.viewerRating).toBe(4);
+
+    postStore.setBookStats('post-1', {
+      readCount: 7,
+      averageRating: 4.3,
+      viewerRead: true,
+      viewerRating: 5,
+    });
+    state = get(postStore);
+    expect(state.posts[0].bookStats).toMatchObject({
+      readCount: 7,
+      averageRating: 4.3,
+      viewerRead: true,
+      viewerRating: 5,
+    });
+  });
+
   it('reset restores defaults', () => {
     postStore.setPosts([basePost], 'cursor-1', false);
     postStore.reset();

@@ -6,6 +6,7 @@ import type {
   Highlight,
   RecipeStats,
   MovieStats,
+  BookStats,
   EmbedData,
   RecipeMetadata,
   MovieMetadata,
@@ -50,6 +51,8 @@ export interface ApiPost {
   recipeStats?: ApiRecipeStats | null;
   movie_stats?: ApiMovieStats | null;
   movieStats?: ApiMovieStats | null;
+  book_stats?: ApiBookStats | null;
+  bookStats?: ApiBookStats | null;
   created_at: string;
   updated_at?: string;
 }
@@ -82,6 +85,25 @@ export interface ApiMovieStats {
   viewerWatched?: boolean | null;
   viewerRating?: number | null;
   viewerCategories?: string[] | null;
+}
+
+export interface ApiBookStats {
+  bookshelf_count?: number | null;
+  read_count?: number | null;
+  avg_rating?: number | null;
+  average_rating?: number | null;
+  viewer_on_bookshelf?: boolean | null;
+  viewer_categories?: string[] | null;
+  viewer_read?: boolean | null;
+  viewer_rating?: number | null;
+  bookshelfCount?: number | null;
+  readCount?: number | null;
+  avgRating?: number | null;
+  averageRating?: number | null;
+  viewerOnBookshelf?: boolean | null;
+  viewerCategories?: string[] | null;
+  viewerRead?: boolean | null;
+  viewerRating?: number | null;
 }
 
 function normalizeString(value: unknown): string | undefined {
@@ -453,6 +475,49 @@ function normalizeMovieStats(rawStats: unknown): MovieStats | undefined {
   };
 }
 
+function normalizeBookStats(rawStats: unknown): BookStats | undefined {
+  if (!rawStats || typeof rawStats !== 'object') {
+    return undefined;
+  }
+
+  const record = rawStats as Record<string, unknown>;
+  const bookshelfCount = normalizeNumber(record.bookshelf_count ?? record.bookshelfCount) ?? 0;
+  const readCount = normalizeNumber(record.read_count ?? record.readCount) ?? 0;
+  const averageRating =
+    normalizeNumber(
+      record.avg_rating ??
+        record.avgRating ??
+        record.average_rating ??
+        record.averageRating
+    ) ?? null;
+  const viewerOnBookshelf =
+    typeof record.viewer_on_bookshelf === 'boolean'
+      ? record.viewer_on_bookshelf
+      : typeof record.viewerOnBookshelf === 'boolean'
+        ? record.viewerOnBookshelf
+        : undefined;
+  const viewerCategories = normalizeStringArray(
+    record.viewer_categories ?? record.viewerCategories
+  );
+  const viewerRead =
+    typeof record.viewer_read === 'boolean'
+      ? record.viewer_read
+      : typeof record.viewerRead === 'boolean'
+        ? record.viewerRead
+        : undefined;
+  const viewerRating = normalizeNumber(record.viewer_rating ?? record.viewerRating) ?? undefined;
+
+  return {
+    bookshelfCount,
+    readCount,
+    averageRating,
+    ...(typeof viewerOnBookshelf === 'boolean' ? { viewerOnBookshelf } : {}),
+    ...(viewerCategories ? { viewerCategories } : {}),
+    ...(typeof viewerRead === 'boolean' ? { viewerRead } : {}),
+    ...(typeof viewerRating === 'number' ? { viewerRating } : {}),
+  };
+}
+
 function normalizeEmbedData(rawEmbed: unknown): EmbedData | undefined {
   if (!rawEmbed || typeof rawEmbed !== 'object' || Array.isArray(rawEmbed)) {
     return undefined;
@@ -654,6 +719,7 @@ export function mapApiPost(apiPost: ApiPost): Post {
     viewerReactions: apiPost.viewer_reactions,
     recipeStats: normalizeRecipeStats(apiPost.recipe_stats ?? apiPost.recipeStats),
     movieStats: normalizeMovieStats(apiPost.movie_stats ?? apiPost.movieStats),
+    bookStats: normalizeBookStats(apiPost.book_stats ?? apiPost.bookStats),
     createdAt: apiPost.created_at,
     updatedAt: apiPost.updated_at,
   };

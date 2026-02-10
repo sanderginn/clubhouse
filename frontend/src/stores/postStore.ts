@@ -118,6 +118,16 @@ export interface MovieStats {
   viewerCategories?: string[];
 }
 
+export interface BookStats {
+  bookshelfCount: number;
+  readCount: number;
+  averageRating: number | null;
+  viewerOnBookshelf?: boolean;
+  viewerCategories?: string[];
+  viewerRead?: boolean;
+  viewerRating?: number | null;
+}
+
 export interface Post {
   id: string;
   userId: string;
@@ -137,6 +147,8 @@ export interface Post {
   recipe_stats?: RecipeStats;
   movieStats?: MovieStats;
   movie_stats?: MovieStats;
+  bookStats?: BookStats;
+  book_stats?: BookStats;
   createdAt: string;
   updatedAt?: string;
 }
@@ -179,6 +191,30 @@ function getMovieStats(post: Post): MovieStats {
     viewerWatched: Boolean(current?.viewerWatched),
     viewerRating: normalizeMovieRating(current?.viewerRating ?? null),
     viewerCategories: current?.viewerCategories ?? [],
+  };
+}
+
+function clampBookCount(value: number): number {
+  return Math.max(0, Number.isFinite(value) ? value : 0);
+}
+
+function normalizeBookRating(value: number | null | undefined): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return null;
+  }
+  return Math.min(5, Math.max(0, value));
+}
+
+function getBookStats(post: Post): BookStats {
+  const current = post.bookStats ?? post.book_stats;
+  return {
+    bookshelfCount: clampBookCount(current?.bookshelfCount ?? 0),
+    readCount: clampBookCount(current?.readCount ?? 0),
+    averageRating: normalizeBookRating(current?.averageRating ?? null),
+    viewerOnBookshelf: Boolean(current?.viewerOnBookshelf),
+    viewerCategories: current?.viewerCategories ?? [],
+    viewerRead: Boolean(current?.viewerRead),
+    viewerRating: normalizeBookRating(current?.viewerRating ?? null),
   };
 }
 
@@ -474,6 +510,135 @@ function createPostStore() {
             ...post,
             movieStats: nextStats,
             movie_stats: nextStats,
+          };
+        }),
+      })),
+    setBookStats: (postId: string, stats: Partial<BookStats>) =>
+      update((state) => ({
+        ...state,
+        posts: state.posts.map((post) => {
+          if (post.id !== postId) {
+            return post;
+          }
+
+          const currentStats = getBookStats(post);
+          const nextStats: BookStats = { ...currentStats };
+
+          if ('bookshelfCount' in stats) {
+            nextStats.bookshelfCount = clampBookCount(stats.bookshelfCount ?? 0);
+          }
+          if ('readCount' in stats) {
+            nextStats.readCount = clampBookCount(stats.readCount ?? 0);
+          }
+          if ('averageRating' in stats) {
+            nextStats.averageRating = normalizeBookRating(stats.averageRating ?? null);
+          }
+          if ('viewerOnBookshelf' in stats) {
+            nextStats.viewerOnBookshelf = Boolean(stats.viewerOnBookshelf);
+          }
+          if ('viewerCategories' in stats) {
+            nextStats.viewerCategories = Array.isArray(stats.viewerCategories)
+              ? stats.viewerCategories
+              : [];
+          }
+          if ('viewerRead' in stats) {
+            nextStats.viewerRead = Boolean(stats.viewerRead);
+          }
+          if ('viewerRating' in stats) {
+            nextStats.viewerRating = normalizeBookRating(stats.viewerRating ?? null);
+          }
+
+          return {
+            ...post,
+            bookStats: nextStats,
+            book_stats: nextStats,
+          };
+        }),
+      })),
+    setBookBookshelfState: (
+      postId: string,
+      viewerOnBookshelf: boolean,
+      viewerCategories: string[] = []
+    ) =>
+      update((state) => ({
+        ...state,
+        posts: state.posts.map((post) => {
+          if (post.id !== postId) {
+            return post;
+          }
+
+          const currentStats = getBookStats(post);
+          let nextBookshelfCount = currentStats.bookshelfCount;
+
+          if (!currentStats.viewerOnBookshelf && viewerOnBookshelf) {
+            nextBookshelfCount = clampBookCount(nextBookshelfCount + 1);
+          } else if (currentStats.viewerOnBookshelf && !viewerOnBookshelf) {
+            nextBookshelfCount = clampBookCount(nextBookshelfCount - 1);
+          }
+
+          const normalizedCategories = viewerOnBookshelf
+            ? viewerCategories
+                .map((category) => category.trim())
+                .filter((category) => category.length > 0)
+            : [];
+
+          const nextStats: BookStats = {
+            ...currentStats,
+            bookshelfCount: nextBookshelfCount,
+            viewerOnBookshelf,
+            viewerCategories: normalizedCategories,
+          };
+
+          return {
+            ...post,
+            bookStats: nextStats,
+            book_stats: nextStats,
+          };
+        }),
+      })),
+    setBookReadState: (postId: string, viewerRead: boolean, viewerRating: number | null = null) =>
+      update((state) => ({
+        ...state,
+        posts: state.posts.map((post) => {
+          if (post.id !== postId) {
+            return post;
+          }
+
+          const currentStats = getBookStats(post);
+          const nextViewerRating = viewerRead ? normalizeBookRating(viewerRating) : null;
+
+          let nextReadCount = currentStats.readCount;
+          if (!currentStats.viewerRead && viewerRead) {
+            nextReadCount = clampBookCount(nextReadCount + 1);
+          } else if (currentStats.viewerRead && !viewerRead) {
+            nextReadCount = clampBookCount(nextReadCount - 1);
+          }
+
+          // Read logs can be unrated; keep average stable unless no reads remain.
+          let nextAverageRating = currentStats.averageRating;
+          if (nextReadCount === 0) {
+            nextAverageRating = null;
+          } else if (
+            currentStats.averageRating === null &&
+            !currentStats.viewerRead &&
+            viewerRead &&
+            nextViewerRating !== null
+          ) {
+            nextAverageRating = nextViewerRating;
+          }
+
+          const nextStats: BookStats = {
+            ...currentStats,
+            readCount: nextReadCount,
+            averageRating: nextAverageRating,
+            viewerRead,
+            viewerRating: nextViewerRating,
+          };
+
+          return {
+            ...post,
+            bookStats: nextStats,
+            book_stats: nextStats,
           };
         }),
       })),
