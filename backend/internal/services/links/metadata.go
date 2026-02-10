@@ -128,6 +128,8 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 		return fetchBandcampMetadata(ctx, rawURL)
 	}
 
+	movieMetadata := fetchMovieMetadata(ctx, rawURL)
+
 	client := f.client
 	if client == nil {
 		client = &http.Client{Timeout: fetchTimeout}
@@ -137,11 +139,17 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 
 	resp, err := f.doRequestWithRetry(ctx, &clientCopy, u)
 	if err != nil {
+		if fallback := fallbackMetadataForMovieURL(ctx, u, movieMetadata); fallback != nil {
+			return fallback, nil
+		}
 		return nil, fmt.Errorf("fetch url: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
+		if fallback := fallbackMetadataForMovieURL(ctx, u, movieMetadata); fallback != nil {
+			return fallback, nil
+		}
 		return nil, fmt.Errorf("unexpected status: %s", resp.Status)
 	}
 
@@ -150,6 +158,9 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	isHTML := strings.Contains(contentTypeLower, "text/html")
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBodyBytes))
 	if err != nil {
+		if fallback := fallbackMetadataForMovieURL(ctx, u, movieMetadata); fallback != nil {
+			return fallback, nil
+		}
 		return nil, fmt.Errorf("read response: %w", err)
 	}
 
@@ -206,17 +217,8 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 			metadata["embed"] = embed
 		}
 	}
-	if shouldExtractMovieMetadata(ctx) {
-		if tmdbClient, err := newTMDBClientFromEnvFunc(); err == nil {
-			var omdbClient *OMDBClient
-			if omdb, omdbErr := getOMDBClientFromEnv(); omdbErr == nil {
-				omdbClient = omdb
-			}
-
-			if movie, movieErr := parseMovieMetadataFunc(ctx, rawURL, tmdbClient, omdbClient); movieErr == nil && movie != nil {
-				metadata["movie"] = movie
-			}
-		}
+	if movieMetadata != nil {
+		metadata["movie"] = movieMetadata
 	}
 	if shouldExtractBookMetadata(rawURL) {
 		bookClient := NewOpenLibraryClient(openLibraryDefaultTimeout)
@@ -260,6 +262,45 @@ func shouldExtractMovieMetadata(ctx context.Context) bool {
 	}
 	sectionType, _ := ctx.Value(metadataSectionTypeContextKey).(string)
 	return sectionType == "movie" || sectionType == "series"
+}
+
+func fetchMovieMetadata(ctx context.Context, rawURL string) *MovieData {
+	if !shouldExtractMovieMetadata(ctx) {
+		return nil
+	}
+
+	tmdbClient, err := newTMDBClientFromEnvFunc()
+	if err != nil {
+		return nil
+	}
+
+	var omdbClient *OMDBClient
+	if omdb, omdbErr := getOMDBClientFromEnv(); omdbErr == nil {
+		omdbClient = omdb
+	}
+
+	movie, movieErr := parseMovieMetadataFunc(ctx, rawURL, tmdbClient, omdbClient)
+	if movieErr != nil || movie == nil {
+		return nil
+	}
+
+	return movie
+}
+
+func fallbackMetadataForMovieURL(ctx context.Context, u *url.URL, movie *MovieData) map[string]interface{} {
+	if !shouldExtractMovieMetadata(ctx) || movie == nil || u == nil {
+		return nil
+	}
+
+	provider := detectProvider(u.Hostname())
+	if provider == "" {
+		provider = u.Hostname()
+	}
+
+	return map[string]interface{}{
+		"movie":    movie,
+		"provider": provider,
+	}
 }
 
 func shouldExtractBookMetadata(rawURL string) bool {

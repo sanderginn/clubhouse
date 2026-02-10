@@ -273,6 +273,7 @@ func TestParseMovieMetadataLetterboxdURL(t *testing.T) {
 				"genres":[{"id":28,"name":"Action"}],
 				"release_date":"1999-03-30",
 				"vote_average":8.2,
+				"imdb_id":"tt0133093",
 				"credits":{"cast":[],"crew":[]},
 				"videos":{"results":[]}
 			}`))
@@ -302,7 +303,7 @@ func TestParseMovieMetadataLetterboxdURL(t *testing.T) {
 }
 
 func TestParseMovieMetadataRottenTomatoesMovieURL(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	tmdbServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/search/movie":
 			if got := strings.TrimSpace(r.URL.Query().Get("query")); got != "the matrix" {
@@ -322,6 +323,8 @@ func TestParseMovieMetadataRottenTomatoesMovieURL(t *testing.T) {
 				"genres":[{"id":28,"name":"Action"}],
 				"release_date":"1999-03-30",
 				"vote_average":8.2,
+				"imdb_id":"tt0133093",
+				"external_ids":{"imdb_id":"tt0133093"},
 				"credits":{"cast":[],"crew":[]},
 				"videos":{"results":[]}
 			}`))
@@ -329,10 +332,26 @@ func TestParseMovieMetadataRottenTomatoesMovieURL(t *testing.T) {
 			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
 	}))
-	defer server.Close()
+	defer tmdbServer.Close()
 
-	client := newTestTMDBClient(t, server.URL)
-	metadata, err := ParseMovieMetadata(context.Background(), "https://www.rottentomatoes.com/m/the_matrix", client, nil)
+	omdbServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := strings.TrimSpace(r.URL.Query().Get("i")); got != "tt0133093" {
+			t.Fatalf("imdb id = %q, want tt0133093", got)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"Response":"True",
+			"Ratings":[
+				{"Source":"Rotten Tomatoes","Value":"88%"},
+				{"Source":"Metacritic","Value":"73/100"}
+			]
+		}`))
+	}))
+	defer omdbServer.Close()
+
+	client := newTestTMDBClient(t, tmdbServer.URL)
+	omdbClient := newTestOMDBClient(t, omdbServer.URL)
+	metadata, err := ParseMovieMetadata(context.Background(), "https://www.rottentomatoes.com/m/the_matrix", client, omdbClient)
 	if err != nil {
 		t.Fatalf("ParseMovieMetadata error: %v", err)
 	}
@@ -347,6 +366,9 @@ func TestParseMovieMetadataRottenTomatoesMovieURL(t *testing.T) {
 	}
 	if metadata.TMDBMediaType != "movie" {
 		t.Fatalf("TMDBMediaType = %q, want movie", metadata.TMDBMediaType)
+	}
+	if metadata.RottenTomatoesScore == nil || *metadata.RottenTomatoesScore != 88 {
+		t.Fatalf("RottenTomatoesScore = %+v, want 88", metadata.RottenTomatoesScore)
 	}
 }
 
