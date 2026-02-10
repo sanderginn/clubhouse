@@ -139,6 +139,33 @@ describe('mapApiPost', () => {
     expect(post.movieStats?.viewerCategories).toEqual(['Top Picks']);
   });
 
+  it('maps book stats from API shape', () => {
+    const post = mapApiPost({
+      id: 'post-book-stats',
+      user_id: 'user-book-stats',
+      section_id: 'section-book',
+      content: 'Book stats',
+      created_at: '2025-01-01T00:00:00Z',
+      book_stats: {
+        bookshelf_count: 8,
+        read_count: 5,
+        average_rating: 4.4,
+        viewer_on_bookshelf: true,
+        viewer_categories: ['Favorites'],
+        viewer_read: true,
+        viewer_rating: 5,
+      },
+    });
+
+    expect(post.bookStats?.bookshelfCount).toBe(8);
+    expect(post.bookStats?.readCount).toBe(5);
+    expect(post.bookStats?.averageRating).toBe(4.4);
+    expect(post.bookStats?.viewerOnBookshelf).toBe(true);
+    expect(post.bookStats?.viewerCategories).toEqual(['Favorites']);
+    expect(post.bookStats?.viewerRead).toBe(true);
+    expect(post.bookStats?.viewerRating).toBe(5);
+  });
+
   it('preserves and normalizes nested movie metadata payload', () => {
     const post = mapApiPost({
       id: 'post-movie-metadata',
