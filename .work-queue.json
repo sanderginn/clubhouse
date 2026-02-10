@@ -40,7 +40,8 @@
     885,
     887,
     888,
-    891
+    891,
+    895
   ],
   "issues": [
     {
@@ -1015,7 +1016,7 @@
     {
       "issue_number": 895,
       "title": "[Podcasts] Add frontend section type/icon and app-level podcasts container mount",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         887
       ],
@@ -1028,7 +1029,9 @@
       "assigned_to": "agent-1770707043-84729",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770707043-84729",
       "branch": "feat/issue-895-podcasts-add-frontend-section-typeicon-a",
-      "claimed_at": "2026-02-10T07:04:03Z"
+      "claimed_at": "2026-02-10T07:04:03Z",
+      "pr_number": 940,
+      "completed_at": "2026-02-10T07:17:09Z"
     },
     {
       "issue_number": 896,
