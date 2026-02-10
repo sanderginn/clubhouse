@@ -1009,7 +1009,7 @@
     {
       "issue_number": 895,
       "title": "[Podcasts] Add frontend section type/icon and app-level podcasts container mount",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         887
       ],
@@ -1018,7 +1018,11 @@
         "frontend",
         "podcasts"
       ],
-      "priority": 103
+      "priority": 103,
+      "assigned_to": "agent-1770707043-84729",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770707043-84729",
+      "branch": "feat/issue-895-podcasts-add-frontend-section-typeicon-a",
+      "claimed_at": "2026-02-10T07:04:03Z"
     },
     {
       "issue_number": 896,
