@@ -744,6 +744,94 @@ func TestPostRouteHandlerGetPostWatchlistInfoRequiresAuth(t *testing.T) {
 	}
 }
 
+func TestPostRouteHandlerAddToBookshelfUsesCSRFAuth(t *testing.T) {
+	authCalled := false
+	handlerCalled := false
+
+	requireAuth := func(next http.Handler) http.Handler {
+		return next
+	}
+	requireAuthCSRF := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authCalled = true
+			next.ServeHTTP(w, r)
+		})
+	}
+
+	deps := postRouteDeps{
+		addToBookshelf: func(w http.ResponseWriter, r *http.Request) {
+			handlerCalled = true
+			w.WriteHeader(http.StatusCreated)
+		},
+		getPost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPost should not be called")
+		},
+	}
+
+	handler := newPostRouteHandler(requireAuth, requireAuthCSRF, deps)
+	postID := uuid.New()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/posts/"+postID.String()+"/bookshelf", nil)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusCreated {
+		t.Fatalf("expected status %v, got %v", http.StatusCreated, status)
+	}
+
+	if !authCalled {
+		t.Fatal("expected CSRF auth middleware to be called")
+	}
+
+	if !handlerCalled {
+		t.Fatal("expected addToBookshelf handler to be called")
+	}
+}
+
+func TestPostRouteHandlerRemoveFromBookshelfUsesCSRFAuth(t *testing.T) {
+	authCalled := false
+	handlerCalled := false
+
+	requireAuth := func(next http.Handler) http.Handler {
+		return next
+	}
+	requireAuthCSRF := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authCalled = true
+			next.ServeHTTP(w, r)
+		})
+	}
+
+	deps := postRouteDeps{
+		removeFromBookshelf: func(w http.ResponseWriter, r *http.Request) {
+			handlerCalled = true
+			w.WriteHeader(http.StatusNoContent)
+		},
+		getPost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPost should not be called")
+		},
+	}
+
+	handler := newPostRouteHandler(requireAuth, requireAuthCSRF, deps)
+	postID := uuid.New()
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/posts/"+postID.String()+"/bookshelf", nil)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusNoContent {
+		t.Fatalf("expected status %v, got %v", http.StatusNoContent, status)
+	}
+
+	if !authCalled {
+		t.Fatal("expected CSRF auth middleware to be called")
+	}
+
+	if !handlerCalled {
+		t.Fatal("expected removeFromBookshelf handler to be called")
+	}
+}
+
 func TestPostRouteHandlerLogWatchUsesCSRFAuth(t *testing.T) {
 	authCalled := false
 	logCalled := false
