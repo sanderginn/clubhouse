@@ -611,7 +611,7 @@
     {
       "issue_number": 876,
       "title": "[Books] Create book_quotes table migration",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -619,7 +619,11 @@
         "books",
         "database"
       ],
-      "priority": 84
+      "priority": 84,
+      "assigned_to": "agent-1770695583-76658",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770695583-76658",
+      "branch": "feat/issue-876-books-create-bookquotes-table-migration",
+      "claimed_at": "2026-02-10T03:53:03Z"
     },
     {
       "issue_number": 877,
