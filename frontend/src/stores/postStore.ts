@@ -15,6 +15,23 @@ export interface Link {
   highlights?: Highlight[];
 }
 
+export interface BookMetadata {
+  title?: string;
+  authors?: string[];
+  description?: string;
+  coverUrl?: string;
+  cover_url?: string;
+  pageCount?: number;
+  page_count?: number;
+  genres?: string[];
+  publishDate?: string;
+  publish_date?: string;
+  openLibraryKey?: string;
+  open_library_key?: string;
+  goodreadsUrl?: string;
+  goodreads_url?: string;
+}
+
 export interface LinkMetadata {
   url: string;
   provider?: string;
@@ -28,6 +45,9 @@ export interface LinkMetadata {
   type?: string;
   recipe?: RecipeMetadata;
   movie?: MovieMetadata;
+  book?: BookMetadata;
+  book_data?: BookMetadata;
+  bookData?: BookMetadata;
   podcast?: PodcastMetadata;
 }
 

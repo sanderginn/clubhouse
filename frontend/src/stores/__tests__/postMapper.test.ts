@@ -112,6 +112,38 @@ describe('mapApiPost', () => {
     expect(post.links?.[0].metadata?.recipe?.nutrition?.calories).toBe('200');
   });
 
+  it('maps book metadata from book_data payload', () => {
+    const post = mapApiPost({
+      id: 'post-book-metadata',
+      user_id: 'user-book-metadata',
+      section_id: 'section-book',
+      content: 'book',
+      created_at: '2025-01-01T00:00:00Z',
+      links: [
+        {
+          id: 'link-book',
+          url: 'https://www.goodreads.com/book/show/22328-neuromancer',
+          metadata: {
+            book_data: {
+              title: 'Neuromancer',
+              authors: ['William Gibson'],
+              description: 'A classic cyberpunk novel.',
+              cover_url: 'https://covers.openlibrary.org/b/id/12345-L.jpg',
+              page_count: 271,
+              publish_date: '1984-07-01',
+              open_library_key: '/books/OL24226054M',
+              goodreads_url: 'https://www.goodreads.com/book/show/22328-neuromancer',
+            },
+          },
+        },
+      ],
+    });
+
+    expect(post.links?.[0].metadata?.book_data?.title).toBe('Neuromancer');
+    expect(post.links?.[0].metadata?.bookData?.authors).toEqual(['William Gibson']);
+    expect(post.links?.[0].metadata?.book?.page_count).toBe(271);
+  });
+
   it('maps movie stats from API shape', () => {
     const post = mapApiPost({
       id: 'post-movie-stats',
