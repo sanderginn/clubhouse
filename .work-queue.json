@@ -677,7 +677,7 @@
     {
       "issue_number": 878,
       "title": "[Books] Create book quote service",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         877
       ],
@@ -686,7 +686,11 @@
         "backend",
         "books"
       ],
-      "priority": 86
+      "priority": 86,
+      "assigned_to": "agent-1770697104-9797",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770697104-9797",
+      "branch": "feat/issue-878-books-create-book-quote-service",
+      "claimed_at": "2026-02-10T04:18:24Z"
     },
     {
       "issue_number": 879,
