@@ -399,6 +399,120 @@ describe('api client', () => {
     expect(url).toContain('section_type=movie');
   });
 
+  it('savePodcast calls podcast-save endpoint and maps fields', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/auth/csrf')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: vi.fn().mockResolvedValue({ token: 'csrf-token' }),
+        });
+      }
+
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue({
+          id: 'podcast-save-1',
+          user_id: 'user-1',
+          post_id: 'post-1',
+          created_at: '2026-02-10T12:00:00Z',
+          deleted_at: null,
+        }),
+      });
+    });
+
+    const response = await api.savePodcast('post-1');
+
+    const call = findCall('/posts/post-1/podcast-save');
+    expect(call?.[1]?.body).toBeUndefined();
+    expect(response).toEqual({
+      id: 'podcast-save-1',
+      userId: 'user-1',
+      postId: 'post-1',
+      createdAt: '2026-02-10T12:00:00Z',
+      deletedAt: undefined,
+    });
+  });
+
+  it('getPostPodcastSaveInfo maps snake_case payload', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({
+        save_count: 2,
+        users: [{ id: 'user-1', username: 'alice', profile_picture_url: '/alice.png' }],
+        viewer_saved: true,
+      }),
+    });
+
+    const response = await api.getPostPodcastSaveInfo('post-1');
+
+    expect(response).toEqual({
+      saveCount: 2,
+      users: [{ id: 'user-1', username: 'alice', displayName: 'alice', avatar: '/alice.png' }],
+      viewerSaved: true,
+    });
+  });
+
+  it('getSectionSavedPodcasts maps posts and cursor pagination', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({
+        posts: [
+          {
+            id: 'post-1',
+            user_id: 'user-1',
+            section_id: 'section-podcast',
+            content: 'Podcast post',
+            created_at: '2026-02-10T10:00:00Z',
+          },
+        ],
+        has_more: true,
+        next_cursor: 'cursor-next',
+      }),
+    });
+
+    const response = await api.getSectionSavedPodcasts('section-podcast', 15, 'cursor-1');
+
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toContain('/sections/section-podcast/podcast-saved');
+    expect(url).toContain('limit=15');
+    expect(url).toContain('cursor=cursor-1');
+    expect(response.hasMore).toBe(true);
+    expect(response.nextCursor).toBe('cursor-next');
+    expect(response.posts).toHaveLength(1);
+    expect(response.posts[0]?.id).toBe('post-1');
+    expect(response.posts[0]?.sectionId).toBe('section-podcast');
+    expect(response.posts[0]?.content).toBe('Podcast post');
+    expect(response.posts[0]?.createdAt).toBe('2026-02-10T10:00:00Z');
+  });
+
+  it('unsavePodcast issues DELETE to podcast-save endpoint', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/auth/csrf')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: vi.fn().mockResolvedValue({ token: 'csrf-token' }),
+        });
+      }
+
+      return Promise.resolve({
+        ok: true,
+        status: 204,
+        json: vi.fn(),
+      });
+    });
+
+    await api.unsavePodcast('post-1');
+
+    const call = findCall('/posts/post-1/podcast-save');
+    expect(call).toBeDefined();
+    expect((call?.[1] as RequestInit).method).toBe('DELETE');
+  });
+
   it('getThreadComments builds query params', async () => {
     fetchMock.mockResolvedValue({
       ok: true,

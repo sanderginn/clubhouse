@@ -112,6 +112,20 @@ interface ApiPostWatchlistInfo {
   viewer_categories?: string[];
 }
 
+interface ApiPodcastSave {
+  id: string;
+  user_id: string;
+  post_id: string;
+  created_at: string;
+  deleted_at?: string | null;
+}
+
+interface ApiPostPodcastSaveInfo {
+  save_count: number;
+  users: ApiReactionUser[];
+  viewer_saved: boolean;
+}
+
 interface ApiWatchLog {
   id: string;
   user_id: string;
@@ -329,6 +343,25 @@ function mapApiWatchlistUser(user: ApiReactionUser): WatchlistUser {
   };
 }
 
+function mapApiPodcastSave(save: ApiPodcastSave): PodcastSave {
+  return {
+    id: save.id,
+    userId: save.user_id,
+    postId: save.post_id,
+    createdAt: save.created_at,
+    deletedAt: save.deleted_at ?? undefined,
+  };
+}
+
+function mapApiPodcastSaveUser(user: ApiReactionUser): PodcastSaveUser {
+  return {
+    id: user.id,
+    username: user.username,
+    displayName: user.username,
+    avatar: user.profile_picture_url ?? undefined,
+  };
+}
+
 function mapApiWatchLogUser(user: ApiWatchLogUser): WatchLogUser {
   return {
     id: user.id,
@@ -534,6 +567,27 @@ export interface PostWatchlistInfo {
   users: WatchlistUser[];
   viewerSaved: boolean;
   viewerCategories: string[];
+}
+
+export interface PodcastSave {
+  id: string;
+  userId: string;
+  postId: string;
+  createdAt: string;
+  deletedAt?: string;
+}
+
+export interface PodcastSaveUser {
+  id: string;
+  username: string;
+  displayName: string;
+  avatar?: string;
+}
+
+export interface PostPodcastSaveInfo {
+  saveCount: number;
+  users: PodcastSaveUser[];
+  viewerSaved: boolean;
 }
 
 export interface WatchlistItemWithPost extends WatchlistItem {
@@ -1290,6 +1344,45 @@ class ApiClient {
       cook_logs: response.cook_logs ?? [],
       has_more: response.meta?.has_more ?? false,
       cursor: response.meta?.cursor ?? undefined,
+    };
+  }
+
+  async savePodcast(postId: string): Promise<PodcastSave> {
+    const response = await this.post<ApiPodcastSave>(`/posts/${postId}/podcast-save`);
+    return mapApiPodcastSave(response);
+  }
+
+  async unsavePodcast(postId: string): Promise<void> {
+    return this.delete(`/posts/${postId}/podcast-save`);
+  }
+
+  async getPostPodcastSaveInfo(postId: string): Promise<PostPodcastSaveInfo> {
+    const response = await this.get<ApiPostPodcastSaveInfo>(`/posts/${postId}/podcast-save-info`);
+    return {
+      saveCount: response.save_count ?? 0,
+      users: (response.users ?? []).map(mapApiPodcastSaveUser),
+      viewerSaved: response.viewer_saved ?? false,
+    };
+  }
+
+  async getSectionSavedPodcasts(
+    sectionId: string,
+    limit = 20,
+    cursor?: string
+  ): Promise<{ posts: Post[]; hasMore: boolean; nextCursor?: string }> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (cursor) {
+      params.set('cursor', cursor);
+    }
+    const response = await this.get<{
+      posts: ApiPost[];
+      has_more?: boolean;
+      next_cursor?: string | null;
+    }>(`/sections/${sectionId}/podcast-saved?${params.toString()}`);
+    return {
+      posts: (response.posts ?? []).map(mapApiPost),
+      hasMore: response.has_more ?? false,
+      nextCursor: response.next_cursor ?? undefined,
     };
   }
 
