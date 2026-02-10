@@ -3,7 +3,13 @@
   import { api } from '../../services/api';
   import { activeSection, postStore, currentUser } from '../../stores';
   import { loadSectionLinks } from '../../stores/sectionLinksFeedStore';
-  import type { Highlight, Link, LinkMetadata } from '../../stores/postStore';
+  import type {
+    Highlight,
+    Link,
+    LinkMetadata,
+    PodcastHighlightEpisode,
+    PodcastMetadataInput,
+  } from '../../stores/postStore';
   import LinkPreview from './LinkPreview.svelte';
   import MentionTextarea from '../mentions/MentionTextarea.svelte';
   import HighlightEditor from './HighlightEditor.svelte';
@@ -48,12 +54,26 @@
   let uploadLimitError: string | null = null;
   let isParsingRecipe = false;
   let parseRecipeError: string | null = null;
+  let podcastKind: '' | 'show' | 'episode' = '';
+  let podcastKindSelectionRequired = false;
+  let podcastHighlightEpisodes: PodcastHighlightEpisode[] = [];
+  let podcastEpisodeTitle = '';
+  let podcastEpisodeUrl = '';
+  let podcastEpisodeNote = '';
+  let podcastEpisodeError: string | null = null;
+
+  const PODCAST_KIND_SELECTION_REQUIRED_MESSAGE =
+    'Could not determine whether this podcast link is a show or an episode. Please select one and try again.';
+  const MAX_PODCAST_HIGHLIGHT_EPISODES = 10;
 
   const URL_REGEX = /https?:\/\/[^\s<>"{}|\\^`[\]]+/gi;
   $: hasLink = Boolean((linkMetadata && linkMetadata.url) || linkUrl.trim());
   $: isMusicSection = $activeSection?.type === 'music';
   $: isRecipeSection = $activeSection?.type === 'recipe';
+  $: isPodcastSection = $activeSection?.type === 'podcast';
   $: showHighlightEditor = isMusicSection && hasLink;
+  $: showPodcastHighlightEpisodeEditor = isPodcastSection && hasLink && podcastKind === 'show';
+  $: podcastKindBlocked = isPodcastSection && hasLink && podcastKindSelectionRequired && !podcastKind;
   $: linkInputValueNormalized = linkUrl.trim();
   $: if (linkInputValueNormalized !== lastHighlightLinkInput) {
     highlights = [];
@@ -62,8 +82,45 @@
   $: if (!showHighlightEditor && highlights.length > 0) {
     highlights = [];
   }
+  $: if (podcastKindSelectionRequired && podcastKind) {
+    podcastKindSelectionRequired = false;
+    if (error === PODCAST_KIND_SELECTION_REQUIRED_MESSAGE) {
+      error = null;
+    }
+  }
+  $: if (podcastKind !== 'show' && (podcastHighlightEpisodes.length > 0 || podcastEpisodeError)) {
+    podcastHighlightEpisodes = [];
+    podcastEpisodeError = null;
+  }
+  $: if (
+    podcastKind !== 'show' &&
+    (podcastEpisodeTitle || podcastEpisodeUrl || podcastEpisodeNote)
+  ) {
+    podcastEpisodeTitle = '';
+    podcastEpisodeUrl = '';
+    podcastEpisodeNote = '';
+  }
+  $: if (
+    !isPodcastSection &&
+    (podcastKind ||
+      podcastKindSelectionRequired ||
+      podcastHighlightEpisodes.length > 0 ||
+      podcastEpisodeTitle ||
+      podcastEpisodeUrl ||
+      podcastEpisodeNote ||
+      podcastEpisodeError)
+  ) {
+    podcastKind = '';
+    podcastKindSelectionRequired = false;
+    podcastHighlightEpisodes = [];
+    podcastEpisodeTitle = '';
+    podcastEpisodeUrl = '';
+    podcastEpisodeNote = '';
+    podcastEpisodeError = null;
+  }
   $: hasUploads = selectedFiles.some((item) => item.status !== 'error');
-  $: canSubmit = Boolean($activeSection) && (content.trim().length > 0 || hasLink || hasUploads);
+  $: canSubmit =
+    Boolean($activeSection) && (content.trim().length > 0 || hasLink || hasUploads) && !podcastKindBlocked;
 
   function createUploadId(): string {
     if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -192,6 +249,81 @@
     isLinkInputVisible = false;
     highlights = [];
     lastHighlightLinkInput = '';
+    podcastKind = '';
+    podcastKindSelectionRequired = false;
+    podcastHighlightEpisodes = [];
+    podcastEpisodeTitle = '';
+    podcastEpisodeUrl = '';
+    podcastEpisodeNote = '';
+    podcastEpisodeError = null;
+  }
+
+  function addPodcastHighlightEpisode() {
+    if (podcastKind !== 'show') {
+      return;
+    }
+    if (podcastHighlightEpisodes.length >= MAX_PODCAST_HIGHLIGHT_EPISODES) {
+      podcastEpisodeError = `You can add up to ${MAX_PODCAST_HIGHLIGHT_EPISODES} highlighted episodes.`;
+      return;
+    }
+
+    const title = podcastEpisodeTitle.trim();
+    let url = podcastEpisodeUrl.trim();
+    const note = podcastEpisodeNote.trim();
+    if (!title) {
+      podcastEpisodeError = 'Episode title is required.';
+      return;
+    }
+    if (!url) {
+      podcastEpisodeError = 'Episode URL is required.';
+      return;
+    }
+    if (!/^https?:\/\//i.test(url)) {
+      url = `https://${url}`;
+    }
+    if (!isValidUrl(url)) {
+      podcastEpisodeError = 'Episode URL must be a valid http(s) URL.';
+      return;
+    }
+
+    podcastEpisodeError = null;
+    podcastHighlightEpisodes = [
+      ...podcastHighlightEpisodes,
+      {
+        title,
+        url,
+        ...(note ? { note } : {}),
+      },
+    ];
+    podcastEpisodeTitle = '';
+    podcastEpisodeUrl = '';
+    podcastEpisodeNote = '';
+  }
+
+  function removePodcastHighlightEpisode(index: number) {
+    podcastHighlightEpisodes = podcastHighlightEpisodes.filter((_, episodeIndex) => episodeIndex !== index);
+    if (podcastHighlightEpisodes.length < MAX_PODCAST_HIGHLIGHT_EPISODES) {
+      podcastEpisodeError = null;
+    }
+  }
+
+  function buildPodcastMetadata(linkValue: string): PodcastMetadataInput | undefined {
+    if (!isPodcastSection || !linkValue) {
+      return undefined;
+    }
+
+    const payload: PodcastMetadataInput = {};
+    if (podcastKind) {
+      payload.kind = podcastKind;
+    }
+    if (podcastKind === 'show' && podcastHighlightEpisodes.length > 0) {
+      payload.highlightEpisodes = podcastHighlightEpisodes.map((episode) => ({
+        title: episode.title.trim(),
+        url: episode.url.trim(),
+        ...(episode.note?.trim() ? { note: episode.note.trim() } : {}),
+      }));
+    }
+    return payload;
   }
 
   function isValidUrl(value: string): boolean {
@@ -311,6 +443,11 @@
       return;
     }
 
+    if (podcastKindBlocked) {
+      error = PODCAST_KIND_SELECTION_REQUIRED_MESSAGE;
+      return;
+    }
+
     if (selectedFiles.some((item) => item.status === 'error')) {
       error = 'Remove invalid files before posting.';
       return;
@@ -354,11 +491,13 @@
 
       const images = uploadedUrls.map((url) => ({ url }));
       const includeHighlights = showHighlightEditor && highlights.length > 0;
+      const podcast = buildPodcastMetadata(linkValue);
       const links = linkValue
         ? [
             {
               url: linkValue,
               ...(includeHighlights ? { highlights } : {}),
+              ...(podcast ? { podcast } : {}),
             },
           ]
         : [];
@@ -370,7 +509,7 @@
       } as {
         sectionId: string;
         content: string;
-        links?: { url: string; highlights?: Highlight[] }[];
+        links?: { url: string; highlights?: Highlight[]; podcast?: PodcastMetadataInput }[];
         images?: { url: string }[];
         mentionUsernames?: string[];
       };
@@ -406,12 +545,23 @@
       isLinkInputVisible = false;
       highlights = [];
       lastHighlightLinkInput = '';
+      podcastKind = '';
+      podcastKindSelectionRequired = false;
+      podcastHighlightEpisodes = [];
+      podcastEpisodeTitle = '';
+      podcastEpisodeUrl = '';
+      podcastEpisodeNote = '';
+      podcastEpisodeError = null;
       selectedFiles.forEach(revokePreviewUrl);
       selectedFiles = [];
       uploadLimitError = null;
 
       dispatch('submit');
     } catch (err) {
+      const requestError = err as Error & { podcastKindSelectionRequired?: boolean };
+      if (requestError.podcastKindSelectionRequired) {
+        podcastKindSelectionRequired = true;
+      }
       error = err instanceof Error ? err.message : 'Failed to create post';
     } finally {
       isSubmitting = false;
@@ -551,6 +701,120 @@
     <div class="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
       <div class="text-sm font-medium text-gray-700">Highlights</div>
       <HighlightEditor bind:highlights disabled={isSubmitting} />
+    </div>
+  {/if}
+
+  {#if isPodcastSection && hasLink}
+    <div class="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+      <div class="space-y-1">
+        <label for="podcast-kind" class="text-sm font-medium text-gray-700">Podcast kind</label>
+        <select
+          id="podcast-kind"
+          bind:value={podcastKind}
+          disabled={isSubmitting}
+          class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:bg-gray-100"
+          aria-label="Podcast kind"
+        >
+          <option value="">Auto-detect from link</option>
+          <option value="show">Show</option>
+          <option value="episode">Episode</option>
+        </select>
+        <p class="text-xs text-gray-500">Choose a kind manually only if auto-detection fails.</p>
+        {#if podcastKindSelectionRequired}
+          <p class="text-xs text-red-600">{PODCAST_KIND_SELECTION_REQUIRED_MESSAGE}</p>
+        {/if}
+      </div>
+
+      {#if showPodcastHighlightEpisodeEditor}
+        <div class="space-y-3 rounded-lg border border-gray-200 bg-white p-3">
+          <div class="text-sm font-medium text-gray-700">Highlighted episodes</div>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <div class="space-y-1">
+              <label for="podcast-episode-title" class="text-xs font-medium text-gray-600">Title</label>
+              <input
+                id="podcast-episode-title"
+                type="text"
+                bind:value={podcastEpisodeTitle}
+                disabled={isSubmitting}
+                placeholder="Episode title"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-primary disabled:bg-gray-100"
+                aria-label="Highlight episode title"
+              />
+            </div>
+            <div class="space-y-1">
+              <label for="podcast-episode-url" class="text-xs font-medium text-gray-600">URL</label>
+              <input
+                id="podcast-episode-url"
+                type="url"
+                bind:value={podcastEpisodeUrl}
+                disabled={isSubmitting}
+                placeholder="https://..."
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-primary disabled:bg-gray-100"
+                aria-label="Highlight episode url"
+              />
+            </div>
+          </div>
+          <div class="space-y-1">
+            <label for="podcast-episode-note" class="text-xs font-medium text-gray-600">
+              Note (optional)
+            </label>
+            <input
+              id="podcast-episode-note"
+              type="text"
+              bind:value={podcastEpisodeNote}
+              disabled={isSubmitting}
+              placeholder="Why this episode stands out"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-primary disabled:bg-gray-100"
+              aria-label="Highlight episode note"
+            />
+          </div>
+          <button
+            type="button"
+            on:click={addPodcastHighlightEpisode}
+            disabled={isSubmitting}
+            class="inline-flex items-center rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Add highlighted episode
+          </button>
+          {#if podcastEpisodeError}
+            <p class="text-xs text-red-600">{podcastEpisodeError}</p>
+          {/if}
+
+          {#if podcastHighlightEpisodes.length > 0}
+            <ul class="space-y-2">
+              {#each podcastHighlightEpisodes as episode, index}
+                <li class="rounded-lg border border-gray-200 bg-gray-50 p-2">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <p class="truncate text-sm font-medium text-gray-700">{episode.title}</p>
+                      <p class="truncate text-xs text-gray-500">{episode.url}</p>
+                      {#if episode.note}
+                        <p class="mt-1 text-xs text-gray-600">{episode.note}</p>
+                      {/if}
+                    </div>
+                    <button
+                      type="button"
+                      on:click={() => removePodcastHighlightEpisode(index)}
+                      disabled={isSubmitting}
+                      class="rounded-md p-1 text-gray-400 hover:bg-white hover:text-gray-600 disabled:opacity-40"
+                      aria-label={`Remove highlighted episode ${index + 1}`}
+                    >
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </li>
+              {/each}
+            </ul>
+          {/if}
+        </div>
+      {/if}
     </div>
   {/if}
 

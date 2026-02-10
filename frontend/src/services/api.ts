@@ -275,7 +275,7 @@ function mapPodcastMetadataRequest(
     : undefined;
 
   if (!kind && !(highlightEpisodes && highlightEpisodes.length > 0)) {
-    return undefined;
+    return {};
   }
 
   return {
