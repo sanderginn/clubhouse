@@ -773,7 +773,7 @@
     {
       "issue_number": 884,
       "title": "[Books] Add spoiler field to comment model and service",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         883
       ],
@@ -782,7 +782,11 @@
         "backend",
         "books"
       ],
-      "priority": 92
+      "priority": 92,
+      "assigned_to": "agent-1770697107-10063",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770697107-10063",
+      "branch": "feat/issue-884-books-add-spoiler-field-to-comment-model",
+      "claimed_at": "2026-02-10T04:18:27Z"
     },
     {
       "issue_number": 885,
