@@ -205,13 +205,11 @@
   }
 
   function toggleCategory(categoryName: string) {
-    const next = new Set(pendingSelection);
-    if (next.has(categoryName)) {
-      next.delete(categoryName);
-    } else {
-      next.add(categoryName);
+    if (pendingSelection.has(categoryName)) {
+      pendingSelection = new Set<string>();
+      return;
     }
-    pendingSelection = next;
+    pendingSelection = new Set<string>([categoryName]);
   }
 
   async function toggleSave() {
@@ -398,7 +396,7 @@
     >
       <div class="border-b border-gray-100 px-4 py-3">
         <p class="text-sm font-semibold text-gray-900">Save to bookshelf</p>
-        <p class="text-xs text-gray-500">Select categories. Changes apply when this menu closes.</p>
+        <p class="text-xs text-gray-500">Select a category. Changes apply when this menu closes.</p>
       </div>
 
       <div class="max-h-56 space-y-2 overflow-y-auto px-4 py-3">

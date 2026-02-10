@@ -20,7 +20,7 @@ vi.mock('../../services/api', () => ({
 }));
 
 const { default: BookshelfSaveButton } = await import('./BookshelfSaveButton.svelte');
-const { bookStore } = await import('../../stores/bookStore');
+const { bookStore, bookshelfCategories } = await import('../../stores/bookStore');
 const { authStore } = await import('../../stores/authStore');
 
 const createDeferred = <T>() => {
@@ -149,6 +149,37 @@ describe('BookshelfSaveButton', () => {
 
     expect(screen.getByRole('dialog', { name: 'Select bookshelf categories' })).toBeInTheDocument();
     expect(screen.getByText('+ Create category')).toBeInTheDocument();
+  });
+
+  it('persists a single category when multiple are selected before close', async () => {
+    bookshelfCategories.set([
+      { id: 'cat-1', name: 'Favorites', position: 0 },
+      { id: 'cat-2', name: 'Sci-Fi', position: 1 },
+    ]);
+
+    render(BookshelfSaveButton, {
+      postId: 'post-multi',
+      bookStats: {
+        bookshelfCount: 0,
+        readCount: 0,
+        averageRating: null,
+        viewerOnBookshelf: false,
+        viewerCategories: [],
+      },
+    });
+
+    await fireEvent.click(screen.getByTestId('bookshelf-dropdown-toggle'));
+    await fireEvent.click(screen.getByLabelText('Favorites'));
+    await fireEvent.click(screen.getByLabelText('Sci-Fi'));
+    await fireEvent.click(screen.getByTestId('bookshelf-dropdown-toggle'));
+
+    await waitFor(() => {
+      expect(apiAddToBookshelf).toHaveBeenCalledWith('post-multi', ['Sci-Fi']);
+    });
+
+    await fireEvent.click(screen.getByTestId('bookshelf-dropdown-toggle'));
+    expect(screen.getByLabelText('Sci-Fi')).toBeChecked();
+    expect(screen.getByLabelText('Favorites')).not.toBeChecked();
   });
 
   it('creates a new category inline and selects it', async () => {
