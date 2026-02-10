@@ -39,6 +39,7 @@
     884,
     885,
     887,
+    888,
     891
   ],
   "issues": [
@@ -902,7 +903,7 @@
     {
       "issue_number": 888,
       "title": "[Podcasts] Add podcast metadata model and validation for post links",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         887
       ],
@@ -915,7 +916,9 @@
       "assigned_to": "agent-1770706705-78181",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770706705-78181",
       "branch": "feat/issue-888-podcasts-add-podcast-metadata-model-and-",
-      "claimed_at": "2026-02-10T06:58:25Z"
+      "claimed_at": "2026-02-10T06:58:25Z",
+      "pr_number": 937,
+      "completed_at": "2026-02-10T07:16:10Z"
     },
     {
       "issue_number": 889,
