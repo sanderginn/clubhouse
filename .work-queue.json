@@ -1181,6 +1181,58 @@
         "testing"
       ],
       "priority": 110
+    },
+    {
+      "issue_number": 948,
+      "title": "[Movies] Fix Rotten Tomatoes URL parsing to TMDB metadata",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "backend",
+        "movies"
+      ],
+      "priority": 1
+    },
+    {
+      "issue_number": 949,
+      "title": "[Movies] Fix Rotten Tomatoes scores not displaying in MovieCard",
+      "status": "available",
+      "dependencies": [
+        948
+      ],
+      "labels": [
+        "bug",
+        "frontend",
+        "movies"
+      ],
+      "priority": 2
+    },
+    {
+      "issue_number": 950,
+      "title": "[Movies] Make TMDB link more prominent in MovieCard",
+      "status": "available",
+      "dependencies": [
+        949
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "movies"
+      ],
+      "priority": 3
+    },
+    {
+      "issue_number": 951,
+      "title": "[Movies] Make Watchlist fixed at top and collapsible like Cookbook",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "movies"
+      ],
+      "priority": 4
     }
   ]
 }
