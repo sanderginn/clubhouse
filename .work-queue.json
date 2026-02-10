@@ -631,7 +631,7 @@
     {
       "issue_number": 871,
       "title": "[Books] Create BookStatsBar component",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [
         869,
         870
@@ -641,11 +641,7 @@
         "frontend",
         "books"
       ],
-      "priority": 79,
-      "assigned_to": "agent-1770710302-59994",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770710302-59994",
-      "branch": "feat/issue-871-books-create-bookstatsbar-component",
-      "claimed_at": "2026-02-10T07:58:22Z"
+      "priority": 79
     },
     {
       "issue_number": 872,
@@ -687,7 +683,7 @@
     {
       "issue_number": 874,
       "title": "[Books] Add Bookshelf route and navigation",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [
         872
       ],
@@ -696,11 +692,7 @@
         "frontend",
         "books"
       ],
-      "priority": 82,
-      "assigned_to": "agent-1770710304-60121",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770710304-60121",
-      "branch": "feat/issue-874-books-add-bookshelf-route-and-navigation",
-      "claimed_at": "2026-02-10T07:58:24Z"
+      "priority": 82
     },
     {
       "issue_number": 875,
@@ -1033,7 +1025,7 @@
     {
       "issue_number": 892,
       "title": "[Podcasts] Create PodcastSave service with section guard and audit logging",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [
         891,
         890
@@ -1043,11 +1035,7 @@
         "backend",
         "podcasts"
       ],
-      "priority": 100,
-      "assigned_to": "agent-1770710307-59993",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770710307-59993",
-      "branch": "feat/issue-892-podcasts-create-podcastsave-service-with",
-      "claimed_at": "2026-02-10T07:58:27Z"
+      "priority": 100
     },
     {
       "issue_number": 893,
