@@ -18,6 +18,7 @@
 
   export let bookData: BookData = {};
   export let compact = false;
+  export let threadHref: string | null = null;
 
   let descriptionExpanded = false;
   let previousDescription = '';
@@ -44,11 +45,34 @@
   $: visibleGenres = (bookData.genres ?? [])
     .filter((genre): genre is string => typeof genre === 'string' && genre.trim().length > 0)
     .slice(0, 3);
-  $: goodreadsUrl = normalizeURL(bookData.goodreadsUrl ?? bookData.goodreads_url);
+  $: goodreadsUrl = normalizeURLForHosts(bookData.goodreadsUrl ?? bookData.goodreads_url, [
+    'goodreads.com',
+  ]);
   $: openLibraryUrl = resolveOpenLibraryURL(bookData.openLibraryKey ?? bookData.open_library_key);
-  $: titleUrl = goodreadsUrl ?? openLibraryUrl;
+  $: normalizedThreadHref = normalizeThreadHref(threadHref);
 
   function normalizeURL(value?: string): string | null {
+    const parsed = parseAbsoluteHTTPURL(value);
+    if (!parsed) {
+      return null;
+    }
+    return parsed.toString();
+  }
+
+  function normalizeURLForHosts(value: string | undefined, hosts: string[]): string | null {
+    const parsed = parseAbsoluteHTTPURL(value);
+    if (!parsed) {
+      return null;
+    }
+    const hostname = parsed.hostname.toLowerCase();
+    const hasAllowedHost = hosts.some((host) => hostname === host || hostname.endsWith(`.${host}`));
+    if (!hasAllowedHost) {
+      return null;
+    }
+    return parsed.toString();
+  }
+
+  function parseAbsoluteHTTPURL(value?: string): URL | null {
     if (typeof value !== 'string') {
       return null;
     }
@@ -56,7 +80,29 @@
     if (!trimmed) {
       return null;
     }
-    return trimmed;
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        return null;
+      }
+      return parsed;
+    } catch {
+      return null;
+    }
+  }
+
+  function normalizeThreadHref(value?: string | null): string | null {
+    if (typeof value !== 'string') {
+      return null;
+    }
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+    if (trimmed.startsWith('/')) {
+      return trimmed;
+    }
+    return normalizeURL(trimmed);
   }
 
   function normalizePositiveInteger(value: unknown): number | null {
@@ -84,7 +130,7 @@
       return null;
     }
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-      return trimmed;
+      return normalizeURLForHosts(trimmed, ['openlibrary.org']);
     }
 
     const prefixed = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
@@ -128,12 +174,11 @@
 
     <div class="min-w-0 flex-1">
       <h3 class={`font-semibold text-slate-900 ${compact ? 'text-base' : 'text-lg'}`} data-testid="book-title">
-        {#if titleUrl}
+        {#if normalizedThreadHref}
           <a
-            href={titleUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={normalizedThreadHref}
             class="underline-offset-2 hover:text-slate-700 hover:underline"
+            data-testid="book-thread-link"
           >
             {title}
           </a>

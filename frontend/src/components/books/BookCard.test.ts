@@ -34,9 +34,13 @@ afterEach(() => {
 
 describe('BookCard', () => {
   it('renders title, authors, and description', () => {
-    render(BookCard, { bookData: fullBookData });
+    render(BookCard, {
+      bookData: fullBookData,
+      threadHref: '/sections/books/posts/post-123',
+    });
 
     expect(screen.getByTestId('book-title')).toHaveTextContent('Neuromancer');
+    expect(screen.getByTestId('book-thread-link')).toHaveAttribute('href', '/sections/books/posts/post-123');
     expect(screen.getByTestId('book-authors')).toHaveTextContent('William Gibson, Jane Doe');
     expect(screen.getByTestId('book-description')).toHaveTextContent('A cyberpunk classic');
     expect(screen.getByTestId('book-details')).toHaveTextContent('271 pages · 1984');
@@ -59,6 +63,19 @@ describe('BookCard', () => {
       'https://www.goodreads.com/book/show/22328-neuromancer'
     );
     expect(goodreadsLink).toHaveTextContent('View on Goodreads');
+  });
+
+  it('does not render unsafe or mislabeled external links', () => {
+    render(BookCard, {
+      bookData: {
+        ...fullBookData,
+        goodreads_url: 'javascript:alert(1)',
+        open_library_key: 'https://evil.example/works/OL45883W',
+      },
+    });
+
+    expect(screen.queryByTestId('book-goodreads-link')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('book-open-library-link')).not.toBeInTheDocument();
   });
 
   it('uses compact description truncation class in compact mode', () => {
