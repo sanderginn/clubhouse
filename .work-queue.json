@@ -1581,14 +1581,18 @@
     {
       "issue_number": 985,
       "title": "[Podcasts] Fix Spotify podcast auto-detection for shows and episodes",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "bug",
         "backend",
         "podcasts"
       ],
-      "priority": 14
+      "priority": 14,
+      "assigned_to": "agent-1770725419-85815",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770725419-85815",
+      "branch": "fix/issue-985-podcasts-fix-spotify-podcast-autodetecti",
+      "claimed_at": "2026-02-10T12:10:19Z"
     }
   ]
 }
