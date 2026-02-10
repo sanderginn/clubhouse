@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/svelte';
 import type { Post } from '../../stores/postStore';
-import { authStore } from '../../stores';
+import { authStore, uiStore } from '../../stores';
 import { sectionStore } from '../../stores/sectionStore';
 import { mapApiPost } from '../../stores/postMapper';
 import { tick } from 'svelte';
@@ -50,6 +50,24 @@ type LinkMetadataWithMovieForTest = NonNullable<
   movie?: MovieMetadataForTest;
 };
 
+type BookDataForTest = {
+  title?: string;
+  authors?: string[];
+  description?: string;
+  cover_url?: string;
+  page_count?: number;
+  genres?: string[];
+  publish_date?: string;
+  open_library_key?: string;
+  goodreads_url?: string;
+};
+
+type LinkMetadataWithBookForTest = NonNullable<
+  NonNullable<Post['links']>[number]['metadata']
+> & {
+  book_data?: BookDataForTest;
+};
+
 const basePost: Post = {
   id: 'post-1',
   userId: 'user-1',
@@ -66,6 +84,7 @@ const basePost: Post = {
 beforeEach(() => {
   vi.clearAllMocks();
   authStore.setUser(null);
+  uiStore.setActiveView('feed');
   sectionStore.setSections([]);
 });
 
@@ -343,6 +362,166 @@ describe('PostCard', () => {
 
     expect(screen.getByTestId('movie-rating-rotten-tomatoes')).toHaveTextContent('🍅 91%');
     expect(screen.getByTestId('movie-rating-metacritic')).toHaveTextContent('MC 74');
+  });
+
+  it('renders book card for book metadata links in book sections', () => {
+    sectionStore.setSections([
+      {
+        id: 'section-1',
+        name: 'Books',
+        type: 'book',
+        icon: '📚',
+        slug: 'books',
+      },
+    ]);
+
+    const metadataWithBook: LinkMetadataWithBookForTest = {
+      url: 'https://www.goodreads.com/book/show/22328-neuromancer',
+      provider: 'goodreads',
+      title: 'Neuromancer',
+      book_data: {
+        title: 'Neuromancer',
+        authors: ['William Gibson'],
+        description: 'A classic cyberpunk novel.',
+        cover_url: 'https://covers.openlibrary.org/b/id/12345-L.jpg',
+        page_count: 271,
+      },
+    };
+
+    const bookPost: Post = {
+      ...basePost,
+      links: [
+        {
+          url: 'https://www.goodreads.com/book/show/22328-neuromancer',
+          metadata: metadataWithBook,
+        },
+      ],
+    };
+
+    render(PostCard, { post: bookPost });
+
+    expect(screen.getByTestId('book-card')).toBeInTheDocument();
+    expect(screen.getByTestId('book-title')).toHaveTextContent('Neuromancer');
+  });
+
+  it('renders book stats bar for book sections when book stats are present', () => {
+    sectionStore.setSections([
+      {
+        id: 'section-1',
+        name: 'Books',
+        type: 'book',
+        icon: '📚',
+        slug: 'books',
+      },
+    ]);
+
+    const postWithBookStats: Post = {
+      ...basePost,
+      links: [
+        {
+          url: 'https://www.goodreads.com/book/show/22328-neuromancer',
+          metadata: {
+            url: 'https://www.goodreads.com/book/show/22328-neuromancer',
+            book_data: {
+              title: 'Neuromancer',
+            },
+          } as LinkMetadataWithBookForTest,
+        },
+      ],
+      bookStats: {
+        bookshelfCount: 3,
+        readCount: 2,
+        averageRating: 4.5,
+        viewerOnBookshelf: true,
+        viewerCategories: ['Favorites'],
+        viewerRead: true,
+        viewerRating: 5,
+      },
+    };
+
+    render(PostCard, { post: postWithBookStats });
+
+    expect(screen.getByTestId('book-stats-bar')).toBeInTheDocument();
+  });
+
+  it('does not render book components for non-book sections', () => {
+    sectionStore.setSections([
+      {
+        id: 'section-1',
+        name: 'General',
+        type: 'general',
+        icon: '💬',
+        slug: 'general',
+      },
+    ]);
+
+    const generalPostWithBookData: Post = {
+      ...basePost,
+      links: [
+        {
+          url: 'https://www.goodreads.com/book/show/22328-neuromancer',
+          metadata: {
+            url: 'https://www.goodreads.com/book/show/22328-neuromancer',
+            book_data: {
+              title: 'Neuromancer',
+            },
+          } as LinkMetadataWithBookForTest,
+        },
+      ],
+      bookStats: {
+        bookshelfCount: 3,
+        readCount: 2,
+        averageRating: 4.2,
+        viewerOnBookshelf: false,
+        viewerCategories: [],
+        viewerRead: false,
+        viewerRating: null,
+      },
+    };
+
+    render(PostCard, { post: generalPostWithBookData });
+
+    expect(screen.queryByTestId('book-card')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('book-stats-bar')).not.toBeInTheDocument();
+  });
+
+  it('uses compact BookCard mode in feed view and full mode in thread view', () => {
+    sectionStore.setSections([
+      {
+        id: 'section-1',
+        name: 'Books',
+        type: 'book',
+        icon: '📚',
+        slug: 'books',
+      },
+    ]);
+
+    const postWithBookMetadata: Post = {
+      ...basePost,
+      links: [
+        {
+          url: 'https://www.goodreads.com/book/show/22328-neuromancer',
+          metadata: {
+            url: 'https://www.goodreads.com/book/show/22328-neuromancer',
+            book_data: {
+              title: 'Neuromancer',
+              description:
+                'A cyberpunk classic that helped define the genre and follows a washed-up hacker pulled into a final dangerous heist.',
+            },
+          } as LinkMetadataWithBookForTest,
+        },
+      ],
+    };
+
+    uiStore.setActiveView('feed');
+    render(PostCard, { post: postWithBookMetadata });
+    expect(screen.getByTestId('book-description')).toHaveClass('line-clamp-2');
+
+    cleanup();
+
+    uiStore.setActiveView('thread');
+    render(PostCard, { post: postWithBookMetadata });
+    expect(screen.getByTestId('book-description')).toHaveClass('line-clamp-3');
   });
 
   it('does not render movie components for non-movie sections', () => {

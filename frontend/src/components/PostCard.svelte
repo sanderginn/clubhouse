@@ -2,7 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { fade } from 'svelte/transition';
   import type { Link, LinkMetadata, Post } from '../stores/postStore';
-  import { postStore, currentUser, isAdmin } from '../stores';
+  import { postStore, currentUser, isAdmin, activeView } from '../stores';
   import { api } from '../services/api';
   import CommentThread from './comments/CommentThread.svelte';
   import EditedBadge from './EditedBadge.svelte';
@@ -23,6 +23,8 @@
   import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
   import RecipeCard from './recipes/RecipeCard.svelte';
   import RecipeStatsBar from './recipes/RecipeStatsBar.svelte';
+  import BookCard from './books/BookCard.svelte';
+  import BookStatsBar from './books/BookStatsBar.svelte';
   import MovieCard from './movies/MovieCard.svelte';
   import MovieStatsBar from './movies/MovieStatsBar.svelte';
   import BandcampEmbed from '../lib/components/embeds/BandcampEmbed.svelte';
@@ -121,6 +123,26 @@
   type LinkMetadataWithMovie = LinkMetadata & {
     movie?: MovieMetadata;
   };
+  type BookMetadata = {
+    title?: string;
+    authors?: string[];
+    description?: string;
+    coverUrl?: string;
+    cover_url?: string;
+    pageCount?: number;
+    page_count?: number;
+    genres?: string[];
+    publishDate?: string;
+    publish_date?: string;
+    openLibraryKey?: string;
+    open_library_key?: string;
+    goodreadsUrl?: string;
+    goodreads_url?: string;
+  };
+  type LinkMetadataWithBook = LinkMetadata & {
+    book_data?: BookMetadata | string;
+    bookData?: BookMetadata | string;
+  };
   type PostWithSectionType = Post & {
     section?: {
       type?: string;
@@ -141,8 +163,11 @@
   $: sectionInfo = $sections.find((s) => s.id === post.sectionId) ?? null;
   $: sectionType = sectionInfo?.type ?? ((post as PostWithSectionType).section?.type ?? null);
   $: recipeStats = post.recipeStats ?? post.recipe_stats ?? null;
+  $: bookStats = post.bookStats ?? post.book_stats ?? null;
   $: movieStats = post.movieStats ?? post.movie_stats ?? null;
+  $: isBookSection = sectionType === 'book';
   $: isMovieSection = sectionType === 'movie' || sectionType === 'series';
+  $: isThreadView = $activeView === 'thread';
   let copiedLink = false;
   let copyTimeout: ReturnType<typeof setTimeout> | null = null;
   let isEditing = false;
@@ -666,6 +691,98 @@
     return undefined;
   }
 
+  function normalizeBookMetadata(rawBook: unknown): BookMetadata | null {
+    if (!rawBook) {
+      return null;
+    }
+
+    let parsedBook: Record<string, unknown> | null = null;
+    if (typeof rawBook === 'string') {
+      try {
+        const maybeObject = JSON.parse(rawBook) as unknown;
+        if (maybeObject && typeof maybeObject === 'object' && !Array.isArray(maybeObject)) {
+          parsedBook = maybeObject as Record<string, unknown>;
+        }
+      } catch {
+        return null;
+      }
+    } else if (typeof rawBook === 'object' && !Array.isArray(rawBook)) {
+      parsedBook = rawBook as Record<string, unknown>;
+    }
+
+    if (!parsedBook) {
+      return null;
+    }
+
+    const normalizeString = (value: unknown): string | undefined => {
+      if (typeof value !== 'string') {
+        return undefined;
+      }
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : undefined;
+    };
+
+    const normalizeNumber = (value: unknown): number | undefined => {
+      if (typeof value !== 'number' || !Number.isFinite(value)) {
+        return undefined;
+      }
+      const rounded = Math.round(value);
+      return rounded > 0 ? rounded : undefined;
+    };
+
+    const normalizeStringArray = (value: unknown): string[] | undefined => {
+      if (!Array.isArray(value)) {
+        return undefined;
+      }
+      const normalized = value
+        .filter((entry): entry is string => typeof entry === 'string')
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0);
+      return normalized.length > 0 ? normalized : undefined;
+    };
+
+    const title = normalizeString(parsedBook.title);
+    const authors = normalizeStringArray(parsedBook.authors);
+    const description = normalizeString(parsedBook.description);
+    const coverURL =
+      normalizeString(parsedBook.cover_url) ?? normalizeString(parsedBook.coverUrl);
+    const pageCount =
+      normalizeNumber(parsedBook.page_count) ?? normalizeNumber(parsedBook.pageCount);
+    const genres = normalizeStringArray(parsedBook.genres);
+    const publishDate =
+      normalizeString(parsedBook.publish_date) ?? normalizeString(parsedBook.publishDate);
+    const openLibraryKey =
+      normalizeString(parsedBook.open_library_key) ?? normalizeString(parsedBook.openLibraryKey);
+    const goodreadsURL =
+      normalizeString(parsedBook.goodreads_url) ?? normalizeString(parsedBook.goodreadsUrl);
+
+    if (
+      !title &&
+      !authors &&
+      !description &&
+      !coverURL &&
+      !pageCount &&
+      !genres &&
+      !publishDate &&
+      !openLibraryKey &&
+      !goodreadsURL
+    ) {
+      return null;
+    }
+
+    return {
+      ...(title ? { title } : {}),
+      ...(authors ? { authors } : {}),
+      ...(description ? { description } : {}),
+      ...(coverURL ? { cover_url: coverURL } : {}),
+      ...(typeof pageCount === 'number' ? { page_count: pageCount } : {}),
+      ...(genres ? { genres } : {}),
+      ...(publishDate ? { publish_date: publishDate } : {}),
+      ...(openLibraryKey ? { open_library_key: openLibraryKey } : {}),
+      ...(goodreadsURL ? { goodreads_url: goodreadsURL } : {}),
+    };
+  }
+
   function normalizeMovieMetadata(movie?: MovieMetadata): MovieCardMetadata | null {
     if (!movie) {
       return null;
@@ -832,6 +949,16 @@
     };
   }
 
+  function getBookMetadataFromLink(link?: Link): BookMetadata | null {
+    if (!link?.metadata) {
+      return null;
+    }
+
+    const metadataWithBook = link.metadata as LinkMetadataWithBook;
+    const rawBookData = metadataWithBook.book_data ?? metadataWithBook.bookData;
+    return normalizeBookMetadata(rawBookData);
+  }
+
   $: postImages = (post.images ?? []).slice().sort((a, b) => a.position - b.position);
   $: hasPostImages = postImages.length > 0;
   $: imageLinks = (post.links ?? []).filter((item) => Boolean(getImageLinkUrl(item)));
@@ -853,6 +980,7 @@
   $: primaryLink = post.links?.[0];
   $: primaryLinkIsImage = primaryLink ? Boolean(getImageLinkUrl(primaryLink)) : false;
   $: metadata = primaryLink?.metadata;
+  $: primaryBookMetadata = getBookMetadataFromLink(primaryLink);
   $: primaryMovieMetadata = getMovieMetadataFromLink(primaryLink);
   $: movieLinks = isMovieSection
     ? (post.links ?? []).filter((link) => Boolean(getMovieMetadataFromLink(link)))
@@ -916,6 +1044,24 @@
         ...(movieStats?.viewerCategories ? { viewerCategories: movieStats.viewerCategories } : {}),
       }
     : null;
+  $: bookStatsForBar =
+    isBookSection && bookStats
+      ? {
+          bookshelfCount: bookStats.bookshelfCount ?? 0,
+          readCount: bookStats.readCount ?? 0,
+          averageRating:
+            typeof bookStats.averageRating === 'number' && Number.isFinite(bookStats.averageRating)
+              ? bookStats.averageRating
+              : null,
+          viewerOnBookshelf: bookStats.viewerOnBookshelf ?? false,
+          viewerCategories: bookStats.viewerCategories ?? [],
+          viewerRead: bookStats.viewerRead ?? false,
+          viewerRating:
+            typeof bookStats.viewerRating === 'number' && Number.isFinite(bookStats.viewerRating)
+              ? bookStats.viewerRating
+              : null,
+        }
+      : null;
   $: {
     if (embedController && (!highlightEmbedProvider || embedController.provider !== highlightEmbedProvider)) {
       embedController = null;
@@ -1808,6 +1954,12 @@
           />
         {:else if primaryLink && bandcampEmbed}
           <BandcampEmbed embed={bandcampEmbed} linkUrl={primaryLink.url} title={metadata?.title} />
+        {:else if primaryLink && isBookSection && primaryBookMetadata}
+          <BookCard
+            bookData={primaryBookMetadata}
+            compact={!isThreadView}
+            threadHref={buildThreadHref(sectionSlug, post.id)}
+          />
         {:else if primaryLink && isMovieSection && primaryMovieMetadata}
           <MovieCard movie={primaryMovieMetadata} />
         {:else if primaryLink && metadata?.recipe}
@@ -1883,6 +2035,12 @@
           />
         {:else if bandcampEmbed}
           <BandcampEmbed embed={bandcampEmbed} linkUrl={primaryLink.url} title={metadata?.title} />
+        {:else if isBookSection && primaryBookMetadata}
+          <BookCard
+            bookData={primaryBookMetadata}
+            compact={!isThreadView}
+            threadHref={buildThreadHref(sectionSlug, post.id)}
+          />
         {:else if isMovieSection && primaryMovieMetadata}
           <MovieCard movie={primaryMovieMetadata} />
         {:else if metadata.recipe}
@@ -2001,6 +2159,11 @@
             averageRating={recipeStats?.averageRating ?? null}
             showEmpty
           />
+        </div>
+      {/if}
+      {#if isBookSection && bookStatsForBar}
+        <div class="mt-3">
+          <BookStatsBar postId={post.id} bookStats={bookStatsForBar} />
         </div>
       {/if}
       {#if isMovieSection && movieStatsForBar}
