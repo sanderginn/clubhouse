@@ -107,6 +107,8 @@ function createPodcastStore() {
     ...initialState,
     savedPostIds: new Set(),
   });
+  let recentRequestGeneration = 0;
+  let savedRequestGeneration = 0;
 
   return {
     subscribe,
@@ -241,9 +243,13 @@ function createPodcastStore() {
         savedPostIds: new Set([...state.savedPostIds].filter((id) => id !== postId)),
       })),
     loadRecentPodcasts: async (sectionId: string, limit = DEFAULT_PAGE_SIZE): Promise<void> => {
+      const requestGeneration = ++recentRequestGeneration;
       podcastStore.setLoadingRecent(true);
       try {
         const response = await api.getSectionRecentPodcasts(sectionId, limit);
+        if (requestGeneration !== recentRequestGeneration) {
+          return;
+        }
         podcastStore.setRecentItems(
           response.items ?? [],
           response.nextCursor ?? null,
@@ -251,6 +257,9 @@ function createPodcastStore() {
           sectionId
         );
       } catch (error) {
+        if (requestGeneration !== recentRequestGeneration) {
+          return;
+        }
         podcastStore.setRecentError(
           error instanceof Error ? error.message : 'Failed to load recent podcasts'
         );
@@ -267,6 +276,7 @@ function createPodcastStore() {
         return;
       }
 
+      const requestGeneration = ++recentRequestGeneration;
       podcastStore.setLoadingRecent(true);
       try {
         const response = await api.getSectionRecentPodcasts(
@@ -274,12 +284,18 @@ function createPodcastStore() {
           limit,
           state.recentCursor
         );
+        if (requestGeneration !== recentRequestGeneration) {
+          return;
+        }
         podcastStore.appendRecentItems(
           response.items ?? [],
           response.nextCursor ?? null,
           response.hasMore ?? false
         );
       } catch (error) {
+        if (requestGeneration !== recentRequestGeneration) {
+          return;
+        }
         podcastStore.setRecentError(
           error instanceof Error ? error.message : 'Failed to load more recent podcasts'
         );
@@ -318,9 +334,13 @@ function createPodcastStore() {
       }
     },
     loadSavedPodcasts: async (sectionId: string, limit = DEFAULT_PAGE_SIZE): Promise<void> => {
+      const requestGeneration = ++savedRequestGeneration;
       podcastStore.setLoadingSaved(true);
       try {
         const response = await api.getSectionSavedPodcasts(sectionId, limit);
+        if (requestGeneration !== savedRequestGeneration) {
+          return;
+        }
         podcastStore.setSavedPosts(
           response.posts ?? [],
           response.nextCursor ?? null,
@@ -328,6 +348,9 @@ function createPodcastStore() {
           sectionId
         );
       } catch (error) {
+        if (requestGeneration !== savedRequestGeneration) {
+          return;
+        }
         podcastStore.setError(
           error instanceof Error ? error.message : 'Failed to load saved podcasts'
         );
@@ -339,26 +362,36 @@ function createPodcastStore() {
         return;
       }
 
+      const requestGeneration = ++savedRequestGeneration;
       podcastStore.setLoadingSaved(true);
       try {
         const response = await api.getSectionSavedPodcasts(state.sectionId, limit, state.cursor);
+        if (requestGeneration !== savedRequestGeneration) {
+          return;
+        }
         podcastStore.appendSavedPosts(
           response.posts ?? [],
           response.nextCursor ?? null,
           response.hasMore ?? false
         );
       } catch (error) {
+        if (requestGeneration !== savedRequestGeneration) {
+          return;
+        }
         podcastStore.setError(
           error instanceof Error ? error.message : 'Failed to load more saved podcasts'
         );
       }
     },
     isPostSaved: (postId: string): boolean => isPostSaved(get(podcastStore), postId),
-    reset: (): void =>
+    reset: (): void => {
+      recentRequestGeneration += 1;
+      savedRequestGeneration += 1;
       set({
         ...initialState,
         savedPostIds: new Set(),
-      }),
+      });
+    },
   };
 }
 

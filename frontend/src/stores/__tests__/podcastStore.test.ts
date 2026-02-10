@@ -184,6 +184,34 @@ describe('podcastStore', () => {
     expect(state.recentCursor).toBeNull();
   });
 
+  it('ignores stale recent load responses when a newer request already completed', async () => {
+    let resolveFirstRecent: ((value: unknown) => void) | null = null;
+    const firstRecentPromise = new Promise((resolve) => {
+      resolveFirstRecent = resolve;
+    });
+
+    apiGetSectionRecentPodcasts
+      .mockReturnValueOnce(firstRecentPromise)
+      .mockResolvedValueOnce({
+        items: [buildRecentItem('2', 'episode')],
+        hasMore: false,
+        nextCursor: undefined,
+      });
+
+    const firstLoad = podcastStore.loadRecentPodcasts('section-podcast');
+    await podcastStore.loadRecentPodcasts('section-podcast');
+
+    resolveFirstRecent?.({
+      items: [buildRecentItem('1', 'show')],
+      hasMore: false,
+      nextCursor: undefined,
+    });
+    await firstLoad;
+
+    const state = get(podcastStore);
+    expect(state.recentItems.map((item) => item.linkId)).toEqual(['link-2']);
+  });
+
   it('sets error on load failure and reset clears store state', async () => {
     apiGetSectionSavedPodcasts.mockRejectedValue(new Error('Failed to load saved podcasts'));
     apiGetSectionRecentPodcasts.mockRejectedValue(new Error('Failed to load recent podcasts'));
