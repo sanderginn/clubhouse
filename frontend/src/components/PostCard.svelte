@@ -629,7 +629,7 @@
     embedController = controller;
   };
 
-  function normalizeMoviePercentScore(value: unknown): number | undefined {
+  function parseMoviePercentScore(value: unknown): number | undefined {
     if (typeof value === 'number' && Number.isFinite(value)) {
       return value;
     }
@@ -656,6 +656,16 @@
     return Number.isFinite(parsed) ? parsed : undefined;
   }
 
+  function normalizeMoviePercentScore(...values: unknown[]): number | undefined {
+    for (const value of values) {
+      const parsed = parseMoviePercentScore(value);
+      if (typeof parsed === 'number') {
+        return parsed;
+      }
+    }
+    return undefined;
+  }
+
   function normalizeMovieMetadata(movie?: MovieMetadata): MovieCardMetadata | null {
     if (!movie) {
       return null;
@@ -680,10 +690,12 @@
           ? movie.tmdb_rating
           : undefined;
     const normalizedRottenTomatoesScore = normalizeMoviePercentScore(
-      movie.rottenTomatoesScore ?? movie.rotten_tomatoes_score
+      movie.rottenTomatoesScore,
+      movie.rotten_tomatoes_score
     );
     const normalizedMetacriticScore = normalizeMoviePercentScore(
-      movie.metacriticScore ?? movie.metacritic_score
+      movie.metacriticScore,
+      movie.metacritic_score
     );
     const normalizedRuntime =
       typeof movie.runtime === 'number' && Number.isFinite(movie.runtime) ? movie.runtime : undefined;

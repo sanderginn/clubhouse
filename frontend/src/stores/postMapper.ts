@@ -129,7 +129,7 @@ function normalizeNumber(value: unknown): number | undefined {
   return undefined;
 }
 
-function normalizePercentScore(value: unknown): number | undefined {
+function parsePercentScore(value: unknown): number | undefined {
   const normalized = normalizeNumber(value);
   if (typeof normalized === 'number') {
     return normalized;
@@ -151,6 +151,16 @@ function normalizePercentScore(value: unknown): number | undefined {
 
   const parsed = Number(match[1]);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function normalizePercentScore(...values: unknown[]): number | undefined {
+  for (const value of values) {
+    const parsed = parsePercentScore(value);
+    if (typeof parsed === 'number') {
+      return parsed;
+    }
+  }
+  return undefined;
 }
 
 function normalizeStringArray(value: unknown): string[] | undefined {
@@ -358,9 +368,10 @@ function normalizeMovieMetadata(rawMovie: unknown): MovieMetadata | undefined {
   const director = normalizeString(movie.director);
   const tmdbRating = normalizeNumber(movie.tmdb_rating ?? movie.tmdbRating);
   const rottenTomatoesScore = normalizePercentScore(
-    movie.rotten_tomatoes_score ?? movie.rottenTomatoesScore
+    movie.rotten_tomatoes_score,
+    movie.rottenTomatoesScore
   );
-  const metacriticScore = normalizePercentScore(movie.metacritic_score ?? movie.metacriticScore);
+  const metacriticScore = normalizePercentScore(movie.metacritic_score, movie.metacriticScore);
   const trailerKey = normalizeString(movie.trailer_key ?? movie.trailerKey);
   const tmdbId = normalizeNumber(movie.tmdb_id ?? movie.tmdbId);
   const tmdbMediaType = normalizeTMDBMediaType(

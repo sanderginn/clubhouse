@@ -86,9 +86,10 @@
   $: runtimeLabel = formatRuntime(movie.runtime);
   $: tmdbRatingLabel = formatTMDBRating(movie.tmdbRating);
   $: rottenTomatoesScore = normalizePercentScore(
-    movie.rottenTomatoesScore ?? movie.rotten_tomatoes_score
+    movie.rottenTomatoesScore,
+    movie.rotten_tomatoes_score
   );
-  $: metacriticScore = normalizePercentScore(movie.metacriticScore ?? movie.metacritic_score);
+  $: metacriticScore = normalizePercentScore(movie.metacriticScore, movie.metacritic_score);
   $: visibleGenres = (movie.genres ?? []).filter(Boolean).slice(0, 3);
   $: remainingGenres = Math.max((movie.genres?.length ?? 0) - visibleGenres.length, 0);
   $: directorLabel = movie.director?.trim() || 'Unknown';
@@ -192,7 +193,7 @@
     return value.toFixed(1);
   }
 
-  function normalizePercentScore(value: unknown): number | null {
+  function parsePercentScore(value: unknown): number | null {
     let parsedValue: number | null = null;
 
     if (typeof value === 'number' && Number.isFinite(value)) {
@@ -226,6 +227,16 @@
       return null;
     }
     return rounded;
+  }
+
+  function normalizePercentScore(...values: unknown[]): number | null {
+    for (const value of values) {
+      const parsed = parsePercentScore(value);
+      if (typeof parsed === 'number') {
+        return parsed;
+      }
+    }
+    return null;
   }
 
   function getRottenTomatoesClasses(score: number): string {
