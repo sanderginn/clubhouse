@@ -484,4 +484,249 @@ describe('api client', () => {
       nextCursor: 'next-1',
     });
   });
+
+  it('createBookshelfCategory posts name and maps category', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/auth/csrf')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: vi.fn().mockResolvedValue({ token: 'csrf-token' }),
+        });
+      }
+
+      return Promise.resolve({
+        ok: true,
+        status: 201,
+        json: vi.fn().mockResolvedValue({
+          category: { id: 'cat-1', name: 'Favorites', position: 0 },
+        }),
+      });
+    });
+
+    const response = await api.createBookshelfCategory('Favorites');
+
+    const call = findCall('/bookshelf/categories');
+    const body = JSON.parse(call?.[1]?.body as string);
+    expect(body).toEqual({ name: 'Favorites' });
+    expect(response).toEqual({
+      category: { id: 'cat-1', name: 'Favorites', position: 0 },
+    });
+  });
+
+  it('reorderBookshelfCategories sends category_ids payload', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/auth/csrf')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: vi.fn().mockResolvedValue({ token: 'csrf-token' }),
+        });
+      }
+
+      return Promise.resolve({
+        ok: true,
+        status: 204,
+        json: vi.fn(),
+      });
+    });
+
+    await api.reorderBookshelfCategories(['cat-1', 'cat-2']);
+
+    const call = findCall('/bookshelf/categories/reorder');
+    const body = JSON.parse(call?.[1]?.body as string);
+    expect(body).toEqual({ category_ids: ['cat-1', 'cat-2'] });
+  });
+
+  it('getMyBookshelf and getAllBookshelfItems map response and query params', async () => {
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue({
+          bookshelf_items: [
+            {
+              id: 'item-1',
+              user_id: 'user-1',
+              post_id: 'post-1',
+              category_id: 'cat-1',
+              created_at: '2026-02-01T00:00:00Z',
+            },
+          ],
+          next_cursor: 'next-my',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue({
+          bookshelf_items: [
+            {
+              id: 'item-2',
+              user_id: 'user-2',
+              post_id: 'post-2',
+              category_id: null,
+              created_at: '2026-02-02T00:00:00Z',
+            },
+          ],
+          next_cursor: null,
+        }),
+      });
+
+    const mine = await api.getMyBookshelf('Favorites', 'cursor-1', 10);
+    const all = await api.getAllBookshelfItems('Uncategorized', 'cursor-2', 15);
+
+    const [myUrl] = fetchMock.mock.calls[0];
+    expect(myUrl).toContain('/bookshelf');
+    expect(myUrl).toContain('category=Favorites');
+    expect(myUrl).toContain('cursor=cursor-1');
+    expect(myUrl).toContain('limit=10');
+    expect(mine).toEqual({
+      bookshelfItems: [
+        {
+          id: 'item-1',
+          userId: 'user-1',
+          postId: 'post-1',
+          categoryId: 'cat-1',
+          createdAt: '2026-02-01T00:00:00Z',
+          deletedAt: undefined,
+        },
+      ],
+      nextCursor: 'next-my',
+    });
+
+    const [allUrl] = fetchMock.mock.calls[1];
+    expect(allUrl).toContain('/bookshelf/all');
+    expect(allUrl).toContain('category=Uncategorized');
+    expect(allUrl).toContain('cursor=cursor-2');
+    expect(allUrl).toContain('limit=15');
+    expect(all).toEqual({
+      bookshelfItems: [
+        {
+          id: 'item-2',
+          userId: 'user-2',
+          postId: 'post-2',
+          categoryId: undefined,
+          createdAt: '2026-02-02T00:00:00Z',
+          deletedAt: undefined,
+        },
+      ],
+      nextCursor: undefined,
+    });
+  });
+
+  it('logRead and updateReadRating map read_log responses', async () => {
+    let readMutationCallCount = 0;
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/auth/csrf')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: vi.fn().mockResolvedValue({ token: 'csrf-token' }),
+        });
+      }
+
+      readMutationCallCount += 1;
+      const isPost = readMutationCallCount === 1;
+      return Promise.resolve({
+        ok: true,
+        status: isPost ? 201 : 200,
+        json: vi.fn().mockResolvedValue({
+          read_log: {
+            id: isPost ? 'read-1' : 'read-2',
+            user_id: 'user-1',
+            post_id: 'post-1',
+            rating: isPost ? 4 : 5,
+            created_at: '2026-02-03T00:00:00Z',
+            deleted_at: null,
+          },
+        }),
+      });
+    });
+
+    const created = await api.logRead('post-1', 4);
+    const updated = await api.updateReadRating('post-1', 5);
+
+    const postCall = findCall('/posts/post-1/read');
+    const postBody = JSON.parse(postCall?.[1]?.body as string);
+    expect(postBody).toEqual({ rating: 4 });
+    expect(created.readLog.rating).toBe(4);
+    expect(updated.readLog.rating).toBe(5);
+  });
+
+  it('getPostReadLogs and getReadHistory map snake_case responses', async () => {
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue({
+          read_count: 2,
+          average_rating: 4,
+          viewer_read: true,
+          viewer_rating: 5,
+          readers: [
+            {
+              id: 'user-1',
+              username: 'alice',
+              profile_picture_url: '/alice.png',
+              rating: 5,
+            },
+          ],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue({
+          read_logs: [
+            {
+              id: 'read-1',
+              user_id: 'user-1',
+              post_id: 'post-1',
+              rating: 4,
+              created_at: '2026-02-03T00:00:00Z',
+              deleted_at: null,
+            },
+          ],
+          next_cursor: 'next-read',
+        }),
+      });
+
+    const postLogs = await api.getPostReadLogs('post-1');
+    const history = await api.getReadHistory('cursor-1', 10);
+
+    expect(postLogs).toEqual({
+      readCount: 2,
+      averageRating: 4,
+      viewerRead: true,
+      viewerRating: 5,
+      readers: [
+        {
+          id: 'user-1',
+          username: 'alice',
+          displayName: 'alice',
+          avatar: '/alice.png',
+          rating: 5,
+        },
+      ],
+    });
+
+    const [historyUrl] = fetchMock.mock.calls[1];
+    expect(historyUrl).toContain('/read-history');
+    expect(historyUrl).toContain('cursor=cursor-1');
+    expect(historyUrl).toContain('limit=10');
+    expect(history).toEqual({
+      readLogs: [
+        {
+          id: 'read-1',
+          userId: 'user-1',
+          postId: 'post-1',
+          rating: 4,
+          createdAt: '2026-02-03T00:00:00Z',
+          deletedAt: undefined,
+        },
+      ],
+      nextCursor: 'next-read',
+    });
+  });
 });
