@@ -150,6 +150,7 @@
   type LinkMetadataWithBook = LinkMetadata & {
     book_data?: BookMetadata | string;
     bookData?: BookMetadata | string;
+    book?: BookMetadata | string;
   };
   type PodcastHighlightEpisodeMetadata = {
     title?: string;
@@ -187,7 +188,20 @@
   $: userReactions = new Set(post.viewerReactions ?? []);
   $: sectionSlug = getSectionSlugById($sections, post.sectionId) ?? post.sectionId;
   $: sectionInfo = $sections.find((s) => s.id === post.sectionId) ?? null;
-  $: sectionType = sectionInfo?.type ?? ((post as PostWithSectionType).section?.type ?? null);
+  function normalizeSectionType(value: string | null | undefined): string | null {
+    if (typeof value !== 'string') {
+      return null;
+    }
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'books') {
+      return 'book';
+    }
+    return normalized || null;
+  }
+
+  $: sectionType = normalizeSectionType(
+    sectionInfo?.type ?? ((post as PostWithSectionType).section?.type ?? null)
+  );
   $: recipeStats = post.recipeStats ?? post.recipe_stats ?? null;
   $: bookStats = post.bookStats ?? post.book_stats ?? null;
   $: movieStats = post.movieStats ?? post.movie_stats ?? null;
@@ -993,7 +1007,7 @@
     }
 
     const metadataWithBook = link.metadata as LinkMetadataWithBook;
-    const rawBookData = metadataWithBook.book_data ?? metadataWithBook.bookData;
+    const rawBookData = metadataWithBook.book_data ?? metadataWithBook.bookData ?? metadataWithBook.book;
     return normalizeBookMetadata(rawBookData);
   }
 

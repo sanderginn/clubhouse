@@ -68,6 +68,8 @@ type LinkMetadataWithBookForTest = NonNullable<
   NonNullable<Post['links']>[number]['metadata']
 > & {
   book_data?: BookDataForTest;
+  bookData?: BookDataForTest;
+  book?: BookDataForTest;
 };
 
 type PodcastHighlightEpisodeForTest = {
@@ -430,6 +432,43 @@ describe('PostCard', () => {
     expect(screen.getByTestId('book-title')).toHaveTextContent('Neuromancer');
   });
 
+  it('renders book card for mapped book metadata in legacy books sections', () => {
+    sectionStore.setSections([
+      {
+        id: 'section-1',
+        name: 'Books',
+        type: 'books',
+        icon: '📚',
+        slug: 'books',
+      } as unknown as { id: string; name: string; type: 'book'; icon: string; slug: string },
+    ]);
+
+    const mappedPost = mapApiPost({
+      id: 'post-books-legacy',
+      user_id: 'user-1',
+      section_id: 'section-1',
+      content: 'Neuromancer',
+      created_at: '2025-01-01T00:00:00Z',
+      links: [
+        {
+          url: 'https://www.goodreads.com/book/show/22328-neuromancer',
+          metadata: {
+            book_data: {
+              title: 'Neuromancer',
+              authors: ['William Gibson'],
+              description: 'A classic cyberpunk novel.',
+            },
+          },
+        },
+      ],
+    });
+
+    render(PostCard, { post: mappedPost });
+
+    expect(screen.getByTestId('book-card')).toBeInTheDocument();
+    expect(screen.getByTestId('book-title')).toHaveTextContent('Neuromancer');
+  });
+
   it('renders plain URL fallback for book sections when book metadata is unavailable', () => {
     sectionStore.setSections([
       {
@@ -454,6 +493,41 @@ describe('PostCard', () => {
         },
       ],
     };
+
+    render(PostCard, { post: bookPostWithoutBookData });
+
+    expect(screen.queryByTestId('book-card')).not.toBeInTheDocument();
+    const fallbackLinkText = screen.getByText(fallbackUrl);
+    expect(fallbackLinkText.closest('a')).toHaveAttribute('href', fallbackUrl);
+  });
+
+  it('renders plain URL fallback for legacy books sections when book metadata is unavailable', () => {
+    sectionStore.setSections([
+      {
+        id: 'section-1',
+        name: 'Books',
+        type: 'books',
+        icon: '📚',
+        slug: 'books',
+      } as unknown as { id: string; name: string; type: 'book'; icon: string; slug: string },
+    ]);
+
+    const fallbackUrl = 'https://www.goodreads.com/book/show/22328-neuromancer';
+    const bookPostWithoutBookData = mapApiPost({
+      id: 'post-books-fallback',
+      user_id: 'user-1',
+      section_id: 'section-1',
+      content: 'No metadata',
+      created_at: '2025-01-01T00:00:00Z',
+      links: [
+        {
+          url: fallbackUrl,
+          metadata: {
+            provider: 'goodreads',
+          },
+        },
+      ],
+    });
 
     render(PostCard, { post: bookPostWithoutBookData });
 

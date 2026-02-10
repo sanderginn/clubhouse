@@ -10,6 +10,7 @@ import type {
   EmbedData,
   RecipeMetadata,
   MovieMetadata,
+  BookMetadata,
   MovieCastMember,
   MovieSeason,
   PodcastMetadata,
@@ -544,6 +545,82 @@ function normalizeMovieMetadata(rawMovie: unknown): MovieMetadata | undefined {
   };
 }
 
+function normalizeBookMetadata(rawBook: unknown): BookMetadata | undefined {
+  if (!rawBook) {
+    return undefined;
+  }
+
+  let book: Record<string, unknown> | null = null;
+  if (typeof rawBook === 'string') {
+    try {
+      const parsed = JSON.parse(rawBook) as unknown;
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        book = parsed as Record<string, unknown>;
+      }
+    } catch {
+      return undefined;
+    }
+  } else if (typeof rawBook === 'object' && !Array.isArray(rawBook)) {
+    book = rawBook as Record<string, unknown>;
+  }
+
+  if (!book) {
+    return undefined;
+  }
+
+  const title = normalizeString(book.title);
+  const authors = normalizeStringArray(book.authors);
+  const description = normalizeString(book.description);
+  const coverUrl = normalizeString(book.coverUrl);
+  const coverURLSnake = normalizeString(book.cover_url);
+  const pageCount = normalizeNumber(book.pageCount);
+  const pageCountSnake = normalizeNumber(book.page_count);
+  const genres = normalizeStringArray(book.genres);
+  const publishDate = normalizeString(book.publishDate);
+  const publishDateSnake = normalizeString(book.publish_date);
+  const openLibraryKey = normalizeString(book.openLibraryKey);
+  const openLibraryKeySnake = normalizeString(book.open_library_key);
+  const goodreadsURL = normalizeString(book.goodreadsUrl);
+  const goodreadsURLSnake = normalizeString(book.goodreads_url);
+
+  const hasBookMetadata =
+    !!title ||
+    !!authors ||
+    !!description ||
+    !!coverUrl ||
+    !!coverURLSnake ||
+    typeof pageCount === 'number' ||
+    typeof pageCountSnake === 'number' ||
+    !!genres ||
+    !!publishDate ||
+    !!publishDateSnake ||
+    !!openLibraryKey ||
+    !!openLibraryKeySnake ||
+    !!goodreadsURL ||
+    !!goodreadsURLSnake;
+
+  if (!hasBookMetadata) {
+    return undefined;
+  }
+
+  return {
+    ...(title ? { title } : {}),
+    ...(authors ? { authors } : {}),
+    ...(description ? { description } : {}),
+    ...(coverUrl ? { coverUrl } : {}),
+    ...(coverURLSnake ? { cover_url: coverURLSnake } : {}),
+    ...(typeof pageCount === 'number' ? { pageCount } : {}),
+    ...(typeof pageCountSnake === 'number' ? { page_count: pageCountSnake } : {}),
+    ...(genres ? { genres } : {}),
+    ...(publishDate ? { publishDate } : {}),
+    ...(publishDateSnake ? { publish_date: publishDateSnake } : {}),
+    ...(openLibraryKey ? { openLibraryKey } : {}),
+    ...(openLibraryKeySnake ? { open_library_key: openLibraryKeySnake } : {}),
+    ...(goodreadsURL ? { goodreadsUrl: goodreadsURL } : {}),
+    ...(goodreadsURLSnake ? { goodreads_url: goodreadsURLSnake } : {}),
+  };
+}
+
 function normalizeRecipeStats(rawStats: unknown): RecipeStats | undefined {
   if (!rawStats || typeof rawStats !== 'object') {
     return undefined;
@@ -818,6 +895,7 @@ export function normalizeLinkMetadata(
     normalizeString(metadata.ogType);
   const recipe = normalizeRecipeMetadata(metadata.recipe);
   const movie = normalizeMovieMetadata(metadata.movie);
+  const book = normalizeBookMetadata(metadata.book_data ?? metadata.bookData ?? metadata.book);
   const podcast = normalizePodcastMetadata(metadata.podcast);
 
   const hasMetadata =
@@ -832,6 +910,7 @@ export function normalizeLinkMetadata(
     !!type ||
     !!recipe ||
     !!movie ||
+    !!book ||
     !!podcast;
   if (!hasMetadata) {
     return undefined;
@@ -850,6 +929,9 @@ export function normalizeLinkMetadata(
     type,
     ...(recipe ? { recipe } : {}),
     ...(movie ? { movie } : {}),
+    ...(book ? { book } : {}),
+    ...(book ? { book_data: book } : {}),
+    ...(book ? { bookData: book } : {}),
     ...(podcast ? { podcast } : {}),
   };
 }
