@@ -101,7 +101,17 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 		return nil, fmt.Errorf("section not found")
 	}
 
-	for _, link := range req.Links {
+	resolvedLinks := req.Links
+	if shouldDetectPodcastKinds(resolvedLinks) {
+		detectionHints := fetchLinkMetadata(ctx, resolvedLinks, sectionType)
+		resolvedLinks, err = resolvePodcastKinds(sectionType, resolvedLinks, detectionHints)
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+	}
+
+	for _, link := range resolvedLinks {
 		if err := models.ValidateHighlights(sectionType, link.Highlights); err != nil {
 			recordSpanError(span, err)
 			return nil, err
@@ -111,7 +121,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 			return nil, err
 		}
 	}
-	highlightCount := countLinkHighlights(req.Links)
+	highlightCount := countLinkHighlights(resolvedLinks)
 	if highlightCount > 0 {
 		span.SetAttributes(attribute.Int("highlight_count", highlightCount))
 		observability.LogDebug(ctx, "post highlights provided", "highlight_count", strconv.Itoa(highlightCount), "section_type", sectionType)
@@ -121,7 +131,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 	postID := uuid.New()
 	trimmedContent := strings.TrimSpace(req.Content)
 	shouldEnqueueMetadataJobs := s.redis != nil && GetConfigService().IsLinkMetadataEnabled()
-	jobs := make([]MetadataJob, 0, len(req.Links))
+	jobs := make([]MetadataJob, 0, len(resolvedLinks))
 
 	// Begin transaction
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -150,10 +160,10 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 	}
 
 	// Insert links if provided
-	if len(req.Links) > 0 {
-		post.Links = make([]models.Link, 0, len(req.Links))
+	if len(resolvedLinks) > 0 {
+		post.Links = make([]models.Link, 0, len(resolvedLinks))
 
-		for _, linkReq := range req.Links {
+		for _, linkReq := range resolvedLinks {
 			linkID := uuid.New()
 
 			mergedMetadata, sortedHighlights, podcast := mergeHighlightsIntoMetadata(linkReq, nil)
@@ -300,6 +310,7 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 	linkMetadataRemoved := false
 	imagesChanged := false
 	var normalizedImages []models.PostImageRequest
+	var resolvedLinks []models.LinkRequest
 	var existingLinks []models.Link
 	var removedLink *models.Link
 
@@ -349,13 +360,37 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 	}
 
 	if req.Links != nil {
-		highlightCount := countLinkHighlights(*req.Links)
+		resolvedLinks = make([]models.LinkRequest, len(*req.Links))
+		copy(resolvedLinks, *req.Links)
+
+		var detectionMetadata []models.JSONMap
+		if shouldDetectPodcastKinds(resolvedLinks) {
+			detectionHints := buildPodcastKindDetectionHints(resolvedLinks, existingLinks)
+			resolvedCandidate, resolveErr := resolvePodcastKinds(sectionType, resolvedLinks, detectionHints)
+			if resolveErr == nil {
+				resolvedLinks = resolvedCandidate
+			}
+			if resolveErr != nil && errors.Is(resolveErr, errPodcastKindSelectionRequired) {
+				detectionMetadata = fetchLinkMetadata(ctx, resolvedLinks, sectionType)
+				detectionHints = mergePodcastKindDetectionHints(detectionHints, detectionMetadata)
+				resolvedCandidate, resolveErr = resolvePodcastKinds(sectionType, resolvedLinks, detectionHints)
+				if resolveErr == nil {
+					resolvedLinks = resolvedCandidate
+				}
+			}
+			if resolveErr != nil {
+				recordSpanError(span, resolveErr)
+				return nil, resolveErr
+			}
+		}
+
+		highlightCount := countLinkHighlights(resolvedLinks)
 		if highlightCount > 0 {
 			span.SetAttributes(attribute.Int("highlight_count", highlightCount))
 			observability.LogDebug(ctx, "post highlights updated", "highlight_count", strconv.Itoa(highlightCount), "section_type", sectionType)
 		}
 
-		for _, link := range *req.Links {
+		for _, link := range resolvedLinks {
 			if err := models.ValidateHighlights(sectionType, link.Highlights); err != nil {
 				recordSpanError(span, err)
 				return nil, err
@@ -366,9 +401,13 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 			}
 		}
 
-		linksChanged = !linkRequestsMatchExistingLinks(existingLinks, *req.Links)
-		if linksChanged && len(*req.Links) > 0 {
-			linkMetadata = fetchLinkMetadata(ctx, *req.Links, sectionType)
+		linksChanged = !linkRequestsMatchExistingLinks(existingLinks, resolvedLinks)
+		if linksChanged && len(resolvedLinks) > 0 {
+			if len(detectionMetadata) > 0 {
+				linkMetadata = detectionMetadata
+			} else {
+				linkMetadata = fetchLinkMetadata(ctx, resolvedLinks, sectionType)
+			}
 		}
 	}
 
@@ -408,8 +447,8 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 			return nil, fmt.Errorf("failed to delete post links: %w", err)
 		}
 
-		if len(*req.Links) > 0 {
-			for i, linkReq := range *req.Links {
+		if len(resolvedLinks) > 0 {
+			for i, linkReq := range resolvedLinks {
 				linkID := uuid.New()
 
 				var fetchedMetadata models.JSONMap
@@ -483,7 +522,7 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 		"images_provided":       req.Images != nil,
 	}
 	if req.Links != nil {
-		metadata["link_count"] = len(*req.Links)
+		metadata["link_count"] = len(resolvedLinks)
 	}
 	if req.Images != nil {
 		metadata["image_count"] = len(*req.Images)
