@@ -46,6 +46,10 @@
     rotten_tomatoes_score?: number | string;
     metacriticScore?: number | string;
     metacritic_score?: number | string;
+    imdbId?: string;
+    imdb_id?: string;
+    rottenTomatoesUrl?: string;
+    rotten_tomatoes_url?: string;
     trailerKey?: string;
     tmdbId?: number;
     tmdb_id?: number;
@@ -98,6 +102,12 @@
   $: trailerEmbedUrl = buildTrailerUrl(movie.trailerKey);
   $: tmdbId = resolveTMDBID(movie.tmdbId ?? movie.tmdb_id);
   $: tmdbMediaType = normalizeTMDBMediaType(movie.tmdbMediaType ?? movie.tmdb_media_type);
+  $: imdbId = normalizeIMDBID(movie.imdbId ?? movie.imdb_id);
+  $: imdbUrl = imdbId ? `https://www.imdb.com/title/${encodeURIComponent(imdbId)}` : null;
+  $: rottenTomatoesUrl = normalizeRottenTomatoesURL(
+    movie.rottenTomatoesUrl ?? movie.rotten_tomatoes_url,
+    tmdbMediaType
+  );
   $: seasons = normalizeSeasons(movie.seasons);
   $: seasonCount = seasons.length;
   $: isSeriesContent = tmdbMediaType === 'tv' || (tmdbMediaType !== 'movie' && seasonCount > 0);
@@ -167,6 +177,96 @@
     typeof tmdbId === 'number' && tmdbMediaType
       ? `https://www.themoviedb.org/${tmdbMediaType}/${tmdbId}`
       : null;
+
+  function normalizeIMDBID(value?: string): string | null {
+    const normalized = value?.trim().toLowerCase();
+    if (!normalized || !/^tt\d+$/.test(normalized)) {
+      return null;
+    }
+    return normalized;
+  }
+
+  function normalizeRottenTomatoesURL(
+    value: unknown,
+    mediaType: 'movie' | 'tv' | null
+  ): string | null {
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const rawPath = extractRottenTomatoesPath(trimmed);
+    if (rawPath) {
+      const normalized = normalizeRottenTomatoesPath(rawPath, mediaType);
+      return normalized ? `https://www.rottentomatoes.com${normalized}` : null;
+    }
+
+    const slug = normalizeRottenTomatoesSlug(trimmed);
+    if (!slug) {
+      return null;
+    }
+
+    return `https://www.rottentomatoes.com/${getRottenTomatoesCategory(mediaType)}/${slug}`;
+  }
+
+  function extractRottenTomatoesPath(value: string): string | null {
+    try {
+      const parsed = new URL(value);
+      const host = parsed.hostname.toLowerCase();
+      if (host === 'rottentomatoes.com' || host.endsWith('.rottentomatoes.com')) {
+        return parsed.pathname;
+      }
+      return null;
+    } catch {
+      if (value.startsWith('/')) {
+        return value;
+      }
+      return null;
+    }
+  }
+
+  function normalizeRottenTomatoesPath(
+    pathValue: string,
+    mediaType: 'movie' | 'tv' | null
+  ): string | null {
+    const pathSegments = pathValue.split('/').filter(Boolean);
+    if (pathSegments.length < 2) {
+      return null;
+    }
+
+    const category = pathSegments[0]?.toLowerCase();
+    if (category !== 'm' && category !== 'tv') {
+      return null;
+    }
+
+    const slug = normalizeRottenTomatoesSlug(pathSegments[1]);
+    if (!slug) {
+      return null;
+    }
+
+    const normalizedCategory = category === 'tv' ? 'tv' : getRottenTomatoesCategory(mediaType);
+    return `/${normalizedCategory}/${slug}`;
+  }
+
+  function normalizeRottenTomatoesSlug(value: string): string | null {
+    const slug = value
+      .trim()
+      .toLowerCase()
+      .replace(/-/g, '_')
+      .replace(/[^a-z0-9_]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .replace(/_+/g, '_');
+
+    return slug.length > 0 ? slug : null;
+  }
+
+  function getRottenTomatoesCategory(mediaType: 'movie' | 'tv' | null): 'm' | 'tv' {
+    return mediaType === 'tv' ? 'tv' : 'm';
+  }
 
   function formatRuntime(runtime?: number): string | null {
     if (typeof runtime !== 'number' || !Number.isFinite(runtime) || runtime <= 0) {
@@ -562,23 +662,63 @@
               {/if}
             {/each}
           </p>
-          {#if tmdbUrl}
-            <a
-              href={tmdbUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="mt-2 inline-flex items-center gap-2 rounded-md border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-sm font-semibold text-slate-800 transition-colors hover:border-slate-400 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500"
-              aria-label={`View ${title} on TMDB (opens in a new tab)`}
-              data-testid="movie-tmdb-link"
-            >
-              <span
-                class="rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-800"
-                aria-hidden="true"
-              >
-                TMDB
-              </span>
-              <span>View on TMDB</span>
-            </a>
+          {#if tmdbUrl || imdbUrl || rottenTomatoesUrl}
+            <div class="mt-2 flex flex-wrap gap-2">
+              {#if tmdbUrl}
+                <a
+                  href={tmdbUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-sm font-semibold text-slate-800 transition-colors hover:border-slate-400 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500"
+                  aria-label={`View ${title} on TMDB (opens in a new tab)`}
+                  data-testid="movie-tmdb-link"
+                >
+                  <span
+                    class="rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-800"
+                    aria-hidden="true"
+                  >
+                    TMDB
+                  </span>
+                  <span>View on TMDB</span>
+                </a>
+              {/if}
+              {#if imdbUrl}
+                <a
+                  href={imdbUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-sm font-semibold text-slate-800 transition-colors hover:border-slate-400 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500"
+                  aria-label={`View ${title} on IMDb (opens in a new tab)`}
+                  data-testid="movie-imdb-link"
+                >
+                  <span
+                    class="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-800"
+                    aria-hidden="true"
+                  >
+                    IMDb
+                  </span>
+                  <span>View on IMDb</span>
+                </a>
+              {/if}
+              {#if rottenTomatoesUrl}
+                <a
+                  href={rottenTomatoesUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-sm font-semibold text-slate-800 transition-colors hover:border-slate-400 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500"
+                  aria-label={`View ${title} on Rotten Tomatoes (opens in a new tab)`}
+                  data-testid="movie-rotten-tomatoes-link"
+                >
+                  <span
+                    class="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-rose-800"
+                    aria-hidden="true"
+                  >
+                    RT
+                  </span>
+                  <span>View on Rotten Tomatoes</span>
+                </a>
+              {/if}
+            </div>
           {/if}
         </div>
 

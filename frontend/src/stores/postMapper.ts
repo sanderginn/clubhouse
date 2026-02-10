@@ -191,6 +191,14 @@ function normalizeTMDBMediaType(value: unknown): 'movie' | 'tv' | undefined {
   return undefined;
 }
 
+function normalizeIMDBID(value: unknown): string | undefined {
+  const normalized = normalizeString(value)?.toLowerCase();
+  if (!normalized) {
+    return undefined;
+  }
+  return /^tt\d+$/.test(normalized) ? normalized : undefined;
+}
+
 function normalizePodcastKind(value: unknown): 'show' | 'episode' | undefined {
   const normalized = normalizeString(value)?.toLowerCase();
   if (normalized === 'show') {
@@ -454,6 +462,10 @@ function normalizeMovieMetadata(rawMovie: unknown): MovieMetadata | undefined {
     movie.rottenTomatoesScore
   );
   const metacriticScore = normalizePercentScore(movie.metacritic_score, movie.metacriticScore);
+  const imdbId = normalizeIMDBID(movie.imdb_id ?? movie.imdbId);
+  const rottenTomatoesUrl = normalizeString(
+    movie.rotten_tomatoes_url ?? movie.rottenTomatoesUrl
+  );
   const trailerKey = normalizeString(movie.trailer_key ?? movie.trailerKey);
   const tmdbId = normalizeNumber(movie.tmdb_id ?? movie.tmdbId);
   const tmdbMediaType = normalizeTMDBMediaType(
@@ -496,6 +508,8 @@ function normalizeMovieMetadata(rawMovie: unknown): MovieMetadata | undefined {
     typeof tmdbRating === 'number' ||
     typeof rottenTomatoesScore === 'number' ||
     typeof metacriticScore === 'number' ||
+    !!imdbId ||
+    !!rottenTomatoesUrl ||
     !!trailerKey ||
     typeof tmdbId === 'number' ||
     !!tmdbMediaType ||
@@ -519,6 +533,8 @@ function normalizeMovieMetadata(rawMovie: unknown): MovieMetadata | undefined {
     ...(typeof tmdbRating === 'number' ? { tmdbRating } : {}),
     ...(typeof rottenTomatoesScore === 'number' ? { rottenTomatoesScore } : {}),
     ...(typeof metacriticScore === 'number' ? { metacriticScore } : {}),
+    ...(imdbId ? { imdbId } : {}),
+    ...(rottenTomatoesUrl ? { rottenTomatoesUrl } : {}),
     ...(trailerKey ? { trailerKey } : {}),
     ...(typeof tmdbId === 'number' ? { tmdbId } : {}),
     ...(tmdbMediaType ? { tmdbMediaType } : {}),

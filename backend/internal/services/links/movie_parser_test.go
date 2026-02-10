@@ -33,6 +33,7 @@ func TestParseMovieMetadataIMDbURL(t *testing.T) {
 				"genres":[{"id":28,"name":"Action"},{"id":878,"name":"Science Fiction"}],
 				"release_date":"1999-03-30",
 				"vote_average":8.2,
+				"imdb_id":"tt0133093",
 				"credits":{
 					"cast":[
 						{"id":1,"name":"Keanu Reeves","character":"Neo","order":0},
@@ -82,6 +83,12 @@ func TestParseMovieMetadataIMDbURL(t *testing.T) {
 	}
 	if metadata.TMDBMediaType != "movie" {
 		t.Fatalf("TMDBMediaType = %q, want movie", metadata.TMDBMediaType)
+	}
+	if metadata.IMDBID != "tt0133093" {
+		t.Fatalf("IMDBID = %q, want tt0133093", metadata.IMDBID)
+	}
+	if metadata.RottenTomatoesURL != "https://www.rottentomatoes.com/m/the_matrix" {
+		t.Fatalf("RottenTomatoesURL = %q, want https://www.rottentomatoes.com/m/the_matrix", metadata.RottenTomatoesURL)
 	}
 	if metadata.TrailerKey != "trailer-key" {
 		t.Fatalf("TrailerKey = %q, want trailer-key", metadata.TrailerKey)
@@ -162,6 +169,7 @@ func TestParseMovieMetadataTMDBTVURL(t *testing.T) {
 				{"season_number":1,"episode_count":10,"air_date":"2011-04-17","name":"Season 1","overview":"Houses rise.","poster_path":"/season1.jpg"}
 			],
 			"vote_average":8.5,
+			"external_ids":{"imdb_id":"tt0944947"},
 			"credits":{"cast":[{"id":239019,"name":"Emilia Clarke","character":"Daenerys Targaryen","order":1}],"crew":[{"id":9813,"name":"Miguel Sapochnik","job":"Director","department":"Directing"}]},
 			"videos":{"results":[{"id":"def456","key":"KPLWWIOCOOQ","name":"Teaser","site":"YouTube","type":"Teaser","official":true}]}
 		}`))
@@ -205,6 +213,12 @@ func TestParseMovieMetadataTMDBTVURL(t *testing.T) {
 	}
 	if metadata.TMDBMediaType != "tv" {
 		t.Fatalf("TMDBMediaType = %q, want tv", metadata.TMDBMediaType)
+	}
+	if metadata.IMDBID != "tt0944947" {
+		t.Fatalf("IMDBID = %q, want tt0944947", metadata.IMDBID)
+	}
+	if metadata.RottenTomatoesURL != "https://www.rottentomatoes.com/tv/game_of_thrones" {
+		t.Fatalf("RottenTomatoesURL = %q, want https://www.rottentomatoes.com/tv/game_of_thrones", metadata.RottenTomatoesURL)
 	}
 }
 
@@ -370,6 +384,12 @@ func TestParseMovieMetadataRottenTomatoesMovieURL(t *testing.T) {
 	if metadata.RottenTomatoesScore == nil || *metadata.RottenTomatoesScore != 88 {
 		t.Fatalf("RottenTomatoesScore = %+v, want 88", metadata.RottenTomatoesScore)
 	}
+	if metadata.IMDBID != "tt0133093" {
+		t.Fatalf("IMDBID = %q, want tt0133093", metadata.IMDBID)
+	}
+	if metadata.RottenTomatoesURL != "https://www.rottentomatoes.com/m/the_matrix" {
+		t.Fatalf("RottenTomatoesURL = %q, want https://www.rottentomatoes.com/m/the_matrix", metadata.RottenTomatoesURL)
+	}
 }
 
 func TestParseMovieMetadataRottenTomatoesTVURL(t *testing.T) {
@@ -418,6 +438,9 @@ func TestParseMovieMetadataRottenTomatoesTVURL(t *testing.T) {
 	}
 	if metadata.TMDBMediaType != "tv" {
 		t.Fatalf("TMDBMediaType = %q, want tv", metadata.TMDBMediaType)
+	}
+	if metadata.RottenTomatoesURL != "https://www.rottentomatoes.com/tv/game_of_thrones" {
+		t.Fatalf("RottenTomatoesURL = %q, want https://www.rottentomatoes.com/tv/game_of_thrones", metadata.RottenTomatoesURL)
 	}
 }
 
@@ -643,6 +666,12 @@ func TestParseMovieMetadataEnrichesWithOMDBRatings(t *testing.T) {
 	if metadata.MetacriticScore == nil || *metadata.MetacriticScore != 73 {
 		t.Fatalf("MetacriticScore = %+v, want 73", metadata.MetacriticScore)
 	}
+	if metadata.IMDBID != "tt0133093" {
+		t.Fatalf("IMDBID = %q, want tt0133093", metadata.IMDBID)
+	}
+	if metadata.RottenTomatoesURL != "https://www.rottentomatoes.com/m/the_matrix" {
+		t.Fatalf("RottenTomatoesURL = %q, want https://www.rottentomatoes.com/m/the_matrix", metadata.RottenTomatoesURL)
+	}
 }
 
 func TestParseMovieMetadataOMDBFailureFallsBackToTMDB(t *testing.T) {
@@ -685,6 +714,12 @@ func TestParseMovieMetadataOMDBFailureFallsBackToTMDB(t *testing.T) {
 	}
 	if metadata.Title != "Game of Thrones" {
 		t.Fatalf("Title = %q, want Game of Thrones", metadata.Title)
+	}
+	if metadata.IMDBID != "tt0944947" {
+		t.Fatalf("IMDBID = %q, want tt0944947", metadata.IMDBID)
+	}
+	if metadata.RottenTomatoesURL != "https://www.rottentomatoes.com/tv/game_of_thrones" {
+		t.Fatalf("RottenTomatoesURL = %q, want https://www.rottentomatoes.com/tv/game_of_thrones", metadata.RottenTomatoesURL)
 	}
 	if metadata.RottenTomatoesScore != nil {
 		t.Fatalf("expected RottenTomatoesScore to be nil, got %v", *metadata.RottenTomatoesScore)

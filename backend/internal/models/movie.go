@@ -37,6 +37,8 @@ type MovieData struct {
 	TMDBRating          float64      `json:"tmdb_rating"`
 	RottenTomatoesScore *int         `json:"rotten_tomatoes_score,omitempty"`
 	MetacriticScore     *int         `json:"metacritic_score,omitempty"`
+	IMDBID              string       `json:"imdb_id,omitempty"`
+	RottenTomatoesURL   string       `json:"rotten_tomatoes_url,omitempty"`
 	TrailerKey          string       `json:"trailer_key"`
 	TMDBID              int          `json:"tmdb_id,omitempty"`
 	TMDBMediaType       string       `json:"tmdb_media_type,omitempty"`
