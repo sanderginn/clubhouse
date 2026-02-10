@@ -39,6 +39,7 @@
     878,
     879,
     880,
+    881,
     883,
     884,
     885,
@@ -812,7 +813,7 @@
     {
       "issue_number": 881,
       "title": "[Books] Create QuoteCard and QuoteForm components",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         880
       ],
@@ -825,7 +826,9 @@
       "assigned_to": "agent-1770709390-37307",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770709390-37307",
       "branch": "feat/issue-881-books-create-quotecard-and-quoteform-com",
-      "claimed_at": "2026-02-10T07:43:10Z"
+      "claimed_at": "2026-02-10T07:43:10Z",
+      "pr_number": 946,
+      "completed_at": "2026-02-10T07:56:18Z"
     },
     {
       "issue_number": 882,
