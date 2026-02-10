@@ -279,7 +279,7 @@
       return;
     }
 
-    pendingSelection = new Set([...pendingSelection, createdCategory.name]);
+    pendingSelection = new Set<string>([createdCategory.name]);
     showCreateCategoryInline = false;
     newCategoryName = '';
     isCreatingCategory = false;

@@ -210,6 +210,46 @@ describe('BookshelfSaveButton', () => {
     expect(screen.getByLabelText('Classics')).toBeChecked();
   });
 
+  it('replaces existing selection when creating a category inline', async () => {
+    const pendingLoad = createDeferred<{ bookshelfItems: []; nextCursor: undefined }>();
+    apiGetMyBookshelf.mockReturnValueOnce(pendingLoad.promise);
+    bookshelfCategories.set([{ id: 'cat-1', name: 'Favorites', position: 0 }]);
+
+    render(BookshelfSaveButton, {
+      postId: 'post-inline-replace',
+      bookStats: {
+        bookshelfCount: 1,
+        readCount: 0,
+        averageRating: null,
+        viewerOnBookshelf: true,
+        viewerCategories: ['Favorites'],
+      },
+    });
+
+    await fireEvent.click(screen.getByTestId('bookshelf-dropdown-toggle'));
+    expect(screen.getByLabelText('Favorites')).toBeChecked();
+
+    await fireEvent.click(screen.getByText('+ Create category'));
+    await fireEvent.input(screen.getByLabelText('New category name'), {
+      target: { value: 'Classics' },
+    });
+    await fireEvent.click(screen.getByRole('button', { name: 'Create' }));
+
+    await waitFor(() => {
+      expect(apiCreateBookshelfCategory).toHaveBeenCalledWith('Classics');
+    });
+
+    expect(screen.getByLabelText('Classics')).toBeChecked();
+    expect(screen.getByLabelText('Favorites')).not.toBeChecked();
+
+    await fireEvent.click(screen.getByTestId('bookshelf-dropdown-toggle'));
+    await waitFor(() => {
+      expect(apiAddToBookshelf).toHaveBeenCalledWith('post-inline-replace', ['Classics']);
+    });
+
+    pendingLoad.resolve({ bookshelfItems: [], nextCursor: undefined });
+  });
+
   it('shows optimistic saved state while add call is in flight', async () => {
     const deferred = createDeferred<void>();
     apiAddToBookshelf.mockReturnValueOnce(deferred.promise);
