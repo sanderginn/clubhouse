@@ -1033,7 +1033,7 @@
     {
       "issue_number": 892,
       "title": "[Podcasts] Create PodcastSave service with section guard and audit logging",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         891,
         890
@@ -1043,7 +1043,11 @@
         "backend",
         "podcasts"
       ],
-      "priority": 100
+      "priority": 100,
+      "assigned_to": "agent-1770710307-59993",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770710307-59993",
+      "branch": "feat/issue-892-podcasts-create-podcastsave-service-with",
+      "claimed_at": "2026-02-10T07:58:27Z"
     },
     {
       "issue_number": 893,
