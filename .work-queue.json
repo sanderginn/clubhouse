@@ -837,7 +837,7 @@
     {
       "issue_number": 887,
       "title": "[Podcasts] Add podcast section seed and ordering",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -845,7 +845,11 @@
         "podcasts",
         "database"
       ],
-      "priority": 95
+      "priority": 95,
+      "assigned_to": "agent-1770698341-33217",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770698341-33217",
+      "branch": "feat/issue-887-podcasts-add-podcast-section-seed-and-or",
+      "claimed_at": "2026-02-10T04:39:01Z"
     },
     {
       "issue_number": 888,
