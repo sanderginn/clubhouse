@@ -87,6 +87,110 @@
   ],
   "issues": [
     {
+      "issue_number": 1000,
+      "title": "[Books] Fix link metadata still not loading for book posts (regression)",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "backend",
+        "books"
+      ],
+      "priority": 1
+    },
+    {
+      "issue_number": 1001,
+      "title": "[Books] Fix BookCard UI component not rendering for book links",
+      "status": "available",
+      "dependencies": [
+        1000
+      ],
+      "labels": [
+        "bug",
+        "frontend",
+        "books"
+      ],
+      "priority": 2
+    },
+    {
+      "issue_number": 1002,
+      "title": "[Movies/Series] Fix Rotten Tomatoes scores still not displaying (regression)",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "backend",
+        "movies"
+      ],
+      "priority": 3
+    },
+    {
+      "issue_number": 1003,
+      "title": "[Movies/Series] Fix incorrect IMDB link resolution for some URLs",
+      "status": "available",
+      "dependencies": [
+        1002
+      ],
+      "labels": [
+        "bug",
+        "backend",
+        "movies"
+      ],
+      "priority": 4
+    },
+    {
+      "issue_number": 1004,
+      "title": "[Books] Fix book stats (saved/read) not appearing on new posts until reload (regression)",
+      "status": "available",
+      "dependencies": [
+        1001
+      ],
+      "labels": [
+        "bug",
+        "frontend",
+        "books"
+      ],
+      "priority": 5
+    },
+    {
+      "issue_number": 1005,
+      "title": "[Podcasts] Fix Recent section in PodcastsTopContainer empty until page refresh (regression)",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "podcasts"
+      ],
+      "priority": 6
+    },
+    {
+      "issue_number": 1006,
+      "title": "[Podcasts] Fix deleted post not removed from Saved tab until page refresh",
+      "status": "available",
+      "dependencies": [
+        1005
+      ],
+      "labels": [
+        "bug",
+        "frontend",
+        "podcasts"
+      ],
+      "priority": 7
+    },
+    {
+      "issue_number": 1007,
+      "title": "[Music] Fix tracks/sets filter affecting main feed instead of Recent Music Links component",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend"
+      ],
+      "priority": 8
+    },
+    {
       "issue_number": 842,
       "title": "Fix watchlist category edit and delete buttons not working",
       "status": "completed",
