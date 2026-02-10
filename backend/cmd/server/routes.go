@@ -23,6 +23,9 @@ type postRouteDeps struct {
 	saveRecipe              http.HandlerFunc
 	unsaveRecipe            http.HandlerFunc
 	getPostSaves            http.HandlerFunc
+	savePodcast             http.HandlerFunc
+	unsavePodcast           http.HandlerFunc
+	getPostPodcastSaveInfo  http.HandlerFunc
 	addToWatchlist          http.HandlerFunc
 	removeFromWatchlist     http.HandlerFunc
 	getPostWatchlistInfo    http.HandlerFunc
@@ -100,6 +103,21 @@ func newPostRouteHandler(requireAuth authMiddleware, requireAuthCSRF authMiddlew
 		if r.Method == http.MethodGet && strings.HasSuffix(strings.TrimSuffix(r.URL.Path, "/"), "/saves") {
 			// GET /api/v1/posts/{id}/saves
 			requireAuth(http.HandlerFunc(deps.getPostSaves)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodPost && strings.HasSuffix(strings.TrimSuffix(r.URL.Path, "/"), "/podcast-save") {
+			// POST /api/v1/posts/{id}/podcast-save
+			requireAuthCSRF(http.HandlerFunc(deps.savePodcast)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodDelete && strings.HasSuffix(strings.TrimSuffix(r.URL.Path, "/"), "/podcast-save") {
+			// DELETE /api/v1/posts/{id}/podcast-save
+			requireAuthCSRF(http.HandlerFunc(deps.unsavePodcast)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodGet && strings.HasSuffix(strings.TrimSuffix(r.URL.Path, "/"), "/podcast-save-info") {
+			// GET /api/v1/posts/{id}/podcast-save-info
+			requireAuth(http.HandlerFunc(deps.getPostPodcastSaveInfo)).ServeHTTP(w, r)
 			return
 		}
 		if r.Method == http.MethodPost && strings.HasSuffix(strings.TrimSuffix(r.URL.Path, "/"), "/watchlist") {
@@ -222,6 +240,7 @@ type sectionRouteDeps struct {
 	getFeed           http.HandlerFunc
 	getLinks          http.HandlerFunc
 	getRecentPodcasts http.HandlerFunc
+	getPodcastSaved   http.HandlerFunc
 }
 
 type bookshelfRouteDeps struct {
@@ -241,6 +260,10 @@ type bookQuoteRouteDeps struct {
 
 func newSectionRouteHandler(requireAuth authMiddleware, deps sectionRouteDeps) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(strings.TrimSuffix(r.URL.Path, "/"), "/podcast-saved") {
+			requireAuth(http.HandlerFunc(deps.getPodcastSaved)).ServeHTTP(w, r)
+			return
+		}
 		if strings.HasSuffix(strings.TrimSuffix(r.URL.Path, "/"), "/podcasts/recent") {
 			requireAuth(http.HandlerFunc(deps.getRecentPodcasts)).ServeHTTP(w, r)
 			return

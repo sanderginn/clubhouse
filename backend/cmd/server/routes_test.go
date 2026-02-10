@@ -744,6 +744,127 @@ func TestPostRouteHandlerGetPostWatchlistInfoRequiresAuth(t *testing.T) {
 	}
 }
 
+func TestPostRouteHandlerSavePodcastUsesCSRFAuth(t *testing.T) {
+	authCalled := false
+	handlerCalled := false
+
+	requireAuth := func(next http.Handler) http.Handler {
+		return next
+	}
+	requireAuthCSRF := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authCalled = true
+			next.ServeHTTP(w, r)
+		})
+	}
+
+	deps := postRouteDeps{
+		savePodcast: func(w http.ResponseWriter, r *http.Request) {
+			handlerCalled = true
+			w.WriteHeader(http.StatusOK)
+		},
+		getPost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPost should not be called")
+		},
+	}
+
+	handler := newPostRouteHandler(requireAuth, requireAuthCSRF, deps)
+	postID := uuid.New()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/posts/"+postID.String()+"/podcast-save", nil)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Fatalf("expected status %v, got %v", http.StatusOK, status)
+	}
+	if !authCalled {
+		t.Fatal("expected CSRF auth middleware to be called")
+	}
+	if !handlerCalled {
+		t.Fatal("expected savePodcast handler to be called")
+	}
+}
+
+func TestPostRouteHandlerUnsavePodcastUsesCSRFAuth(t *testing.T) {
+	authCalled := false
+	handlerCalled := false
+
+	requireAuth := func(next http.Handler) http.Handler {
+		return next
+	}
+	requireAuthCSRF := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authCalled = true
+			next.ServeHTTP(w, r)
+		})
+	}
+
+	deps := postRouteDeps{
+		unsavePodcast: func(w http.ResponseWriter, r *http.Request) {
+			handlerCalled = true
+			w.WriteHeader(http.StatusNoContent)
+		},
+		getPost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPost should not be called")
+		},
+	}
+
+	handler := newPostRouteHandler(requireAuth, requireAuthCSRF, deps)
+	postID := uuid.New()
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/posts/"+postID.String()+"/podcast-save", nil)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusNoContent {
+		t.Fatalf("expected status %v, got %v", http.StatusNoContent, status)
+	}
+	if !authCalled {
+		t.Fatal("expected CSRF auth middleware to be called")
+	}
+	if !handlerCalled {
+		t.Fatal("expected unsavePodcast handler to be called")
+	}
+}
+
+func TestPostRouteHandlerGetPostPodcastSaveInfoRequiresAuth(t *testing.T) {
+	authCalled := false
+
+	requireAuth := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authCalled = true
+			w.WriteHeader(http.StatusUnauthorized)
+		})
+	}
+	requireAuthCSRF := func(next http.Handler) http.Handler {
+		return next
+	}
+
+	deps := postRouteDeps{
+		getPostPodcastSaveInfo: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPostPodcastSaveInfo should not be called without auth")
+		},
+		getPost: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPost should not be called")
+		},
+	}
+
+	handler := newPostRouteHandler(requireAuth, requireAuthCSRF, deps)
+	postID := uuid.New()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/posts/"+postID.String()+"/podcast-save-info", nil)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusUnauthorized {
+		t.Fatalf("expected status %v, got %v", http.StatusUnauthorized, status)
+	}
+	if !authCalled {
+		t.Fatal("expected auth middleware to be called")
+	}
+}
+
 func TestPostRouteHandlerAddToBookshelfUsesCSRFAuth(t *testing.T) {
 	authCalled := false
 	handlerCalled := false
@@ -1369,6 +1490,52 @@ func TestSectionRouteHandlerRecentPodcastsRequiresAuth(t *testing.T) {
 	handler := newSectionRouteHandler(requireAuth, deps)
 	sectionID := uuid.New()
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/sections/"+sectionID.String()+"/podcasts/recent", nil)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusUnauthorized {
+		t.Fatalf("expected status %v, got %v", http.StatusUnauthorized, status)
+	}
+	if !authCalled {
+		t.Fatal("expected auth middleware to be called")
+	}
+}
+
+func TestSectionRouteHandlerPodcastSavedRequiresAuth(t *testing.T) {
+	authCalled := false
+
+	requireAuth := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authCalled = true
+			w.WriteHeader(http.StatusUnauthorized)
+		})
+	}
+
+	deps := sectionRouteDeps{
+		listSections: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("listSections should not be called without auth")
+		},
+		getSection: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getSection should not be called without auth")
+		},
+		getFeed: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getFeed should not be called without auth")
+		},
+		getLinks: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getLinks should not be called without auth")
+		},
+		getRecentPodcasts: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getRecentPodcasts should not be called without auth")
+		},
+		getPodcastSaved: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getPodcastSaved should not be called without auth")
+		},
+	}
+
+	handler := newSectionRouteHandler(requireAuth, deps)
+	sectionID := uuid.New()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/sections/"+sectionID.String()+"/podcast-saved", nil)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
