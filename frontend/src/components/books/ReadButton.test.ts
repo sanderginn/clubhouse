@@ -184,6 +184,46 @@ describe('ReadButton', () => {
     expect(logRead).toHaveBeenCalledWith('post-4', undefined);
     await tick();
     expect(screen.getByText('Read')).toBeInTheDocument();
+    expect(screen.getByTestId('read-rating-popover')).toBeInTheDocument();
+  });
+
+  it('does not open rating popover when marking as read fails', async () => {
+    logRead.mockImplementationOnce(async () => {
+      bookStoreMetaState.update((state) => ({ ...state, error: 'unable to mark as read' }));
+    });
+
+    render(ReadButton, { postId: 'post-4-error', bookStats: buildStats() });
+
+    await fireEvent.click(screen.getByTestId('read-button'));
+
+    expect(logRead).toHaveBeenCalledWith('post-4-error', undefined);
+    await tick();
+    expect(screen.getByText('Mark as Read')).toBeInTheDocument();
+    expect(screen.queryByTestId('read-rating-popover')).not.toBeInTheDocument();
+  });
+
+  it('keeps popover toggle behavior for already-read books', async () => {
+    setState({
+      readHistory: [
+        {
+          id: 'read-4-toggle',
+          userId: 'user-1',
+          postId: 'post-4-toggle',
+          createdAt: '2026-01-01T00:00:00Z',
+        },
+      ],
+    });
+
+    render(ReadButton, {
+      postId: 'post-4-toggle',
+      bookStats: buildStats({ viewerRead: true }),
+    });
+
+    await fireEvent.click(screen.getByTestId('read-button-read'));
+    expect(screen.getByTestId('read-rating-popover')).toBeInTheDocument();
+
+    await fireEvent.click(screen.getByTestId('read-button-read'));
+    expect(screen.queryByTestId('read-rating-popover')).not.toBeInTheDocument();
   });
 
   it('updates rating when selecting a star', async () => {
