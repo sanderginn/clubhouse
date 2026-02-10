@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/observability"
@@ -22,8 +23,10 @@ const (
 )
 
 var (
-	imdbIDPattern       = regexp.MustCompile(`^tt\d+$`)
-	leadingDigitsRegexp = regexp.MustCompile(`^(\d+)`)
+	imdbIDPattern           = regexp.MustCompile(`^tt\d+$`)
+	leadingDigitsRegexp     = regexp.MustCompile(`^(\d+)`)
+	trailingRTYearPattern   = regexp.MustCompile(`[_-](19\d{2}|20\d{2})$`)
+	rtDelimiterStripPattern = regexp.MustCompile(`[_-]+`)
 )
 
 type MovieData = models.MovieData
@@ -63,6 +66,12 @@ func ParseMovieMetadata(ctx context.Context, rawURL string, client *TMDBClient, 
 			return nil, nil
 		}
 		return parseLetterboxdMovieMetadata(ctx, client, omdbClient, slug)
+	case isRottenTomatoesHost(host):
+		mediaType, slug, ok := parseRottenTomatoesPath(segments)
+		if !ok {
+			return nil, nil
+		}
+		return parseRottenTomatoesMovieMetadata(ctx, client, omdbClient, mediaType, slug)
 	default:
 		return nil, nil
 	}
@@ -81,6 +90,11 @@ func isTMDBHost(host string) bool {
 func isLetterboxdHost(host string) bool {
 	host = strings.ToLower(strings.TrimSpace(host))
 	return host == "letterboxd.com" || strings.HasSuffix(host, ".letterboxd.com")
+}
+
+func isRottenTomatoesHost(host string) bool {
+	host = strings.ToLower(strings.TrimSpace(host))
+	return host == "rottentomatoes.com" || strings.HasSuffix(host, ".rottentomatoes.com")
 }
 
 func splitURLPath(path string) []string {
@@ -151,6 +165,30 @@ func parseLetterboxdSlug(segments []string) (string, bool) {
 	return slug, true
 }
 
+func parseRottenTomatoesPath(segments []string) (string, string, bool) {
+	if len(segments) < 2 {
+		return "", "", false
+	}
+
+	category := strings.ToLower(strings.TrimSpace(segments[0]))
+	var mediaType string
+	switch category {
+	case "m":
+		mediaType = "movie"
+	case "tv":
+		mediaType = "tv"
+	default:
+		return "", "", false
+	}
+
+	slug := strings.TrimSpace(segments[1])
+	if slug == "" {
+		return "", "", false
+	}
+
+	return mediaType, slug, true
+}
+
 func parseIMDbMovieMetadata(ctx context.Context, client *TMDBClient, omdbClient *OMDBClient, imdbID string) (*MovieData, error) {
 	result, err := client.FindByIMDBID(ctx, imdbID)
 	if err != nil {
@@ -207,6 +245,38 @@ func parseLetterboxdMovieMetadata(ctx context.Context, client *TMDBClient, omdbC
 	return parseTMDBMovieMetadata(ctx, client, omdbClient, "movie", results[0].ID)
 }
 
+func parseRottenTomatoesMovieMetadata(ctx context.Context, client *TMDBClient, omdbClient *OMDBClient, mediaType, slug string) (*MovieData, error) {
+	titleQuery, releaseYear := rottenTomatoesSlugToTitle(slug)
+	if titleQuery == "" {
+		return nil, nil
+	}
+
+	switch mediaType {
+	case "movie":
+		results, err := client.SearchMovie(ctx, titleQuery)
+		if err != nil {
+			return nil, fmt.Errorf("search tmdb movie for rotten tomatoes slug %s: %w", slug, err)
+		}
+		match, ok := selectBestMovieSearchResult(titleQuery, releaseYear, results)
+		if !ok {
+			return nil, nil
+		}
+		return parseTMDBMovieMetadata(ctx, client, omdbClient, "movie", match.ID)
+	case "tv":
+		results, err := client.SearchTV(ctx, titleQuery)
+		if err != nil {
+			return nil, fmt.Errorf("search tmdb tv for rotten tomatoes slug %s: %w", slug, err)
+		}
+		match, ok := selectBestTVSearchResult(titleQuery, releaseYear, results)
+		if !ok {
+			return nil, nil
+		}
+		return parseTMDBMovieMetadata(ctx, client, omdbClient, "tv", match.ID)
+	default:
+		return nil, nil
+	}
+}
+
 func letterboxdSlugToTitle(slug string) string {
 	slug = strings.ToLower(strings.TrimSpace(slug))
 	slug = strings.Trim(slug, "/")
@@ -216,6 +286,147 @@ func letterboxdSlugToTitle(slug string) string {
 
 	title := strings.ReplaceAll(slug, "-", " ")
 	return strings.Join(strings.Fields(title), " ")
+}
+
+func rottenTomatoesSlugToTitle(slug string) (string, int) {
+	slug = strings.ToLower(strings.TrimSpace(slug))
+	slug = strings.Trim(slug, "/")
+	if slug == "" {
+		return "", 0
+	}
+
+	year := 0
+	if match := trailingRTYearPattern.FindStringSubmatch(slug); len(match) == 2 {
+		if parsedYear, err := strconv.Atoi(match[1]); err == nil {
+			year = parsedYear
+		}
+		slug = strings.TrimSuffix(slug, match[0])
+	}
+
+	title := rtDelimiterStripPattern.ReplaceAllString(slug, " ")
+	title = strings.Join(strings.Fields(title), " ")
+	return title, year
+}
+
+func selectBestMovieSearchResult(query string, year int, results []MovieSearchResult) (MovieSearchResult, bool) {
+	bestIndex := -1
+	bestScore := 0
+	bestVoteAverage := -1.0
+
+	for i, result := range results {
+		score := scoreTMDBTitleMatch(query, result.Title, year, yearFromDate(result.ReleaseDate))
+		if score < 40 {
+			continue
+		}
+
+		if score > bestScore || (score == bestScore && result.VoteAverage > bestVoteAverage) {
+			bestIndex = i
+			bestScore = score
+			bestVoteAverage = result.VoteAverage
+		}
+	}
+
+	if bestIndex < 0 {
+		return MovieSearchResult{}, false
+	}
+	return results[bestIndex], true
+}
+
+func selectBestTVSearchResult(query string, year int, results []TVSearchResult) (TVSearchResult, bool) {
+	bestIndex := -1
+	bestScore := 0
+	bestVoteAverage := -1.0
+
+	for i, result := range results {
+		score := scoreTMDBTitleMatch(query, result.Name, year, yearFromDate(result.FirstAirDate))
+		if score < 40 {
+			continue
+		}
+
+		if score > bestScore || (score == bestScore && result.VoteAverage > bestVoteAverage) {
+			bestIndex = i
+			bestScore = score
+			bestVoteAverage = result.VoteAverage
+		}
+	}
+
+	if bestIndex < 0 {
+		return TVSearchResult{}, false
+	}
+	return results[bestIndex], true
+}
+
+func scoreTMDBTitleMatch(query, candidate string, expectedYear, candidateYear int) int {
+	queryNormalized := normalizeTMDBMatchValue(query)
+	candidateNormalized := normalizeTMDBMatchValue(candidate)
+	if queryNormalized == "" || candidateNormalized == "" {
+		return 0
+	}
+
+	score := 0
+	if queryNormalized == candidateNormalized {
+		score += 100
+	}
+	if strings.HasPrefix(candidateNormalized, queryNormalized) || strings.HasPrefix(queryNormalized, candidateNormalized) {
+		score += 20
+	}
+	if strings.Contains(candidateNormalized, queryNormalized) || strings.Contains(queryNormalized, candidateNormalized) {
+		score += 15
+	}
+
+	queryTokens := strings.Fields(queryNormalized)
+	candidateTokens := strings.Fields(candidateNormalized)
+	if len(queryTokens) > 0 {
+		candidateTokenSet := make(map[string]struct{}, len(candidateTokens))
+		for _, token := range candidateTokens {
+			candidateTokenSet[token] = struct{}{}
+		}
+
+		matches := 0
+		for _, token := range queryTokens {
+			if _, ok := candidateTokenSet[token]; ok {
+				matches++
+			}
+		}
+		score += (matches * 60) / len(queryTokens)
+	}
+
+	if expectedYear > 0 && candidateYear > 0 {
+		if expectedYear == candidateYear {
+			score += 15
+		} else {
+			score -= 10
+		}
+	}
+
+	return score
+}
+
+func normalizeTMDBMatchValue(value string) string {
+	normalized := strings.Map(func(r rune) rune {
+		switch {
+		case unicode.IsLetter(r):
+			return unicode.ToLower(r)
+		case unicode.IsDigit(r):
+			return r
+		default:
+			return ' '
+		}
+	}, value)
+	return strings.Join(strings.Fields(normalized), " ")
+}
+
+func yearFromDate(value string) int {
+	parts := strings.Split(strings.TrimSpace(value), "-")
+	if len(parts) == 0 || len(parts[0]) != 4 {
+		return 0
+	}
+
+	year, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return 0
+	}
+	return year
 }
 
 func movieDataFromMovieDetails(details *MovieDetails, mediaType string) *MovieData {
