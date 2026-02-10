@@ -1391,14 +1391,18 @@
     {
       "issue_number": 972,
       "title": "[Books] Fix link metadata not loading for book posts",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "bug",
         "backend",
         "books"
       ],
-      "priority": 1
+      "priority": 1,
+      "assigned_to": "agent-1770727460-17062",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770727460-17062",
+      "branch": "fix/issue-972-books-fix-link-metadata-not-loading-for-",
+      "claimed_at": "2026-02-10T12:44:20Z"
     },
     {
       "issue_number": 973,
