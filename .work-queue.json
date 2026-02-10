@@ -767,7 +767,7 @@
     {
       "issue_number": 880,
       "title": "[Books] Add book quote API client functions and store",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         879,
         866
@@ -777,7 +777,11 @@
         "frontend",
         "books"
       ],
-      "priority": 88
+      "priority": 88,
+      "assigned_to": "agent-1770707922-6655",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770707922-6655",
+      "branch": "feat/issue-880-books-add-book-quote-api-client-function",
+      "claimed_at": "2026-02-10T07:18:42Z"
     },
     {
       "issue_number": 881,
