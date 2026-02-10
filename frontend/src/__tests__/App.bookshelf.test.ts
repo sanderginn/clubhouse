@@ -90,7 +90,7 @@ afterEach(() => {
 });
 
 describe('App bookshelf routing', () => {
-  it('renders bookshelf route for authenticated users', async () => {
+  it('does not treat /bookshelf as a standalone bookshelf view for authenticated users', async () => {
     stores.authStore.setUser(defaultUser);
     window.history.replaceState(null, '', '/bookshelf');
 
@@ -98,14 +98,13 @@ describe('App bookshelf routing', () => {
     window.dispatchEvent(new Event('popstate'));
 
     await waitFor(() => {
-      expect(get(stores.activeView)).toBe('bookshelf');
+      expect(get(stores.activeView)).toBe('feed');
     });
-    expect(screen.getByTestId('bookshelf-tab-my')).toBeInTheDocument();
-    expect(window.location.pathname).toBe('/bookshelf');
-    expect(document.title).toBe('Bookshelf - Clubhouse');
+    expect(screen.queryByTestId('section-tab-bookshelf')).not.toBeInTheDocument();
+    expect(document.title).toBe('Clubhouse');
   });
 
-  it('renders login for unauthenticated users on bookshelf route', async () => {
+  it('renders login for unauthenticated users on legacy bookshelf route', async () => {
     window.history.replaceState(null, '', '/bookshelf');
 
     render(App);
@@ -117,21 +116,18 @@ describe('App bookshelf routing', () => {
     expect(screen.queryByRole('heading', { name: 'Bookshelf' })).not.toBeInTheDocument();
   });
 
-  it('shows Bookshelf tab in Books section header and routes to /bookshelf', async () => {
+  it('renders Bookshelf inline in books section without a standalone tab', async () => {
     stores.authStore.setUser(defaultUser);
     window.history.replaceState(null, '', '/sections/books');
 
     render(App);
 
-    const feedTab = await screen.findByTestId('section-tab-feed');
-    const bookshelfTab = screen.getByTestId('section-tab-bookshelf');
-    expect(feedTab).toHaveAttribute('aria-selected', 'true');
+    await fireEvent.click(await screen.findByRole('button', { name: 'Books' }));
 
-    await fireEvent.click(bookshelfTab);
     await waitFor(() => {
-      expect(window.location.pathname).toBe('/bookshelf');
+      expect(screen.getByTestId('bookshelf')).toBeInTheDocument();
     });
-    expect(bookshelfTab).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByTestId('bookshelf-tab-my')).toBeInTheDocument();
+    expect(screen.queryByTestId('section-tab-bookshelf')).not.toBeInTheDocument();
+    expect(window.location.pathname).toBe('/sections/books');
   });
 });

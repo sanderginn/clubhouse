@@ -10,16 +10,9 @@
     threadRouteStore,
     unreadRegistrationCount,
   } from '../stores';
-  import {
-    buildAdminHref,
-    buildBookshelfHref,
-    buildSectionHref,
-    pushPath,
-  } from '../services/routeNavigation';
+  import { buildAdminHref, buildSectionHref, pushPath } from '../services/routeNavigation';
   import type { Section } from '../stores/sectionStore';
   import NotificationSettings from './NotificationSettings.svelte';
-
-  $: hasBooksSection = $sections.some((section) => section.type === 'book');
 
   function handleSectionClick(section: Section) {
     sectionStore.setActiveSection(section);
@@ -33,13 +26,6 @@
     threadRouteStore.clearTarget();
     pushPath(buildAdminHref());
   }
-
-  function handleBookshelfClick() {
-    uiStore.setActiveView('bookshelf');
-    threadRouteStore.clearTarget();
-    pushPath(buildBookshelfHref());
-  }
-
 </script>
 
 <nav class="flex flex-col h-full" aria-label="Main navigation">
@@ -56,31 +42,16 @@
               {$activeView === 'feed' && $activeSection?.id === section.id
               ? 'bg-primary text-white'
               : 'text-gray-700 hover:bg-gray-100'}"
-            aria-current={$activeView === 'feed' && $activeSection?.id === section.id ? 'page' : undefined}
+            aria-current={$activeView === 'feed' && $activeSection?.id === section.id
+              ? 'page'
+              : undefined}
           >
             <span class="text-lg" aria-hidden="true">{section.icon}</span>
             <span>{section.name}</span>
           </button>
         </li>
       {/each}
-      {#if hasBooksSection}
-        <li>
-          <button
-            on:click={handleBookshelfClick}
-            class="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors
-              {$activeView === 'bookshelf'
-              ? 'bg-primary text-white'
-              : 'text-gray-700 hover:bg-gray-100'}"
-            aria-current={$activeView === 'bookshelf' ? 'page' : undefined}
-            data-testid="nav-bookshelf"
-          >
-            <span class="text-lg" aria-hidden="true">📚</span>
-            <span>Bookshelf</span>
-          </button>
-        </li>
-      {/if}
     </ul>
-
   </div>
 
   {#if $isAuthenticated}
@@ -96,9 +67,7 @@
       <button
         on:click={handleAdminClick}
         class="mt-3 w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors
-          {$activeView === 'admin'
-          ? 'bg-amber-500 text-white'
-          : 'text-gray-700 hover:bg-amber-50'}"
+          {$activeView === 'admin' ? 'bg-amber-500 text-white' : 'text-gray-700 hover:bg-amber-50'}"
         aria-current={$activeView === 'admin' ? 'page' : undefined}
       >
         <span class="text-lg" aria-hidden="true">🛡️</span>

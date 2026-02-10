@@ -33,11 +33,6 @@ describe('uiStore', () => {
     expect(get(uiStore).activeView).toBe('admin');
   });
 
-  it('setActiveView supports bookshelf view', () => {
-    uiStore.setActiveView('bookshelf');
-    expect(get(uiStore).activeView).toBe('bookshelf');
-  });
-
   it('openProfile sets profile view and active user', () => {
     uiStore.openProfile('user-42');
     const state = get(uiStore);
