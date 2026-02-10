@@ -37,6 +37,7 @@
     871,
     872,
     874,
+    875,
     876,
     877,
     878,
@@ -720,7 +721,7 @@
     {
       "issue_number": 875,
       "title": "[Books] Create books component index",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         868,
         869,
@@ -737,7 +738,9 @@
       "assigned_to": "agent-1770714193-7747",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770714193-7747",
       "branch": "feat/issue-875-books-create-books-component-index",
-      "claimed_at": "2026-02-10T09:03:13Z"
+      "claimed_at": "2026-02-10T09:03:13Z",
+      "pr_number": 960,
+      "completed_at": "2026-02-10T09:19:04Z"
     },
     {
       "issue_number": 876,
