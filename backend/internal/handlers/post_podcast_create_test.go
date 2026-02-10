@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -48,7 +49,7 @@ func TestCreatePostHandlerPodcastShowWithHighlightedEpisodes(t *testing.T) {
 		t.Fatalf("failed to marshal request body: %v", err)
 	}
 
-	handler := NewPostHandler(db, nil, nil)
+	handler := newPostHandlerForPodcastCreateTests(db)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/posts", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(createTestUserContext(req.Context(), uuid.MustParse(userID), "podcastcreateshow", false))
@@ -133,7 +134,7 @@ func TestCreatePostHandlerPodcastEpisode(t *testing.T) {
 		t.Fatalf("failed to marshal request body: %v", err)
 	}
 
-	handler := NewPostHandler(db, nil, nil)
+	handler := newPostHandlerForPodcastCreateTests(db)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/posts", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(createTestUserContext(req.Context(), uuid.MustParse(userID), "podcastcreateepisode", false))
@@ -189,7 +190,7 @@ func TestCreatePostHandlerPodcastKindSelectionRequired(t *testing.T) {
 		t.Fatalf("failed to marshal request body: %v", err)
 	}
 
-	handler := NewPostHandler(db, nil, nil)
+	handler := newPostHandlerForPodcastCreateTests(db)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/posts", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(createTestUserContext(req.Context(), uuid.MustParse(userID), "podcastcreateuncertain", false))
@@ -224,4 +225,10 @@ func disableLinkMetadataForCreatePostPodcastTests(t *testing.T) {
 			t.Fatalf("failed to restore link metadata config: %v", err)
 		}
 	})
+}
+
+func newPostHandlerForPodcastCreateTests(db *sql.DB) *PostHandler {
+	handler := NewPostHandler(db, nil, nil)
+	handler.rateLimiter = &stubContentRateLimiter{allowed: true}
+	return handler
 }
