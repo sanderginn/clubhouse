@@ -325,6 +325,12 @@ func TestParseMovieMetadataRottenTomatoesMovieURL(t *testing.T) {
 			}
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`{"results":[{"id":603,"title":"The Matrix","release_date":"1999-03-30","vote_average":8.2}]}`))
+		case "/find/tt0133093":
+			if got := r.URL.Query().Get("external_source"); got != "imdb_id" {
+				t.Fatalf("external_source = %q, want imdb_id", got)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"movie_results":[{"id":603,"title":"The Matrix"}],"tv_results":[]}`))
 		case "/movie/603":
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`{
@@ -389,6 +395,154 @@ func TestParseMovieMetadataRottenTomatoesMovieURL(t *testing.T) {
 	}
 	if metadata.RottenTomatoesURL != "https://www.rottentomatoes.com/m/the_matrix" {
 		t.Fatalf("RottenTomatoesURL = %q, want https://www.rottentomatoes.com/m/the_matrix", metadata.RottenTomatoesURL)
+	}
+}
+
+func TestParseMovieMetadataRottenTomatoesMovieURLOmitsIMDBIDOnVerificationMismatch(t *testing.T) {
+	tmdbServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/search/movie":
+			if got := strings.TrimSpace(r.URL.Query().Get("query")); got != "the contestant" {
+				t.Fatalf("query = %q, want the contestant", got)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"results":[{"id":101,"title":"The Contestant","release_date":"2023-01-01","vote_average":7.4}]}`))
+		case "/movie/101":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{
+				"id":101,
+				"title":"The Contestant",
+				"overview":"A documentary profile.",
+				"poster_path":"/contestant.jpg",
+				"backdrop_path":"/contestant-bg.jpg",
+				"runtime":90,
+				"genres":[{"id":99,"name":"Documentary"}],
+				"release_date":"2023-01-01",
+				"vote_average":7.4,
+				"imdb_id":"tt8050160",
+				"external_ids":{"imdb_id":"tt8050160"},
+				"credits":{"cast":[],"crew":[]},
+				"videos":{"results":[]}
+			}`))
+		case "/find/tt8050160":
+			if got := r.URL.Query().Get("external_source"); got != "imdb_id" {
+				t.Fatalf("external_source = %q, want imdb_id", got)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"movie_results":[{"id":202,"title":"Different Movie"}],"tv_results":[]}`))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer tmdbServer.Close()
+
+	omdbServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("unexpected omdb request: %s", r.URL.String())
+	}))
+	defer omdbServer.Close()
+
+	client := newTestTMDBClient(t, tmdbServer.URL)
+	omdbClient := newTestOMDBClient(t, omdbServer.URL)
+	metadata, err := ParseMovieMetadata(context.Background(), "https://www.rottentomatoes.com/m/the_contestant", client, omdbClient)
+	if err != nil {
+		t.Fatalf("ParseMovieMetadata error: %v", err)
+	}
+	if metadata == nil {
+		t.Fatal("expected metadata")
+	}
+	if metadata.TMDBID != 101 {
+		t.Fatalf("TMDBID = %d, want 101", metadata.TMDBID)
+	}
+	if metadata.IMDBID != "" {
+		t.Fatalf("IMDBID = %q, want empty", metadata.IMDBID)
+	}
+	if metadata.RottenTomatoesURL != "https://www.rottentomatoes.com/m/the_contestant" {
+		t.Fatalf("RottenTomatoesURL = %q, want https://www.rottentomatoes.com/m/the_contestant", metadata.RottenTomatoesURL)
+	}
+	if metadata.RottenTomatoesScore != nil {
+		t.Fatalf("expected RottenTomatoesScore to be nil, got %v", *metadata.RottenTomatoesScore)
+	}
+	if metadata.MetacriticScore != nil {
+		t.Fatalf("expected MetacriticScore to be nil, got %v", *metadata.MetacriticScore)
+	}
+}
+
+func TestParseMovieMetadataRottenTomatoesMovieURLFallsBackToVerifiedExternalIMDBID(t *testing.T) {
+	tmdbServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/search/movie":
+			if got := strings.TrimSpace(r.URL.Query().Get("query")); got != "the contestant" {
+				t.Fatalf("query = %q, want the contestant", got)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"results":[{"id":101,"title":"The Contestant","release_date":"2023-01-01","vote_average":7.4}]}`))
+		case "/movie/101":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{
+				"id":101,
+				"title":"The Contestant",
+				"overview":"A documentary profile.",
+				"poster_path":"/contestant.jpg",
+				"backdrop_path":"/contestant-bg.jpg",
+				"runtime":90,
+				"genres":[{"id":99,"name":"Documentary"}],
+				"release_date":"2023-01-01",
+				"vote_average":7.4,
+				"imdb_id":"tt8050160",
+				"external_ids":{"imdb_id":"tt14547670"},
+				"credits":{"cast":[],"crew":[]},
+				"videos":{"results":[]}
+			}`))
+		case "/find/tt8050160":
+			if got := r.URL.Query().Get("external_source"); got != "imdb_id" {
+				t.Fatalf("external_source = %q, want imdb_id", got)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"movie_results":[{"id":202,"title":"Different Movie"}],"tv_results":[]}`))
+		case "/find/tt14547670":
+			if got := r.URL.Query().Get("external_source"); got != "imdb_id" {
+				t.Fatalf("external_source = %q, want imdb_id", got)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"movie_results":[{"id":101,"title":"The Contestant"}],"tv_results":[]}`))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer tmdbServer.Close()
+
+	omdbServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := strings.TrimSpace(r.URL.Query().Get("i")); got != "tt14547670" {
+			t.Fatalf("imdb id = %q, want tt14547670", got)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"Response":"True",
+			"Ratings":[
+				{"Source":"Rotten Tomatoes","Value":"91%"},
+				{"Source":"Metacritic","Value":"78/100"}
+			]
+		}`))
+	}))
+	defer omdbServer.Close()
+
+	client := newTestTMDBClient(t, tmdbServer.URL)
+	omdbClient := newTestOMDBClient(t, omdbServer.URL)
+	metadata, err := ParseMovieMetadata(context.Background(), "https://www.rottentomatoes.com/m/the_contestant", client, omdbClient)
+	if err != nil {
+		t.Fatalf("ParseMovieMetadata error: %v", err)
+	}
+	if metadata == nil {
+		t.Fatal("expected metadata")
+	}
+	if metadata.IMDBID != "tt14547670" {
+		t.Fatalf("IMDBID = %q, want tt14547670", metadata.IMDBID)
+	}
+	if metadata.RottenTomatoesScore == nil || *metadata.RottenTomatoesScore != 91 {
+		t.Fatalf("RottenTomatoesScore = %+v, want 91", metadata.RottenTomatoesScore)
+	}
+	if metadata.MetacriticScore == nil || *metadata.MetacriticScore != 78 {
+		t.Fatalf("MetacriticScore = %+v, want 78", metadata.MetacriticScore)
 	}
 }
 
