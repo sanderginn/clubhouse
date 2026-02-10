@@ -301,6 +301,181 @@ func TestParseMovieMetadataLetterboxdURL(t *testing.T) {
 	}
 }
 
+func TestParseMovieMetadataRottenTomatoesMovieURL(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/search/movie":
+			if got := strings.TrimSpace(r.URL.Query().Get("query")); got != "the matrix" {
+				t.Fatalf("query = %q, want the matrix", got)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"results":[{"id":603,"title":"The Matrix","release_date":"1999-03-30","vote_average":8.2}]}`))
+		case "/movie/603":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{
+				"id":603,
+				"title":"The Matrix",
+				"overview":"Reality is not what it seems.",
+				"poster_path":"/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
+				"backdrop_path":"/icmmSD4vTTDKOq2vvdulafOGw93.jpg",
+				"runtime":136,
+				"genres":[{"id":28,"name":"Action"}],
+				"release_date":"1999-03-30",
+				"vote_average":8.2,
+				"credits":{"cast":[],"crew":[]},
+				"videos":{"results":[]}
+			}`))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	client := newTestTMDBClient(t, server.URL)
+	metadata, err := ParseMovieMetadata(context.Background(), "https://www.rottentomatoes.com/m/the_matrix", client, nil)
+	if err != nil {
+		t.Fatalf("ParseMovieMetadata error: %v", err)
+	}
+	if metadata == nil {
+		t.Fatal("expected metadata")
+	}
+	if metadata.Title != "The Matrix" {
+		t.Fatalf("Title = %q, want The Matrix", metadata.Title)
+	}
+	if metadata.TMDBID != 603 {
+		t.Fatalf("TMDBID = %d, want 603", metadata.TMDBID)
+	}
+	if metadata.TMDBMediaType != "movie" {
+		t.Fatalf("TMDBMediaType = %q, want movie", metadata.TMDBMediaType)
+	}
+}
+
+func TestParseMovieMetadataRottenTomatoesTVURL(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/search/tv":
+			if got := strings.TrimSpace(r.URL.Query().Get("query")); got != "game of thrones" {
+				t.Fatalf("query = %q, want game of thrones", got)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"results":[{"id":1399,"name":"Game of Thrones","first_air_date":"2011-04-17","vote_average":8.5}]}`))
+		case "/tv/1399":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{
+				"id":1399,
+				"name":"Game of Thrones",
+				"overview":"Noble families fight for control.",
+				"poster_path":"/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+				"backdrop_path":"/suopoADq0k8YZr4dQXcU6pToj6s.jpg",
+				"runtime":57,
+				"genres":[{"id":18,"name":"Drama"}],
+				"first_air_date":"2011-04-17",
+				"vote_average":8.5,
+				"credits":{"cast":[],"crew":[]},
+				"videos":{"results":[]}
+			}`))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	client := newTestTMDBClient(t, server.URL)
+	metadata, err := ParseMovieMetadata(context.Background(), "https://www.rottentomatoes.com/tv/game_of_thrones/s01", client, nil)
+	if err != nil {
+		t.Fatalf("ParseMovieMetadata error: %v", err)
+	}
+	if metadata == nil {
+		t.Fatal("expected metadata")
+	}
+	if metadata.Title != "Game of Thrones" {
+		t.Fatalf("Title = %q, want Game of Thrones", metadata.Title)
+	}
+	if metadata.TMDBID != 1399 {
+		t.Fatalf("TMDBID = %d, want 1399", metadata.TMDBID)
+	}
+	if metadata.TMDBMediaType != "tv" {
+		t.Fatalf("TMDBMediaType = %q, want tv", metadata.TMDBMediaType)
+	}
+}
+
+func TestParseMovieMetadataRottenTomatoesMovieURLPrefersYearMatch(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/search/movie":
+			if got := strings.TrimSpace(r.URL.Query().Get("query")); got != "it" {
+				t.Fatalf("query = %q, want it", got)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{
+				"results":[
+					{"id":1562,"title":"It","release_date":"1990-11-18","vote_average":6.8},
+					{"id":346364,"title":"It","release_date":"2017-09-06","vote_average":7.2}
+				]
+			}`))
+		case "/movie/346364":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{
+				"id":346364,
+				"title":"It",
+				"overview":"You'll float too.",
+				"poster_path":"/9E2y5Q7WlCVNEhP5GiVTjhEhx1o.jpg",
+				"backdrop_path":"/tcheoA2nPATCm2vvXw2hVQoaEFD.jpg",
+				"runtime":135,
+				"genres":[{"id":27,"name":"Horror"}],
+				"release_date":"2017-09-06",
+				"vote_average":7.2,
+				"credits":{"cast":[],"crew":[]},
+				"videos":{"results":[]}
+			}`))
+		case "/movie/1562":
+			t.Fatalf("selected wrong movie id from ambiguous Rotten Tomatoes slug")
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	client := newTestTMDBClient(t, server.URL)
+	metadata, err := ParseMovieMetadata(context.Background(), "https://www.rottentomatoes.com/m/it_2017", client, nil)
+	if err != nil {
+		t.Fatalf("ParseMovieMetadata error: %v", err)
+	}
+	if metadata == nil {
+		t.Fatal("expected metadata")
+	}
+	if metadata.TMDBID != 346364 {
+		t.Fatalf("TMDBID = %d, want 346364", metadata.TMDBID)
+	}
+}
+
+func TestParseMovieMetadataRottenTomatoesMovieURLNoCloseMatch(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/search/movie":
+			if got := strings.TrimSpace(r.URL.Query().Get("query")); got != "zzzzzz" {
+				t.Fatalf("query = %q, want zzzzzz", got)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"results":[{"id":603,"title":"The Matrix","release_date":"1999-03-30","vote_average":8.2}]}`))
+		case "/movie/603":
+			t.Fatalf("expected no details fetch when Rotten Tomatoes search has no close match")
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	client := newTestTMDBClient(t, server.URL)
+	metadata, err := ParseMovieMetadata(context.Background(), "https://www.rottentomatoes.com/m/zzzzzz", client, nil)
+	if err != nil {
+		t.Fatalf("ParseMovieMetadata error: %v", err)
+	}
+	if metadata != nil {
+		t.Fatalf("expected nil metadata, got %+v", metadata)
+	}
+}
+
 func TestParseMovieMetadataNoMatchingURL(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Fatalf("unexpected request: %s", r.URL.String())
