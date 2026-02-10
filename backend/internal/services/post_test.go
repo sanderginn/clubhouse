@@ -2179,6 +2179,47 @@ func TestAdminDeletePostCreatesAuditLogWithMetadata(t *testing.T) {
 	}
 }
 
+func TestLinkRequestsMatchExistingLinks_PodcastNotesUseValueComparison(t *testing.T) {
+	existingNote := "Same note value"
+	requestedNote := "Same note value"
+
+	existing := []models.Link{
+		{
+			URL: "https://example.com/show",
+			Podcast: &models.PodcastMetadata{
+				Kind: "show",
+				HighlightEpisodes: []models.PodcastHighlightEpisode{
+					{
+						Title: "Episode 1",
+						URL:   "https://example.com/show/1",
+						Note:  &existingNote,
+					},
+				},
+			},
+		},
+	}
+
+	requested := []models.LinkRequest{
+		{
+			URL: "https://example.com/show",
+			Podcast: &models.PodcastMetadata{
+				Kind: "show",
+				HighlightEpisodes: []models.PodcastHighlightEpisode{
+					{
+						Title: "Episode 1",
+						URL:   "https://example.com/show/1",
+						Note:  &requestedNote,
+					},
+				},
+			},
+		},
+	}
+
+	if !linkRequestsMatchExistingLinks(existing, requested) {
+		t.Fatalf("expected links to match when note values are equal but pointers differ")
+	}
+}
+
 func disableLinkMetadata(t *testing.T) {
 	t.Helper()
 	config := GetConfigService()

@@ -1070,12 +1070,27 @@ func podcastMetadataMatches(existing *models.PodcastMetadata, requested *models.
 		return false
 	}
 	for i := range existingSanitized.HighlightEpisodes {
-		if existingSanitized.HighlightEpisodes[i] != requestedSanitized.HighlightEpisodes[i] {
+		existingEpisode := existingSanitized.HighlightEpisodes[i]
+		requestedEpisode := requestedSanitized.HighlightEpisodes[i]
+		if existingEpisode.Title != requestedEpisode.Title {
+			return false
+		}
+		if existingEpisode.URL != requestedEpisode.URL {
+			return false
+		}
+		if !optionalStringPtrEqual(existingEpisode.Note, requestedEpisode.Note) {
 			return false
 		}
 	}
 
 	return true
+}
+
+func optionalStringPtrEqual(left *string, right *string) bool {
+	if left == nil || right == nil {
+		return left == nil && right == nil
+	}
+	return *left == *right
 }
 
 func findPrimaryNonImageLink(links []models.Link) *models.Link {
