@@ -172,6 +172,57 @@ func TestMetadataWorker_ProcessJob(t *testing.T) {
 	assert.Equal(t, int64(0), processingLen)
 }
 
+func TestMetadataWorker_StoresMovieScoresInMetadataJSONB(t *testing.T) {
+	rdb := setupMetadataWorkerTestRedis(t)
+	db := setupMetadataWorkerTestDB(t)
+	ctx := context.Background()
+
+	userID := testutil.CreateTestUser(t, db, "movieuser", "movie@example.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Movies", "movie")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Movie post")
+	linkID := createTestLink(t, db, postID, "https://www.rottentomatoes.com/m/the_matrix")
+
+	rtScore := 88
+	metaScore := 73
+	fetcher := &mockMetadataFetcher{
+		metadata: map[string]interface{}{
+			"movie": &models.MovieData{
+				Title:               "The Matrix",
+				RottenTomatoesScore: &rtScore,
+				MetacriticScore:     &metaScore,
+			},
+		},
+	}
+
+	worker := NewMetadataWorker(rdb, db, fetcher, 1)
+	job := MetadataJob{
+		PostID:    uuid.MustParse(postID),
+		LinkID:    uuid.MustParse(linkID),
+		URL:       "https://www.rottentomatoes.com/m/the_matrix",
+		CreatedAt: time.Now(),
+	}
+	err := EnqueueMetadataJob(ctx, rdb, job)
+	require.NoError(t, err)
+
+	worker.Start(ctx)
+	time.Sleep(2 * time.Second)
+	worker.Stop(ctx)
+
+	var metadata sql.NullString
+	err = db.QueryRow("SELECT metadata FROM links WHERE id = $1", linkID).Scan(&metadata)
+	require.NoError(t, err)
+	require.True(t, metadata.Valid)
+
+	var parsed map[string]interface{}
+	err = json.Unmarshal([]byte(metadata.String), &parsed)
+	require.NoError(t, err)
+
+	rawMovie, ok := parsed["movie"].(map[string]interface{})
+	require.True(t, ok, "expected movie metadata object")
+	assert.Equal(t, float64(88), rawMovie["rotten_tomatoes_score"])
+	assert.Equal(t, float64(73), rawMovie["metacritic_score"])
+}
+
 func TestMetadataWorker_ProcessMultipleJobs(t *testing.T) {
 	rdb := setupMetadataWorkerTestRedis(t)
 	db := setupMetadataWorkerTestDB(t)

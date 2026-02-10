@@ -9,6 +9,8 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -37,6 +39,10 @@ var (
 	newOMDBClientFromEnvFunc = NewOMDBClientFromEnv
 	parseMovieMetadataFunc   = ParseMovieMetadata
 	parseBookMetadataFunc    = ParseBookMetadata
+
+	rottenTomatoesScoreAttrPattern = regexp.MustCompile(`(?i)tomatometerscore\s*=\s*["'](\d{1,3})["']`)
+	rottenTomatoesScoreJSONPattern = regexp.MustCompile(`(?is)"tomatometerScore"\s*:\s*\{.*?"score"\s*:\s*(\d{1,3})`)
+	rottenTomatoesCriticsPattern   = regexp.MustCompile(`(?i)"criticsScore"\s*:\s*(\d{1,3})`)
 
 	omdbClientFromEnvOnce sync.Once
 	omdbClientFromEnv     *OMDBClient
@@ -242,6 +248,7 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 		}
 	}
 	if movie := getMovieMetadata(); movie != nil {
+		enrichMovieDataWithRottenTomatoesScoreFromHTML(movie, u, body)
 		metadata["movie"] = movie
 	}
 	if bookData != nil {
@@ -346,6 +353,47 @@ func fallbackMetadataForMovieURL(ctx context.Context, u *url.URL, movie *MovieDa
 		"movie":    movie,
 		"provider": provider,
 	}
+}
+
+func enrichMovieDataWithRottenTomatoesScoreFromHTML(movie *MovieData, u *url.URL, body []byte) {
+	if movie == nil || movie.RottenTomatoesScore != nil || u == nil || len(body) == 0 {
+		return
+	}
+	if !isRottenTomatoesHost(u.Hostname()) {
+		return
+	}
+
+	score, ok := extractRottenTomatoesScoreFromHTML(body)
+	if !ok {
+		return
+	}
+	movie.RottenTomatoesScore = intPtr(score)
+}
+
+func extractRottenTomatoesScoreFromHTML(body []byte) (int, bool) {
+	if len(body) == 0 {
+		return 0, false
+	}
+
+	patterns := []*regexp.Regexp{
+		rottenTomatoesScoreAttrPattern,
+		rottenTomatoesScoreJSONPattern,
+		rottenTomatoesCriticsPattern,
+	}
+	for _, pattern := range patterns {
+		match := pattern.FindSubmatch(body)
+		if len(match) < 2 {
+			continue
+		}
+
+		score, err := strconv.Atoi(string(match[1]))
+		if err != nil || score < 0 || score > 100 {
+			continue
+		}
+		return score, true
+	}
+
+	return 0, false
 }
 
 func shouldExtractBookMetadata(rawURL string) bool {

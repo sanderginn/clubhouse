@@ -365,6 +365,167 @@ func TestFetchMetadataMovieSectionReturnsHTMLWhenMovieParsingTimesOut(t *testing
 	}
 }
 
+func TestFetchMetadataMovieSectionBackfillsRottenTomatoesScoreFromHTML(t *testing.T) {
+	originalNewTMDBClientFromEnvFunc := newTMDBClientFromEnvFunc
+	originalNewOMDBClientFromEnvFunc := newOMDBClientFromEnvFunc
+	originalParseMovieMetadataFunc := parseMovieMetadataFunc
+	resetOMDBClientFromEnvCacheForTests()
+	t.Cleanup(func() {
+		newTMDBClientFromEnvFunc = originalNewTMDBClientFromEnvFunc
+		newOMDBClientFromEnvFunc = originalNewOMDBClientFromEnvFunc
+		parseMovieMetadataFunc = originalParseMovieMetadataFunc
+		resetOMDBClientFromEnvCacheForTests()
+	})
+
+	newTMDBClientFromEnvFunc = func() (*TMDBClient, error) {
+		return &TMDBClient{}, nil
+	}
+	parseMovieMetadataFunc = func(ctx context.Context, rawURL string, client *TMDBClient, omdbClient *OMDBClient) (*MovieData, error) {
+		return &MovieData{Title: "The Matrix"}, nil
+	}
+
+	fetcher := NewFetcher(&http.Client{
+		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Status:     "200 OK",
+				Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
+				Body: io.NopCloser(strings.NewReader(`<!doctype html>
+					<html>
+					<head>
+						<score-board tomatometerscore="91"></score-board>
+					</head>
+					</html>`)),
+				Request: r,
+			}, nil
+		}),
+	})
+	fetcher.resolver = fakeResolver{
+		addrs: map[string][]net.IPAddr{
+			"www.rottentomatoes.com": {{IP: net.ParseIP("151.101.65.91")}},
+		},
+	}
+
+	ctx := WithMetadataSectionType(context.Background(), "movie")
+	metadata, err := fetcher.Fetch(ctx, "https://www.rottentomatoes.com/m/the_matrix")
+	if err != nil {
+		t.Fatalf("Fetch error: %v", err)
+	}
+
+	movie, ok := metadata["movie"].(*MovieData)
+	if !ok || movie == nil {
+		t.Fatalf("expected movie metadata to be present")
+	}
+	if movie.RottenTomatoesScore == nil || *movie.RottenTomatoesScore != 91 {
+		t.Fatalf("rotten tomatoes score = %+v, want 91", movie.RottenTomatoesScore)
+	}
+}
+
+func TestFetchMetadataMovieSectionDoesNotOverrideExistingRottenTomatoesScore(t *testing.T) {
+	originalNewTMDBClientFromEnvFunc := newTMDBClientFromEnvFunc
+	originalNewOMDBClientFromEnvFunc := newOMDBClientFromEnvFunc
+	originalParseMovieMetadataFunc := parseMovieMetadataFunc
+	resetOMDBClientFromEnvCacheForTests()
+	t.Cleanup(func() {
+		newTMDBClientFromEnvFunc = originalNewTMDBClientFromEnvFunc
+		newOMDBClientFromEnvFunc = originalNewOMDBClientFromEnvFunc
+		parseMovieMetadataFunc = originalParseMovieMetadataFunc
+		resetOMDBClientFromEnvCacheForTests()
+	})
+
+	newTMDBClientFromEnvFunc = func() (*TMDBClient, error) {
+		return &TMDBClient{}, nil
+	}
+	parseMovieMetadataFunc = func(ctx context.Context, rawURL string, client *TMDBClient, omdbClient *OMDBClient) (*MovieData, error) {
+		return &MovieData{
+			Title:               "The Matrix",
+			RottenTomatoesScore: intPtr(88),
+		}, nil
+	}
+
+	fetcher := NewFetcher(&http.Client{
+		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Status:     "200 OK",
+				Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
+				Body: io.NopCloser(strings.NewReader(`<!doctype html>
+					<html>
+					<head>
+						<score-board tomatometerscore="97"></score-board>
+					</head>
+					</html>`)),
+				Request: r,
+			}, nil
+		}),
+	})
+	fetcher.resolver = fakeResolver{
+		addrs: map[string][]net.IPAddr{
+			"www.rottentomatoes.com": {{IP: net.ParseIP("151.101.65.91")}},
+		},
+	}
+
+	ctx := WithMetadataSectionType(context.Background(), "movie")
+	metadata, err := fetcher.Fetch(ctx, "https://www.rottentomatoes.com/m/the_matrix")
+	if err != nil {
+		t.Fatalf("Fetch error: %v", err)
+	}
+
+	movie, ok := metadata["movie"].(*MovieData)
+	if !ok || movie == nil {
+		t.Fatalf("expected movie metadata to be present")
+	}
+	if movie.RottenTomatoesScore == nil || *movie.RottenTomatoesScore != 88 {
+		t.Fatalf("rotten tomatoes score = %+v, want 88", movie.RottenTomatoesScore)
+	}
+}
+
+func TestExtractRottenTomatoesScoreFromHTML(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+		want int
+		ok   bool
+	}{
+		{
+			name: "score board attribute",
+			body: `<score-board tomatometerscore="93"></score-board>`,
+			want: 93,
+			ok:   true,
+		},
+		{
+			name: "json score payload",
+			body: `{"tomatometerScore":{"all":{"score":87}}}`,
+			want: 87,
+			ok:   true,
+		},
+		{
+			name: "critics score payload",
+			body: `{"criticsScore":74}`,
+			want: 74,
+			ok:   true,
+		},
+		{
+			name: "invalid score",
+			body: `<score-board tomatometerscore="101"></score-board>`,
+			want: 0,
+			ok:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := extractRottenTomatoesScoreFromHTML([]byte(tt.body))
+			if ok != tt.ok {
+				t.Fatalf("ok = %v, want %v", ok, tt.ok)
+			}
+			if got != tt.want {
+				t.Fatalf("score = %d, want %d", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestFetchMetadataGeneralSectionSkipsMovieMetadata(t *testing.T) {
 	originalNewTMDBClientFromEnvFunc := newTMDBClientFromEnvFunc
 	originalNewOMDBClientFromEnvFunc := newOMDBClientFromEnvFunc
