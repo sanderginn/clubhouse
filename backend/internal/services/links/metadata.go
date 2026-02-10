@@ -365,7 +365,7 @@ func shouldExtractBookMetadata(rawURL string) bool {
 		if _, ok := parseAmazonASIN(segments); ok {
 			return true
 		}
-		_, ok := extractISBNFromSegments(segments)
+		_, ok := extractISBNFromURL(parsedURL, segments)
 		return ok
 	case isOpenLibraryHost(host):
 		if _, ok := parseOpenLibraryWorkKey(segments); ok {
@@ -374,10 +374,10 @@ func shouldExtractBookMetadata(rawURL string) bool {
 		if _, ok := parseOpenLibraryEditionKey(segments); ok {
 			return true
 		}
-		_, ok := extractISBNFromSegments(segments)
+		_, ok := extractISBNFromURL(parsedURL, segments)
 		return ok
 	default:
-		_, ok := extractISBNFromSegments(segments)
+		_, ok := extractISBNFromURL(parsedURL, segments)
 		return ok
 	}
 }

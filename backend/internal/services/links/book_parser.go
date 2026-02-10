@@ -51,10 +51,13 @@ func ParseBookMetadata(ctx context.Context, rawURL string, client *OpenLibraryCl
 		return parseGoodreadsBookMetadata(ctx, rawURL, client, goodreadsID)
 	case isAmazonHost(host):
 		asin, ok := parseAmazonASIN(segments)
-		if !ok {
-			return nil, nil
+		if ok {
+			return parseAmazonBookMetadata(ctx, rawURL, client, asin)
 		}
-		return parseAmazonBookMetadata(ctx, rawURL, client, asin)
+		if isbn, ok := extractISBNFromURL(parsedURL, segments); ok {
+			return parseISBNBookMetadata(ctx, client, isbn)
+		}
+		return nil, nil
 	case isOpenLibraryHost(host):
 		if workKey, ok := parseOpenLibraryWorkKey(segments); ok {
 			return parseOpenLibraryWorkMetadata(ctx, client, workKey)
@@ -62,12 +65,12 @@ func ParseBookMetadata(ctx context.Context, rawURL string, client *OpenLibraryCl
 		if editionKey, ok := parseOpenLibraryEditionKey(segments); ok {
 			return parseOpenLibraryEditionMetadata(ctx, client, editionKey)
 		}
-		if isbn, ok := extractISBNFromSegments(segments); ok {
+		if isbn, ok := extractISBNFromURL(parsedURL, segments); ok {
 			return parseISBNBookMetadata(ctx, client, isbn)
 		}
 		return nil, nil
 	default:
-		if isbn, ok := extractISBNFromSegments(segments); ok {
+		if isbn, ok := extractISBNFromURL(parsedURL, segments); ok {
 			return parseISBNBookMetadata(ctx, client, isbn)
 		}
 		return nil, nil
@@ -381,16 +384,18 @@ func isOpenLibraryHost(host string) bool {
 }
 
 func parseGoodreadsBookID(segments []string) (string, bool) {
-	if len(segments) < 3 || !strings.EqualFold(segments[0], "book") || !strings.EqualFold(segments[1], "show") {
-		return "", false
+	for i := 0; i+2 < len(segments); i++ {
+		if !strings.EqualFold(segments[i], "book") || !strings.EqualFold(segments[i+1], "show") {
+			continue
+		}
+
+		match := goodreadsBookIDPattern.FindStringSubmatch(cleanURLIdentifierSegment(segments[i+2]))
+		if len(match) == 2 {
+			return strings.TrimSpace(match[1]), true
+		}
 	}
 
-	match := goodreadsBookIDPattern.FindStringSubmatch(strings.TrimSpace(segments[2]))
-	if len(match) != 2 {
-		return "", false
-	}
-
-	return strings.TrimSpace(match[1]), true
+	return "", false
 }
 
 func parseAmazonASIN(segments []string) (string, bool) {
@@ -410,9 +415,22 @@ func parseAmazonASIN(segments []string) (string, bool) {
 					return asin, true
 				}
 			}
+			if i+2 < len(segments) && strings.EqualFold(segments[i+1], "aw") {
+				if strings.EqualFold(segments[i+2], "d") || strings.EqualFold(segments[i+2], "product") {
+					if asin, ok := parseAmazonIdentifierSegment(segments, i+3); ok {
+						return asin, true
+					}
+				}
+			}
 		case strings.EqualFold(segments[i], "asin"):
 			if asin, ok := parseAmazonIdentifierSegment(segments, i+1); ok {
 				return asin, true
+			}
+		case strings.EqualFold(segments[i], "d"):
+			if i > 0 && strings.EqualFold(segments[i-1], "aw") {
+				if asin, ok := parseAmazonIdentifierSegment(segments, i+1); ok {
+					return asin, true
+				}
 			}
 		}
 	}
@@ -425,10 +443,10 @@ func parseAmazonIdentifierSegment(segments []string, idx int) (string, bool) {
 		return "", false
 	}
 
-	identifier := strings.TrimSpace(segments[idx])
+	identifier := cleanURLIdentifierSegment(segments[idx])
 	identifier = strings.TrimSuffix(identifier, ".html")
 	identifier = strings.TrimSuffix(identifier, "/")
-	identifier = strings.TrimSpace(identifier)
+	identifier = cleanURLIdentifierSegment(identifier)
 	switch len(identifier) {
 	case 10:
 		for _, r := range identifier {
@@ -449,34 +467,63 @@ func parseAmazonIdentifierSegment(segments []string, idx int) (string, bool) {
 }
 
 func parseOpenLibraryWorkKey(segments []string) (string, bool) {
-	if len(segments) < 2 || !strings.EqualFold(segments[0], "works") {
-		return "", false
+	for i := 0; i+1 < len(segments); i++ {
+		if !strings.EqualFold(segments[i], "works") {
+			continue
+		}
+
+		rawID := strings.TrimSpace(strings.TrimSuffix(cleanURLIdentifierSegment(segments[i+1]), ".json"))
+		if openLibraryWorkIDPattern.MatchString(rawID) {
+			return "/works/" + rawID, true
+		}
 	}
 
-	rawID := strings.TrimSpace(strings.TrimSuffix(segments[1], ".json"))
-	if !openLibraryWorkIDPattern.MatchString(rawID) {
-		return "", false
-	}
-
-	return "/works/" + rawID, true
+	return "", false
 }
 
 func parseOpenLibraryEditionKey(segments []string) (string, bool) {
-	if len(segments) < 2 || !strings.EqualFold(segments[0], "books") {
-		return "", false
+	for i := 0; i+1 < len(segments); i++ {
+		if !strings.EqualFold(segments[i], "books") {
+			continue
+		}
+
+		rawID := strings.TrimSpace(strings.TrimSuffix(cleanURLIdentifierSegment(segments[i+1]), ".json"))
+		if openLibraryBookIDPattern.MatchString(rawID) {
+			return "/books/" + rawID, true
+		}
 	}
 
-	rawID := strings.TrimSpace(strings.TrimSuffix(segments[1], ".json"))
-	if !openLibraryBookIDPattern.MatchString(rawID) {
-		return "", false
-	}
-
-	return "/books/" + rawID, true
+	return "", false
 }
 
 func extractISBNFromSegments(segments []string) (string, bool) {
-	for _, segment := range segments {
-		token := strings.TrimSpace(segment)
+	return extractISBNFromTokens(segments)
+}
+
+func extractISBNFromURL(parsedURL *url.URL, segments []string) (string, bool) {
+	if isbn, ok := extractISBNFromSegments(segments); ok {
+		return isbn, true
+	}
+	if parsedURL == nil {
+		return "", false
+	}
+
+	tokens := make([]string, 0)
+	queryValues := parsedURL.Query()
+	for key, values := range queryValues {
+		tokens = append(tokens, key)
+		tokens = append(tokens, values...)
+	}
+	if parsedURL.Fragment != "" {
+		tokens = append(tokens, parsedURL.Fragment)
+	}
+
+	return extractISBNFromTokens(tokens)
+}
+
+func extractISBNFromTokens(tokens []string) (string, bool) {
+	for _, token := range tokens {
+		token = strings.TrimSpace(token)
 		if token == "" {
 			continue
 		}
@@ -491,6 +538,13 @@ func extractISBNFromSegments(segments []string) (string, bool) {
 	}
 
 	return "", false
+}
+
+func cleanURLIdentifierSegment(raw string) string {
+	raw = strings.TrimSpace(raw)
+	raw = strings.Trim(raw, `"'[]{}<>`)
+	raw = strings.TrimRight(raw, ".,;:!?)]}")
+	return strings.TrimSpace(raw)
 }
 
 func normalizeISBN(raw string) string {

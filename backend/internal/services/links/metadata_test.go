@@ -568,6 +568,11 @@ func TestShouldExtractBookMetadata(t *testing.T) {
 			want: true,
 		},
 		{
+			name: "goodreads localized book url",
+			url:  "https://www.goodreads.com/en/book/show/22328-neuromancer",
+			want: true,
+		},
+		{
 			name: "amazon dp url",
 			url:  "https://www.amazon.com/Some-Book/dp/B00TEST123",
 			want: true,
@@ -588,6 +593,11 @@ func TestShouldExtractBookMetadata(t *testing.T) {
 			want: true,
 		},
 		{
+			name: "amazon mobile aw d url",
+			url:  "https://www.amazon.com/gp/aw/d/B00TEST123",
+			want: true,
+		},
+		{
 			name: "amazon regional host url",
 			url:  "https://www.amazon.co.uk/dp/0441569595",
 			want: true,
@@ -605,6 +615,11 @@ func TestShouldExtractBookMetadata(t *testing.T) {
 		{
 			name: "isbn in generic url",
 			url:  "https://example.com/books/isbn-9780441569595/details",
+			want: true,
+		},
+		{
+			name: "isbn in query parameter",
+			url:  "https://example.com/search?query=isbn%3A9780441569595",
 			want: true,
 		},
 		{
