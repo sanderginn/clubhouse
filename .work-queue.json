@@ -34,6 +34,7 @@
     868,
     869,
     870,
+    871,
     872,
     876,
     877,
@@ -633,7 +634,7 @@
     {
       "issue_number": 871,
       "title": "[Books] Create BookStatsBar component",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         869,
         870
@@ -647,7 +648,9 @@
       "assigned_to": "agent-1770713157-84201",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770713157-84201",
       "branch": "feat/issue-871-books-create-bookstatsbar-component",
-      "claimed_at": "2026-02-10T08:45:57Z"
+      "claimed_at": "2026-02-10T08:45:57Z",
+      "pr_number": 954,
+      "completed_at": "2026-02-10T08:54:37Z"
     },
     {
       "issue_number": 872,
