@@ -67,12 +67,18 @@ func validateCommentTimestamp(sectionType string, timestampSeconds *int) error {
 
 // CreateComment creates a new comment with optional links
 func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCommentRequest, userID uuid.UUID) (*models.Comment, error) {
+	containsSpoiler := false
+	if req.ContainsSpoiler != nil {
+		containsSpoiler = *req.ContainsSpoiler
+	}
+
 	ctx, span := otel.Tracer("clubhouse.comments").Start(ctx, "CommentService.CreateComment")
 	span.SetAttributes(
 		attribute.String("user_id", userID.String()),
 		attribute.Int("content_length", len(strings.TrimSpace(req.Content))),
 		attribute.Bool("has_links", len(req.Links) > 0),
 		attribute.Bool("has_image_id", req.ImageID != nil && strings.TrimSpace(*req.ImageID) != ""),
+		attribute.Bool("contains_spoiler", containsSpoiler),
 	)
 	if req.TimestampSeconds != nil {
 		span.SetAttributes(
@@ -205,15 +211,15 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 
 	// Insert comment
 	query := `
-		INSERT INTO comments (id, user_id, post_id, parent_comment_id, image_id, timestamp_seconds, content, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, now())
-		RETURNING id, user_id, post_id, parent_comment_id, image_id, timestamp_seconds, content, created_at
+		INSERT INTO comments (id, user_id, post_id, parent_comment_id, image_id, timestamp_seconds, content, contains_spoiler, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())
+		RETURNING id, user_id, post_id, parent_comment_id, image_id, timestamp_seconds, content, contains_spoiler, created_at
 	`
 
 	var comment models.Comment
 	var timestampSeconds sql.NullInt32
-	err = tx.QueryRowContext(ctx, query, commentID, userID, postID, parentCommentID, imageID, req.TimestampSeconds, req.Content).
-		Scan(&comment.ID, &comment.UserID, &comment.PostID, &comment.ParentCommentID, &comment.ImageID, &timestampSeconds, &comment.Content, &comment.CreatedAt)
+	err = tx.QueryRowContext(ctx, query, commentID, userID, postID, parentCommentID, imageID, req.TimestampSeconds, req.Content, containsSpoiler).
+		Scan(&comment.ID, &comment.UserID, &comment.PostID, &comment.ParentCommentID, &comment.ImageID, &timestampSeconds, &comment.Content, &comment.ContainsSpoiler, &comment.CreatedAt)
 
 	if err != nil {
 		recordSpanError(span, err)
@@ -262,11 +268,12 @@ func (s *CommentService) CreateComment(ctx context.Context, req *models.CreateCo
 	}
 
 	metadata := map[string]interface{}{
-		"comment_id":      commentID.String(),
-		"post_id":         postID.String(),
-		"section_id":      sectionID.String(),
-		"content_excerpt": truncateAuditExcerpt(strings.TrimSpace(req.Content)),
-		"has_links":       len(req.Links) > 0,
+		"comment_id":       commentID.String(),
+		"post_id":          postID.String(),
+		"section_id":       sectionID.String(),
+		"content_excerpt":  truncateAuditExcerpt(strings.TrimSpace(req.Content)),
+		"has_links":        len(req.Links) > 0,
+		"contains_spoiler": containsSpoiler,
 	}
 	if parentCommentID != nil {
 		metadata["parent_comment_id"] = parentCommentID.String()
@@ -334,16 +341,17 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 
 	var ownerID uuid.UUID
 	var previousContent string
+	var previousContainsSpoiler bool
 	var postID uuid.UUID
 	var sectionID uuid.UUID
 	var sectionType string
 	err := s.db.QueryRowContext(ctx, `
-		SELECT c.user_id, c.content, c.post_id, p.section_id, s.type
+		SELECT c.user_id, c.content, c.contains_spoiler, c.post_id, p.section_id, s.type
 		FROM comments c
 		JOIN posts p ON c.post_id = p.id
 		JOIN sections s ON p.section_id = s.id
 		WHERE c.id = $1 AND c.deleted_at IS NULL
-	`, commentID).Scan(&ownerID, &previousContent, &postID, &sectionID, &sectionType)
+	`, commentID).Scan(&ownerID, &previousContent, &previousContainsSpoiler, &postID, &sectionID, &sectionType)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			notFoundErr := errors.New("comment not found")
@@ -359,6 +367,15 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 		recordSpanError(span, unauthorizedErr)
 		return nil, unauthorizedErr
 	}
+
+	containsSpoiler := previousContainsSpoiler
+	if req.ContainsSpoiler != nil {
+		containsSpoiler = *req.ContainsSpoiler
+	}
+	span.SetAttributes(
+		attribute.Bool("contains_spoiler", containsSpoiler),
+		attribute.Bool("contains_spoiler_provided", req.ContainsSpoiler != nil),
+	)
 
 	if req.Links != nil {
 		for _, link := range *req.Links {
@@ -391,9 +408,9 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 
 	_, err = tx.ExecContext(ctx, `
 		UPDATE comments
-		SET content = $1, updated_at = now()
-		WHERE id = $2
-	`, trimmedContent, commentID)
+		SET content = $1, contains_spoiler = $2, updated_at = now()
+		WHERE id = $3
+	`, trimmedContent, containsSpoiler, commentID)
 	if err != nil {
 		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to update comment: %w", err)
@@ -427,13 +444,16 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID uuid.UUID,
 	}
 
 	metadata := map[string]interface{}{
-		"comment_id":       commentID.String(),
-		"post_id":          postID.String(),
-		"section_id":       sectionID.String(),
-		"content_excerpt":  truncateAuditExcerpt(trimmedContent),
-		"previous_content": previousContent,
-		"links_changed":    linksChanged,
-		"links_provided":   req.Links != nil,
+		"comment_id":                commentID.String(),
+		"post_id":                   postID.String(),
+		"section_id":                sectionID.String(),
+		"content_excerpt":           truncateAuditExcerpt(trimmedContent),
+		"previous_content":          previousContent,
+		"contains_spoiler":          containsSpoiler,
+		"previous_contains_spoiler": previousContainsSpoiler,
+		"contains_spoiler_provided": req.ContainsSpoiler != nil,
+		"links_changed":             linksChanged,
+		"links_provided":            req.Links != nil,
 	}
 	if req.Links != nil {
 		metadata["link_count"] = len(*req.Links)
@@ -464,7 +484,7 @@ func (s *CommentService) GetCommentByID(ctx context.Context, commentID uuid.UUID
 
 	query := `
 		SELECT
-			c.id, c.user_id, c.post_id, p.section_id, c.parent_comment_id, c.image_id, c.timestamp_seconds, c.content,
+			c.id, c.user_id, c.post_id, p.section_id, c.parent_comment_id, c.image_id, c.timestamp_seconds, c.content, c.contains_spoiler,
 			c.created_at, c.updated_at, c.deleted_at, c.deleted_by_user_id,
 			u.id, u.username, COALESCE(u.email, '') as email, u.profile_picture_url, u.bio, u.is_admin, u.created_at
 		FROM comments c
@@ -480,7 +500,7 @@ func (s *CommentService) GetCommentByID(ctx context.Context, commentID uuid.UUID
 	var imageID sql.NullString
 	var timestampSeconds sql.NullInt32
 	err := s.db.QueryRowContext(ctx, query, commentID).Scan(
-		&comment.ID, &comment.UserID, &comment.PostID, &sectionID, &comment.ParentCommentID, &imageID, &timestampSeconds, &comment.Content,
+		&comment.ID, &comment.UserID, &comment.PostID, &sectionID, &comment.ParentCommentID, &imageID, &timestampSeconds, &comment.Content, &comment.ContainsSpoiler,
 		&comment.CreatedAt, &comment.UpdatedAt, &comment.DeletedAt, &comment.DeletedByUserID,
 		&user.ID, &user.Username, &user.Email, &user.ProfilePictureURL, &user.Bio, &user.IsAdmin, &user.CreatedAt,
 	)
@@ -740,7 +760,7 @@ func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID
 	// Build query for top-level comments
 	query := `
 		SELECT
-			c.id, c.user_id, c.post_id, c.parent_comment_id, c.image_id, c.timestamp_seconds, c.content,
+			c.id, c.user_id, c.post_id, c.parent_comment_id, c.image_id, c.timestamp_seconds, c.content, c.contains_spoiler,
 			c.created_at, c.updated_at, c.deleted_at, c.deleted_by_user_id,
 			u.id, u.username, COALESCE(u.email, '') as email, u.profile_picture_url, u.bio, u.is_admin, u.created_at
 		FROM comments c
@@ -798,7 +818,7 @@ func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID
 		var timestampSeconds sql.NullInt32
 
 		err := rows.Scan(
-			&c.ID, &c.UserID, &c.PostID, &parentID, &imageID, &timestampSeconds, &c.Content,
+			&c.ID, &c.UserID, &c.PostID, &parentID, &imageID, &timestampSeconds, &c.Content, &c.ContainsSpoiler,
 			&c.CreatedAt, &updatedAt, &deletedAt, &deletedByUserID,
 			&user.ID, &user.Username, &user.Email, &user.ProfilePictureURL, &user.Bio, &user.IsAdmin, &user.CreatedAt,
 		)
@@ -885,7 +905,7 @@ func (s *CommentService) GetThreadComments(ctx context.Context, postID uuid.UUID
 func (s *CommentService) getCommentReplies(ctx context.Context, parentCommentID uuid.UUID, userID uuid.UUID) ([]models.Comment, error) {
 	query := `
 		SELECT
-			c.id, c.user_id, c.post_id, c.parent_comment_id, c.image_id, c.timestamp_seconds, c.content,
+			c.id, c.user_id, c.post_id, c.parent_comment_id, c.image_id, c.timestamp_seconds, c.content, c.contains_spoiler,
 			c.created_at, c.updated_at, c.deleted_at, c.deleted_by_user_id,
 			u.id, u.username, COALESCE(u.email, '') as email, u.profile_picture_url, u.bio, u.is_admin, u.created_at
 		FROM comments c
@@ -912,7 +932,7 @@ func (s *CommentService) getCommentReplies(ctx context.Context, parentCommentID 
 		var timestampSeconds sql.NullInt32
 
 		err := rows.Scan(
-			&c.ID, &c.UserID, &c.PostID, &parentID, &imageID, &timestampSeconds, &c.Content,
+			&c.ID, &c.UserID, &c.PostID, &parentID, &imageID, &timestampSeconds, &c.Content, &c.ContainsSpoiler,
 			&c.CreatedAt, &updatedAt, &deletedAt, &deletedByUserID,
 			&user.ID, &user.Username, &user.Email, &user.ProfilePictureURL, &user.Bio, &user.IsAdmin, &user.CreatedAt,
 		)
@@ -1004,7 +1024,7 @@ func (s *CommentService) DeleteComment(ctx context.Context, commentID uuid.UUID,
 		UPDATE comments
 		SET deleted_at = now(), deleted_by_user_id = $1
 		WHERE id = $2
-		RETURNING id, user_id, post_id, parent_comment_id, image_id, content, created_at, updated_at, deleted_at, deleted_by_user_id
+		RETURNING id, user_id, post_id, parent_comment_id, image_id, content, contains_spoiler, created_at, updated_at, deleted_at, deleted_by_user_id
 	`
 
 	var updatedComment models.Comment
@@ -1013,7 +1033,7 @@ func (s *CommentService) DeleteComment(ctx context.Context, commentID uuid.UUID,
 	var updatedAt sql.NullTime
 
 	err = tx.QueryRowContext(ctx, query, userID, commentID).Scan(
-		&updatedComment.ID, &updatedComment.UserID, &updatedComment.PostID, &parentID, &imageID, &updatedComment.Content,
+		&updatedComment.ID, &updatedComment.UserID, &updatedComment.PostID, &parentID, &imageID, &updatedComment.Content, &updatedComment.ContainsSpoiler,
 		&updatedComment.CreatedAt, &updatedAt, &updatedComment.DeletedAt, &updatedComment.DeletedByUserID,
 	)
 	if err != nil {
@@ -1085,7 +1105,7 @@ func (s *CommentService) RestoreComment(ctx context.Context, commentID uuid.UUID
 
 	query := `
 		SELECT
-			c.id, c.user_id, c.post_id, c.parent_comment_id, c.image_id, c.content,
+			c.id, c.user_id, c.post_id, c.parent_comment_id, c.image_id, c.content, c.contains_spoiler,
 			c.created_at, c.updated_at, c.deleted_at, c.deleted_by_user_id,
 			u.id, u.username, COALESCE(u.email, '') as email, u.profile_picture_url, u.bio, u.is_admin, u.created_at
 		FROM comments c
@@ -1102,7 +1122,7 @@ func (s *CommentService) RestoreComment(ctx context.Context, commentID uuid.UUID
 	var deletedByUserID sql.NullString
 
 	err := s.db.QueryRowContext(ctx, query, commentID).Scan(
-		&comment.ID, &comment.UserID, &comment.PostID, &parentID, &imageID, &comment.Content,
+		&comment.ID, &comment.UserID, &comment.PostID, &parentID, &imageID, &comment.Content, &comment.ContainsSpoiler,
 		&comment.CreatedAt, &updatedAt, &deletedAt, &deletedByUserID,
 		&user.ID, &user.Username, &user.Email, &user.ProfilePictureURL, &user.Bio, &user.IsAdmin, &user.CreatedAt,
 	)
@@ -1157,7 +1177,7 @@ func (s *CommentService) RestoreComment(ctx context.Context, commentID uuid.UUID
 		UPDATE comments
 		SET deleted_at = NULL, deleted_by_user_id = NULL
 		WHERE id = $1
-		RETURNING id, user_id, post_id, parent_comment_id, image_id, content, created_at, updated_at, deleted_at, deleted_by_user_id
+		RETURNING id, user_id, post_id, parent_comment_id, image_id, content, contains_spoiler, created_at, updated_at, deleted_at, deleted_by_user_id
 	`
 
 	var restoredComment models.Comment
@@ -1166,7 +1186,7 @@ func (s *CommentService) RestoreComment(ctx context.Context, commentID uuid.UUID
 	var restoredUpdatedAt sql.NullTime
 
 	err = s.db.QueryRowContext(ctx, updateQuery, commentID).Scan(
-		&restoredComment.ID, &restoredComment.UserID, &restoredComment.PostID, &restoredParentID, &restoredImageID, &restoredComment.Content,
+		&restoredComment.ID, &restoredComment.UserID, &restoredComment.PostID, &restoredParentID, &restoredImageID, &restoredComment.Content, &restoredComment.ContainsSpoiler,
 		&restoredComment.CreatedAt, &restoredUpdatedAt, &restoredComment.DeletedAt, &restoredComment.DeletedByUserID,
 	)
 
@@ -1388,9 +1408,9 @@ func (s *CommentService) AdminRestoreComment(ctx context.Context, commentID uuid
 		UPDATE comments
 		SET deleted_at = NULL, deleted_by_user_id = NULL
 		WHERE id = $1
-		RETURNING id, user_id, post_id, parent_comment_id, image_id, content, created_at, updated_at, deleted_at, deleted_by_user_id
+		RETURNING id, user_id, post_id, parent_comment_id, image_id, content, contains_spoiler, created_at, updated_at, deleted_at, deleted_by_user_id
 	`, commentID).Scan(
-		&comment.ID, &comment.UserID, &comment.PostID, &parentID, &imageID, &comment.Content,
+		&comment.ID, &comment.UserID, &comment.PostID, &parentID, &imageID, &comment.Content, &comment.ContainsSpoiler,
 		&comment.CreatedAt, &updatedAt, &comment.DeletedAt, &comment.DeletedByUserID,
 	)
 	if err != nil {

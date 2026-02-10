@@ -15,6 +15,7 @@ type Comment struct {
 	ParentCommentID  *uuid.UUID     `json:"parent_comment_id,omitempty"`
 	ImageID          *uuid.UUID     `json:"image_id,omitempty"`
 	Content          string         `json:"content"`
+	ContainsSpoiler  bool           `json:"contains_spoiler"`
 	TimestampSeconds *int           `json:"timestamp_seconds,omitempty"`
 	TimestampDisplay *string        `json:"timestamp_display,omitempty"`
 	Links            []Link         `json:"links,omitempty"`
@@ -34,6 +35,7 @@ type CreateCommentRequest struct {
 	ParentCommentID  *string       `json:"parent_comment_id,omitempty"`
 	ImageID          *string       `json:"image_id,omitempty"`
 	Content          string        `json:"content"`
+	ContainsSpoiler  *bool         `json:"contains_spoiler,omitempty"`
 	TimestampSeconds *int          `json:"timestamp_seconds,omitempty"`
 	Links            []LinkRequest `json:"links,omitempty"`
 	// MentionUsernames contains explicitly selected mentions from the client.
@@ -47,8 +49,9 @@ type CreateCommentResponse struct {
 
 // UpdateCommentRequest represents the request body for updating a comment
 type UpdateCommentRequest struct {
-	Content string         `json:"content"`
-	Links   *[]LinkRequest `json:"links,omitempty"`
+	Content         string         `json:"content"`
+	Links           *[]LinkRequest `json:"links,omitempty"`
+	ContainsSpoiler *bool          `json:"contains_spoiler,omitempty"`
 	// MentionUsernames contains explicitly selected mentions from the client.
 	MentionUsernames []string `json:"mention_usernames,omitempty"`
 }

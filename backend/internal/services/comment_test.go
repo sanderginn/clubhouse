@@ -41,6 +41,35 @@ func TestCreateComment(t *testing.T) {
 	if comment.User.Username != "commentuser" {
 		t.Errorf("expected username 'commentuser', got %s", comment.User.Username)
 	}
+	if comment.ContainsSpoiler {
+		t.Errorf("expected contains_spoiler to default to false")
+	}
+}
+
+func TestCreateCommentWithSpoilerTrue(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "commentspoiler", "commentspoiler@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Books Section", "books")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Book post")
+
+	service := NewCommentService(db)
+
+	req := &models.CreateCommentRequest{
+		PostID:          postID,
+		Content:         "Spoiler comment",
+		ContainsSpoiler: boolPtr(true),
+	}
+
+	comment, err := service.CreateComment(context.Background(), req, uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("CreateComment failed: %v", err)
+	}
+
+	if !comment.ContainsSpoiler {
+		t.Errorf("expected contains_spoiler to be true")
+	}
 }
 
 func TestCreateCommentWithTimestamp(t *testing.T) {
@@ -258,6 +287,31 @@ func TestGetCommentByID(t *testing.T) {
 
 	if comment.Content != "Test comment content" {
 		t.Errorf("expected content 'Test comment content', got %s", comment.Content)
+	}
+}
+
+func TestUpdateCommentToggleSpoiler(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "updatespoiler", "updatespoiler@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Books Section", "books")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Post")
+	commentID := testutil.CreateTestComment(t, db, userID, postID, "Non-spoiler comment")
+
+	service := NewCommentService(db)
+	req := &models.UpdateCommentRequest{
+		Content:         "Marked as spoiler",
+		ContainsSpoiler: boolPtr(true),
+	}
+
+	comment, err := service.UpdateComment(context.Background(), uuid.MustParse(commentID), uuid.MustParse(userID), req)
+	if err != nil {
+		t.Fatalf("UpdateComment failed: %v", err)
+	}
+
+	if !comment.ContainsSpoiler {
+		t.Fatalf("expected contains_spoiler to be true after update")
 	}
 }
 
@@ -607,5 +661,9 @@ func stringPtr(s string) *string {
 }
 
 func intPtr(value int) *int {
+	return &value
+}
+
+func boolPtr(value bool) *bool {
 	return &value
 }
