@@ -1533,7 +1533,7 @@
     {
       "issue_number": 980,
       "title": "[Books] Make Bookshelf a collapsible component like Cookbook",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         979,
         976
@@ -1543,7 +1543,11 @@
         "frontend",
         "books"
       ],
-      "priority": 9
+      "priority": 9,
+      "assigned_to": "agent-1770729087-49885",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770729087-49885",
+      "branch": "feat/issue-980-books-make-bookshelf-a-collapsible-compo",
+      "claimed_at": "2026-02-10T13:11:27Z"
     },
     {
       "issue_number": 981,
