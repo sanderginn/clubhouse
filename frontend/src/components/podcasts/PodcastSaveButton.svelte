@@ -2,7 +2,11 @@
   import type { PostPodcastSaveInfo } from '../../services/api';
   import { api } from '../../services/api';
   import type { Post } from '../../stores/postStore';
-  import { podcastSaveInfoByPostId, podcastStore } from '../../stores/podcastStore';
+  import {
+    podcastSaveInfoByPostId,
+    podcastStore,
+    savedPodcastPostIds,
+  } from '../../stores/podcastStore';
 
   export let postId: string;
   export let post: Post | null = null;
@@ -21,7 +25,10 @@
   }
 
   $: storeInfo = $podcastSaveInfoByPostId[postId];
-  $: effectiveInfo = storeInfo ?? fallbackInfo;
+  $: storeSaved = $savedPodcastPostIds.has(postId);
+  $: fallbackSaved = fallbackInfo.viewerSaved || storeSaved;
+  $: fallbackCount = fallbackSaved ? Math.max(1, fallbackInfo.saveCount) : fallbackInfo.saveCount;
+  $: effectiveInfo = storeInfo ?? buildSaveInfo(fallbackSaved, fallbackCount);
   $: isSaved = Boolean(effectiveInfo.viewerSaved);
   $: displayedSaveCount = clampCount(effectiveInfo.saveCount);
 
