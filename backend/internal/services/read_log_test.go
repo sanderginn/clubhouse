@@ -148,6 +148,9 @@ func TestGetReadLogAggregations(t *testing.T) {
 	if postReadLogs.ReadCount != 3 {
 		t.Fatalf("expected read_count 3, got %d", postReadLogs.ReadCount)
 	}
+	if postReadLogs.RatedCount != 2 {
+		t.Fatalf("expected rated_count 2, got %d", postReadLogs.RatedCount)
+	}
 	if math.Abs(postReadLogs.AverageRating-3.0) > 0.001 {
 		t.Fatalf("expected average_rating 3.0, got %f", postReadLogs.AverageRating)
 	}
@@ -169,6 +172,9 @@ func TestGetReadLogAggregations(t *testing.T) {
 	if logsByPost[postIDOne].ReadCount != 3 {
 		t.Fatalf("expected post one read_count 3, got %d", logsByPost[postIDOne].ReadCount)
 	}
+	if logsByPost[postIDOne].RatedCount != 2 {
+		t.Fatalf("expected post one rated_count 2, got %d", logsByPost[postIDOne].RatedCount)
+	}
 	if math.Abs(logsByPost[postIDOne].AverageRating-3.0) > 0.001 {
 		t.Fatalf("expected post one average_rating 3.0, got %f", logsByPost[postIDOne].AverageRating)
 	}
@@ -181,6 +187,9 @@ func TestGetReadLogAggregations(t *testing.T) {
 
 	if logsByPost[postIDTwo].ReadCount != 1 {
 		t.Fatalf("expected post two read_count 1, got %d", logsByPost[postIDTwo].ReadCount)
+	}
+	if logsByPost[postIDTwo].RatedCount != 1 {
+		t.Fatalf("expected post two rated_count 1, got %d", logsByPost[postIDTwo].RatedCount)
 	}
 	if math.Abs(logsByPost[postIDTwo].AverageRating-5.0) > 0.001 {
 		t.Fatalf("expected post two average_rating 5.0, got %f", logsByPost[postIDTwo].AverageRating)

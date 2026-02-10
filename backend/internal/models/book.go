@@ -24,6 +24,7 @@ type BookData struct {
 type BookStats struct {
 	BookshelfCount    int      `json:"bookshelf_count"`
 	ReadCount         int      `json:"read_count"`
+	RatedCount        int      `json:"rated_count"`
 	AverageRating     float64  `json:"average_rating"`
 	ViewerOnBookshelf bool     `json:"viewer_on_bookshelf"`
 	ViewerCategories  []string `json:"viewer_categories,omitempty"`
@@ -132,6 +133,7 @@ type ReadLogUserInfo struct {
 
 type PostReadLogsResponse struct {
 	ReadCount     int               `json:"read_count"`
+	RatedCount    int               `json:"rated_count"`
 	AverageRating float64           `json:"average_rating"`
 	ViewerRead    bool              `json:"viewer_read"`
 	ViewerRating  *int              `json:"viewer_rating,omitempty"`

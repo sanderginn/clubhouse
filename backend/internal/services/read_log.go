@@ -516,7 +516,11 @@ func (s *ReadLogService) populateReadLogSummaries(ctx context.Context, responses
 	}
 
 	summaryRows, err := s.db.QueryContext(ctx, `
-		SELECT post_id, COUNT(*) AS read_count, ROUND(AVG(rating)::numeric, 1) AS average_rating
+		SELECT
+			post_id,
+			COUNT(*) AS read_count,
+			COUNT(rating) AS rated_count,
+			ROUND(AVG(rating)::numeric, 1) AS average_rating
 		FROM read_logs
 		WHERE post_id = ANY($1) AND deleted_at IS NULL
 		GROUP BY post_id
@@ -529,13 +533,15 @@ func (s *ReadLogService) populateReadLogSummaries(ctx context.Context, responses
 	for summaryRows.Next() {
 		var postID uuid.UUID
 		var readCount int
+		var ratedCount int
 		var avgRating sql.NullFloat64
-		if err := summaryRows.Scan(&postID, &readCount, &avgRating); err != nil {
+		if err := summaryRows.Scan(&postID, &readCount, &ratedCount, &avgRating); err != nil {
 			return fmt.Errorf("failed to scan read log summary: %w", err)
 		}
 
 		if response, ok := responses[postID]; ok {
 			response.ReadCount = readCount
+			response.RatedCount = ratedCount
 			if avgRating.Valid {
 				response.AverageRating = avgRating.Float64
 			}

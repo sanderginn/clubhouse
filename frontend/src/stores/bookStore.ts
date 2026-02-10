@@ -249,9 +249,16 @@ function restoreBookStats(postId: string, previous: BookStats | null): void {
 async function refreshPostReadStats(postId: string): Promise<void> {
   try {
     const readStats: PostReadLogsResponse = await api.getPostReadLogs(postId);
+    const ratedCount =
+      typeof readStats.ratedCount === 'number' && Number.isFinite(readStats.ratedCount)
+        ? readStats.ratedCount
+        : (readStats.readers ?? []).filter(
+            (reader) => typeof reader.rating === 'number' && Number.isFinite(reader.rating)
+          ).length;
     postStore.setBookStats(postId, {
       readCount: readStats.readCount ?? 0,
       averageRating: normalizeAverageRating(readStats.averageRating ?? 0, readStats.readCount ?? 0),
+      ratedCount,
       viewerRead: readStats.viewerRead ?? false,
       viewerRating: readStats.viewerRating ?? null,
     });
