@@ -72,6 +72,10 @@
     if (firstHighlight) {
       return firstHighlight;
     }
+    const metadataTitle = item.title?.trim();
+    if (metadataTitle) {
+      return metadataTitle;
+    }
     const kind = normalizeKind(item.podcast.kind);
     if (kind === 'show') {
       return 'Podcast show';

@@ -357,6 +357,39 @@ func TestSectionServiceGetRecentPodcastsPaginationDeterministic(t *testing.T) {
 	}
 }
 
+func TestSectionServiceGetRecentPodcastsDetectsEpisodeKindAndTitle(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "recentpodcastepisode", "recentpodcastepisode@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Podcasts", "podcast")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Episode post")
+
+	insertTestSectionLink(t, db, postID, "https://podcasts.apple.com/us/podcast/example/id123456789?i=1000123456789", map[string]interface{}{
+		"title": "Episode from metadata title",
+		"type":  "episode",
+		"podcast": map[string]interface{}{
+			"highlight_episodes": []map[string]interface{}{},
+		},
+	}, time.Now().UTC())
+
+	service := NewSectionService(db)
+
+	response, err := service.GetRecentPodcasts(context.Background(), uuid.MustParse(sectionID), nil, 10)
+	if err != nil {
+		t.Fatalf("GetRecentPodcasts failed: %v", err)
+	}
+	if len(response.Items) != 1 {
+		t.Fatalf("expected 1 recent podcast item, got %d", len(response.Items))
+	}
+	if response.Items[0].Podcast.Kind != "episode" {
+		t.Fatalf("expected episode podcast kind, got %q", response.Items[0].Podcast.Kind)
+	}
+	if response.Items[0].Title != "Episode from metadata title" {
+		t.Fatalf("expected metadata-derived title, got %q", response.Items[0].Title)
+	}
+}
+
 func TestSectionServiceGetRecentPodcastsInvalidCursor(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })

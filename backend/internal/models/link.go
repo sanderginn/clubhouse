@@ -29,6 +29,7 @@ type RecentPodcastItem struct {
 	PostID        uuid.UUID       `json:"post_id"`
 	LinkID        uuid.UUID       `json:"link_id"`
 	URL           string          `json:"url"`
+	Title         string          `json:"title,omitempty"`
 	Podcast       PodcastMetadata `json:"podcast"`
 	UserID        uuid.UUID       `json:"user_id"`
 	Username      string          `json:"username"`

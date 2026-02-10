@@ -103,6 +103,17 @@ describe('PodcastsTopContainer', () => {
           postCreatedAt: '2026-02-10T10:00:00Z',
           linkCreatedAt: '2026-02-10T10:01:00Z',
         },
+        {
+          postId: 'post-2',
+          linkId: 'link-2',
+          url: 'https://example.com/podcast/episode-42',
+          title: 'Episode 42: Debugging',
+          podcast: { kind: 'episode' },
+          userId: 'user-2',
+          username: 'taylor',
+          postCreatedAt: '2026-02-10T10:02:00Z',
+          linkCreatedAt: '2026-02-10T10:03:00Z',
+        },
       ],
       hasMore: false,
       nextCursor: undefined,
@@ -118,6 +129,8 @@ describe('PodcastsTopContainer', () => {
 
     expect(await screen.findByTestId('podcasts-recent-list')).toBeInTheDocument();
     expect(screen.getByText('Show')).toBeInTheDocument();
+    expect(screen.getByText('Episode 42: Debugging')).toBeInTheDocument();
+    expect(screen.getByText('Episode')).toBeInTheDocument();
 
     await fireEvent.click(screen.getByTestId('podcasts-mode-saved'));
 
