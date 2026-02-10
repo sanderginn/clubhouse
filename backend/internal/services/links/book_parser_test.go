@@ -151,6 +151,60 @@ func TestParseBookMetadataGoodreadsURLFallsBackToPageTitle(t *testing.T) {
 	}
 }
 
+func TestParseBookMetadataGoodreadsLocalizedURL(t *testing.T) {
+	originalFetchTitle := fetchBookPageTitleFunc
+	fetchBookPageTitleFunc = func(ctx context.Context, rawURL string) (string, error) {
+		t.Fatalf("unexpected title fetch for URL: %s", rawURL)
+		return "", nil
+	}
+	defer func() {
+		fetchBookPageTitleFunc = originalFetchTitle
+	}()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/search.json":
+			if got := strings.TrimSpace(r.URL.Query().Get("q")); got != "id_goodreads:22328" {
+				t.Fatalf("q = %q, want id_goodreads:22328", got)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{
+				"docs":[
+					{
+						"title":"Neuromancer",
+						"author_name":["William Gibson"],
+						"key":"/works/OL45883W"
+					}
+				]
+			}`))
+		case "/works/OL45883W.json":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{
+				"title":"Neuromancer",
+				"subjects":["Science fiction"]
+			}`))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	client := newTestOpenLibraryClient(t, server.URL)
+	metadata, err := ParseBookMetadata(context.Background(), "https://www.goodreads.com/en/book/show/22328-neuromancer", client)
+	if err != nil {
+		t.Fatalf("ParseBookMetadata error: %v", err)
+	}
+	if metadata == nil {
+		t.Fatal("expected metadata")
+	}
+	if metadata.Title != "Neuromancer" {
+		t.Fatalf("Title = %q, want Neuromancer", metadata.Title)
+	}
+	if metadata.GoodreadsURL != "https://www.goodreads.com/en/book/show/22328-neuromancer" {
+		t.Fatalf("GoodreadsURL = %q, want input URL", metadata.GoodreadsURL)
+	}
+}
+
 func TestParseBookMetadataAmazonURL(t *testing.T) {
 	originalFetchTitle := fetchBookPageTitleFunc
 	fetchBookPageTitleFunc = func(ctx context.Context, rawURL string) (string, error) {
@@ -238,6 +292,64 @@ func TestParseBookMetadataAmazonGPProductURL(t *testing.T) {
 	}
 	if metadata.Title != "Neuromancer" {
 		t.Fatalf("Title = %q, want Neuromancer", metadata.Title)
+	}
+}
+
+func TestParseBookMetadataAmazonGPAWDURL(t *testing.T) {
+	originalFetchTitle := fetchBookPageTitleFunc
+	fetchBookPageTitleFunc = func(ctx context.Context, rawURL string) (string, error) {
+		t.Fatalf("unexpected title fetch for URL: %s", rawURL)
+		return "", nil
+	}
+	defer func() {
+		fetchBookPageTitleFunc = originalFetchTitle
+	}()
+
+	requests := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests++
+		switch r.URL.Path {
+		case "/isbn/B00TEST123.json":
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(`{"error":"not found"}`))
+		case "/search.json":
+			if q := strings.TrimSpace(r.URL.Query().Get("q")); q != "id_amazon:B00TEST123" {
+				t.Fatalf("q = %q, want id_amazon:B00TEST123", q)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{
+				"docs":[
+					{
+						"title":"Amazon Mobile Book",
+						"author_name":["Some Author"],
+						"key":"/works/OL45883W"
+					}
+				]
+			}`))
+		case "/works/OL45883W.json":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{
+				"title":"Amazon Mobile Book"
+			}`))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	client := newTestOpenLibraryClient(t, server.URL)
+	metadata, err := ParseBookMetadata(context.Background(), "https://www.amazon.com/gp/aw/d/B00TEST123", client)
+	if err != nil {
+		t.Fatalf("ParseBookMetadata error: %v", err)
+	}
+	if metadata == nil {
+		t.Fatal("expected metadata")
+	}
+	if metadata.Title != "Amazon Mobile Book" {
+		t.Fatalf("Title = %q, want Amazon Mobile Book", metadata.Title)
+	}
+	if requests != 3 {
+		t.Fatalf("requests = %d, want 3", requests)
 	}
 }
 
@@ -557,6 +669,33 @@ func TestParseBookMetadataISBNURL(t *testing.T) {
 	}
 	if metadata.OpenLibraryKey != "/books/OL24226054M" {
 		t.Fatalf("OpenLibraryKey = %q, want /books/OL24226054M", metadata.OpenLibraryKey)
+	}
+}
+
+func TestParseBookMetadataISBNInQueryURL(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/isbn/9780441569595.json" {
+			t.Fatalf("path = %q, want /isbn/9780441569595.json", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"key":"/books/OL24226054M",
+			"title":"Neuromancer",
+			"isbn_13":["9780441569595"]
+		}`))
+	}))
+	defer server.Close()
+
+	client := newTestOpenLibraryClient(t, server.URL)
+	metadata, err := ParseBookMetadata(context.Background(), "https://example.com/search?query=isbn%3A9780441569595", client)
+	if err != nil {
+		t.Fatalf("ParseBookMetadata error: %v", err)
+	}
+	if metadata == nil {
+		t.Fatal("expected metadata")
+	}
+	if metadata.ISBN != "9780441569595" {
+		t.Fatalf("ISBN = %q, want 9780441569595", metadata.ISBN)
 	}
 }
 
