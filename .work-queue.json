@@ -1556,7 +1556,7 @@
     {
       "issue_number": 982,
       "title": "[Podcasts] Fix PodcastsTopContainer not updating immediately when saving links",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         981
       ],
@@ -1565,7 +1565,11 @@
         "frontend",
         "podcasts"
       ],
-      "priority": 11
+      "priority": 11,
+      "assigned_to": "agent-1770727494-17859",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770727494-17859",
+      "branch": "fix/issue-982-podcasts-fix-podcaststopcontainer-not-up",
+      "claimed_at": "2026-02-10T12:44:54Z"
     },
     {
       "issue_number": 983,
