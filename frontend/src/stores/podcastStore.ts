@@ -1,10 +1,16 @@
 import { derived, get, writable } from 'svelte/store';
-import { api, type PostPodcastSaveInfo } from '../services/api';
+import { api, type PostPodcastSaveInfo, type RecentPodcastItem } from '../services/api';
 import type { Post } from './postStore';
 
 const DEFAULT_PAGE_SIZE = 20;
 
 export interface PodcastStoreState {
+  recentItems: RecentPodcastItem[];
+  recentSectionId: string | null;
+  recentCursor: string | null;
+  recentHasMore: boolean;
+  isLoadingRecent: boolean;
+  recentError: string | null;
   saveInfoByPostId: Record<string, PostPodcastSaveInfo>;
   savedPostIds: Set<string>;
   savedPosts: Post[];
@@ -18,6 +24,12 @@ export interface PodcastStoreState {
 }
 
 const initialState: PodcastStoreState = {
+  recentItems: [],
+  recentSectionId: null,
+  recentCursor: null,
+  recentHasMore: false,
+  isLoadingRecent: false,
+  recentError: null,
   saveInfoByPostId: {},
   savedPostIds: new Set(),
   savedPosts: [],
@@ -39,6 +51,22 @@ function dedupePosts(existing: Post[], nextPosts: Post[]): Post[] {
     }
     seen.add(post.id);
     merged.push(post);
+  }
+  return merged;
+}
+
+function dedupeRecentPodcasts(
+  existing: RecentPodcastItem[],
+  nextItems: RecentPodcastItem[]
+): RecentPodcastItem[] {
+  const seen = new Set(existing.map((item) => item.linkId));
+  const merged = [...existing];
+  for (const item of nextItems) {
+    if (seen.has(item.linkId)) {
+      continue;
+    }
+    seen.add(item.linkId);
+    merged.push(item);
   }
   return merged;
 }
@@ -71,6 +99,42 @@ function createPodcastStore() {
 
   return {
     subscribe,
+    setLoadingRecent: (isLoading: boolean) =>
+      update((state) => ({
+        ...state,
+        isLoadingRecent: isLoading,
+        recentError: isLoading ? null : state.recentError,
+      })),
+    setRecentError: (error: string | null) =>
+      update((state) => ({
+        ...state,
+        recentError: error,
+        isLoadingRecent: false,
+      })),
+    setRecentItems: (
+      items: RecentPodcastItem[],
+      cursor: string | null,
+      hasMore: boolean,
+      sectionId: string
+    ) =>
+      update((state) => ({
+        ...state,
+        recentItems: items,
+        recentCursor: cursor,
+        recentHasMore: hasMore,
+        recentSectionId: sectionId,
+        isLoadingRecent: false,
+        recentError: null,
+      })),
+    appendRecentItems: (items: RecentPodcastItem[], cursor: string | null, hasMore: boolean) =>
+      update((state) => ({
+        ...state,
+        recentItems: dedupeRecentPodcasts(state.recentItems, items),
+        recentCursor: cursor,
+        recentHasMore: hasMore,
+        isLoadingRecent: false,
+        recentError: null,
+      })),
     setLoadingSaved: (isLoading: boolean) =>
       update((state) => ({
         ...state,
@@ -154,6 +218,51 @@ function createPodcastStore() {
         savedPosts: state.savedPosts.filter((post) => post.id !== postId),
         savedPostIds: new Set([...state.savedPostIds].filter((id) => id !== postId)),
       })),
+    loadRecentPodcasts: async (sectionId: string, limit = DEFAULT_PAGE_SIZE): Promise<void> => {
+      podcastStore.setLoadingRecent(true);
+      try {
+        const response = await api.getSectionRecentPodcasts(sectionId, limit);
+        podcastStore.setRecentItems(
+          response.items ?? [],
+          response.nextCursor ?? null,
+          response.hasMore ?? false,
+          sectionId
+        );
+      } catch (error) {
+        podcastStore.setRecentError(
+          error instanceof Error ? error.message : 'Failed to load recent podcasts'
+        );
+      }
+    },
+    loadMoreRecentPodcasts: async (limit = DEFAULT_PAGE_SIZE): Promise<void> => {
+      const state = get(podcastStore);
+      if (
+        !state.recentSectionId ||
+        !state.recentCursor ||
+        !state.recentHasMore ||
+        state.isLoadingRecent
+      ) {
+        return;
+      }
+
+      podcastStore.setLoadingRecent(true);
+      try {
+        const response = await api.getSectionRecentPodcasts(
+          state.recentSectionId,
+          limit,
+          state.recentCursor
+        );
+        podcastStore.appendRecentItems(
+          response.items ?? [],
+          response.nextCursor ?? null,
+          response.hasMore ?? false
+        );
+      } catch (error) {
+        podcastStore.setRecentError(
+          error instanceof Error ? error.message : 'Failed to load more recent podcasts'
+        );
+      }
+    },
     loadPostSaveInfo: async (postId: string): Promise<void> => {
       podcastStore.setLoadingSaveInfo(true);
       try {
@@ -232,6 +341,8 @@ function createPodcastStore() {
 }
 
 export const podcastStore = createPodcastStore();
+
+export const recentPodcastItems = derived(podcastStore, ($store) => $store.recentItems);
 
 export const podcastSaveInfoByPostId = derived(podcastStore, ($store) => $store.saveInfoByPostId);
 

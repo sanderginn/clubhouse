@@ -489,6 +489,67 @@ describe('api client', () => {
     expect(response.posts[0]?.createdAt).toBe('2026-02-10T10:00:00Z');
   });
 
+  it('getSectionRecentPodcasts maps metadata and cursor pagination', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({
+        items: [
+          {
+            post_id: 'post-1',
+            link_id: 'link-1',
+            url: 'https://example.com/show',
+            podcast: {
+              kind: 'SHOW',
+              highlight_episodes: [
+                {
+                  title: 'Start Here',
+                  url: 'https://example.com/show/start',
+                  note: 'Best intro',
+                },
+              ],
+            },
+            user_id: 'user-1',
+            username: 'sander',
+            post_created_at: '2026-02-10T10:00:00Z',
+            link_created_at: '2026-02-10T10:01:00Z',
+          },
+        ],
+        has_more: true,
+        next_cursor: 'cursor-next',
+      }),
+    });
+
+    const response = await api.getSectionRecentPodcasts('section-podcast', 15, 'cursor-1');
+
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toContain('/sections/section-podcast/podcasts/recent');
+    expect(url).toContain('limit=15');
+    expect(url).toContain('cursor=cursor-1');
+    expect(response.hasMore).toBe(true);
+    expect(response.nextCursor).toBe('cursor-next');
+    expect(response.items).toHaveLength(1);
+    expect(response.items[0]).toEqual({
+      postId: 'post-1',
+      linkId: 'link-1',
+      url: 'https://example.com/show',
+      podcast: {
+        kind: 'show',
+        highlightEpisodes: [
+          {
+            title: 'Start Here',
+            url: 'https://example.com/show/start',
+            note: 'Best intro',
+          },
+        ],
+      },
+      userId: 'user-1',
+      username: 'sander',
+      postCreatedAt: '2026-02-10T10:00:00Z',
+      linkCreatedAt: '2026-02-10T10:01:00Z',
+    });
+  });
+
   it('unsavePodcast issues DELETE to podcast-save endpoint', async () => {
     fetchMock.mockImplementation((url: string) => {
       if (url.endsWith('/auth/csrf')) {
