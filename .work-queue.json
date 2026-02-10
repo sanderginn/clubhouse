@@ -55,6 +55,7 @@
     894,
     895,
     948,
+    949,
     951
   ],
   "issues": [
@@ -1258,7 +1259,7 @@
     {
       "issue_number": 949,
       "title": "[Movies] Fix Rotten Tomatoes scores not displaying in MovieCard",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         948
       ],
@@ -1271,7 +1272,9 @@
       "assigned_to": "agent-1770713332-86591",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770713332-86591",
       "branch": "fix/issue-949-movies-fix-rotten-tomatoes-scores-not-di",
-      "claimed_at": "2026-02-10T08:48:52Z"
+      "claimed_at": "2026-02-10T08:48:52Z",
+      "pr_number": 957,
+      "completed_at": "2026-02-10T09:16:49Z"
     },
     {
       "issue_number": 950,
