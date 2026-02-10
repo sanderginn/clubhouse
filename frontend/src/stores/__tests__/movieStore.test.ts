@@ -44,6 +44,15 @@ const {
 } = await import('../movieStore');
 const { authStore } = await import('../authStore');
 const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0));
+const createDeferred = <T>() => {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+};
 
 beforeEach(() => {
   movieStore.reset();
@@ -121,6 +130,67 @@ describe('movieStore', () => {
   it('loadWatchlist forwards optional section type', async () => {
     await movieStore.loadWatchlist('series');
     expect(apiGetMyWatchlist).toHaveBeenCalledWith('series');
+  });
+
+  it('loadWatchlist ignores stale responses from older in-flight requests', async () => {
+    const moviesRequest = createDeferred<{ categories: unknown[] }>();
+    const seriesRequest = createDeferred<{ categories: unknown[] }>();
+
+    apiGetMyWatchlist.mockImplementation((sectionType?: 'movie' | 'series') => {
+      if (sectionType === 'movie') {
+        return moviesRequest.promise;
+      }
+      if (sectionType === 'series') {
+        return seriesRequest.promise;
+      }
+      return Promise.resolve({ categories: [] });
+    });
+
+    const moviesLoad = movieStore.loadWatchlist('movie');
+    const seriesLoad = movieStore.loadWatchlist('series');
+
+    seriesRequest.resolve({
+      categories: [
+        {
+          name: 'Series Picks',
+          items: [
+            {
+              id: 'watch-series-1',
+              userId: 'user-1',
+              postId: 'post-series-1',
+              category: 'Series Picks',
+              createdAt: '2026-01-02T00:00:00Z',
+            },
+          ],
+        },
+      ],
+    });
+    await seriesLoad;
+
+    moviesRequest.resolve({
+      categories: [
+        {
+          name: 'Movie Picks',
+          items: [
+            {
+              id: 'watch-movie-1',
+              userId: 'user-1',
+              postId: 'post-movie-1',
+              category: 'Movie Picks',
+              createdAt: '2026-01-03T00:00:00Z',
+            },
+          ],
+        },
+      ],
+    });
+    await moviesLoad;
+
+    const state = get(movieStore);
+    const seriesItems = state.watchlist.get('Series Picks') ?? [];
+    expect(seriesItems).toHaveLength(1);
+    expect(seriesItems[0].postId).toBe('post-series-1');
+    expect(state.watchlist.get('Movie Picks')).toBeUndefined();
+    expect(state.isLoadingWatchlist).toBe(false);
   });
 
   it('addToWatchlist and removeFromWatchlist update state', async () => {
