@@ -34,6 +34,7 @@
     876,
     877,
     878,
+    879,
     883,
     884,
     885,
@@ -743,7 +744,7 @@
     {
       "issue_number": 879,
       "title": "[Books] Create book quote handler and register routes",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         878,
         865
@@ -757,7 +758,9 @@
       "assigned_to": "agent-1770706703-78165",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770706703-78165",
       "branch": "feat/issue-879-books-create-book-quote-handler-and-regi",
-      "claimed_at": "2026-02-10T06:58:23Z"
+      "claimed_at": "2026-02-10T06:58:23Z",
+      "pr_number": 938,
+      "completed_at": "2026-02-10T07:13:47Z"
     },
     {
       "issue_number": 880,
