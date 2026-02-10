@@ -465,7 +465,7 @@
     {
       "issue_number": 864,
       "title": "[Books] Add book stats to post responses",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         860,
         861
@@ -475,7 +475,11 @@
         "backend",
         "books"
       ],
-      "priority": 72
+      "priority": 72,
+      "assigned_to": "agent-1770697768-22942",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770697768-22942",
+      "branch": "feat/issue-864-books-add-book-stats-to-post-responses",
+      "claimed_at": "2026-02-10T04:29:28Z"
     },
     {
       "issue_number": 865,
