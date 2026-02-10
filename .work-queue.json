@@ -34,6 +34,7 @@
     868,
     869,
     870,
+    872,
     876,
     877,
     878,
@@ -645,7 +646,7 @@
     {
       "issue_number": 872,
       "title": "[Books] Create Bookshelf view component",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         867,
         868
@@ -659,7 +660,9 @@
       "assigned_to": "agent-1770708516-18383",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770708516-18383",
       "branch": "feat/issue-872-books-create-bookshelf-view-component",
-      "claimed_at": "2026-02-10T07:28:36Z"
+      "claimed_at": "2026-02-10T07:28:36Z",
+      "pr_number": 945,
+      "completed_at": "2026-02-10T07:57:31Z"
     },
     {
       "issue_number": 873,
