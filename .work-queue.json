@@ -26,6 +26,7 @@
     860,
     861,
     863,
+    868,
     876,
     877,
     883
@@ -528,7 +529,7 @@
     {
       "issue_number": 868,
       "title": "[Books] Create BookCard component",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         858
       ],
@@ -541,7 +542,9 @@
       "assigned_to": "agent-1770696578-98387",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770696578-98387",
       "branch": "feat/issue-868-books-create-bookcard-component",
-      "claimed_at": "2026-02-10T04:09:38Z"
+      "claimed_at": "2026-02-10T04:09:38Z",
+      "pr_number": 926,
+      "completed_at": "2026-02-10T04:31:48Z"
     },
     {
       "issue_number": 869,
