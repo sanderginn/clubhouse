@@ -1382,6 +1382,189 @@
       "claimed_at": "2026-02-10T07:58:18Z",
       "pr_number": 952,
       "completed_at": "2026-02-10T08:45:22Z"
+    },
+    {
+      "issue_number": 972,
+      "title": "[Books] Fix link metadata not loading for book posts",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "backend",
+        "books"
+      ],
+      "priority": 1
+    },
+    {
+      "issue_number": 973,
+      "title": "[Books] Show link URL as fallback when book metadata is unavailable",
+      "status": "available",
+      "dependencies": [
+        972
+      ],
+      "labels": [
+        "bug",
+        "frontend",
+        "books"
+      ],
+      "priority": 2
+    },
+    {
+      "issue_number": 974,
+      "title": "[Books] Fix book stats (saved/read) not updating until page reload",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "books"
+      ],
+      "priority": 3
+    },
+    {
+      "issue_number": 975,
+      "title": "[Books] Show rating prompt when marking a book as read",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "books"
+      ],
+      "priority": 4
+    },
+    {
+      "issue_number": 976,
+      "title": "[Movies/Series] Fix Watchlist still using feed/watchlist toggle instead of collapsible component",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "movies"
+      ],
+      "priority": 5
+    },
+    {
+      "issue_number": 977,
+      "title": "[Movies/Series] Fix Rotten Tomatoes scores still not displaying",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "backend",
+        "movies"
+      ],
+      "priority": 6
+    },
+    {
+      "issue_number": 978,
+      "title": "[Movies/Series] Add Rotten Tomatoes and IMDB links to MovieCard",
+      "status": "available",
+      "dependencies": [
+        977
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "backend",
+        "movies"
+      ],
+      "priority": 7
+    },
+    {
+      "issue_number": 979,
+      "title": "[Books] Remove standalone Bookshelf section from navigation",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "books"
+      ],
+      "priority": 8
+    },
+    {
+      "issue_number": 980,
+      "title": "[Books] Make Bookshelf a collapsible component like Cookbook",
+      "status": "available",
+      "dependencies": [
+        979,
+        976
+      ],
+      "labels": [
+        "enhancement",
+        "frontend",
+        "books"
+      ],
+      "priority": 9
+    },
+    {
+      "issue_number": 981,
+      "title": "[Podcasts] Fix PodcastsTopContainer Recent section showing no links",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "frontend",
+        "podcasts"
+      ],
+      "priority": 10
+    },
+    {
+      "issue_number": 982,
+      "title": "[Podcasts] Fix PodcastsTopContainer not updating immediately when saving links",
+      "status": "available",
+      "dependencies": [
+        981
+      ],
+      "labels": [
+        "bug",
+        "frontend",
+        "podcasts"
+      ],
+      "priority": 11
+    },
+    {
+      "issue_number": 983,
+      "title": "[Podcasts] Fix saved podcast state not persisting after page refresh",
+      "status": "available",
+      "dependencies": [
+        981
+      ],
+      "labels": [
+        "bug",
+        "frontend",
+        "podcasts"
+      ],
+      "priority": 12
+    },
+    {
+      "issue_number": 984,
+      "title": "[Podcasts] Fix PodcastsTopContainer not showing Episode entries",
+      "status": "available",
+      "dependencies": [
+        981
+      ],
+      "labels": [
+        "bug",
+        "frontend",
+        "podcasts"
+      ],
+      "priority": 13
+    },
+    {
+      "issue_number": 985,
+      "title": "[Podcasts] Fix Spotify podcast auto-detection for shows and episodes",
+      "status": "available",
+      "dependencies": [],
+      "labels": [
+        "bug",
+        "backend",
+        "podcasts"
+      ],
+      "priority": 14
     }
   ]
 }
