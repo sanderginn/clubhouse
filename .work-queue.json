@@ -64,6 +64,7 @@
     898,
     899,
     900,
+    901,
     948,
     949,
     950,
@@ -1262,7 +1263,7 @@
     {
       "issue_number": 901,
       "title": "[Podcasts] Build Podcasts top widget (mixed recent + section saved view)",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         894,
         895,
@@ -1277,7 +1278,9 @@
       "assigned_to": "agent-1770717118-71149",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770717118-71149",
       "branch": "feat/issue-901-podcasts-build-podcasts-top-widget-mixed",
-      "claimed_at": "2026-02-10T09:51:58Z"
+      "claimed_at": "2026-02-10T09:51:58Z",
+      "pr_number": 970,
+      "completed_at": "2026-02-10T10:13:05Z"
     },
     {
       "issue_number": 902,
