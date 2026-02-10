@@ -173,7 +173,7 @@
     {
       "issue_number": 1004,
       "title": "[Books] Fix book stats (saved/read) not appearing on new posts until reload (regression)",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         1001
       ],
@@ -182,7 +182,11 @@
         "frontend",
         "books"
       ],
-      "priority": 5
+      "priority": 5,
+      "assigned_to": "agent-1770741186-18230",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770741186-18230",
+      "branch": "fix/issue-1004-books-fix-book-stats-savedread-not-appea",
+      "claimed_at": "2026-02-10T16:33:06Z"
     },
     {
       "issue_number": 1005,
