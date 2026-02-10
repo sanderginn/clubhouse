@@ -26,6 +26,7 @@
     860,
     861,
     863,
+    864,
     868,
     876,
     877,
@@ -466,7 +467,7 @@
     {
       "issue_number": 864,
       "title": "[Books] Add book stats to post responses",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         860,
         861
@@ -480,7 +481,9 @@
       "assigned_to": "agent-1770697768-22942",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770697768-22942",
       "branch": "feat/issue-864-books-add-book-stats-to-post-responses",
-      "claimed_at": "2026-02-10T04:29:28Z"
+      "claimed_at": "2026-02-10T04:29:28Z",
+      "pr_number": 930,
+      "completed_at": "2026-02-10T04:42:34Z"
     },
     {
       "issue_number": 865,
