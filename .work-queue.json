@@ -30,6 +30,7 @@
     864,
     865,
     866,
+    867,
     868,
     876,
     877,
@@ -543,7 +544,7 @@
     {
       "issue_number": 867,
       "title": "[Books] Create bookStore",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         866
       ],
@@ -556,7 +557,9 @@
       "assigned_to": "agent-1770706700-78076",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770706700-78076",
       "branch": "feat/issue-867-books-create-bookstore",
-      "claimed_at": "2026-02-10T06:58:20Z"
+      "claimed_at": "2026-02-10T06:58:20Z",
+      "pr_number": 939,
+      "completed_at": "2026-02-10T07:27:49Z"
     },
     {
       "issue_number": 868,
