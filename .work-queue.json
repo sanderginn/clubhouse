@@ -164,14 +164,18 @@
     {
       "issue_number": 1005,
       "title": "[Podcasts] Fix Recent section in PodcastsTopContainer empty until page refresh (regression)",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "bug",
         "frontend",
         "podcasts"
       ],
-      "priority": 6
+      "priority": 6,
+      "assigned_to": "agent-1770739041-78355",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770739041-78355",
+      "branch": "fix/issue-1005-podcasts-fix-recent-section-in-podcastst",
+      "claimed_at": "2026-02-10T15:57:21Z"
     },
     {
       "issue_number": 1006,
