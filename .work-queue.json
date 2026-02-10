@@ -72,6 +72,7 @@
     951,
     972,
     973,
+    974,
     975,
     976,
     977,
@@ -1437,7 +1438,7 @@
     {
       "issue_number": 974,
       "title": "[Books] Fix book stats (saved/read) not updating until page reload",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -1448,7 +1449,9 @@
       "assigned_to": "agent-1770727462-17129",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770727462-17129",
       "branch": "fix/issue-974-books-fix-book-stats-savedread-not-updat",
-      "claimed_at": "2026-02-10T12:44:22Z"
+      "claimed_at": "2026-02-10T12:44:22Z",
+      "pr_number": 995,
+      "completed_at": "2026-02-10T14:05:25Z"
     },
     {
       "issue_number": 975,
