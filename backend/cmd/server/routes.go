@@ -11,6 +11,8 @@ type authMiddleware = middleware.Middleware
 
 type postRouteDeps struct {
 	getThread               http.HandlerFunc
+	createQuote             http.HandlerFunc
+	getPostQuotes           http.HandlerFunc
 	restorePost             http.HandlerFunc
 	addHighlightReaction    http.HandlerFunc
 	getHighlightReactions   http.HandlerFunc
@@ -48,6 +50,16 @@ func newPostRouteHandler(requireAuth authMiddleware, requireAuthCSRF authMiddlew
 		// Check if this is a thread comments request (GET /api/v1/posts/{id}/comments)
 		if r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/comments") {
 			requireAuth(http.HandlerFunc(deps.getThread)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodPost && isPostQuoteCollectionPath(r.URL.Path) {
+			// POST /api/v1/posts/{id}/quotes
+			requireAuthCSRF(http.HandlerFunc(deps.createQuote)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodGet && isPostQuoteCollectionPath(r.URL.Path) {
+			// GET /api/v1/posts/{id}/quotes
+			requireAuth(http.HandlerFunc(deps.getPostQuotes)).ServeHTTP(w, r)
 			return
 		}
 		if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/restore") {
@@ -221,6 +233,11 @@ type bookshelfRouteDeps struct {
 	deleteCategory    http.HandlerFunc
 }
 
+type bookQuoteRouteDeps struct {
+	updateQuote http.HandlerFunc
+	deleteQuote http.HandlerFunc
+}
+
 func newSectionRouteHandler(requireAuth authMiddleware, deps sectionRouteDeps) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.URL.Path, "/links") {
@@ -284,6 +301,28 @@ func registerReadHistoryRoute(mux *http.ServeMux, requireAuth authMiddleware, ge
 	mux.Handle("/api/v1/read-history", requireAuth(http.HandlerFunc(getReadHistory)))
 }
 
+func registerBookQuoteRoutes(
+	mux *http.ServeMux,
+	requireAuthCSRF authMiddleware,
+	deps bookQuoteRouteDeps,
+) {
+	mux.Handle("/api/v1/quotes/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !isQuoteIDPath(r.URL.Path) {
+			writeJSONBytes(r.Context(), w, http.StatusNotFound, []byte(`{"error":"Not found","code":"NOT_FOUND"}`))
+			return
+		}
+		if r.Method == http.MethodPut {
+			requireAuthCSRF(http.HandlerFunc(deps.updateQuote)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodDelete {
+			requireAuthCSRF(http.HandlerFunc(deps.deleteQuote)).ServeHTTP(w, r)
+			return
+		}
+		writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+	}))
+}
+
 func isPostIDPath(path string) bool {
 	trimmed := strings.TrimSuffix(path, "/")
 	parts := strings.Split(trimmed, "/")
@@ -293,9 +332,36 @@ func isPostIDPath(path string) bool {
 	return parts[1] == "api" && parts[2] == "v1" && parts[3] == "posts" && parts[4] != ""
 }
 
+func isPostQuoteCollectionPath(path string) bool {
+	trimmed := strings.TrimSuffix(path, "/")
+	parts := strings.Split(trimmed, "/")
+	if len(parts) != 6 {
+		return false
+	}
+	return parts[1] == "api" && parts[2] == "v1" && parts[3] == "posts" && parts[4] != "" && parts[5] == "quotes"
+}
+
 func isHighlightReactionPath(path string) bool {
 	trimmed := strings.TrimSuffix(path, "/")
 	return strings.Contains(trimmed, "/highlights/") && strings.HasSuffix(trimmed, "/reactions")
+}
+
+func isQuoteIDPath(path string) bool {
+	trimmed := strings.TrimSuffix(path, "/")
+	parts := strings.Split(trimmed, "/")
+	if len(parts) != 5 {
+		return false
+	}
+	return parts[1] == "api" && parts[2] == "v1" && parts[3] == "quotes" && parts[4] != ""
+}
+
+func isUserQuoteCollectionPath(path string) bool {
+	trimmed := strings.TrimSuffix(path, "/")
+	parts := strings.Split(trimmed, "/")
+	if len(parts) != 6 {
+		return false
+	}
+	return parts[1] == "api" && parts[2] == "v1" && parts[3] == "users" && parts[4] != "" && parts[4] != "me" && parts[5] == "quotes"
 }
 
 func isCommentIDPath(path string) bool {

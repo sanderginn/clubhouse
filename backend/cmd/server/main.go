@@ -170,6 +170,8 @@ func main() {
 	watchLogHandler := handlers.NewWatchLogHandler(dbConn, redisConn)
 	readLogService := services.NewReadLogService(dbConn)
 	readLogHandler := handlers.NewReadLogHandler(readLogService)
+	bookQuoteService := services.NewBookQuoteService(dbConn)
+	bookQuoteHandler := handlers.NewBookQuoteHandler(bookQuoteService)
 	bookshelfService := services.NewBookshelfService(dbConn)
 	bookshelfHandler := handlers.NewBookshelfHandler(bookshelfService)
 	userHandler := handlers.NewUserHandler(dbConn)
@@ -260,7 +262,11 @@ func main() {
 			return
 		}
 		// GET /api/v1/users/{id}/posts
-		if r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/posts") {
+		if r.Method == http.MethodGet && isUserQuoteCollectionPath(r.URL.Path) {
+			quotesHandler := middleware.RequireAuth(redisConn, dbConn)(http.HandlerFunc(bookQuoteHandler.GetUserQuotes))
+			quotesHandler.ServeHTTP(w, r)
+		} else if r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/posts") {
+			// GET /api/v1/users/{id}/posts
 			postsHandler := middleware.RequireAuth(redisConn, dbConn)(http.HandlerFunc(userHandler.GetUserPosts))
 			postsHandler.ServeHTTP(w, r)
 		} else if r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/comments") {
@@ -311,6 +317,8 @@ func main() {
 	// Post routes - route to appropriate handler
 	postRouteHandler := newPostRouteHandler(requireAuth, requireAuthCSRF, postRouteDeps{
 		getThread:               commentHandler.GetThread,
+		createQuote:             bookQuoteHandler.CreateQuote,
+		getPostQuotes:           bookQuoteHandler.GetPostQuotes,
 		restorePost:             postHandler.RestorePost,
 		addHighlightReaction:    highlightReactionHandler.AddHighlightReaction,
 		getHighlightReactions:   highlightReactionHandler.GetHighlightReactions,
@@ -416,6 +424,10 @@ func main() {
 		reorderCategories: bookshelfHandler.ReorderCategories,
 		updateCategory:    bookshelfHandler.UpdateCategory,
 		deleteCategory:    bookshelfHandler.DeleteCategory,
+	})
+	registerBookQuoteRoutes(mux, requireAuthCSRF, bookQuoteRouteDeps{
+		updateQuote: bookQuoteHandler.UpdateQuote,
+		deleteQuote: bookQuoteHandler.DeleteQuote,
 	})
 
 	// Search routes (protected)

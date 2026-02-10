@@ -1583,3 +1583,187 @@ func TestRegisterReadHistoryRouteRequiresAuth(t *testing.T) {
 		t.Fatal("expected auth middleware to be called")
 	}
 }
+
+func TestPostRouteHandlerCreateQuoteUsesCSRFAuth(t *testing.T) {
+	authCalled := false
+	createQuoteCalled := false
+
+	requireAuth := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("requireAuth should not be called for quote creation")
+		})
+	}
+	requireAuthCSRF := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authCalled = true
+			next.ServeHTTP(w, r)
+		})
+	}
+
+	handler := newPostRouteHandler(requireAuth, requireAuthCSRF, postRouteDeps{
+		createQuote: func(w http.ResponseWriter, r *http.Request) {
+			createQuoteCalled = true
+			w.WriteHeader(http.StatusCreated)
+		},
+	})
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/posts/"+uuid.New().String()+"/quotes", nil)
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d", http.StatusCreated, rr.Code)
+	}
+	if !authCalled {
+		t.Fatal("expected CSRF auth middleware to be called")
+	}
+	if !createQuoteCalled {
+		t.Fatal("expected createQuote handler to be called")
+	}
+}
+
+func TestPostRouteHandlerGetPostQuotesUsesAuth(t *testing.T) {
+	authCalled := false
+	getQuotesCalled := false
+
+	requireAuth := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authCalled = true
+			next.ServeHTTP(w, r)
+		})
+	}
+	requireAuthCSRF := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("requireAuthCSRF should not be called for quote listing")
+		})
+	}
+
+	handler := newPostRouteHandler(requireAuth, requireAuthCSRF, postRouteDeps{
+		getPostQuotes: func(w http.ResponseWriter, r *http.Request) {
+			getQuotesCalled = true
+			w.WriteHeader(http.StatusOK)
+		},
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/posts/"+uuid.New().String()+"/quotes", nil)
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, rr.Code)
+	}
+	if !authCalled {
+		t.Fatal("expected auth middleware to be called")
+	}
+	if !getQuotesCalled {
+		t.Fatal("expected getPostQuotes handler to be called")
+	}
+}
+
+func TestRegisterBookQuoteRoutesWiresHandlersAndMiddleware(t *testing.T) {
+	mux := http.NewServeMux()
+	csrfAuthCalled := false
+	calledHandler := ""
+
+	requireAuthCSRF := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			csrfAuthCalled = true
+			next.ServeHTTP(w, r)
+		})
+	}
+
+	handler := func(name string, status int) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			calledHandler = name
+			w.WriteHeader(status)
+		}
+	}
+
+	registerBookQuoteRoutes(mux, requireAuthCSRF, bookQuoteRouteDeps{
+		updateQuote: handler("updateQuote", http.StatusOK),
+		deleteQuote: handler("deleteQuote", http.StatusNoContent),
+	})
+
+	tests := []struct {
+		name               string
+		method             string
+		path               string
+		expectedStatus     int
+		expectedHandler    string
+		expectAuthWithCSRF bool
+	}{
+		{
+			name:               "PUT /api/v1/quotes/{id}",
+			method:             http.MethodPut,
+			path:               "/api/v1/quotes/" + uuid.New().String(),
+			expectedStatus:     http.StatusOK,
+			expectedHandler:    "updateQuote",
+			expectAuthWithCSRF: true,
+		},
+		{
+			name:               "DELETE /api/v1/quotes/{id}",
+			method:             http.MethodDelete,
+			path:               "/api/v1/quotes/" + uuid.New().String(),
+			expectedStatus:     http.StatusNoContent,
+			expectedHandler:    "deleteQuote",
+			expectAuthWithCSRF: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			csrfAuthCalled = false
+			calledHandler = ""
+
+			req := httptest.NewRequest(tc.method, tc.path, nil)
+			rr := httptest.NewRecorder()
+			mux.ServeHTTP(rr, req)
+
+			if rr.Code != tc.expectedStatus {
+				t.Fatalf("expected status %d, got %d", tc.expectedStatus, rr.Code)
+			}
+			if calledHandler != tc.expectedHandler {
+				t.Fatalf("expected handler %q, got %q", tc.expectedHandler, calledHandler)
+			}
+			if csrfAuthCalled != tc.expectAuthWithCSRF {
+				t.Fatalf("expected CSRF auth middleware called=%t, got %t", tc.expectAuthWithCSRF, csrfAuthCalled)
+			}
+		})
+	}
+}
+
+func TestRegisterBookQuoteRoutesRejectsUnsupportedMethods(t *testing.T) {
+	mux := http.NewServeMux()
+	csrfAuthCalled := false
+
+	requireAuthCSRF := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			csrfAuthCalled = true
+			next.ServeHTTP(w, r)
+		})
+	}
+
+	registerBookQuoteRoutes(mux, requireAuthCSRF, bookQuoteRouteDeps{
+		updateQuote: func(w http.ResponseWriter, r *http.Request) { t.Fatal("unexpected updateQuote call") },
+		deleteQuote: func(w http.ResponseWriter, r *http.Request) { t.Fatal("unexpected deleteQuote call") },
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/quotes/"+uuid.New().String(), nil)
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("expected status %d, got %d", http.StatusMethodNotAllowed, rr.Code)
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if response.Code != "METHOD_NOT_ALLOWED" {
+		t.Fatalf("expected METHOD_NOT_ALLOWED code, got %q", response.Code)
+	}
+	if csrfAuthCalled {
+		t.Fatal("expected CSRF auth middleware to not be called")
+	}
+}
