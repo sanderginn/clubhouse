@@ -70,6 +70,34 @@ describe('api client', () => {
     await expect(api.get('/bad')).rejects.toThrow('An unexpected error occurred');
   });
 
+  it('surfaces podcast kind selection errors with explicit frontend flag', async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: vi.fn().mockResolvedValue({
+        error: 'podcast kind could not be detected; explicit selection required',
+        code: 'PODCAST_KIND_SELECTION_REQUIRED',
+      }),
+    });
+
+    let caught: unknown = null;
+    try {
+      await api.get('/posts');
+    } catch (error) {
+      caught = error;
+    }
+
+    const apiError = caught as Error & {
+      code?: string;
+      podcastKindSelectionRequired?: boolean;
+    };
+    expect(apiError.code).toBe('PODCAST_KIND_SELECTION_REQUIRED');
+    expect(apiError.podcastKindSelectionRequired).toBe(true);
+    expect(apiError.message).toBe(
+      'Could not determine whether this podcast link is a show or an episode. Please select one and try again.'
+    );
+  });
+
   it('includes credentials and content-type headers', async () => {
     fetchMock.mockResolvedValue({
       ok: true,
@@ -122,6 +150,85 @@ describe('api client', () => {
     expect(body.images).toEqual([{ url: '/api/v1/uploads/user-1/photo.png' }]);
     expect(response.post.createdAt).toBe('2025-01-01T00:00:00Z');
     expect(response.post.userId).toBe('user-1');
+  });
+
+  it('createPost sends podcast metadata with normalized payload shape', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/auth/csrf')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: vi.fn().mockResolvedValue({ token: 'csrf-token' }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue({
+          post: {
+            id: 'post-podcast',
+            user_id: 'user-1',
+            section_id: 'section-podcast',
+            content: 'Podcast',
+            links: [
+              {
+                id: 'link-podcast',
+                url: 'https://podcasts.apple.com/us/podcast/example/id123456789',
+                podcast: {
+                  kind: 'show',
+                  highlight_episodes: [
+                    {
+                      title: 'Episode 1',
+                      url: 'https://example.com/episode-1',
+                      note: 'Start here',
+                    },
+                  ],
+                },
+              },
+            ],
+            created_at: '2025-01-01T00:00:00Z',
+          },
+        }),
+      });
+    });
+
+    await api.createPost({
+      sectionId: 'section-podcast',
+      content: 'Podcast',
+      links: [
+        {
+          url: 'https://podcasts.apple.com/us/podcast/example/id123456789',
+          podcast: {
+            kind: ' SHOW ',
+            highlightEpisodes: [
+              {
+                title: ' Episode 1 ',
+                url: ' https://example.com/episode-1 ',
+                note: ' Start here ',
+              },
+            ],
+          },
+        },
+      ],
+    });
+
+    const postCall = findCall('/posts');
+    const body = JSON.parse(postCall?.[1]?.body as string);
+    expect(body.links).toEqual([
+      {
+        url: 'https://podcasts.apple.com/us/podcast/example/id123456789',
+        podcast: {
+          kind: 'show',
+          highlight_episodes: [
+            {
+              title: 'Episode 1',
+              url: 'https://example.com/episode-1',
+              note: 'Start here',
+            },
+          ],
+        },
+      },
+    ]);
   });
 
   it('getPost maps fields', async () => {

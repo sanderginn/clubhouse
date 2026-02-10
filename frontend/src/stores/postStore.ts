@@ -28,6 +28,7 @@ export interface LinkMetadata {
   type?: string;
   recipe?: RecipeMetadata;
   movie?: MovieMetadata;
+  podcast?: PodcastMetadata;
 }
 
 export interface EmbedData {
@@ -93,6 +94,23 @@ export interface MovieMetadata {
   seasons?: MovieSeason[];
 }
 
+export interface PodcastHighlightEpisode {
+  title: string;
+  url: string;
+  note?: string;
+}
+
+export interface PodcastMetadata {
+  kind?: 'show' | 'episode';
+  highlightEpisodes?: PodcastHighlightEpisode[];
+}
+
+export interface PodcastMetadataInput {
+  kind?: string;
+  highlightEpisodes?: PodcastHighlightEpisode[];
+  highlight_episodes?: PodcastHighlightEpisode[];
+}
+
 export interface PostImage {
   id: string;
   url: string;
@@ -156,7 +174,7 @@ export interface Post {
 export interface CreatePostRequest {
   sectionId: string;
   content: string;
-  links?: { url: string; highlights?: Highlight[] }[];
+  links?: { url: string; highlights?: Highlight[]; podcast?: PodcastMetadataInput }[];
   images?: { url: string; caption?: string; altText?: string }[];
   mentionUsernames?: string[];
 }
