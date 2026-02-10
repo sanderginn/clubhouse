@@ -57,14 +57,12 @@
   let sectionsLoadedForSession = false;
   let popstateHandler: (() => void) | null = null;
   let pendingSectionIdentifier: string | null = null;
-  let pendingSectionSubview: 'feed' = 'feed';
   let pendingThreadPostId: string | null = null;
   let pendingLegacyWatchlistRoute = false;
   let pendingLegacyBookshelfRoute = false;
   let pendingAdminPath = false;
   let sectionNotFound: string | null = null;
   let highlightCommentId: string | null = null;
-  let sectionSubview: 'feed' = 'feed';
   const LEGACY_BOOKSHELF_PATH = '/bookshelf';
 
   function isWatchlistSection(section: Pick<Section, 'type'> | null): boolean {
@@ -129,13 +127,11 @@
       unauthRoute = 'reset';
       resetToken = token;
       pendingSectionIdentifier = null;
-      pendingSectionSubview = 'feed';
       pendingThreadPostId = null;
       pendingLegacyWatchlistRoute = false;
       pendingLegacyBookshelfRoute = false;
       pendingAdminPath = false;
       highlightCommentId = null;
-      sectionSubview = 'feed';
       return;
     }
     if (isWatchlistPath(path)) {
@@ -143,7 +139,6 @@
       resetToken = null;
       threadRouteStore.clearTarget();
       pendingSectionIdentifier = null;
-      pendingSectionSubview = 'feed';
       pendingThreadPostId = null;
       pendingLegacyWatchlistRoute = false;
       pendingLegacyBookshelfRoute = false;
@@ -156,10 +151,8 @@
         (isWatchlistSection(get(activeSection)) ? get(activeSection) : null);
       if (preferredSection) {
         sectionStore.setActiveSection(preferredSection);
-        sectionSubview = 'feed';
         replacePath(buildFeedHref(getSectionSlug(preferredSection)));
       } else {
-        sectionSubview = 'feed';
         pendingLegacyWatchlistRoute = true;
       }
       return;
@@ -169,13 +162,11 @@
       resetToken = null;
       threadRouteStore.clearTarget();
       pendingSectionIdentifier = null;
-      pendingSectionSubview = 'feed';
       pendingThreadPostId = null;
       pendingLegacyWatchlistRoute = false;
       pendingLegacyBookshelfRoute = false;
       pendingAdminPath = false;
       highlightCommentId = null;
-      sectionSubview = 'feed';
       uiStore.setActiveView('feed');
       const availableSections = get(sections);
       const preferredBooksSection =
@@ -194,25 +185,21 @@
       uiStore.openProfile(profileUserId);
       threadRouteStore.clearTarget();
       pendingSectionIdentifier = null;
-      pendingSectionSubview = 'feed';
       pendingThreadPostId = null;
       pendingLegacyWatchlistRoute = false;
       pendingLegacyBookshelfRoute = false;
       pendingAdminPath = false;
       highlightCommentId = null;
-      sectionSubview = 'feed';
     } else {
       const standaloneThreadPostId = parseStandaloneThreadPostId(path);
       if (standaloneThreadPostId) {
         uiStore.setActiveView('thread');
         threadRouteStore.setTarget(standaloneThreadPostId, null);
         pendingSectionIdentifier = null;
-        pendingSectionSubview = 'feed';
         pendingThreadPostId = null;
         pendingLegacyWatchlistRoute = false;
         pendingLegacyBookshelfRoute = false;
         pendingAdminPath = false;
-        sectionSubview = 'feed';
         return;
       }
       const threadPostId = parseThreadPostId(path);
@@ -234,7 +221,6 @@
           pendingThreadPostId = threadPostId;
           threadRouteStore.setTarget(threadPostId, null);
         }
-        sectionSubview = 'feed';
       } else {
         threadRouteStore.clearTarget();
         highlightCommentId = null;
@@ -247,7 +233,6 @@
           if (match) {
             sectionStore.setActiveSection(match);
             const slug = getSectionSlug(match);
-            sectionSubview = 'feed';
             if (wantsSectionWatchlist) {
               replacePath(buildFeedHref(slug));
             } else if (sectionIdentifier !== slug) {
@@ -258,13 +243,10 @@
             }
           } else {
             sectionNotFound = sectionIdentifier;
-            sectionSubview = 'feed';
           }
           pendingSectionIdentifier = null;
-          pendingSectionSubview = 'feed';
         } else {
           pendingSectionIdentifier = sectionIdentifier;
-          pendingSectionSubview = 'feed';
         }
         pendingLegacyWatchlistRoute = false;
         pendingLegacyBookshelfRoute = false;
@@ -272,7 +254,6 @@
         uiStore.setActiveView(threadPostId ? 'thread' : 'feed');
       } else if (isSettingsPath(path)) {
         pendingSectionIdentifier = null;
-        pendingSectionSubview = 'feed';
         pendingThreadPostId = null;
         pendingLegacyWatchlistRoute = false;
         pendingLegacyBookshelfRoute = false;
@@ -280,15 +261,12 @@
         threadRouteStore.clearTarget();
         uiStore.setActiveView('settings');
         highlightCommentId = null;
-        sectionSubview = 'feed';
       } else if (isAdminPath(path)) {
         pendingSectionIdentifier = null;
-        pendingSectionSubview = 'feed';
         pendingThreadPostId = null;
         pendingLegacyWatchlistRoute = false;
         pendingLegacyBookshelfRoute = false;
         highlightCommentId = null;
-        sectionSubview = 'feed';
         if (get(authStore).isLoading) {
           pendingAdminPath = true;
           return;
@@ -306,14 +284,12 @@
         }
       } else {
         pendingSectionIdentifier = null;
-        pendingSectionSubview = 'feed';
         pendingThreadPostId = null;
         pendingLegacyWatchlistRoute = false;
         pendingLegacyBookshelfRoute = false;
         pendingAdminPath = false;
         uiStore.setActiveView('feed');
         highlightCommentId = null;
-        sectionSubview = 'feed';
       }
     }
     resetToken = null;
@@ -344,26 +320,22 @@
     if (match) {
       sectionStore.setActiveSection(match);
       if (pendingThreadPostId) {
-        sectionSubview = 'feed';
         threadRouteStore.setTarget(pendingThreadPostId, match.id);
         uiStore.setActiveView('thread');
         replacePath(buildThreadHref(getSectionSlug(match), pendingThreadPostId));
         pendingThreadPostId = null;
       } else if (!hasThreadTarget) {
-        sectionSubview = 'feed';
         uiStore.setActiveView('feed');
         replacePath(buildFeedHref(getSectionSlug(match)));
       }
     } else {
       sectionNotFound = pendingSectionIdentifier;
-      sectionSubview = 'feed';
       if (pendingThreadPostId) {
         threadRouteStore.clearTarget();
         pendingThreadPostId = null;
       }
     }
     pendingSectionIdentifier = null;
-    pendingSectionSubview = 'feed';
   }
 
   $: if (pendingLegacyWatchlistRoute && $sections.length > 0) {
@@ -371,11 +343,9 @@
     pendingLegacyWatchlistRoute = false;
     if (preferred) {
       sectionStore.setActiveSection(preferred);
-      sectionSubview = 'feed';
       uiStore.setActiveView('feed');
       replacePath(buildFeedHref(getSectionSlug(preferred)));
     } else {
-      sectionSubview = 'feed';
       const fallbackSection = $activeSection ?? $sections[0] ?? null;
       replacePath(buildFeedHref(fallbackSection ? getSectionSlug(fallbackSection) : null));
     }
@@ -386,11 +356,9 @@
     pendingLegacyBookshelfRoute = false;
     if (preferred) {
       sectionStore.setActiveSection(preferred);
-      sectionSubview = 'feed';
       uiStore.setActiveView('feed');
       replacePath(buildFeedHref(getSectionSlug(preferred)));
     } else {
-      sectionSubview = 'feed';
       const fallbackSection = $activeSection ?? $sections[0] ?? null;
       replacePath(buildFeedHref(fallbackSection ? getSectionSlug(fallbackSection) : null));
     }
@@ -432,7 +400,6 @@
       if ($activeSection?.id !== preferredSection.id) {
         sectionStore.setActiveSection(preferredSection);
       }
-      sectionSubview = 'feed';
       if ($activeView !== 'feed') {
         uiStore.setActiveView('feed');
       }
