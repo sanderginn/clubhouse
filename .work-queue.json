@@ -1240,7 +1240,7 @@
     {
       "issue_number": 900,
       "title": "[Podcasts] Add save-for-later button to podcast posts",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         898,
         899
@@ -1250,7 +1250,11 @@
         "frontend",
         "podcasts"
       ],
-      "priority": 108
+      "priority": 108,
+      "assigned_to": "agent-1770717110-70973",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770717110-70973",
+      "branch": "feat/issue-900-podcasts-add-saveforlater-button-to-podc",
+      "claimed_at": "2026-02-10T09:51:50Z"
     },
     {
       "issue_number": 901,
