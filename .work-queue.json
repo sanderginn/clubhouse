@@ -30,6 +30,7 @@
     868,
     876,
     877,
+    878,
     883,
     884
   ],
@@ -698,7 +699,7 @@
     {
       "issue_number": 878,
       "title": "[Books] Create book quote service",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         877
       ],
@@ -711,7 +712,9 @@
       "assigned_to": "agent-1770697104-9797",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770697104-9797",
       "branch": "feat/issue-878-books-create-book-quote-service",
-      "claimed_at": "2026-02-10T04:18:24Z"
+      "claimed_at": "2026-02-10T04:18:24Z",
+      "pr_number": 929,
+      "completed_at": "2026-02-10T04:47:08Z"
     },
     {
       "issue_number": 879,
