@@ -86,6 +86,7 @@
     985,
     1000,
     1002,
+    1003,
     1005,
     1007
   ],
@@ -148,7 +149,7 @@
     {
       "issue_number": 1003,
       "title": "[Movies/Series] Fix incorrect IMDB link resolution for some URLs",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         1002
       ],
@@ -161,7 +162,9 @@
       "assigned_to": "agent-1770740340-5688",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770740340-5688",
       "branch": "fix/issue-1003-moviesseries-fix-incorrect-imdb-link-res",
-      "claimed_at": "2026-02-10T16:19:00Z"
+      "claimed_at": "2026-02-10T16:19:00Z",
+      "pr_number": 1012,
+      "completed_at": "2026-02-10T16:27:42Z"
     },
     {
       "issue_number": 1004,
