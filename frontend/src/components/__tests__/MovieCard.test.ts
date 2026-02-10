@@ -106,10 +106,16 @@ describe('MovieCard', () => {
     expect(screen.getByTestId('movie-genres')).toHaveTextContent('Drama');
     expect(screen.getByTestId('movie-genres')).toHaveTextContent('Adventure');
     expect(screen.getByTestId('movie-genres')).toHaveTextContent('+1');
-    expect(screen.getByTestId('movie-tmdb-link')).toHaveAttribute(
-      'href',
-      'https://www.themoviedb.org/movie/157336'
+    const tmdbLink = screen.getByTestId('movie-tmdb-link');
+    expect(tmdbLink).toHaveAttribute('href', 'https://www.themoviedb.org/movie/157336');
+    expect(tmdbLink).toHaveClass(
+      'rounded-md',
+      'border',
+      'bg-slate-50',
+      'text-sm',
+      'focus-visible:outline'
     );
+    expect(screen.getByRole('link', { name: /view interstellar on tmdb/i })).toBe(tmdbLink);
     expect(screen.queryByTestId('movie-expanded-content')).not.toBeInTheDocument();
   });
 
