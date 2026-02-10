@@ -435,7 +435,7 @@
     {
       "issue_number": 863,
       "title": "[Books] Create read log handler",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         861
       ],
@@ -444,7 +444,11 @@
         "backend",
         "books"
       ],
-      "priority": 71
+      "priority": 71,
+      "assigned_to": "agent-1770696575-98282",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770696575-98282",
+      "branch": "feat/issue-863-books-create-read-log-handler",
+      "claimed_at": "2026-02-10T04:09:35Z"
     },
     {
       "issue_number": 864,
