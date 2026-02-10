@@ -608,6 +608,44 @@ describe('PostForm', () => {
     });
   });
 
+  it('serializes explicit episode kind without highlighted episodes', async () => {
+    setAuthenticated();
+    setActiveSection('podcast');
+    previewLink.mockResolvedValue({
+      metadata: {
+        url: 'https://example.com/podcast-episode',
+        title: 'Example Episode',
+      },
+    });
+    createPost.mockResolvedValue({
+      post: { id: 'post-1', userId: 'user-1', sectionId: 'section-1', content: '', createdAt: 'now' },
+    });
+
+    const { container } = render(PostForm);
+    const addLinkButton = screen.getByLabelText('Add link');
+    await fireEvent.click(addLinkButton);
+
+    const linkInput = screen.getByLabelText('Link URL');
+    await fireEvent.input(linkInput, { target: { value: 'example.com/podcast-episode' } });
+    await fireEvent.keyDown(linkInput, { key: 'Enter' });
+    await tick();
+
+    await fireEvent.change(screen.getByLabelText('Podcast kind'), { target: { value: 'episode' } });
+    await tick();
+
+    const form = container.querySelector('form');
+    if (!form) throw new Error('form not found');
+    await fireEvent.submit(form);
+    await tick();
+
+    expect(createPost).toHaveBeenCalledWith({
+      sectionId: 'section-1',
+      content: '',
+      links: [{ url: 'https://example.com/podcast-episode', podcast: { kind: 'episode' } }],
+      mentionUsernames: [],
+    });
+  });
+
   it('handles file attachments', async () => {
     setAuthenticated();
     setActiveSection();
