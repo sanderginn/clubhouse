@@ -45,6 +45,7 @@
     879,
     880,
     881,
+    882,
     883,
     884,
     885,
@@ -874,7 +875,7 @@
     {
       "issue_number": 882,
       "title": "[Books] Create QuoteList and integrate into book thread",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         881,
         873
@@ -888,7 +889,9 @@
       "assigned_to": "agent-1770715913-40836",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770715913-40836",
       "branch": "feat/issue-882-books-create-quotelist-and-integrate-int",
-      "claimed_at": "2026-02-10T09:31:53Z"
+      "claimed_at": "2026-02-10T09:31:53Z",
+      "pr_number": 965,
+      "completed_at": "2026-02-10T09:46:09Z"
     },
     {
       "issue_number": 883,
