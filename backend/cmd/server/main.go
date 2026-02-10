@@ -170,6 +170,8 @@ func main() {
 	watchLogHandler := handlers.NewWatchLogHandler(dbConn, redisConn)
 	readLogService := services.NewReadLogService(dbConn)
 	readLogHandler := handlers.NewReadLogHandler(readLogService)
+	bookshelfService := services.NewBookshelfService(dbConn)
+	bookshelfHandler := handlers.NewBookshelfHandler(bookshelfService)
 	userHandler := handlers.NewUserHandler(dbConn)
 	sectionHandler := handlers.NewSectionHandler(dbConn)
 	searchHandler := handlers.NewSearchHandler(dbConn)
@@ -322,6 +324,8 @@ func main() {
 		addToWatchlist:          watchlistHandler.AddToWatchlist,
 		removeFromWatchlist:     watchlistHandler.RemoveFromWatchlist,
 		getPostWatchlistInfo:    watchlistHandler.GetPostWatchlistInfo,
+		addToBookshelf:          bookshelfHandler.AddToBookshelf,
+		removeFromBookshelf:     bookshelfHandler.RemoveFromBookshelf,
 		logCook:                 cookLogHandler.LogCook,
 		updateCookLog:           cookLogHandler.UpdateCookLog,
 		removeCookLog:           cookLogHandler.RemoveCookLog,
@@ -398,6 +402,39 @@ func main() {
 		}
 		if r.Method == http.MethodDelete {
 			requireAuthCSRF(http.HandlerFunc(watchlistHandler.DeleteWatchlistCategory)).ServeHTTP(w, r)
+			return
+		}
+		writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+	}))
+
+	// Bookshelf routes (protected)
+	mux.Handle("/api/v1/bookshelf", requireAuth(http.HandlerFunc(bookshelfHandler.GetMyBookshelf)))
+	mux.Handle("/api/v1/bookshelf/all", requireAuth(http.HandlerFunc(bookshelfHandler.GetAllBookshelf)))
+	mux.Handle("/api/v1/bookshelf/categories", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			requireAuth(http.HandlerFunc(bookshelfHandler.ListCategories)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodPost {
+			requireAuthCSRF(http.HandlerFunc(bookshelfHandler.CreateCategory)).ServeHTTP(w, r)
+			return
+		}
+		writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+	}))
+	mux.Handle("/api/v1/bookshelf/categories/reorder", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			requireAuthCSRF(http.HandlerFunc(bookshelfHandler.ReorderCategories)).ServeHTTP(w, r)
+			return
+		}
+		writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+	}))
+	mux.Handle("/api/v1/bookshelf/categories/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPut {
+			requireAuthCSRF(http.HandlerFunc(bookshelfHandler.UpdateCategory)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodDelete {
+			requireAuthCSRF(http.HandlerFunc(bookshelfHandler.DeleteCategory)).ServeHTTP(w, r)
 			return
 		}
 		writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))

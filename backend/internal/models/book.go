@@ -75,9 +75,35 @@ type AddToBookshelfRequest struct {
 	Categories []string `json:"categories,omitempty"`
 }
 
+// ReorderBookshelfCategoriesRequest represents the request body for reordering categories.
+type ReorderBookshelfCategoriesRequest struct {
+	CategoryIDs []uuid.UUID `json:"category_ids"`
+}
+
 // BookshelfResponse represents bookshelf items grouped by category.
 type BookshelfResponse struct {
 	Categories []BookshelfCategoryGroup `json:"categories"`
+}
+
+// CreateBookshelfCategoryResponse represents the response for creating a bookshelf category.
+type CreateBookshelfCategoryResponse struct {
+	Category BookshelfCategory `json:"category"`
+}
+
+// UpdateBookshelfCategoryResponse represents the response for updating a bookshelf category.
+type UpdateBookshelfCategoryResponse struct {
+	Category BookshelfCategory `json:"category"`
+}
+
+// ListBookshelfCategoriesResponse represents the response for listing bookshelf categories.
+type ListBookshelfCategoriesResponse struct {
+	Categories []BookshelfCategory `json:"categories"`
+}
+
+// ListBookshelfItemsResponse represents a paginated bookshelf item response.
+type ListBookshelfItemsResponse struct {
+	BookshelfItems []BookshelfItem `json:"bookshelf_items"`
+	NextCursor     *string         `json:"next_cursor,omitempty"`
 }
 
 // PostBookshelfInfo represents bookshelf tooltip data for a post.
