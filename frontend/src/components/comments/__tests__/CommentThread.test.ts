@@ -273,6 +273,46 @@ describe('CommentThread', () => {
     expect(screen.getByText('Image 2')).toBeInTheDocument();
   });
 
+  it('wraps spoiler comments in spoiler wrapper for book posts', () => {
+    commentStore.setThread('post-1', [
+      {
+        id: 'comment-1',
+        postId: 'post-1',
+        userId: 'user-1',
+        content: 'Darth Vader is Luke\'s father.',
+        containsSpoiler: true,
+        createdAt: 'now',
+        user: { id: 'user-1', username: 'Sander' },
+        replies: [],
+      },
+    ], null, false);
+
+    render(CommentThread, { postId: 'post-1', commentCount: 1, sectionType: 'book' });
+
+    expect(screen.getByTestId('spoiler-wrapper')).toBeInTheDocument();
+    expect(screen.getByTestId('spoiler-overlay')).toBeInTheDocument();
+  });
+
+  it('renders non-spoiler comments normally for book posts', () => {
+    commentStore.setThread('post-1', [
+      {
+        id: 'comment-1',
+        postId: 'post-1',
+        userId: 'user-1',
+        content: 'Great read.',
+        containsSpoiler: false,
+        createdAt: 'now',
+        user: { id: 'user-1', username: 'Sander' },
+        replies: [],
+      },
+    ], null, false);
+
+    render(CommentThread, { postId: 'post-1', commentCount: 1, sectionType: 'book' });
+
+    expect(screen.queryByTestId('spoiler-wrapper')).not.toBeInTheDocument();
+    expect(screen.getByText('Great read.')).toBeInTheDocument();
+  });
+
   it('saves edits with ctrl+enter', async () => {
     authStore.setUser({
       id: 'user-1',
@@ -320,6 +360,65 @@ describe('CommentThread', () => {
     expect(apiUpdateComment).toHaveBeenCalledWith('comment-1', {
       content: 'Hello',
       mentionUsernames: [],
+    });
+  });
+
+  it('prefills spoiler toggle when editing a spoiler comment in book section', async () => {
+    authStore.setUser({
+      id: 'user-1',
+      username: 'Sander',
+      email: 'sander@example.com',
+      isAdmin: false,
+      totpEnabled: false,
+    });
+
+    commentStore.setThread('post-1', [
+      {
+        id: 'comment-1',
+        postId: 'post-1',
+        userId: 'user-1',
+        content: 'Spoiler',
+        containsSpoiler: true,
+        createdAt: 'now',
+        user: { id: 'user-1', username: 'Sander' },
+        replies: [],
+      },
+    ], null, false);
+
+    apiUpdateComment.mockResolvedValue({
+      comment: {
+        id: 'comment-1',
+        postId: 'post-1',
+        userId: 'user-1',
+        content: 'Spoiler',
+        containsSpoiler: true,
+        createdAt: 'now',
+        user: { id: 'user-1', username: 'Sander' },
+        replies: [],
+      },
+    });
+
+    render(CommentThread, { postId: 'post-1', commentCount: 1, sectionType: 'book' });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+
+    const spoilerToggle = screen
+      .getAllByLabelText('Contains spoiler')
+      .find((toggle) => (toggle as HTMLInputElement).checked) as HTMLInputElement | undefined;
+    expect(spoilerToggle).toBeDefined();
+    expect(spoilerToggle?.checked).toBe(true);
+
+    const textareas = screen.getAllByRole('textbox');
+    const textarea = textareas.find((area) => area.getAttribute('rows') === '3');
+    if (!textarea) {
+      throw new Error('Edit textarea not found');
+    }
+    await fireEvent.keyDown(textarea, { key: 'Enter', ctrlKey: true });
+
+    expect(apiUpdateComment).toHaveBeenCalledWith('comment-1', {
+      content: 'Spoiler',
+      mentionUsernames: [],
+      containsSpoiler: true,
     });
   });
 

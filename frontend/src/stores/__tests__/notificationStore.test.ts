@@ -193,6 +193,8 @@ describe('notificationStore', () => {
     handleRealtimeNotification({
       id: 'notif-10',
       type: 'mention',
+      related_comment_id: 'comment-10',
+      contains_spoiler: true,
       created_at: '2026-01-05T00:00:00Z',
       read_at: null,
     });
@@ -200,6 +202,7 @@ describe('notificationStore', () => {
     const state = get(notificationStore);
     expect(state.notifications).toHaveLength(1);
     expect(state.notifications[0]?.id).toBe('notif-10');
+    expect(state.notifications[0]?.containsSpoiler).toBe(true);
     expect(state.unreadCount).toBe(1);
   });
 

@@ -201,4 +201,31 @@ describe('NotificationMenu', () => {
     expect(storeRefs.markNotificationRead).toHaveBeenCalledWith('notif-4');
     expect(routeRefs.pushPath).toHaveBeenCalledWith('/admin');
   });
+
+  it('shows [Spoiler] preview for spoiler comment notifications', async () => {
+    storeRefs.notificationStore.set({
+      ...baseState,
+      notifications: [
+        {
+          id: 'notif-5',
+          type: 'new_comment',
+          relatedPostId: 'post-1',
+          relatedCommentId: 'comment-1',
+          containsSpoiler: true,
+          contentExcerpt: 'Bruce Willis was dead the whole time.',
+          createdAt: '2026-02-01T00:00:00Z',
+          readAt: null,
+        },
+      ],
+      unreadCount: 1,
+    });
+
+    render(NotificationMenu);
+
+    await fireEvent.click(screen.getByLabelText('Toggle notifications'));
+    await tick();
+
+    expect(screen.getByText('[Spoiler]')).toBeInTheDocument();
+    expect(screen.queryByText('Bruce Willis was dead the whole time.')).not.toBeInTheDocument();
+  });
 });

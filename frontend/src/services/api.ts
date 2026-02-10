@@ -1114,6 +1114,7 @@ class ApiClient {
       parent_comment_id: data.parentCommentId,
       image_id: data.imageId,
       content: data.content,
+      contains_spoiler: data.containsSpoiler,
       timestamp_seconds: data.timestampSeconds,
       links: data.links,
       mention_usernames: data.mentionUsernames ?? [],
@@ -1136,10 +1137,16 @@ class ApiClient {
 
   async updateComment(
     commentId: string,
-    data: { content: string; links?: { url: string }[] | null; mentionUsernames?: string[] }
+    data: {
+      content: string;
+      containsSpoiler?: boolean;
+      links?: { url: string }[] | null;
+      mentionUsernames?: string[];
+    }
   ): Promise<{ comment: Comment }> {
     const response = await this.patch<{ comment: ApiComment }>(`/comments/${commentId}`, {
       content: data.content,
+      contains_spoiler: data.containsSpoiler,
       links: data.links ?? undefined,
       mention_usernames: data.mentionUsernames ?? [],
     });

@@ -108,4 +108,37 @@ describe('ReplyForm', () => {
 
     expect(incrementSpy).not.toHaveBeenCalled();
   });
+
+  it('shows spoiler toggle for book replies and sends spoiler flag', async () => {
+    mapApiComment.mockReturnValue({
+      id: 'reply-2',
+      postId: 'post-1',
+      parentCommentId: 'comment-1',
+      userId: 'user-1',
+      content: 'Spoiler reply',
+      containsSpoiler: true,
+      createdAt: 'now',
+    });
+    createComment.mockResolvedValue({ comment: { id: 'reply-2' } });
+
+    const { container } = render(ReplyForm, {
+      postId: 'post-1',
+      parentCommentId: 'comment-1',
+      allowSpoiler: true,
+    });
+
+    const textarea = screen.getByPlaceholderText('Write a reply...');
+    await fireEvent.input(textarea, { target: { value: 'Spoiler reply' } });
+    await fireEvent.click(screen.getByLabelText('Contains spoiler'));
+
+    const form = container.querySelector('form');
+    if (!form) throw new Error('form not found');
+    await fireEvent.submit(form);
+
+    expect(createComment).toHaveBeenCalled();
+    expect(createComment.mock.calls[0][0]).toMatchObject({
+      parentCommentId: 'comment-1',
+      containsSpoiler: true,
+    });
+  });
 });

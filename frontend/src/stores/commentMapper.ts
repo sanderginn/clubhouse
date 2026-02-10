@@ -9,6 +9,7 @@ export interface ApiComment {
   parent_comment_id?: string | null;
   image_id?: string | null;
   content: string;
+  contains_spoiler?: boolean | null;
   timestamp_seconds?: number | null;
   timestamp_display?: string | null;
   links?: ApiLink[];
@@ -28,6 +29,7 @@ export function mapApiComment(apiComment: ApiComment): Comment {
     parentCommentId: apiComment.parent_comment_id ?? undefined,
     imageId: apiComment.image_id ?? undefined,
     content: apiComment.content,
+    containsSpoiler: typeof apiComment.contains_spoiler === 'boolean' ? apiComment.contains_spoiler : undefined,
     timestampSeconds: typeof apiComment.timestamp_seconds === 'number' ? apiComment.timestamp_seconds : undefined,
     timestampDisplay:
       typeof apiComment.timestamp_display === 'string' ? apiComment.timestamp_display : undefined,

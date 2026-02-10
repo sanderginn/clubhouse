@@ -8,6 +8,7 @@ export interface Comment {
   parentCommentId?: string;
   imageId?: string;
   content: string;
+  containsSpoiler?: boolean;
   timestampSeconds?: number;
   timestampDisplay?: string;
   links?: Link[];
@@ -28,6 +29,7 @@ export interface CreateCommentRequest {
   parentCommentId?: string;
   imageId?: string;
   content: string;
+  containsSpoiler?: boolean;
   timestampSeconds?: number;
   links?: { url: string }[];
   mentionUsernames?: string[];

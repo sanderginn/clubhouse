@@ -137,4 +137,43 @@ describe('CommentForm', () => {
     expect(createComment).not.toHaveBeenCalled();
     expect(screen.getByText('Enter a timestamp in mm:ss or hh:mm:ss format.')).toBeInTheDocument();
   });
+
+  it('shows spoiler toggle for book posts and sends spoiler flag', async () => {
+    mapApiComment.mockReturnValue({
+      id: 'comment-3',
+      postId: 'post-1',
+      userId: 'user-1',
+      content: 'Spoiler comment',
+      containsSpoiler: true,
+      createdAt: 'now',
+    });
+    createComment.mockResolvedValue({ comment: { id: 'comment-3' } });
+
+    const { container } = render(CommentForm, {
+      postId: 'post-1',
+      allowSpoiler: true,
+    });
+
+    const textarea = screen.getByLabelText('Add a comment');
+    await fireEvent.input(textarea, { target: { value: 'Spoiler comment' } });
+
+    const spoilerToggle = screen.getByLabelText('Contains spoiler');
+    await fireEvent.click(spoilerToggle);
+
+    const form = container.querySelector('form');
+    if (!form) throw new Error('form not found');
+    await fireEvent.submit(form);
+
+    expect(createComment).toHaveBeenCalled();
+    expect(createComment.mock.calls[0][0]).toMatchObject({
+      postId: 'post-1',
+      content: 'Spoiler comment',
+      containsSpoiler: true,
+    });
+  });
+
+  it('hides spoiler toggle for non-book posts', () => {
+    render(CommentForm, { postId: 'post-1' });
+    expect(screen.queryByLabelText('Contains spoiler')).not.toBeInTheDocument();
+  });
 });

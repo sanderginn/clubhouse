@@ -17,6 +17,8 @@
   import { formatHighlightTimestamp } from '../../lib/highlights';
   import SpotifyEmbed from '../../lib/components/embeds/SpotifyEmbed.svelte';
   import YouTubeEmbed from '../../lib/components/embeds/YouTubeEmbed.svelte';
+  import SpoilerToggle from '../books/SpoilerToggle.svelte';
+  import SpoilerWrapper from '../books/SpoilerWrapper.svelte';
 
   export let postId: string;
   export let commentCount = 0;
@@ -59,6 +61,7 @@
   let isVisible = false;
   let editingCommentId: string | null = null;
   let editCommentContent = '';
+  let editContainsSpoiler = false;
   let editMentionUsernames: string[] = [];
   let editCommentError: string | null = null;
   let isSavingComment = false;
@@ -67,6 +70,7 @@
   let lastHighlightId: string | null = null;
 
   $: isMusicPost = sectionType === 'music';
+  $: isBookPost = sectionType === 'book';
 
   const renderStart = typeof performance !== 'undefined' ? performance.now() : null;
 
@@ -166,9 +170,10 @@
     openReplies = new Set([...openReplies].filter((id) => id !== commentId));
   }
 
-  function startEdit(commentId: string, content: string) {
+  function startEdit(commentId: string, content: string, containsSpoiler = false) {
     editingCommentId = commentId;
     editCommentContent = content;
+    editContainsSpoiler = containsSpoiler;
     editMentionUsernames = [];
     editCommentError = null;
   }
@@ -176,6 +181,7 @@
   function cancelEdit() {
     editingCommentId = null;
     editCommentContent = '';
+    editContainsSpoiler = false;
     editMentionUsernames = [];
     editCommentError = null;
   }
@@ -191,12 +197,17 @@
     editCommentError = null;
 
     try {
-      const response = await api.updateComment(commentId, {
+      const payload = {
         content: trimmed,
         mentionUsernames: editMentionUsernames,
+        ...(isBookPost ? { containsSpoiler: editContainsSpoiler } : {}),
+      };
+      const response = await api.updateComment(commentId, {
+        ...payload,
       });
       commentStore.updateComment(postId, response.comment);
       editingCommentId = null;
+      editContainsSpoiler = false;
       editMentionUsernames = [];
     } catch (err) {
       editCommentError = err instanceof Error ? err.message : 'Failed to update comment';
@@ -465,7 +476,7 @@
                       <button
                         type="button"
                         class="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-                        on:click={() => startEdit(comment.id, comment.content)}
+                        on:click={() => startEdit(comment.id, comment.content, comment.containsSpoiler ?? false)}
                       >
                         <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                           <path
@@ -524,6 +535,14 @@
                     ariaLabel="Edit comment"
                     className="w-full rounded-lg border border-gray-300 p-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
+                  {#if isBookPost}
+                    <SpoilerToggle
+                      checked={editContainsSpoiler}
+                      on:change={(event) => {
+                        editContainsSpoiler = event.detail;
+                      }}
+                    />
+                  {/if}
                   {#if editCommentError}
                     <div class="text-sm text-red-600">{editCommentError}</div>
                   {/if}
@@ -547,12 +566,23 @@
                   </div>
                 </div>
               {:else}
-                <LinkifiedText
-                  text={comment.content}
-                  highlightQuery={highlightQuery}
-                  className="text-gray-800 text-sm whitespace-pre-wrap break-words"
-                  linkClassName="text-blue-600 hover:text-blue-800 underline"
-                />
+                {#if isBookPost && comment.containsSpoiler}
+                  <SpoilerWrapper isSpoiler={true}>
+                    <LinkifiedText
+                      text={comment.content}
+                      highlightQuery={highlightQuery}
+                      className="text-gray-800 text-sm whitespace-pre-wrap break-words"
+                      linkClassName="text-blue-600 hover:text-blue-800 underline"
+                    />
+                  </SpoilerWrapper>
+                {:else}
+                  <LinkifiedText
+                    text={comment.content}
+                    highlightQuery={highlightQuery}
+                    className="text-gray-800 text-sm whitespace-pre-wrap break-words"
+                    linkClassName="text-blue-600 hover:text-blue-800 underline"
+                  />
+                {/if}
               {/if}
 
               {#if deleteCommentErrors[comment.id]}
@@ -652,6 +682,7 @@
                     {postId}
                     parentCommentId={comment.id}
                     allowTimestamp={isMusicPost}
+                    allowSpoiler={isBookPost}
                     on:cancel={() => closeReply(comment.id)}
                     on:submit={() => closeReply(comment.id)}
                   />
@@ -743,7 +774,7 @@
                                 <button
                                   type="button"
                                   class="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-                                  on:click={() => startEdit(reply.id, reply.content)}
+                                  on:click={() => startEdit(reply.id, reply.content, reply.containsSpoiler ?? false)}
                                 >
                                   <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                     <path
@@ -800,6 +831,14 @@
                                 ariaLabel="Edit reply"
                                 className="w-full rounded-lg border border-gray-300 p-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                               />
+                            {#if isBookPost}
+                              <SpoilerToggle
+                                checked={editContainsSpoiler}
+                                on:change={(event) => {
+                                  editContainsSpoiler = event.detail;
+                                }}
+                              />
+                            {/if}
                             {#if editCommentError}
                               <div class="text-sm text-red-600">{editCommentError}</div>
                             {/if}
@@ -823,12 +862,23 @@
                             </div>
                           </div>
                         {:else}
-                          <LinkifiedText
-                            text={reply.content}
-                            highlightQuery={highlightQuery}
-                            className="text-gray-800 text-sm whitespace-pre-wrap break-words"
-                            linkClassName="text-blue-600 hover:text-blue-800 underline"
-                          />
+                          {#if isBookPost && reply.containsSpoiler}
+                            <SpoilerWrapper isSpoiler={true}>
+                              <LinkifiedText
+                                text={reply.content}
+                                highlightQuery={highlightQuery}
+                                className="text-gray-800 text-sm whitespace-pre-wrap break-words"
+                                linkClassName="text-blue-600 hover:text-blue-800 underline"
+                              />
+                            </SpoilerWrapper>
+                          {:else}
+                            <LinkifiedText
+                              text={reply.content}
+                              highlightQuery={highlightQuery}
+                              className="text-gray-800 text-sm whitespace-pre-wrap break-words"
+                              linkClassName="text-blue-600 hover:text-blue-800 underline"
+                            />
+                          {/if}
                           {#if deleteCommentErrors[reply.id]}
                             <div class="mt-2 text-xs text-red-600">{deleteCommentErrors[reply.id]}</div>
                           {/if}
@@ -871,6 +921,7 @@
       imageContext={imageReplyTarget}
       onClearImageContext={onClearImageReply}
       allowTimestamp={isMusicPost}
+      allowSpoiler={isBookPost}
     />
   </div>
 </div>
