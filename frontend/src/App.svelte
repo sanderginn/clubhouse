@@ -6,6 +6,7 @@
   import MusicLinksContainer from './components/MusicLinksContainer.svelte';
   import ThreadView from './components/ThreadView.svelte';
   import UserProfile from './components/UserProfile.svelte';
+  import Bookshelf from './components/books/Bookshelf.svelte';
   import Watchlist from './components/movies/Watchlist.svelte';
   import PodcastsTopContainer from './components/podcasts/PodcastsTopContainer.svelte';
   import Cookbook from './components/recipes/Cookbook.svelte';
@@ -38,6 +39,7 @@
     buildThreadHref,
     getHistoryState,
     isAdminPath,
+    isBookshelfPath,
     isSettingsPath,
     isWatchlistPath,
     parseSectionWatchlistSlug,
@@ -168,6 +170,20 @@
         sectionSubview = 'feed';
         pendingLegacyWatchlistRoute = true;
       }
+      return;
+    }
+    if (isBookshelfPath(path)) {
+      unauthRoute = 'login';
+      resetToken = null;
+      threadRouteStore.clearTarget();
+      pendingSectionIdentifier = null;
+      pendingSectionSubview = 'feed';
+      pendingThreadPostId = null;
+      pendingLegacyWatchlistRoute = false;
+      pendingAdminPath = false;
+      highlightCommentId = null;
+      sectionSubview = 'feed';
+      uiStore.setActiveView('bookshelf');
       return;
     }
     const profileUserId = parseProfileUserId(path);
@@ -414,6 +430,18 @@
     }
   }
 
+  $: if (
+    typeof window !== 'undefined' &&
+    isBookshelfPath(window.location.pathname) &&
+    $isAuthenticated
+  ) {
+    if ($activeView !== 'bookshelf') {
+      uiStore.setActiveView('bookshelf');
+    }
+    threadRouteStore.clearTarget();
+    sectionSubview = 'feed';
+  }
+
   $: if (sectionSubview === 'watchlist' && $activeSection && typeof window !== 'undefined') {
     const watchlistSlug = parseSectionWatchlistSlug(window.location.pathname);
     const isLegacyWatchlistRoute = isWatchlistPath(window.location.pathname);
@@ -428,6 +456,8 @@
   $: if (typeof document !== 'undefined') {
     if (sectionSubview === 'watchlist' && $activeSection && isWatchlistSection($activeSection)) {
       document.title = `${$activeSection.name} Watchlist - Clubhouse`;
+    } else if ($activeView === 'bookshelf') {
+      document.title = 'Bookshelf - Clubhouse';
     } else {
       document.title = 'Clubhouse';
     }
@@ -485,6 +515,8 @@
           {/if}
         {:else if $activeView === 'settings'}
           <Settings />
+        {:else if $activeView === 'bookshelf'}
+          <Bookshelf />
         {:else if sectionNotFound}
           <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h1 class="text-xl font-semibold text-gray-900 mb-2">Section not found</h1>

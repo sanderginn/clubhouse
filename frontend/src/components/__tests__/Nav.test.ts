@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, fireEvent, screen, cleanup } from '@testing-library/svelte';
+import { get } from 'svelte/store';
 import { authStore, notificationStore, sectionStore, uiStore } from '../../stores';
 
 const { default: Nav } = await import('../Nav.svelte');
@@ -75,5 +76,26 @@ describe('Nav', () => {
     render(Nav);
 
     expect(screen.queryByRole('button', { name: 'My Movies' })).not.toBeInTheDocument();
+  });
+
+  it('renders bookshelf entry for book communities and navigates to /bookshelf', async () => {
+    const pushStateSpy = vi.spyOn(window.history, 'pushState');
+    render(Nav);
+
+    const bookshelfButton = screen.getByRole('button', { name: 'Bookshelf' });
+    await fireEvent.click(bookshelfButton);
+
+    expect(get(uiStore).activeView).toBe('bookshelf');
+    expect(pushStateSpy).toHaveBeenCalledWith(null, '', '/bookshelf');
+  });
+
+  it('does not render bookshelf entry when there is no books section', () => {
+    sectionStore.setSections([
+      { id: 'section-1', name: 'Music', type: 'music', icon: '🎵', slug: 'music' },
+      { id: 'section-2', name: 'Movies', type: 'movie', icon: '🎬', slug: 'movies' },
+    ]);
+    render(Nav);
+
+    expect(screen.queryByRole('button', { name: 'Bookshelf' })).not.toBeInTheDocument();
   });
 });

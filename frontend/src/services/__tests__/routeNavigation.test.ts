@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildAdminHref,
+  buildBookshelfHref,
   buildFeedHref,
   buildSectionWatchlistHref,
   buildSectionHref,
@@ -9,6 +10,7 @@ import {
   buildWatchlistHref,
   buildThreadHref,
   isAdminPath,
+  isBookshelfPath,
   isSettingsPath,
   isWatchlistPath,
   parseSectionWatchlistSlug,
@@ -72,6 +74,13 @@ describe('routeNavigation', () => {
     expect(isWatchlistPath('/watchlist')).toBe(true);
     expect(isWatchlistPath('/watchlist/favorites')).toBe(true);
     expect(isWatchlistPath('/sections/movies')).toBe(false);
+  });
+
+  it('builds bookshelf hrefs and recognizes bookshelf paths', () => {
+    expect(buildBookshelfHref()).toBe('/bookshelf');
+    expect(isBookshelfPath('/bookshelf')).toBe(true);
+    expect(isBookshelfPath('/bookshelf/all')).toBe(true);
+    expect(isBookshelfPath('/sections/books')).toBe(false);
   });
 
   it('builds and parses section watchlist hrefs', () => {

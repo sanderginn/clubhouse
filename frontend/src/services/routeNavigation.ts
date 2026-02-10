@@ -4,6 +4,7 @@ const THREAD_PATH_SEGMENT = '/posts/';
 const ADMIN_PATH = '/admin';
 const SETTINGS_PATH = '/settings';
 const WATCHLIST_PATH = '/watchlist';
+const BOOKSHELF_PATH = '/bookshelf';
 const WATCHLIST_SEGMENT = WATCHLIST_PATH.slice(1);
 
 export type SearchHistoryState = {
@@ -104,6 +105,10 @@ export function buildWatchlistHref(): string {
   return WATCHLIST_PATH;
 }
 
+export function buildBookshelfHref(): string {
+  return BOOKSHELF_PATH;
+}
+
 export function isAdminPath(pathname: string): boolean {
   return pathname === ADMIN_PATH || pathname.startsWith(`${ADMIN_PATH}/`);
 }
@@ -114,6 +119,10 @@ export function isSettingsPath(pathname: string): boolean {
 
 export function isWatchlistPath(pathname: string): boolean {
   return pathname === WATCHLIST_PATH || pathname.startsWith(`${WATCHLIST_PATH}/`);
+}
+
+export function isBookshelfPath(pathname: string): boolean {
+  return pathname === BOOKSHELF_PATH || pathname.startsWith(`${BOOKSHELF_PATH}/`);
 }
 
 export function buildFeedHref(sectionSlug?: string | null): string {
