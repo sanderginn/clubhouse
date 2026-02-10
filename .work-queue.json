@@ -427,7 +427,7 @@
     {
       "issue_number": 862,
       "title": "[Books] Create bookshelf handler",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         860
       ],
@@ -436,7 +436,11 @@
         "backend",
         "books"
       ],
-      "priority": 70
+      "priority": 70,
+      "assigned_to": "agent-1770697766-22797",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770697766-22797",
+      "branch": "feat/issue-862-books-create-bookshelf-handler",
+      "claimed_at": "2026-02-10T04:29:26Z"
     },
     {
       "issue_number": 863,
