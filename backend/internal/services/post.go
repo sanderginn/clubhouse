@@ -590,6 +590,15 @@ func (s *PostService) GetPostByID(ctx context.Context, postID uuid.UUID, userID 
 		post.RecipeStats = recipeStats
 	}
 
+	if sectionType == "book" {
+		bookStats, err := s.getBookStats(ctx, postID, viewerID)
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+		post.BookStats = bookStats
+	}
+
 	if isMovieOrSeriesSectionType(sectionType) {
 		movieStats, err := s.getMovieStats(ctx, postID, viewerID)
 		if err != nil {
@@ -1192,6 +1201,72 @@ func (s *PostService) getRecipeStatsForPosts(ctx context.Context, postIDs []uuid
 	return stats, nil
 }
 
+func (s *PostService) getBookStats(ctx context.Context, postID uuid.UUID, viewerID *uuid.UUID) (*models.BookStats, error) {
+	statsByPost, err := s.getBookStatsForPosts(ctx, []uuid.UUID{postID}, viewerID)
+	if err != nil {
+		return nil, err
+	}
+	stats, ok := statsByPost[postID]
+	if !ok {
+		return &models.BookStats{}, nil
+	}
+	return stats, nil
+}
+
+func (s *PostService) getBookStatsForPosts(ctx context.Context, postIDs []uuid.UUID, viewerID *uuid.UUID) (map[uuid.UUID]*models.BookStats, error) {
+	ctx, span := otel.Tracer("clubhouse.posts").Start(ctx, "PostService.getBookStatsForPosts")
+	span.SetAttributes(
+		attribute.Int("post_count", len(postIDs)),
+		attribute.Bool("has_viewer_id", viewerID != nil),
+	)
+	if viewerID != nil {
+		span.SetAttributes(attribute.String("viewer_id", viewerID.String()))
+	}
+	defer span.End()
+
+	stats := make(map[uuid.UUID]*models.BookStats, len(postIDs))
+	for _, postID := range postIDs {
+		stats[postID] = &models.BookStats{}
+	}
+	if len(postIDs) == 0 {
+		return stats, nil
+	}
+
+	bookshelfService := NewBookshelfService(s.db)
+	bookshelfStatsByPost, err := bookshelfService.GetBookshelfStatsForPosts(ctx, postIDs, viewerID)
+	if err != nil {
+		recordSpanError(span, err)
+		return nil, err
+	}
+
+	readLogService := NewReadLogService(s.db)
+	readLogStatsByPost, err := readLogService.GetReadLogsForPosts(ctx, postIDs, viewerID)
+	if err != nil {
+		recordSpanError(span, err)
+		return nil, err
+	}
+
+	for postID, stat := range stats {
+		if bookshelfStat, ok := bookshelfStatsByPost[postID]; ok {
+			stat.BookshelfCount = bookshelfStat.SaveCount
+			stat.ViewerOnBookshelf = bookshelfStat.ViewerSaved
+			stat.ViewerCategories = append(stat.ViewerCategories, bookshelfStat.ViewerCategories...)
+		}
+
+		if readLogStat, ok := readLogStatsByPost[postID]; ok {
+			stat.ReadCount = readLogStat.ReadCount
+			stat.AverageRating = readLogStat.AverageRating
+			stat.ViewerRead = readLogStat.ViewerRead
+			if readLogStat.ViewerRating != nil {
+				viewerRating := *readLogStat.ViewerRating
+				stat.ViewerRating = &viewerRating
+			}
+		}
+	}
+
+	return stats, nil
+}
+
 func (s *PostService) getMovieStats(ctx context.Context, postID uuid.UUID, viewerID *uuid.UUID) (*models.MovieStats, error) {
 	statsByPost, err := s.getMovieStatsForPosts(ctx, []uuid.UUID{postID}, viewerID)
 	if err != nil {
@@ -1618,7 +1693,7 @@ func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *
 		nextCursor = &cursorStr
 	}
 
-	if len(posts) > 0 && (sectionType == "recipe" || isMovieOrSeriesSectionType(sectionType)) {
+	if len(posts) > 0 && (sectionType == "recipe" || sectionType == "book" || isMovieOrSeriesSectionType(sectionType)) {
 		postIDs := make([]uuid.UUID, 0, len(posts))
 		for _, post := range posts {
 			postIDs = append(postIDs, post.ID)
@@ -1638,6 +1713,19 @@ func (s *PostService) GetFeed(ctx context.Context, sectionID uuid.UUID, cursor *
 			for _, post := range posts {
 				if stat, ok := statsByPost[post.ID]; ok {
 					post.RecipeStats = stat
+				}
+			}
+		}
+
+		if sectionType == "book" {
+			statsByPost, err := s.getBookStatsForPosts(ctx, postIDs, viewerID)
+			if err != nil {
+				recordSpanError(span, err)
+				return nil, err
+			}
+			for _, post := range posts {
+				if stat, ok := statsByPost[post.ID]; ok {
+					post.BookStats = stat
 				}
 			}
 		}
@@ -1925,6 +2013,7 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, targetUserID uuid.UU
 
 	var posts []*models.Post
 	var recipePostIDs []uuid.UUID
+	var bookPostIDs []uuid.UUID
 	var moviePostIDs []uuid.UUID
 	for rows.Next() {
 		var post models.Post
@@ -1971,6 +2060,9 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, targetUserID uuid.UU
 
 		if sectionType == "recipe" {
 			recipePostIDs = append(recipePostIDs, post.ID)
+		}
+		if sectionType == "book" {
+			bookPostIDs = append(bookPostIDs, post.ID)
 		}
 		if isMovieOrSeriesSectionType(sectionType) {
 			moviePostIDs = append(moviePostIDs, post.ID)
@@ -2029,6 +2121,23 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, targetUserID uuid.UU
 		for _, post := range posts {
 			if stat, ok := statsByPost[post.ID]; ok {
 				post.MovieStats = stat
+			}
+		}
+	}
+
+	if len(bookPostIDs) > 0 {
+		viewerIDPtr := &viewerID
+		if viewerID == uuid.Nil {
+			viewerIDPtr = nil
+		}
+		statsByPost, err := s.getBookStatsForPosts(ctx, bookPostIDs, viewerIDPtr)
+		if err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
+		for _, post := range posts {
+			if stat, ok := statsByPost[post.ID]; ok {
+				post.BookStats = stat
 			}
 		}
 	}
