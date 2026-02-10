@@ -65,6 +65,19 @@ afterEach(() => {
 });
 
 describe('PodcastSaveButton', () => {
+  it('renders saved state from store-backed saved post IDs on initial render', () => {
+    podcastStore.setSavedPosts([buildPost('post-1')], null, false, 'section-podcast');
+
+    render(PodcastSaveButton, {
+      postId: 'post-1',
+      initialSaved: false,
+      initialSaveCount: 0,
+    });
+
+    expect(screen.getByText('Saved')).toBeInTheDocument();
+    expect(screen.getByTestId('podcast-save-count')).toHaveTextContent('1');
+  });
+
   it('renders unsaved state', () => {
     render(PodcastSaveButton, { postId: 'post-1' });
 

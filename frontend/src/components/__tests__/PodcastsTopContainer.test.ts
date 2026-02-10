@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Post } from '../../stores/postStore';
 import { podcastStore } from '../../stores/podcastStore';
@@ -157,5 +157,38 @@ describe('PodcastsTopContainer', () => {
 
     await fireEvent.click(screen.getByTestId('podcasts-mode-saved'));
     expect(await screen.findByTestId('podcasts-saved-empty')).toBeInTheDocument();
+  });
+
+  it('reloads saved podcasts across mount cycles for refresh persistence', async () => {
+    apiGetSectionRecentPodcasts.mockResolvedValue({
+      items: [],
+      hasMore: false,
+      nextCursor: undefined,
+    });
+    apiGetSectionSavedPodcasts.mockResolvedValue({
+      posts: [buildSavedPost()],
+      hasMore: false,
+      nextCursor: undefined,
+    });
+
+    setActiveSection('podcast');
+    const firstRender = render(PodcastsTopContainer);
+
+    await screen.findByTestId('podcasts-recent-empty');
+    await fireEvent.click(screen.getByTestId('podcasts-mode-saved'));
+    expect(await screen.findByText('Saved episode')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(apiGetSectionSavedPodcasts).toHaveBeenCalledTimes(1);
+    });
+
+    firstRender.unmount();
+
+    render(PodcastsTopContainer);
+    await screen.findByTestId('podcasts-recent-empty');
+    await fireEvent.click(screen.getByTestId('podcasts-mode-saved'));
+    expect(await screen.findByText('Saved episode')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(apiGetSectionSavedPodcasts).toHaveBeenCalledTimes(2);
+    });
   });
 });
