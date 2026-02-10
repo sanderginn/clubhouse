@@ -44,6 +44,14 @@ interface WsPostEvent {
   post: ApiPost;
 }
 
+interface WsPostDeletedEvent {
+  post_id?: string;
+  postId?: string;
+  post?: {
+    id?: string;
+  };
+}
+
 interface WsCommentEvent {
   comment: {
     id: string;
@@ -94,6 +102,23 @@ function hasComment(comments: Comment[] | undefined, commentId: string): boolean
     }
   }
   return false;
+}
+
+function extractDeletedPostId(payload: WsPostDeletedEvent | null | undefined): string | null {
+  if (!payload) {
+    return null;
+  }
+
+  const directID = payload.post_id ?? payload.postId;
+  if (typeof directID === 'string' && directID.length > 0) {
+    return directID;
+  }
+
+  if (typeof payload.post?.id === 'string' && payload.post.id.length > 0) {
+    return payload.post.id;
+  }
+
+  return null;
 }
 
 const status = writable<WebSocketStatus>('disconnected');
@@ -233,6 +258,16 @@ function connect() {
           const post: Post = mapApiPost(payload.post);
           postStore.upsertPost(post);
         }
+        break;
+      }
+      case 'post_deleted': {
+        const payload = parsed.data as WsPostDeletedEvent;
+        const postId = extractDeletedPostId(payload);
+        if (!postId) {
+          logWarn('WebSocket invalid post_deleted payload', { payload });
+          break;
+        }
+        postStore.removePost(postId);
         break;
       }
       case 'new_comment': {

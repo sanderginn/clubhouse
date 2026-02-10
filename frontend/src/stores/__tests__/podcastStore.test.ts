@@ -126,6 +126,34 @@ describe('podcastStore', () => {
     expect(state.savedPosts).toHaveLength(0);
   });
 
+  it('handlePostDeleted removes the post from saved and recent state', () => {
+    podcastStore.setPostSaveInfo('post-1', {
+      saveCount: 3,
+      users: [],
+      viewerSaved: true,
+    });
+    podcastStore.setSavedPosts(
+      [buildPost('post-1'), buildPost('post-2')],
+      'cursor-1',
+      true,
+      'section-podcast'
+    );
+    podcastStore.setRecentItems(
+      [buildRecentItem('1', 'show'), buildRecentItem('2', 'episode')],
+      null,
+      false,
+      'section-podcast'
+    );
+
+    podcastStore.handlePostDeleted('post-1');
+
+    const state = get(podcastStore);
+    expect(state.savedPosts.map((post) => post.id)).toEqual(['post-2']);
+    expect(state.savedPostIds.has('post-1')).toBe(false);
+    expect(state.saveInfoByPostId['post-1']).toBeUndefined();
+    expect(state.recentItems.map((item) => item.postId)).toEqual(['post-2']);
+  });
+
   it('loadSavedPodcasts and loadMoreSavedPodcasts handle cursor pagination', async () => {
     apiGetSectionSavedPodcasts
       .mockResolvedValueOnce({

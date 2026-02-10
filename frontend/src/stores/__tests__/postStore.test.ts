@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { get } from 'svelte/store';
 import { postStore } from '../postStore';
+import { podcastStore } from '../podcastStore';
 
 const basePost = {
   id: 'post-1',
@@ -12,6 +13,7 @@ const basePost = {
 
 beforeEach(() => {
   postStore.reset();
+  podcastStore.reset();
 });
 
 describe('postStore', () => {
@@ -82,10 +84,22 @@ describe('postStore', () => {
 
   it('removePost removes by id', () => {
     postStore.setPosts([basePost, { ...basePost, id: 'post-2' }], null, true);
+    podcastStore.setPostSaveInfo('post-1', {
+      saveCount: 1,
+      users: [],
+      viewerSaved: true,
+    });
+    podcastStore.setSavedPosts([basePost], null, false, 'section-1');
     postStore.removePost('post-1');
+
     const state = get(postStore);
     expect(state.posts).toHaveLength(1);
     expect(state.posts[0].id).toBe('post-2');
+
+    const podcastState = get(podcastStore);
+    expect(podcastState.savedPosts).toHaveLength(0);
+    expect(podcastState.savedPostIds.has('post-1')).toBe(false);
+    expect(podcastState.saveInfoByPostId['post-1']).toBeUndefined();
   });
 
   it('incrementCommentCount updates count and never below zero', () => {
