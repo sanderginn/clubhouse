@@ -21,6 +21,7 @@
     855,
     856,
     857,
+    858,
     859,
     861,
     876
@@ -339,7 +340,7 @@
     {
       "issue_number": 858,
       "title": "[Books] Register book parser in metadata pipeline",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         857
       ],
@@ -352,7 +353,9 @@
       "assigned_to": "agent-1770695801-83044",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770695801-83044",
       "branch": "feat/issue-858-books-register-book-parser-in-metadata-p",
-      "claimed_at": "2026-02-10T03:56:41Z"
+      "claimed_at": "2026-02-10T03:56:41Z",
+      "pr_number": 922,
+      "completed_at": "2026-02-10T04:09:04Z"
     },
     {
       "issue_number": 859,
