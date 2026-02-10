@@ -58,6 +58,7 @@
 
   let activeTab: TabKey = 'my';
   let selectedCategory = ALL_CATEGORY_VALUE;
+  let isCollapsed = false;
   let sortKey: SortKey = 'rating';
   let searchTerm = '';
   let allMoviePosts: Post[] = [];
@@ -133,7 +134,10 @@
     selectedCategory = ALL_CATEGORY_VALUE;
   }
 
-  $: selectedWatchlistItems = getWatchlistItemsForCategory(filteredWatchlistByCategory, selectedCategory);
+  $: selectedWatchlistItems = getWatchlistItemsForCategory(
+    filteredWatchlistByCategory,
+    selectedCategory
+  );
   $: myMovies = buildWatchlistMovieItems(
     selectedWatchlistItems,
     watchedPostIDs,
@@ -469,7 +473,8 @@
       allMoviesNextCursor = response.nextCursor ?? null;
       allMoviesError = null;
     } catch (error) {
-      allMoviesError = error instanceof Error ? error.message : `Failed to load ${mediaLabelPlural}`;
+      allMoviesError =
+        error instanceof Error ? error.message : `Failed to load ${mediaLabelPlural}`;
     } finally {
       allMoviesLoading = false;
     }
@@ -530,7 +535,10 @@
   }
 
   async function refreshWatchlistView(): Promise<void> {
-    await Promise.all([movieStore.loadWatchlistCategories(), movieStore.loadWatchlist(sectionType)]);
+    await Promise.all([
+      movieStore.loadWatchlistCategories(),
+      movieStore.loadWatchlist(sectionType),
+    ]);
   }
 
   function startEditCategory(categoryName: string) {
@@ -655,11 +663,23 @@
 
 <section class="rounded-2xl border border-gray-200 bg-white shadow-sm" data-testid="watchlist">
   <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-4 py-3">
-    <div>
-      <h2 class="text-base font-semibold text-gray-900">Watchlist</h2>
-      <p class="text-xs text-gray-500">
-        Track what you want to watch and what your club is rating.
-      </p>
+    <div class="flex items-center gap-3">
+      <div>
+        <h2 class="text-base font-semibold text-gray-900">Watchlist</h2>
+        <p class="text-xs text-gray-500">
+          Track what you want to watch and what your club is rating.
+        </p>
+      </div>
+      <button
+        type="button"
+        class="rounded-full border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+        on:click={() => (isCollapsed = !isCollapsed)}
+        data-testid="watchlist-collapse"
+        aria-expanded={!isCollapsed}
+        aria-controls="watchlist-content"
+      >
+        {isCollapsed ? 'Expand' : 'Collapse'}
+      </button>
     </div>
 
     <div class="flex items-center gap-2" role="tablist" aria-label="Watchlist views">
@@ -680,192 +700,318 @@
     </div>
   </div>
 
-  <div class="p-4">
-    {#if activeTab === 'my'}
-      <div class="flex flex-col gap-4 lg:flex-row">
-        <aside class="lg:w-64" data-testid="watchlist-category-panel">
-          <div class="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-            <div class="flex items-center justify-between">
-              <h3 class="text-sm font-semibold text-gray-900">Categories</h3>
-              <span class="text-xs text-gray-500">{totalSavedCount} saved</span>
-            </div>
+  {#if !isCollapsed}
+    <div class="p-4" id="watchlist-content">
+      {#if activeTab === 'my'}
+        <div class="flex flex-col gap-4 lg:flex-row">
+          <aside class="lg:w-64" data-testid="watchlist-category-panel">
+            <div class="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-gray-900">Categories</h3>
+                <span class="text-xs text-gray-500">{totalSavedCount} saved</span>
+              </div>
 
-            <div class="mt-3 space-y-1">
-              {#each categoryOptions as option}
-                {@const editableCategory = findEditableCategory(option.value)}
-                <div
-                  class="group rounded-lg"
-                  data-testid={`watchlist-category-row-${option.value}`}
-                >
-                  {#if editingCategoryId === editableCategory?.id}
-                    <div
-                      class="flex flex-wrap items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2"
-                    >
-                      <input
-                        class="min-w-[8rem] flex-1 rounded-md border border-blue-300 px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
-                        type="text"
-                        bind:value={editingCategoryName}
-                        placeholder="Category name"
-                        data-testid="watchlist-category-edit-input"
-                      />
-                      <button
-                        type="button"
-                        class="rounded-md bg-blue-600 px-2 py-1 text-xs font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                        on:click={confirmEditCategory}
-                        disabled={isCategoryActionBusy}
-                        data-testid="watchlist-category-edit-save"
+              <div class="mt-3 space-y-1">
+                {#each categoryOptions as option}
+                  {@const editableCategory = findEditableCategory(option.value)}
+                  <div
+                    class="group rounded-lg"
+                    data-testid={`watchlist-category-row-${option.value}`}
+                  >
+                    {#if editingCategoryId === editableCategory?.id}
+                      <div
+                        class="flex flex-wrap items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2"
                       >
-                        {isCategoryActionBusy ? 'Saving...' : 'Save'}
-                      </button>
-                      <button
-                        type="button"
-                        class="rounded-md border border-blue-200 px-2 py-1 text-xs text-blue-700 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
-                        on:click={cancelEditCategory}
-                        disabled={isCategoryActionBusy}
-                        data-testid="watchlist-category-edit-cancel"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  {:else}
-                    <div class="flex items-center gap-1">
-                      <button
-                        type="button"
-                        class={`flex flex-1 items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
-                          selectedCategory === option.value
-                            ? 'bg-blue-50 text-blue-700'
-                            : 'text-gray-600 hover:bg-gray-100'
-                        }`}
-                        on:click={() => (selectedCategory = option.value)}
-                        data-testid={`watchlist-category-${option.value}`}
-                      >
-                        <span>{option.label}</span>
-                        <span class="rounded-full bg-white px-2 py-0.5 text-[11px] text-gray-500">
-                          {option.value === ALL_CATEGORY_VALUE
-                            ? totalSavedCount
-                            : (categoryCounts.get(option.value) ?? 0)}
-                        </span>
-                      </button>
-
-                      {#if editableCategory}
-                        <div
-                          class="hidden items-center gap-1 group-hover:flex"
-                          data-testid={`watchlist-category-actions-${editableCategory.id}`}
-                        >
-                          <button
-                            type="button"
-                            class="rounded-md border border-gray-200 px-1.5 py-1 text-[11px] text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-                            aria-label={`Edit ${editableCategory.name}`}
-                            on:click={() => startEditCategory(editableCategory.name)}
-                            disabled={isCategoryActionBusy}
-                            data-testid={`watchlist-category-edit-${editableCategory.id}`}
-                          >
-                            ⚙
-                          </button>
-                          <button
-                            type="button"
-                            class="rounded-md border border-gray-200 px-1.5 py-1 text-[11px] text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-                            aria-label={`Delete ${editableCategory.name}`}
-                            on:click={() => startDeleteCategory(editableCategory.name)}
-                            disabled={isCategoryActionBusy}
-                            data-testid={`watchlist-category-delete-${editableCategory.id}`}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      {/if}
-                    </div>
-                  {/if}
-
-                  {#if deleteCategoryId === editableCategory?.id}
-                    <div
-                      class="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
-                      data-testid="watchlist-category-delete-confirm"
-                    >
-                      <p>
-                        Delete <span class="font-semibold">{deleteCategoryName}</span>? Saved items
-                        will move to
-                        <span class="font-semibold"> {DEFAULT_WATCHLIST_CATEGORY}</span>.
-                      </p>
-                      <div class="mt-2 flex items-center gap-2">
+                        <input
+                          class="min-w-[8rem] flex-1 rounded-md border border-blue-300 px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                          type="text"
+                          bind:value={editingCategoryName}
+                          placeholder="Category name"
+                          data-testid="watchlist-category-edit-input"
+                        />
                         <button
                           type="button"
-                          class="rounded-md bg-amber-600 px-2 py-1 text-xs font-semibold text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
-                          on:click={confirmDeleteCategory}
+                          class="rounded-md bg-blue-600 px-2 py-1 text-xs font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          on:click={confirmEditCategory}
                           disabled={isCategoryActionBusy}
-                          data-testid="watchlist-category-delete-confirm-button"
+                          data-testid="watchlist-category-edit-save"
                         >
-                          {isCategoryActionBusy ? 'Deleting...' : 'Delete'}
+                          {isCategoryActionBusy ? 'Saving...' : 'Save'}
                         </button>
                         <button
                           type="button"
-                          class="rounded-md border border-amber-200 px-2 py-1 text-xs text-amber-900 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
-                          on:click={cancelDeleteCategory}
+                          class="rounded-md border border-blue-200 px-2 py-1 text-xs text-blue-700 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                          on:click={cancelEditCategory}
                           disabled={isCategoryActionBusy}
-                          data-testid="watchlist-category-delete-cancel-button"
+                          data-testid="watchlist-category-edit-cancel"
                         >
                           Cancel
                         </button>
                       </div>
-                    </div>
-                  {/if}
+                    {:else}
+                      <div class="flex items-center gap-1">
+                        <button
+                          type="button"
+                          class={`flex flex-1 items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
+                            selectedCategory === option.value
+                              ? 'bg-blue-50 text-blue-700'
+                              : 'text-gray-600 hover:bg-gray-100'
+                          }`}
+                          on:click={() => (selectedCategory = option.value)}
+                          data-testid={`watchlist-category-${option.value}`}
+                        >
+                          <span>{option.label}</span>
+                          <span class="rounded-full bg-white px-2 py-0.5 text-[11px] text-gray-500">
+                            {option.value === ALL_CATEGORY_VALUE
+                              ? totalSavedCount
+                              : (categoryCounts.get(option.value) ?? 0)}
+                          </span>
+                        </button>
+
+                        {#if editableCategory}
+                          <div
+                            class="hidden items-center gap-1 group-hover:flex"
+                            data-testid={`watchlist-category-actions-${editableCategory.id}`}
+                          >
+                            <button
+                              type="button"
+                              class="rounded-md border border-gray-200 px-1.5 py-1 text-[11px] text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              aria-label={`Edit ${editableCategory.name}`}
+                              on:click={() => startEditCategory(editableCategory.name)}
+                              disabled={isCategoryActionBusy}
+                              data-testid={`watchlist-category-edit-${editableCategory.id}`}
+                            >
+                              ⚙
+                            </button>
+                            <button
+                              type="button"
+                              class="rounded-md border border-gray-200 px-1.5 py-1 text-[11px] text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              aria-label={`Delete ${editableCategory.name}`}
+                              on:click={() => startDeleteCategory(editableCategory.name)}
+                              disabled={isCategoryActionBusy}
+                              data-testid={`watchlist-category-delete-${editableCategory.id}`}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        {/if}
+                      </div>
+                    {/if}
+
+                    {#if deleteCategoryId === editableCategory?.id}
+                      <div
+                        class="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+                        data-testid="watchlist-category-delete-confirm"
+                      >
+                        <p>
+                          Delete <span class="font-semibold">{deleteCategoryName}</span>? Saved
+                          items will move to
+                          <span class="font-semibold"> {DEFAULT_WATCHLIST_CATEGORY}</span>.
+                        </p>
+                        <div class="mt-2 flex items-center gap-2">
+                          <button
+                            type="button"
+                            class="rounded-md bg-amber-600 px-2 py-1 text-xs font-semibold text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            on:click={confirmDeleteCategory}
+                            disabled={isCategoryActionBusy}
+                            data-testid="watchlist-category-delete-confirm-button"
+                          >
+                            {isCategoryActionBusy ? 'Deleting...' : 'Delete'}
+                          </button>
+                          <button
+                            type="button"
+                            class="rounded-md border border-amber-200 px-2 py-1 text-xs text-amber-900 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            on:click={cancelDeleteCategory}
+                            disabled={isCategoryActionBusy}
+                            data-testid="watchlist-category-delete-cancel-button"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    {/if}
+                  </div>
+                {/each}
+              </div>
+
+              {#if displayCategoryError}
+                <div
+                  class="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700"
+                  data-testid="watchlist-category-error"
+                >
+                  {displayCategoryError}
                 </div>
-              {/each}
+              {/if}
+
+              <button
+                type="button"
+                class="mt-3 w-full rounded-lg border border-dashed border-gray-300 px-3 py-2 text-xs font-semibold text-gray-600 hover:border-gray-400 hover:bg-gray-50"
+                on:click={handleCreateCategory}
+                data-testid="watchlist-create-category"
+              >
+                + Create category
+              </button>
+            </div>
+          </aside>
+
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-sm font-semibold text-gray-900">{selectedCategoryLabel}</h3>
+                <p class="text-xs text-gray-500">{mediaLabelTitle} saved to your list.</p>
+              </div>
+              <span class="text-xs text-gray-400">{myMovies.length} {mediaLabelPlural}</span>
             </div>
 
-            {#if displayCategoryError}
+            {#if myMovies.length === 0}
               <div
-                class="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700"
-                data-testid="watchlist-category-error"
+                class="mt-3 rounded-xl border border-dashed border-gray-200 px-4 py-6 text-sm text-gray-500"
+                data-testid="watchlist-empty"
               >
-                {displayCategoryError}
+                {#if totalSavedCount === 0}
+                  No {mediaLabelPlural} saved yet
+                {:else if selectedCategory !== ALL_CATEGORY_VALUE}
+                  No {mediaLabelPlural} in this category
+                {:else}
+                  No {mediaLabelPlural} saved yet
+                {/if}
+              </div>
+            {:else}
+              <div
+                class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4"
+                data-testid="watchlist-my-grid"
+              >
+                {#each myMovies as movie}
+                  <button
+                    type="button"
+                    class="group relative overflow-hidden rounded-xl border border-gray-200 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:border-gray-300"
+                    on:click={() => navigateToPost(movie.postId)}
+                    data-testid={`watchlist-my-item-${movie.postId}`}
+                  >
+                    {#if movie.watched}
+                      <span
+                        class="absolute right-2 top-2 z-10 rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-700"
+                        data-testid={`watchlist-watched-${movie.postId}`}
+                      >
+                        ✓ Watched
+                      </span>
+                    {/if}
+
+                    <div class="aspect-[2/3] w-full overflow-hidden bg-gray-100">
+                      {#if movie.poster}
+                        <img
+                          src={movie.poster}
+                          alt={movie.title}
+                          class="h-full w-full object-cover"
+                          loading="lazy"
+                        />
+                      {:else}
+                        <div
+                          class="flex h-full w-full items-center justify-center px-3 text-center text-xs text-gray-400"
+                        >
+                          No poster
+                        </div>
+                      {/if}
+                    </div>
+
+                    <div class="space-y-1 px-3 py-3">
+                      <h4 class="line-clamp-2 text-sm font-semibold text-gray-900">
+                        {movie.title}
+                      </h4>
+                      <p class="text-xs text-gray-500">
+                        {#if movie.rating !== null}
+                          ★ {movie.rating.toFixed(1)}
+                        {:else}
+                          No rating yet
+                        {/if}
+                      </p>
+                    </div>
+                  </button>
+                {/each}
               </div>
             {/if}
-
-            <button
-              type="button"
-              class="mt-3 w-full rounded-lg border border-dashed border-gray-300 px-3 py-2 text-xs font-semibold text-gray-600 hover:border-gray-400 hover:bg-gray-50"
-              on:click={handleCreateCategory}
-              data-testid="watchlist-create-category"
-            >
-              + Create category
-            </button>
           </div>
-        </aside>
-
-        <div class="min-w-0 flex-1">
-          <div class="flex items-center justify-between">
+        </div>
+      {:else}
+        <div>
+          <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 class="text-sm font-semibold text-gray-900">{selectedCategoryLabel}</h3>
-              <p class="text-xs text-gray-500">{mediaLabelTitle} saved to your list.</p>
+              <h3 class="text-sm font-semibold text-gray-900">All {mediaLabelTitle}</h3>
+              <p class="text-xs text-gray-500">
+                Browse everything shared in the {mediaLabelPlural} section.
+              </p>
             </div>
-            <span class="text-xs text-gray-400">{myMovies.length} {mediaLabelPlural}</span>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <label class="text-xs font-semibold text-gray-600" for="watchlist-search"
+                >Search</label
+              >
+              <input
+                id="watchlist-search"
+                type="search"
+                class="rounded-lg border border-gray-200 px-3 py-2 text-xs"
+                placeholder="Search titles"
+                bind:value={searchTerm}
+                data-testid="watchlist-search"
+              />
+
+              <label class="text-xs font-semibold text-gray-600" for="watchlist-sort">Sort</label>
+              <select
+                id="watchlist-sort"
+                class="rounded-lg border border-gray-200 px-3 py-2 text-xs"
+                bind:value={sortKey}
+                data-testid="watchlist-sort"
+              >
+                {#each sortOptions as option}
+                  <option value={option.key}>{option.label}</option>
+                {/each}
+              </select>
+            </div>
           </div>
 
-          {#if myMovies.length === 0}
+          {#if allMoviesLoading && allMovies.length === 0}
             <div
               class="mt-3 rounded-xl border border-dashed border-gray-200 px-4 py-6 text-sm text-gray-500"
-              data-testid="watchlist-empty"
+              data-testid="watchlist-all-loading"
             >
-              {#if totalSavedCount === 0}
-                No {mediaLabelPlural} saved yet
-              {:else if selectedCategory !== ALL_CATEGORY_VALUE}
-                No {mediaLabelPlural} in this category
-              {:else}
-                No {mediaLabelPlural} saved yet
-              {/if}
+              Loading {mediaLabelPlural}...
+            </div>
+          {:else if allMoviesError && allMovies.length === 0}
+            <div
+              class="mt-3 rounded-xl border border-dashed border-red-200 bg-red-50 px-4 py-6 text-sm text-red-700"
+              data-testid="watchlist-all-error"
+            >
+              <p>{allMoviesError}</p>
+              <div class="mt-3">
+                <button
+                  type="button"
+                  class="rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100"
+                  on:click={() => void loadAllMovies(true)}
+                  disabled={allMoviesLoading}
+                  data-testid="watchlist-all-retry"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          {:else if allMovies.length === 0}
+            <div
+              class="mt-3 rounded-xl border border-dashed border-gray-200 px-4 py-6 text-sm text-gray-500"
+              data-testid="watchlist-all-empty"
+            >
+              No {mediaLabelPlural} available
             </div>
           {:else}
             <div
               class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4"
-              data-testid="watchlist-my-grid"
+              data-testid="watchlist-all-grid"
             >
-              {#each myMovies as movie}
+              {#each allMovies as movie}
                 <button
                   type="button"
                   class="group relative overflow-hidden rounded-xl border border-gray-200 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:border-gray-300"
                   on:click={() => navigateToPost(movie.postId)}
-                  data-testid={`watchlist-my-item-${movie.postId}`}
+                  data-testid={`watchlist-all-item-${movie.postId}`}
                 >
                   {#if movie.watched}
                     <span
@@ -902,156 +1048,39 @@
                         No rating yet
                       {/if}
                     </p>
+                    <p class="text-[11px] text-gray-500">
+                      Watched {movie.watchCount} · In lists {movie.watchlistCount}
+                    </p>
                   </div>
                 </button>
               {/each}
             </div>
           {/if}
-        </div>
-      </div>
-    {:else}
-      <div>
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h3 class="text-sm font-semibold text-gray-900">All {mediaLabelTitle}</h3>
-            <p class="text-xs text-gray-500">
-              Browse everything shared in the {mediaLabelPlural} section.
-            </p>
-          </div>
 
-          <div class="flex flex-wrap items-center gap-2">
-            <label class="text-xs font-semibold text-gray-600" for="watchlist-search">Search</label>
-            <input
-              id="watchlist-search"
-              type="search"
-              class="rounded-lg border border-gray-200 px-3 py-2 text-xs"
-              placeholder="Search titles"
-              bind:value={searchTerm}
-              data-testid="watchlist-search"
-            />
-
-            <label class="text-xs font-semibold text-gray-600" for="watchlist-sort">Sort</label>
-            <select
-              id="watchlist-sort"
-              class="rounded-lg border border-gray-200 px-3 py-2 text-xs"
-              bind:value={sortKey}
-              data-testid="watchlist-sort"
-            >
-              {#each sortOptions as option}
-                <option value={option.key}>{option.label}</option>
-              {/each}
-            </select>
-          </div>
-        </div>
-
-        {#if allMoviesLoading && allMovies.length === 0}
-          <div
-            class="mt-3 rounded-xl border border-dashed border-gray-200 px-4 py-6 text-sm text-gray-500"
-            data-testid="watchlist-all-loading"
-          >
-            Loading {mediaLabelPlural}...
-          </div>
-        {:else if allMoviesError && allMovies.length === 0}
-          <div
-            class="mt-3 rounded-xl border border-dashed border-red-200 bg-red-50 px-4 py-6 text-sm text-red-700"
-            data-testid="watchlist-all-error"
-          >
-            <p>{allMoviesError}</p>
-            <div class="mt-3">
+          {#if allMoviesHasMore}
+            <div class="mt-4 flex justify-center">
               <button
                 type="button"
-                class="rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100"
-                on:click={() => void loadAllMovies(true)}
+                class="rounded-lg border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                on:click={() => void loadAllMovies(false)}
                 disabled={allMoviesLoading}
-                data-testid="watchlist-all-retry"
+                data-testid="watchlist-all-load-more"
               >
-                Retry
+                {allMoviesLoading ? 'Loading...' : 'Load more'}
               </button>
             </div>
-          </div>
-        {:else if allMovies.length === 0}
-          <div
-            class="mt-3 rounded-xl border border-dashed border-gray-200 px-4 py-6 text-sm text-gray-500"
-            data-testid="watchlist-all-empty"
-          >
-            No {mediaLabelPlural} available
-          </div>
-        {:else}
-          <div
-            class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4"
-            data-testid="watchlist-all-grid"
-          >
-            {#each allMovies as movie}
-              <button
-                type="button"
-                class="group relative overflow-hidden rounded-xl border border-gray-200 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:border-gray-300"
-                on:click={() => navigateToPost(movie.postId)}
-                data-testid={`watchlist-all-item-${movie.postId}`}
-              >
-                {#if movie.watched}
-                  <span
-                    class="absolute right-2 top-2 z-10 rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-700"
-                    data-testid={`watchlist-watched-${movie.postId}`}
-                  >
-                    ✓ Watched
-                  </span>
-                {/if}
+          {/if}
 
-                <div class="aspect-[2/3] w-full overflow-hidden bg-gray-100">
-                  {#if movie.poster}
-                    <img
-                      src={movie.poster}
-                      alt={movie.title}
-                      class="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                  {:else}
-                    <div
-                      class="flex h-full w-full items-center justify-center px-3 text-center text-xs text-gray-400"
-                    >
-                      No poster
-                    </div>
-                  {/if}
-                </div>
-
-                <div class="space-y-1 px-3 py-3">
-                  <h4 class="line-clamp-2 text-sm font-semibold text-gray-900">{movie.title}</h4>
-                  <p class="text-xs text-gray-500">
-                    {#if movie.rating !== null}
-                      ★ {movie.rating.toFixed(1)}
-                    {:else}
-                      No rating yet
-                    {/if}
-                  </p>
-                  <p class="text-[11px] text-gray-500">
-                    Watched {movie.watchCount} · In lists {movie.watchlistCount}
-                  </p>
-                </div>
-              </button>
-            {/each}
-          </div>
-        {/if}
-
-        {#if allMoviesHasMore}
-          <div class="mt-4 flex justify-center">
-            <button
-              type="button"
-              class="rounded-lg border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-              on:click={() => void loadAllMovies(false)}
-              disabled={allMoviesLoading}
-              data-testid="watchlist-all-load-more"
+          {#if allMoviesError && allMovies.length > 0}
+            <p
+              class="mt-3 text-center text-xs text-red-600"
+              data-testid="watchlist-all-error-inline"
             >
-              {allMoviesLoading ? 'Loading...' : 'Load more'}
-            </button>
-          </div>
-        {/if}
-
-        {#if allMoviesError && allMovies.length > 0}
-          <p class="mt-3 text-center text-xs text-red-600" data-testid="watchlist-all-error-inline">
-            {allMoviesError}
-          </p>
-        {/if}
-      </div>
-    {/if}
-  </div>
+              {allMoviesError}
+            </p>
+          {/if}
+        </div>
+      {/if}
+    </div>
+  {/if}
 </section>
