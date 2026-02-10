@@ -204,4 +204,58 @@ describe('PodcastsTopContainer', () => {
       expect(apiGetSectionSavedPodcasts).toHaveBeenCalledTimes(2);
     });
   });
+
+  it('keeps latest recent podcasts after navigation when an older request resolves late', async () => {
+    let resolveFirstRecent: ((value: unknown) => void) | null = null;
+    const firstRecentPromise = new Promise((resolve) => {
+      resolveFirstRecent = resolve;
+    });
+
+    apiGetSectionRecentPodcasts
+      .mockReturnValueOnce(firstRecentPromise)
+      .mockResolvedValueOnce({
+        items: [
+          {
+            postId: 'post-2',
+            linkId: 'link-2',
+            url: 'https://example.com/podcast/new',
+            title: 'Newest podcast',
+            podcast: { kind: 'episode' },
+            userId: 'user-2',
+            username: 'taylor',
+            postCreatedAt: '2026-02-10T11:00:00Z',
+            linkCreatedAt: '2026-02-10T11:01:00Z',
+          },
+        ],
+        hasMore: false,
+        nextCursor: undefined,
+      });
+    apiGetSectionSavedPodcasts.mockResolvedValue({
+      posts: [],
+      hasMore: false,
+      nextCursor: undefined,
+    });
+
+    setActiveSection('podcast');
+    render(PodcastsTopContainer);
+    expect(await screen.findByTestId('podcasts-recent-loading')).toBeInTheDocument();
+
+    setActiveSection('general');
+    await waitFor(() => {
+      expect(screen.queryByTestId('podcasts-top-container')).not.toBeInTheDocument();
+    });
+
+    setActiveSection('podcast');
+    expect(await screen.findByText('Newest podcast')).toBeInTheDocument();
+
+    resolveFirstRecent?.({
+      items: [],
+      hasMore: false,
+      nextCursor: undefined,
+    });
+    await firstRecentPromise;
+
+    expect(screen.getByText('Newest podcast')).toBeInTheDocument();
+    expect(screen.queryByTestId('podcasts-recent-empty')).not.toBeInTheDocument();
+  });
 });
