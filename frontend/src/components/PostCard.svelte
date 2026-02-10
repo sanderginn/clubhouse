@@ -143,6 +143,24 @@
     book_data?: BookMetadata | string;
     bookData?: BookMetadata | string;
   };
+  type PodcastHighlightEpisodeMetadata = {
+    title?: string;
+    url?: string;
+    note?: string;
+  };
+  type PodcastMetadata = {
+    kind?: 'show' | 'episode' | string;
+    highlightEpisodes?: PodcastHighlightEpisodeMetadata[];
+    highlight_episodes?: PodcastHighlightEpisodeMetadata[];
+  };
+  type PodcastCardMetadata = {
+    kind: 'show' | 'episode';
+    highlightEpisodes: Array<{
+      title: string;
+      url: string;
+      note?: string;
+    }>;
+  };
   type PostWithSectionType = Post & {
     section?: {
       type?: string;
@@ -167,6 +185,7 @@
   $: movieStats = post.movieStats ?? post.movie_stats ?? null;
   $: isBookSection = sectionType === 'book';
   $: isMovieSection = sectionType === 'movie' || sectionType === 'series';
+  $: isPodcastSection = sectionType === 'podcast';
   $: isThreadView = $activeView === 'thread';
   let copiedLink = false;
   let copyTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -959,6 +978,72 @@
     return normalizeBookMetadata(rawBookData);
   }
 
+  function normalizePodcastKind(kind: unknown): 'show' | 'episode' | null {
+    if (typeof kind !== 'string') {
+      return null;
+    }
+
+    const normalized = kind.trim().toLowerCase();
+    if (normalized === 'show') {
+      return 'show';
+    }
+    if (normalized === 'episode') {
+      return 'episode';
+    }
+    return null;
+  }
+
+  function normalizePodcastHighlightEpisodes(
+    episodes: unknown
+  ): PodcastCardMetadata['highlightEpisodes'] {
+    if (!Array.isArray(episodes)) {
+      return [];
+    }
+
+    return episodes
+      .map((episode) => {
+        if (!episode || typeof episode !== 'object' || Array.isArray(episode)) {
+          return null;
+        }
+
+        const record = episode as PodcastHighlightEpisodeMetadata;
+        const title = typeof record.title === 'string' ? record.title.trim() : '';
+        const url = typeof record.url === 'string' ? record.url.trim() : '';
+        if (!title || !url) {
+          return null;
+        }
+
+        const note = typeof record.note === 'string' ? record.note.trim() : '';
+        return {
+          title,
+          url,
+          ...(note ? { note } : {}),
+        };
+      })
+      .filter((episode): episode is PodcastCardMetadata['highlightEpisodes'][number] => episode !== null);
+  }
+
+  function getPodcastMetadataFromLink(link?: Link): PodcastCardMetadata | null {
+    if (!link?.metadata?.podcast) {
+      return null;
+    }
+
+    const podcast = link.metadata.podcast as PodcastMetadata;
+    const kind = normalizePodcastKind(podcast.kind);
+    if (!kind) {
+      return null;
+    }
+
+    const highlightEpisodes = normalizePodcastHighlightEpisodes(
+      podcast.highlightEpisodes ?? podcast.highlight_episodes
+    );
+
+    return {
+      kind,
+      highlightEpisodes,
+    };
+  }
+
   $: postImages = (post.images ?? []).slice().sort((a, b) => a.position - b.position);
   $: hasPostImages = postImages.length > 0;
   $: imageLinks = (post.links ?? []).filter((item) => Boolean(getImageLinkUrl(item)));
@@ -982,6 +1067,13 @@
   $: metadata = primaryLink?.metadata;
   $: primaryBookMetadata = getBookMetadataFromLink(primaryLink);
   $: primaryMovieMetadata = getMovieMetadataFromLink(primaryLink);
+  $: primaryPodcastMetadata = isPodcastSection ? getPodcastMetadataFromLink(primaryLink) : null;
+  $: podcastKindLabel =
+    primaryPodcastMetadata?.kind === 'show'
+      ? 'Show'
+      : primaryPodcastMetadata?.kind === 'episode'
+        ? 'Episode'
+        : null;
   $: movieLinks = isMovieSection
     ? (post.links ?? []).filter((link) => Boolean(getMovieMetadataFromLink(link)))
     : [];
@@ -2112,6 +2204,45 @@
           <span>🔗</span>
           <span class="underline">{primaryLink.url}</span>
         </a>
+      {/if}
+
+      {#if isPodcastSection && primaryPodcastMetadata && podcastKindLabel}
+        <div
+          class="mt-3 rounded-lg border border-amber-200 bg-amber-50/70 p-3"
+          data-testid="podcast-metadata-block"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-medium uppercase tracking-wide text-amber-700">Podcast</span>
+            <span
+              class="inline-flex items-center rounded-full border border-amber-300 bg-white px-2 py-0.5 text-xs font-semibold text-amber-800"
+              data-testid="podcast-kind-badge"
+            >
+              {podcastKindLabel}
+            </span>
+          </div>
+          {#if primaryPodcastMetadata.kind === 'show' && primaryPodcastMetadata.highlightEpisodes.length > 0}
+            <div class="mt-3 border-t border-amber-200 pt-3" data-testid="podcast-highlight-episodes">
+              <p class="text-xs font-semibold text-amber-800">Highlighted Episodes</p>
+              <ul class="mt-2 space-y-2">
+                {#each primaryPodcastMetadata.highlightEpisodes as episode, index (`${episode.url}-${index}`)}
+                  <li class="rounded-md border border-amber-100 bg-white px-3 py-2" data-testid="podcast-highlight-episode">
+                    <a
+                      href={episode.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="text-sm font-medium text-amber-900 hover:underline"
+                    >
+                      {episode.title}
+                    </a>
+                    {#if episode.note}
+                      <p class="mt-1 text-xs text-amber-700">{episode.note}</p>
+                    {/if}
+                  </li>
+                {/each}
+              </ul>
+            </div>
+          {/if}
+        </div>
       {/if}
 
       {#if isMovieSection}
