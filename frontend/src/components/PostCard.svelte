@@ -2087,7 +2087,7 @@
               onReady={handleEmbedReady}
             />
           </div>
-        {:else if primaryLink && metadata && !primaryLinkIsImage}
+        {:else if primaryLink && metadata && !primaryLinkIsImage && (!isBookSection || primaryBookMetadata)}
           {#if spotifyEmbedUrl}
             <div class="mt-3">
               <SpotifyEmbed embedUrl={spotifyEmbedUrl} height={spotifyEmbedHeight} />
@@ -2135,8 +2135,18 @@
               </div>
             </a>
           {/if}
+        {:else if primaryLink && isBookSection && !primaryBookMetadata}
+          <a
+            href={primaryLink.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="mt-3 inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm break-all"
+          >
+            <span>🔗</span>
+            <span class="underline">{primaryLink.url}</span>
+          </a>
         {/if}
-      {:else if !isEditing && primaryLink && metadata}
+      {:else if !isEditing && primaryLink && metadata && (!isBookSection || primaryBookMetadata)}
         {#if soundCloudEmbed}
           <SoundCloudEmbed
             embedUrl={soundCloudEmbed.embedUrl}
