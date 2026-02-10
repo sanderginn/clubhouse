@@ -25,7 +25,7 @@ const (
 var (
 	imdbIDPattern           = regexp.MustCompile(`^tt\d+$`)
 	leadingDigitsRegexp     = regexp.MustCompile(`^(\d+)`)
-	trailingRTYearPattern   = regexp.MustCompile(`(?:^|[_-])(19\d{2}|20\d{2})$`)
+	trailingRTYearPattern   = regexp.MustCompile(`[_-](19\d{2}|20\d{2})$`)
 	rtDelimiterStripPattern = regexp.MustCompile(`[_-]+`)
 )
 

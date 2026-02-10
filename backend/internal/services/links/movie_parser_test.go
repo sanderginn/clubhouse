@@ -449,6 +449,62 @@ func TestParseMovieMetadataRottenTomatoesMovieURLPrefersYearMatch(t *testing.T) 
 	}
 }
 
+func TestParseMovieMetadataRottenTomatoesMovieURLNumericTitleSlug(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/search/movie":
+			if got := strings.TrimSpace(r.URL.Query().Get("query")); got != "2012" {
+				t.Fatalf("query = %q, want 2012", got)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{
+				"results":[
+					{"id":14161,"title":"2012","release_date":"2009-10-10","vote_average":5.8},
+					{"id":530915,"title":"1917","release_date":"2019-12-25","vote_average":8.0}
+				]
+			}`))
+		case "/movie/14161":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{
+				"id":14161,
+				"title":"2012",
+				"overview":"A global cataclysm threatens humanity.",
+				"poster_path":"/zaqam2RNscH5ooYFWInV6hjx6y5.jpg",
+				"backdrop_path":"/fQ5s7xBvYjQ2iF0Q6w8X9Kf3xB1.jpg",
+				"runtime":158,
+				"genres":[{"id":28,"name":"Action"}],
+				"release_date":"2009-10-10",
+				"vote_average":5.8,
+				"credits":{"cast":[],"crew":[]},
+				"videos":{"results":[]}
+			}`))
+		case "/movie/530915":
+			t.Fatalf("selected wrong movie id for numeric title slug")
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	client := newTestTMDBClient(t, server.URL)
+	metadata, err := ParseMovieMetadata(context.Background(), "https://www.rottentomatoes.com/m/2012", client, nil)
+	if err != nil {
+		t.Fatalf("ParseMovieMetadata error: %v", err)
+	}
+	if metadata == nil {
+		t.Fatal("expected metadata")
+	}
+	if metadata.Title != "2012" {
+		t.Fatalf("Title = %q, want 2012", metadata.Title)
+	}
+	if metadata.TMDBID != 14161 {
+		t.Fatalf("TMDBID = %d, want 14161", metadata.TMDBID)
+	}
+	if metadata.TMDBMediaType != "movie" {
+		t.Fatalf("TMDBMediaType = %q, want movie", metadata.TMDBMediaType)
+	}
+}
+
 func TestParseMovieMetadataRottenTomatoesMovieURLNoCloseMatch(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
