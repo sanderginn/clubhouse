@@ -36,7 +36,6 @@
   import {
     buildBookshelfHref,
     buildFeedHref,
-    buildSectionWatchlistHref,
     buildThreadHref,
     getHistoryState,
     isAdminPath,
@@ -61,13 +60,13 @@
   let sectionsLoadedForSession = false;
   let popstateHandler: (() => void) | null = null;
   let pendingSectionIdentifier: string | null = null;
-  let pendingSectionSubview: 'feed' | 'watchlist' | 'bookshelf' = 'feed';
+  let pendingSectionSubview: 'feed' | 'bookshelf' = 'feed';
   let pendingThreadPostId: string | null = null;
   let pendingLegacyWatchlistRoute = false;
   let pendingAdminPath = false;
   let sectionNotFound: string | null = null;
   let highlightCommentId: string | null = null;
-  let sectionSubview: 'feed' | 'watchlist' | 'bookshelf' = 'feed';
+  let sectionSubview: 'feed' | 'bookshelf' = 'feed';
 
   function isWatchlistSection(section: Pick<Section, 'type'> | null): boolean {
     if (!section) return false;
@@ -98,15 +97,6 @@
     threadRouteStore.clearTarget();
     uiStore.setActiveView('feed');
     pushPath(buildFeedHref(getSectionSlug(section)));
-  }
-
-  function openSectionWatchlistView() {
-    const section = get(activeSection);
-    if (!section || !isWatchlistSection(section)) return;
-    sectionSubview = 'watchlist';
-    threadRouteStore.clearTarget();
-    uiStore.setActiveView('feed');
-    pushPath(buildSectionWatchlistHref(getSectionSlug(section)));
   }
 
   function openSectionBookshelfView() {
@@ -183,8 +173,8 @@
         (isWatchlistSection(get(activeSection)) ? get(activeSection) : null);
       if (preferredSection) {
         sectionStore.setActiveSection(preferredSection);
-        sectionSubview = 'watchlist';
-        replacePath(buildSectionWatchlistHref(getSectionSlug(preferredSection)));
+        sectionSubview = 'feed';
+        replacePath(buildFeedHref(getSectionSlug(preferredSection)));
       } else {
         sectionSubview = 'feed';
         pendingLegacyWatchlistRoute = true;
@@ -268,16 +258,13 @@
           if (match) {
             sectionStore.setActiveSection(match);
             const slug = getSectionSlug(match);
-            const showWatchlistInSection = wantsSectionWatchlist && isWatchlistSection(match);
-            sectionSubview = showWatchlistInSection ? 'watchlist' : 'feed';
-            if (wantsSectionWatchlist && !isWatchlistSection(match)) {
+            sectionSubview = 'feed';
+            if (wantsSectionWatchlist) {
               replacePath(buildFeedHref(slug));
             } else if (sectionIdentifier !== slug) {
               const targetPath = threadPostId
                 ? buildThreadHref(slug, threadPostId)
-                : showWatchlistInSection
-                  ? buildSectionWatchlistHref(slug)
-                  : buildFeedHref(slug);
+                : buildFeedHref(slug);
               replacePath(targetPath);
             }
           } else {
@@ -288,7 +275,7 @@
           pendingSectionSubview = 'feed';
         } else {
           pendingSectionIdentifier = sectionIdentifier;
-          pendingSectionSubview = wantsSectionWatchlist ? 'watchlist' : 'feed';
+          pendingSectionSubview = 'feed';
         }
         pendingLegacyWatchlistRoute = false;
         pendingAdminPath = false;
@@ -373,10 +360,6 @@
         uiStore.setActiveView('thread');
         replacePath(buildThreadHref(getSectionSlug(match), pendingThreadPostId));
         pendingThreadPostId = null;
-      } else if (pendingSectionSubview === 'watchlist' && isWatchlistSection(match)) {
-        sectionSubview = 'watchlist';
-        uiStore.setActiveView('feed');
-        replacePath(buildSectionWatchlistHref(getSectionSlug(match)));
       } else if (pendingSectionSubview === 'bookshelf' && isBooksSection(match)) {
         sectionSubview = 'bookshelf';
         uiStore.setActiveView('bookshelf');
@@ -403,9 +386,9 @@
     pendingLegacyWatchlistRoute = false;
     if (preferred) {
       sectionStore.setActiveSection(preferred);
-      sectionSubview = 'watchlist';
+      sectionSubview = 'feed';
       uiStore.setActiveView('feed');
-      replacePath(buildSectionWatchlistHref(getSectionSlug(preferred)));
+      replacePath(buildFeedHref(getSectionSlug(preferred)));
     } else {
       sectionSubview = 'feed';
       const fallbackSection = $activeSection ?? $sections[0] ?? null;
@@ -452,11 +435,12 @@
       if ($activeSection?.id !== preferredSection.id) {
         sectionStore.setActiveSection(preferredSection);
       }
-      sectionSubview = 'watchlist';
+      sectionSubview = 'feed';
       if ($activeView !== 'feed') {
         uiStore.setActiveView('feed');
       }
       threadRouteStore.clearTarget();
+      replacePath(buildFeedHref(getSectionSlug(preferredSection)));
     }
   }
 
@@ -484,21 +468,8 @@
     }
   }
 
-  $: if (sectionSubview === 'watchlist' && $activeSection && typeof window !== 'undefined') {
-    const watchlistSlug = parseSectionWatchlistSlug(window.location.pathname);
-    const isLegacyWatchlistRoute = isWatchlistPath(window.location.pathname);
-    if (
-      !isLegacyWatchlistRoute &&
-      (!watchlistSlug || watchlistSlug !== getSectionSlug($activeSection))
-    ) {
-      sectionSubview = 'feed';
-    }
-  }
-
   $: if (typeof document !== 'undefined') {
-    if (sectionSubview === 'watchlist' && $activeSection && isWatchlistSection($activeSection)) {
-      document.title = `${$activeSection.name} Watchlist - Clubhouse`;
-    } else if (sectionSubview === 'bookshelf' && $activeSection && isBooksSection($activeSection)) {
+    if (sectionSubview === 'bookshelf' && $activeSection && isBooksSection($activeSection)) {
       document.title = 'Bookshelf - Clubhouse';
     } else {
       document.title = 'Clubhouse';
@@ -575,7 +546,7 @@
               <span class="text-3xl">{$activeSection.icon}</span>
               <h1 class="text-2xl font-bold text-gray-900">{$activeSection.name}</h1>
             </div>
-            {#if supportsWatchlist || supportsBookshelf}
+            {#if supportsBookshelf}
               <div
                 class="inline-flex items-center gap-1 rounded-full bg-gray-100 p-1"
                 role="tablist"
@@ -595,22 +566,6 @@
                 >
                   Feed
                 </button>
-                {#if supportsWatchlist}
-                  <button
-                    type="button"
-                    role="tab"
-                    class={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                      sectionSubview === 'watchlist'
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-800'
-                    }`}
-                    aria-selected={sectionSubview === 'watchlist'}
-                    on:click={openSectionWatchlistView}
-                    data-testid="section-tab-watchlist"
-                  >
-                    Watchlist
-                  </button>
-                {/if}
                 {#if supportsBookshelf}
                   <button
                     type="button"
@@ -631,12 +586,14 @@
             {/if}
           </div>
 
-          {#if supportsWatchlist && sectionSubview === 'watchlist'}
-            <Watchlist sectionType={$activeSection.type === 'series' ? 'series' : 'movie'} />
-          {:else if supportsBookshelf && sectionSubview === 'bookshelf'}
+          {#if supportsBookshelf && sectionSubview === 'bookshelf'}
             <Bookshelf />
           {:else}
             <!-- Section-specific components should render above PostForm for consistency. -->
+            {#if supportsWatchlist}
+              <Watchlist sectionType={$activeSection.type === 'series' ? 'series' : 'movie'} />
+            {/if}
+
             {#if $activeSection.type === 'recipe'}
               <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                 <Cookbook />
