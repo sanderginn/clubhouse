@@ -676,7 +676,7 @@
     {
       "issue_number": 873,
       "title": "[Books] Integrate BookStatsBar and BookCard into PostCard",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         868,
         871,
@@ -687,7 +687,11 @@
         "frontend",
         "books"
       ],
-      "priority": 81
+      "priority": 81,
+      "assigned_to": "agent-1770713714-1085",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770713714-1085",
+      "branch": "feat/issue-873-books-integrate-bookstatsbar-and-bookcar",
+      "claimed_at": "2026-02-10T08:55:14Z"
     },
     {
       "issue_number": 874,
