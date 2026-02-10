@@ -57,6 +57,7 @@
     893,
     894,
     895,
+    896,
     948,
     949,
     950,
@@ -1141,7 +1142,7 @@
     {
       "issue_number": 896,
       "title": "[Podcasts] Extend frontend API/post mapper for podcast metadata and detection errors",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         889,
         890
@@ -1155,7 +1156,9 @@
       "assigned_to": "agent-1770714863-18002",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770714863-18002",
       "branch": "feat/issue-896-podcasts-extend-frontend-apipost-mapper-",
-      "claimed_at": "2026-02-10T09:14:23Z"
+      "claimed_at": "2026-02-10T09:14:23Z",
+      "pr_number": 961,
+      "completed_at": "2026-02-10T09:31:08Z"
     },
     {
       "issue_number": 897,
