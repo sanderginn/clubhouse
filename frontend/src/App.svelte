@@ -34,6 +34,7 @@
   } from './stores';
   import { parseProfileUserId } from './services/profileNavigation';
   import {
+    buildBookshelfHref,
     buildFeedHref,
     buildSectionWatchlistHref,
     buildThreadHref,
@@ -60,17 +61,22 @@
   let sectionsLoadedForSession = false;
   let popstateHandler: (() => void) | null = null;
   let pendingSectionIdentifier: string | null = null;
-  let pendingSectionSubview: 'feed' | 'watchlist' = 'feed';
+  let pendingSectionSubview: 'feed' | 'watchlist' | 'bookshelf' = 'feed';
   let pendingThreadPostId: string | null = null;
   let pendingLegacyWatchlistRoute = false;
   let pendingAdminPath = false;
   let sectionNotFound: string | null = null;
   let highlightCommentId: string | null = null;
-  let sectionSubview: 'feed' | 'watchlist' = 'feed';
+  let sectionSubview: 'feed' | 'watchlist' | 'bookshelf' = 'feed';
 
   function isWatchlistSection(section: Pick<Section, 'type'> | null): boolean {
     if (!section) return false;
     return section.type === 'movie' || section.type === 'series';
+  }
+
+  function isBooksSection(section: Pick<Section, 'type'> | null): boolean {
+    if (!section) return false;
+    return section.type === 'book';
   }
 
   function getPreferredWatchlistSection(sectionList: Section[]): Section | null {
@@ -79,6 +85,10 @@
       sectionList.find((section) => section.type === 'series') ??
       null
     );
+  }
+
+  function getPreferredBooksSection(sectionList: Section[]): Section | null {
+    return sectionList.find((section) => section.type === 'book') ?? null;
   }
 
   function openSectionFeedView() {
@@ -97,6 +107,15 @@
     threadRouteStore.clearTarget();
     uiStore.setActiveView('feed');
     pushPath(buildSectionWatchlistHref(getSectionSlug(section)));
+  }
+
+  function openSectionBookshelfView() {
+    const section = get(activeSection);
+    if (!section || !isBooksSection(section)) return;
+    sectionSubview = 'bookshelf';
+    threadRouteStore.clearTarget();
+    uiStore.setActiveView('bookshelf');
+    pushPath(buildBookshelfHref());
   }
 
   onMount(() => {
@@ -182,7 +201,14 @@
       pendingLegacyWatchlistRoute = false;
       pendingAdminPath = false;
       highlightCommentId = null;
-      sectionSubview = 'feed';
+      sectionSubview = 'bookshelf';
+      const availableSections = get(sections);
+      const preferredBooksSection =
+        getPreferredBooksSection(availableSections) ??
+        (isBooksSection(get(activeSection)) ? get(activeSection) : null);
+      if (preferredBooksSection) {
+        sectionStore.setActiveSection(preferredBooksSection);
+      }
       uiStore.setActiveView('bookshelf');
       return;
     }
@@ -351,6 +377,10 @@
         sectionSubview = 'watchlist';
         uiStore.setActiveView('feed');
         replacePath(buildSectionWatchlistHref(getSectionSlug(match)));
+      } else if (pendingSectionSubview === 'bookshelf' && isBooksSection(match)) {
+        sectionSubview = 'bookshelf';
+        uiStore.setActiveView('bookshelf');
+        replacePath(buildBookshelfHref());
       } else if (!hasThreadTarget) {
         sectionSubview = 'feed';
         uiStore.setActiveView('feed');
@@ -435,11 +465,23 @@
     isBookshelfPath(window.location.pathname) &&
     $isAuthenticated
   ) {
+    const preferredSection =
+      getPreferredBooksSection($sections) ??
+      (isBooksSection($activeSection) ? $activeSection : null);
+    if (preferredSection && $activeSection?.id !== preferredSection.id) {
+      sectionStore.setActiveSection(preferredSection);
+    }
     if ($activeView !== 'bookshelf') {
       uiStore.setActiveView('bookshelf');
     }
     threadRouteStore.clearTarget();
-    sectionSubview = 'feed';
+    sectionSubview = 'bookshelf';
+  }
+
+  $: if (sectionSubview === 'bookshelf' && typeof window !== 'undefined') {
+    if (!isBookshelfPath(window.location.pathname)) {
+      sectionSubview = 'feed';
+    }
   }
 
   $: if (sectionSubview === 'watchlist' && $activeSection && typeof window !== 'undefined') {
@@ -456,7 +498,7 @@
   $: if (typeof document !== 'undefined') {
     if (sectionSubview === 'watchlist' && $activeSection && isWatchlistSection($activeSection)) {
       document.title = `${$activeSection.name} Watchlist - Clubhouse`;
-    } else if ($activeView === 'bookshelf') {
+    } else if (sectionSubview === 'bookshelf' && $activeSection && isBooksSection($activeSection)) {
       document.title = 'Bookshelf - Clubhouse';
     } else {
       document.title = 'Clubhouse';
@@ -515,8 +557,6 @@
           {/if}
         {:else if $activeView === 'settings'}
           <Settings />
-        {:else if $activeView === 'bookshelf'}
-          <Bookshelf />
         {:else if sectionNotFound}
           <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h1 class="text-xl font-semibold text-gray-900 mb-2">Section not found</h1>
@@ -529,12 +569,13 @@
           <ThreadView {highlightCommentId} />
         {:else if $activeSection}
           {@const supportsWatchlist = isWatchlistSection($activeSection)}
+          {@const supportsBookshelf = isBooksSection($activeSection)}
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-3">
               <span class="text-3xl">{$activeSection.icon}</span>
               <h1 class="text-2xl font-bold text-gray-900">{$activeSection.name}</h1>
             </div>
-            {#if supportsWatchlist}
+            {#if supportsWatchlist || supportsBookshelf}
               <div
                 class="inline-flex items-center gap-1 rounded-full bg-gray-100 p-1"
                 role="tablist"
@@ -554,26 +595,46 @@
                 >
                   Feed
                 </button>
-                <button
-                  type="button"
-                  role="tab"
-                  class={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                    sectionSubview === 'watchlist'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                  aria-selected={sectionSubview === 'watchlist'}
-                  on:click={openSectionWatchlistView}
-                  data-testid="section-tab-watchlist"
-                >
-                  Watchlist
-                </button>
+                {#if supportsWatchlist}
+                  <button
+                    type="button"
+                    role="tab"
+                    class={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                      sectionSubview === 'watchlist'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-800'
+                    }`}
+                    aria-selected={sectionSubview === 'watchlist'}
+                    on:click={openSectionWatchlistView}
+                    data-testid="section-tab-watchlist"
+                  >
+                    Watchlist
+                  </button>
+                {/if}
+                {#if supportsBookshelf}
+                  <button
+                    type="button"
+                    role="tab"
+                    class={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                      sectionSubview === 'bookshelf'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-800'
+                    }`}
+                    aria-selected={sectionSubview === 'bookshelf'}
+                    on:click={openSectionBookshelfView}
+                    data-testid="section-tab-bookshelf"
+                  >
+                    Bookshelf
+                  </button>
+                {/if}
               </div>
             {/if}
           </div>
 
           {#if supportsWatchlist && sectionSubview === 'watchlist'}
             <Watchlist sectionType={$activeSection.type === 'series' ? 'series' : 'movie'} />
+          {:else if supportsBookshelf && sectionSubview === 'bookshelf'}
+            <Bookshelf />
           {:else}
             <!-- Section-specific components should render above PostForm for consistency. -->
             {#if $activeSection.type === 'recipe'}

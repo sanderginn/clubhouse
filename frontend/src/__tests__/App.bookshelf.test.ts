@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { get } from 'svelte/store';
 import * as stores from '../stores';
 import { movieStore } from '../stores/movieStore';
@@ -115,5 +115,23 @@ describe('App bookshelf routing', () => {
       expect(screen.getByRole('heading', { name: 'Sign in to Clubhouse' })).toBeInTheDocument();
     });
     expect(screen.queryByRole('heading', { name: 'Bookshelf' })).not.toBeInTheDocument();
+  });
+
+  it('shows Bookshelf tab in Books section header and routes to /bookshelf', async () => {
+    stores.authStore.setUser(defaultUser);
+    window.history.replaceState(null, '', '/sections/books');
+
+    render(App);
+
+    const feedTab = await screen.findByTestId('section-tab-feed');
+    const bookshelfTab = screen.getByTestId('section-tab-bookshelf');
+    expect(feedTab).toHaveAttribute('aria-selected', 'true');
+
+    await fireEvent.click(bookshelfTab);
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/bookshelf');
+    });
+    expect(bookshelfTab).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByTestId('bookshelf-tab-my')).toBeInTheDocument();
   });
 });
