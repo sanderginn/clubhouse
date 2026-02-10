@@ -1499,14 +1499,18 @@
     {
       "issue_number": 979,
       "title": "[Books] Remove standalone Bookshelf section from navigation",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
         "frontend",
         "books"
       ],
-      "priority": 8
+      "priority": 8,
+      "assigned_to": "agent-1770726068-95543",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770726068-95543",
+      "branch": "feat/issue-979-books-remove-standalone-bookshelf-sectio",
+      "claimed_at": "2026-02-10T12:21:08Z"
     },
     {
       "issue_number": 980,
