@@ -1338,6 +1338,49 @@ func TestSectionRouteHandlerFeedRequiresAuth(t *testing.T) {
 	}
 }
 
+func TestSectionRouteHandlerRecentPodcastsRequiresAuth(t *testing.T) {
+	authCalled := false
+
+	requireAuth := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authCalled = true
+			w.WriteHeader(http.StatusUnauthorized)
+		})
+	}
+
+	deps := sectionRouteDeps{
+		listSections: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("listSections should not be called without auth")
+		},
+		getSection: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getSection should not be called without auth")
+		},
+		getFeed: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getFeed should not be called without auth")
+		},
+		getLinks: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getLinks should not be called without auth")
+		},
+		getRecentPodcasts: func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("getRecentPodcasts should not be called without auth")
+		},
+	}
+
+	handler := newSectionRouteHandler(requireAuth, deps)
+	sectionID := uuid.New()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/sections/"+sectionID.String()+"/podcasts/recent", nil)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusUnauthorized {
+		t.Fatalf("expected status %v, got %v", http.StatusUnauthorized, status)
+	}
+	if !authCalled {
+		t.Fatal("expected auth middleware to be called")
+	}
+}
+
 func TestRegisterBookshelfRoutesWiresHandlersAndMiddleware(t *testing.T) {
 	mux := http.NewServeMux()
 

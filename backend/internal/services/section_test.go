@@ -242,6 +242,147 @@ func TestSectionServiceGetSectionLinksNotFound(t *testing.T) {
 	}
 }
 
+func TestSectionServiceGetRecentPodcastsEmpty(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	sectionID := testutil.CreateTestSection(t, db, "Podcasts", "podcast")
+	service := NewSectionService(db)
+
+	response, err := service.GetRecentPodcasts(context.Background(), uuid.MustParse(sectionID), nil, 10)
+	if err != nil {
+		t.Fatalf("GetRecentPodcasts failed: %v", err)
+	}
+	if len(response.Items) != 0 {
+		t.Fatalf("expected empty items, got %d", len(response.Items))
+	}
+	if response.HasMore {
+		t.Fatalf("expected hasMore=false for empty response")
+	}
+	if response.NextCursor != nil {
+		t.Fatalf("expected nextCursor=nil for empty response")
+	}
+}
+
+func TestSectionServiceGetRecentPodcastsPaginationDeterministic(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "recentpodcasts", "recentpodcasts@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Podcasts", "podcast")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Podcast post")
+
+	now := time.Now().UTC()
+	sameTime := now.Add(-1 * time.Hour)
+	olderTime := now.Add(-2 * time.Hour)
+
+	highestLinkID := uuid.MustParse("ffffffff-ffff-ffff-ffff-fffffffffff1")
+	lowerLinkID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
+	oldestLinkID := uuid.MustParse("22222222-2222-2222-2222-222222222222")
+
+	insertTestSectionLinkWithID(t, db, highestLinkID, postID, "https://example.com/show", map[string]interface{}{
+		"podcast": map[string]interface{}{
+			"kind": "show",
+			"highlight_episodes": []map[string]interface{}{
+				{
+					"title": "Episode One",
+					"url":   "https://example.com/show/ep-1",
+				},
+			},
+		},
+	}, sameTime)
+	insertTestSectionLinkWithID(t, db, lowerLinkID, postID, "https://example.com/episode", map[string]interface{}{
+		"podcast": map[string]interface{}{
+			"kind": "episode",
+		},
+	}, sameTime)
+	insertTestSectionLinkWithID(t, db, oldestLinkID, postID, "https://example.com/older-show", map[string]interface{}{
+		"podcast": map[string]interface{}{
+			"kind": "show",
+		},
+	}, olderTime)
+	insertTestSectionLink(t, db, postID, "https://example.com/non-podcast", map[string]interface{}{"title": "No podcast metadata"}, now)
+
+	service := NewSectionService(db)
+
+	page1, err := service.GetRecentPodcasts(context.Background(), uuid.MustParse(sectionID), nil, 1)
+	if err != nil {
+		t.Fatalf("GetRecentPodcasts page1 failed: %v", err)
+	}
+	if len(page1.Items) != 1 {
+		t.Fatalf("expected 1 item in page1, got %d", len(page1.Items))
+	}
+	if page1.Items[0].LinkID != highestLinkID {
+		t.Fatalf("expected highest UUID first for tied timestamp, got %s", page1.Items[0].LinkID)
+	}
+	if page1.Items[0].Podcast.Kind != "show" {
+		t.Fatalf("expected show podcast kind, got %q", page1.Items[0].Podcast.Kind)
+	}
+	if len(page1.Items[0].Podcast.HighlightEpisodes) != 1 {
+		t.Fatalf("expected highlight episodes for show item")
+	}
+	if !page1.HasMore || page1.NextCursor == nil {
+		t.Fatalf("expected pagination cursor on page1")
+	}
+
+	page2, err := service.GetRecentPodcasts(context.Background(), uuid.MustParse(sectionID), page1.NextCursor, 1)
+	if err != nil {
+		t.Fatalf("GetRecentPodcasts page2 failed: %v", err)
+	}
+	if len(page2.Items) != 1 {
+		t.Fatalf("expected 1 item in page2, got %d", len(page2.Items))
+	}
+	if page2.Items[0].LinkID != lowerLinkID {
+		t.Fatalf("expected second tied UUID on page2, got %s", page2.Items[0].LinkID)
+	}
+	if page2.Items[0].Podcast.Kind != "episode" {
+		t.Fatalf("expected episode podcast kind, got %q", page2.Items[0].Podcast.Kind)
+	}
+	if !page2.HasMore || page2.NextCursor == nil {
+		t.Fatalf("expected pagination cursor on page2")
+	}
+
+	page3, err := service.GetRecentPodcasts(context.Background(), uuid.MustParse(sectionID), page2.NextCursor, 1)
+	if err != nil {
+		t.Fatalf("GetRecentPodcasts page3 failed: %v", err)
+	}
+	if len(page3.Items) != 1 {
+		t.Fatalf("expected 1 item in page3, got %d", len(page3.Items))
+	}
+	if page3.Items[0].LinkID != oldestLinkID {
+		t.Fatalf("expected oldest link on page3, got %s", page3.Items[0].LinkID)
+	}
+	if page3.HasMore || page3.NextCursor != nil {
+		t.Fatalf("expected final page without more results")
+	}
+}
+
+func TestSectionServiceGetRecentPodcastsInvalidCursor(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	sectionID := testutil.CreateTestSection(t, db, "Podcasts", "podcast")
+	service := NewSectionService(db)
+
+	_, err := service.GetRecentPodcasts(context.Background(), uuid.MustParse(sectionID), ptr("bad-cursor"), 10)
+	if err == nil || err.Error() != "invalid cursor" {
+		t.Fatalf("expected invalid cursor error, got %v", err)
+	}
+}
+
+func TestSectionServiceGetRecentPodcastsInvalidSectionType(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	sectionID := testutil.CreateTestSection(t, db, "General", "general")
+	service := NewSectionService(db)
+
+	_, err := service.GetRecentPodcasts(context.Background(), uuid.MustParse(sectionID), nil, 10)
+	if err == nil || err.Error() != "section is not podcast" {
+		t.Fatalf("expected section is not podcast error, got %v", err)
+	}
+}
+
 func insertTestSectionLink(t *testing.T, db *sql.DB, postID, url string, metadata map[string]interface{}, createdAt time.Time) {
 	t.Helper()
 
@@ -260,6 +401,27 @@ func insertTestSectionLink(t *testing.T, db *sql.DB, postID, url string, metadat
 	)
 	if err != nil {
 		t.Fatalf("failed to insert link: %v", err)
+	}
+}
+
+func insertTestSectionLinkWithID(t *testing.T, db *sql.DB, linkID uuid.UUID, postID, url string, metadata map[string]interface{}, createdAt time.Time) {
+	t.Helper()
+
+	var metadataValue interface{}
+	if metadata != nil {
+		bytes, err := json.Marshal(metadata)
+		if err != nil {
+			t.Fatalf("failed to marshal metadata: %v", err)
+		}
+		metadataValue = string(bytes)
+	}
+
+	_, err := db.Exec(
+		`INSERT INTO links (id, post_id, url, metadata, created_at) VALUES ($1, $2, $3, $4, $5)`,
+		linkID, postID, url, metadataValue, createdAt,
+	)
+	if err != nil {
+		t.Fatalf("failed to insert link with ID: %v", err)
 	}
 }
 

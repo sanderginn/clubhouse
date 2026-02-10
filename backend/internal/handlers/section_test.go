@@ -256,6 +256,107 @@ func TestGetSectionLinksInvalidID(t *testing.T) {
 	}
 }
 
+func TestGetRecentPodcastsSuccess(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "recentpodcastshandler", "recentpodcastshandler@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Podcasts", "podcast")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "Podcast post")
+
+	insertTestSectionLink(t, db, postID, "https://example.com/show", map[string]interface{}{
+		"podcast": map[string]interface{}{
+			"kind": "show",
+			"highlight_episodes": []map[string]interface{}{
+				{
+					"title": "Start Here",
+					"url":   "https://example.com/show/start-here",
+				},
+			},
+		},
+	}, time.Now().UTC())
+
+	handler := NewSectionHandler(db)
+	req := httptest.NewRequest("GET", "/api/v1/sections/"+sectionID+"/podcasts/recent", nil)
+	w := httptest.NewRecorder()
+
+	handler.GetRecentPodcasts(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response models.SectionRecentPodcastsResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if len(response.Items) != 1 {
+		t.Fatalf("expected 1 item, got %d", len(response.Items))
+	}
+	if response.Items[0].PostID.String() != postID {
+		t.Fatalf("expected post_id %s, got %s", postID, response.Items[0].PostID)
+	}
+	if response.Items[0].Podcast.Kind != "show" {
+		t.Fatalf("expected podcast kind show, got %q", response.Items[0].Podcast.Kind)
+	}
+	if len(response.Items[0].Podcast.HighlightEpisodes) != 1 {
+		t.Fatalf("expected one highlight episode")
+	}
+	if response.Items[0].Username != "recentpodcastshandler" {
+		t.Fatalf("expected username recentpodcastshandler, got %q", response.Items[0].Username)
+	}
+}
+
+func TestGetRecentPodcastsInvalidCursor(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	sectionID := testutil.CreateTestSection(t, db, "Podcasts", "podcast")
+	handler := NewSectionHandler(db)
+
+	req := httptest.NewRequest("GET", "/api/v1/sections/"+sectionID+"/podcasts/recent?cursor=bad-cursor", nil)
+	w := httptest.NewRecorder()
+
+	handler.GetRecentPodcasts(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if response.Code != "INVALID_CURSOR" {
+		t.Fatalf("expected INVALID_CURSOR, got %s", response.Code)
+	}
+}
+
+func TestGetRecentPodcastsInvalidSectionType(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	sectionID := testutil.CreateTestSection(t, db, "General", "general")
+	handler := NewSectionHandler(db)
+
+	req := httptest.NewRequest("GET", "/api/v1/sections/"+sectionID+"/podcasts/recent", nil)
+	w := httptest.NewRecorder()
+
+	handler.GetRecentPodcasts(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if response.Code != "INVALID_SECTION_TYPE" {
+		t.Fatalf("expected INVALID_SECTION_TYPE, got %s", response.Code)
+	}
+}
+
 func insertTestSectionLink(t *testing.T, db *sql.DB, postID, url string, metadata map[string]interface{}, createdAt time.Time) {
 	t.Helper()
 

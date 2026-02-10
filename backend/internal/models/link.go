@@ -23,3 +23,22 @@ type SectionLinksResponse struct {
 	HasMore    bool          `json:"has_more"`
 	NextCursor *string       `json:"next_cursor,omitempty"`
 }
+
+// RecentPodcastItem represents a recently shared podcast link in a section.
+type RecentPodcastItem struct {
+	PostID        uuid.UUID       `json:"post_id"`
+	LinkID        uuid.UUID       `json:"link_id"`
+	URL           string          `json:"url"`
+	Podcast       PodcastMetadata `json:"podcast"`
+	UserID        uuid.UUID       `json:"user_id"`
+	Username      string          `json:"username"`
+	PostCreatedAt time.Time       `json:"post_created_at"`
+	LinkCreatedAt time.Time       `json:"link_created_at"`
+}
+
+// SectionRecentPodcastsResponse represents a paginated response for recent podcast items.
+type SectionRecentPodcastsResponse struct {
+	Items      []RecentPodcastItem `json:"items"`
+	HasMore    bool                `json:"has_more"`
+	NextCursor *string             `json:"next_cursor,omitempty"`
+}

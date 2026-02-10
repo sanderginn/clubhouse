@@ -217,10 +217,11 @@ func newPostRouteHandler(requireAuth authMiddleware, requireAuthCSRF authMiddlew
 }
 
 type sectionRouteDeps struct {
-	listSections http.HandlerFunc
-	getSection   http.HandlerFunc
-	getFeed      http.HandlerFunc
-	getLinks     http.HandlerFunc
+	listSections      http.HandlerFunc
+	getSection        http.HandlerFunc
+	getFeed           http.HandlerFunc
+	getLinks          http.HandlerFunc
+	getRecentPodcasts http.HandlerFunc
 }
 
 type bookshelfRouteDeps struct {
@@ -240,6 +241,10 @@ type bookQuoteRouteDeps struct {
 
 func newSectionRouteHandler(requireAuth authMiddleware, deps sectionRouteDeps) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(strings.TrimSuffix(r.URL.Path, "/"), "/podcasts/recent") {
+			requireAuth(http.HandlerFunc(deps.getRecentPodcasts)).ServeHTTP(w, r)
+			return
+		}
 		if strings.Contains(r.URL.Path, "/links") {
 			requireAuth(http.HandlerFunc(deps.getLinks)).ServeHTTP(w, r)
 			return
