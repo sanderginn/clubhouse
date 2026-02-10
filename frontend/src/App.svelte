@@ -34,12 +34,10 @@
   } from './stores';
   import { parseProfileUserId } from './services/profileNavigation';
   import {
-    buildBookshelfHref,
     buildFeedHref,
     buildThreadHref,
     getHistoryState,
     isAdminPath,
-    isBookshelfPath,
     isSettingsPath,
     isWatchlistPath,
     parseSectionWatchlistSlug,
@@ -47,7 +45,6 @@
     parseSectionSlug,
     parseThreadCommentId,
     parseThreadPostId,
-    pushPath,
     replacePath,
   } from './services/routeNavigation';
   import { parseResetRoute } from './services/resetLink';
@@ -60,13 +57,13 @@
   let sectionsLoadedForSession = false;
   let popstateHandler: (() => void) | null = null;
   let pendingSectionIdentifier: string | null = null;
-  let pendingSectionSubview: 'feed' | 'bookshelf' = 'feed';
   let pendingThreadPostId: string | null = null;
   let pendingLegacyWatchlistRoute = false;
+  let pendingLegacyBookshelfRoute = false;
   let pendingAdminPath = false;
   let sectionNotFound: string | null = null;
   let highlightCommentId: string | null = null;
-  let sectionSubview: 'feed' | 'bookshelf' = 'feed';
+  const LEGACY_BOOKSHELF_PATH = '/bookshelf';
 
   function isWatchlistSection(section: Pick<Section, 'type'> | null): boolean {
     if (!section) return false;
@@ -88,24 +85,6 @@
 
   function getPreferredBooksSection(sectionList: Section[]): Section | null {
     return sectionList.find((section) => section.type === 'book') ?? null;
-  }
-
-  function openSectionFeedView() {
-    const section = get(activeSection);
-    if (!section) return;
-    sectionSubview = 'feed';
-    threadRouteStore.clearTarget();
-    uiStore.setActiveView('feed');
-    pushPath(buildFeedHref(getSectionSlug(section)));
-  }
-
-  function openSectionBookshelfView() {
-    const section = get(activeSection);
-    if (!section || !isBooksSection(section)) return;
-    sectionSubview = 'bookshelf';
-    threadRouteStore.clearTarget();
-    uiStore.setActiveView('bookshelf');
-    pushPath(buildBookshelfHref());
   }
 
   onMount(() => {
@@ -148,12 +127,11 @@
       unauthRoute = 'reset';
       resetToken = token;
       pendingSectionIdentifier = null;
-      pendingSectionSubview = 'feed';
       pendingThreadPostId = null;
       pendingLegacyWatchlistRoute = false;
+      pendingLegacyBookshelfRoute = false;
       pendingAdminPath = false;
       highlightCommentId = null;
-      sectionSubview = 'feed';
       return;
     }
     if (isWatchlistPath(path)) {
@@ -161,9 +139,9 @@
       resetToken = null;
       threadRouteStore.clearTarget();
       pendingSectionIdentifier = null;
-      pendingSectionSubview = 'feed';
       pendingThreadPostId = null;
       pendingLegacyWatchlistRoute = false;
+      pendingLegacyBookshelfRoute = false;
       pendingAdminPath = false;
       highlightCommentId = null;
       uiStore.setActiveView('feed');
@@ -173,33 +151,33 @@
         (isWatchlistSection(get(activeSection)) ? get(activeSection) : null);
       if (preferredSection) {
         sectionStore.setActiveSection(preferredSection);
-        sectionSubview = 'feed';
         replacePath(buildFeedHref(getSectionSlug(preferredSection)));
       } else {
-        sectionSubview = 'feed';
         pendingLegacyWatchlistRoute = true;
       }
       return;
     }
-    if (isBookshelfPath(path)) {
+    if (path === LEGACY_BOOKSHELF_PATH || path.startsWith(`${LEGACY_BOOKSHELF_PATH}/`)) {
       unauthRoute = 'login';
       resetToken = null;
       threadRouteStore.clearTarget();
       pendingSectionIdentifier = null;
-      pendingSectionSubview = 'feed';
       pendingThreadPostId = null;
       pendingLegacyWatchlistRoute = false;
+      pendingLegacyBookshelfRoute = false;
       pendingAdminPath = false;
       highlightCommentId = null;
-      sectionSubview = 'bookshelf';
+      uiStore.setActiveView('feed');
       const availableSections = get(sections);
       const preferredBooksSection =
         getPreferredBooksSection(availableSections) ??
         (isBooksSection(get(activeSection)) ? get(activeSection) : null);
       if (preferredBooksSection) {
         sectionStore.setActiveSection(preferredBooksSection);
+        replacePath(buildFeedHref(getSectionSlug(preferredBooksSection)));
+      } else {
+        pendingLegacyBookshelfRoute = true;
       }
-      uiStore.setActiveView('bookshelf');
       return;
     }
     const profileUserId = parseProfileUserId(path);
@@ -207,23 +185,21 @@
       uiStore.openProfile(profileUserId);
       threadRouteStore.clearTarget();
       pendingSectionIdentifier = null;
-      pendingSectionSubview = 'feed';
       pendingThreadPostId = null;
       pendingLegacyWatchlistRoute = false;
+      pendingLegacyBookshelfRoute = false;
       pendingAdminPath = false;
       highlightCommentId = null;
-      sectionSubview = 'feed';
     } else {
       const standaloneThreadPostId = parseStandaloneThreadPostId(path);
       if (standaloneThreadPostId) {
         uiStore.setActiveView('thread');
         threadRouteStore.setTarget(standaloneThreadPostId, null);
         pendingSectionIdentifier = null;
-        pendingSectionSubview = 'feed';
         pendingThreadPostId = null;
         pendingLegacyWatchlistRoute = false;
+        pendingLegacyBookshelfRoute = false;
         pendingAdminPath = false;
-        sectionSubview = 'feed';
         return;
       }
       const threadPostId = parseThreadPostId(path);
@@ -245,7 +221,6 @@
           pendingThreadPostId = threadPostId;
           threadRouteStore.setTarget(threadPostId, null);
         }
-        sectionSubview = 'feed';
       } else {
         threadRouteStore.clearTarget();
         highlightCommentId = null;
@@ -258,7 +233,6 @@
           if (match) {
             sectionStore.setActiveSection(match);
             const slug = getSectionSlug(match);
-            sectionSubview = 'feed';
             if (wantsSectionWatchlist) {
               replacePath(buildFeedHref(slug));
             } else if (sectionIdentifier !== slug) {
@@ -269,34 +243,30 @@
             }
           } else {
             sectionNotFound = sectionIdentifier;
-            sectionSubview = 'feed';
           }
           pendingSectionIdentifier = null;
-          pendingSectionSubview = 'feed';
         } else {
           pendingSectionIdentifier = sectionIdentifier;
-          pendingSectionSubview = 'feed';
         }
         pendingLegacyWatchlistRoute = false;
+        pendingLegacyBookshelfRoute = false;
         pendingAdminPath = false;
         uiStore.setActiveView(threadPostId ? 'thread' : 'feed');
       } else if (isSettingsPath(path)) {
         pendingSectionIdentifier = null;
-        pendingSectionSubview = 'feed';
         pendingThreadPostId = null;
         pendingLegacyWatchlistRoute = false;
+        pendingLegacyBookshelfRoute = false;
         pendingAdminPath = false;
         threadRouteStore.clearTarget();
         uiStore.setActiveView('settings');
         highlightCommentId = null;
-        sectionSubview = 'feed';
       } else if (isAdminPath(path)) {
         pendingSectionIdentifier = null;
-        pendingSectionSubview = 'feed';
         pendingThreadPostId = null;
         pendingLegacyWatchlistRoute = false;
+        pendingLegacyBookshelfRoute = false;
         highlightCommentId = null;
-        sectionSubview = 'feed';
         if (get(authStore).isLoading) {
           pendingAdminPath = true;
           return;
@@ -306,24 +276,20 @@
           uiStore.setActiveView('admin');
         } else if (get(isAuthenticated)) {
           uiStore.setActiveView('feed');
-          const fallbackSectionId =
-            get(activeSection)?.id ?? get(sections)[0]?.id ?? null;
-          const fallbackSection = get(sections).find(
-            (section) => section.id === fallbackSectionId
-          );
+          const fallbackSectionId = get(activeSection)?.id ?? get(sections)[0]?.id ?? null;
+          const fallbackSection = get(sections).find((section) => section.id === fallbackSectionId);
           replacePath(buildFeedHref(fallbackSection ? getSectionSlug(fallbackSection) : null));
         } else {
           uiStore.setActiveView('feed');
         }
       } else {
         pendingSectionIdentifier = null;
-        pendingSectionSubview = 'feed';
         pendingThreadPostId = null;
         pendingLegacyWatchlistRoute = false;
+        pendingLegacyBookshelfRoute = false;
         pendingAdminPath = false;
         uiStore.setActiveView('feed');
         highlightCommentId = null;
-        sectionSubview = 'feed';
       }
     }
     resetToken = null;
@@ -350,35 +316,26 @@
 
   $: if (pendingSectionIdentifier && $sections.length > 0) {
     const match = findSectionByIdentifier($sections, pendingSectionIdentifier) ?? null;
-    const hasThreadTarget =
-      $threadRouteStore.postId && $threadRouteStore.sectionId === match?.id;
+    const hasThreadTarget = $threadRouteStore.postId && $threadRouteStore.sectionId === match?.id;
     if (match) {
       sectionStore.setActiveSection(match);
       if (pendingThreadPostId) {
-        sectionSubview = 'feed';
         threadRouteStore.setTarget(pendingThreadPostId, match.id);
         uiStore.setActiveView('thread');
         replacePath(buildThreadHref(getSectionSlug(match), pendingThreadPostId));
         pendingThreadPostId = null;
-      } else if (pendingSectionSubview === 'bookshelf' && isBooksSection(match)) {
-        sectionSubview = 'bookshelf';
-        uiStore.setActiveView('bookshelf');
-        replacePath(buildBookshelfHref());
       } else if (!hasThreadTarget) {
-        sectionSubview = 'feed';
         uiStore.setActiveView('feed');
         replacePath(buildFeedHref(getSectionSlug(match)));
       }
     } else {
       sectionNotFound = pendingSectionIdentifier;
-      sectionSubview = 'feed';
       if (pendingThreadPostId) {
         threadRouteStore.clearTarget();
         pendingThreadPostId = null;
       }
     }
     pendingSectionIdentifier = null;
-    pendingSectionSubview = 'feed';
   }
 
   $: if (pendingLegacyWatchlistRoute && $sections.length > 0) {
@@ -386,11 +343,22 @@
     pendingLegacyWatchlistRoute = false;
     if (preferred) {
       sectionStore.setActiveSection(preferred);
-      sectionSubview = 'feed';
       uiStore.setActiveView('feed');
       replacePath(buildFeedHref(getSectionSlug(preferred)));
     } else {
-      sectionSubview = 'feed';
+      const fallbackSection = $activeSection ?? $sections[0] ?? null;
+      replacePath(buildFeedHref(fallbackSection ? getSectionSlug(fallbackSection) : null));
+    }
+  }
+
+  $: if (pendingLegacyBookshelfRoute && $sections.length > 0) {
+    const preferred = getPreferredBooksSection($sections);
+    pendingLegacyBookshelfRoute = false;
+    if (preferred) {
+      sectionStore.setActiveSection(preferred);
+      uiStore.setActiveView('feed');
+      replacePath(buildFeedHref(getSectionSlug(preferred)));
+    } else {
       const fallbackSection = $activeSection ?? $sections[0] ?? null;
       replacePath(buildFeedHref(fallbackSection ? getSectionSlug(fallbackSection) : null));
     }
@@ -404,11 +372,8 @@
       pendingAdminPath = false;
     } else if ($isAuthenticated) {
       uiStore.setActiveView('feed');
-      const fallbackSectionId =
-        get(activeSection)?.id ?? get(sections)[0]?.id ?? null;
-      const fallbackSection = get(sections).find(
-        (section) => section.id === fallbackSectionId
-      );
+      const fallbackSectionId = get(activeSection)?.id ?? get(sections)[0]?.id ?? null;
+      const fallbackSection = get(sections).find((section) => section.id === fallbackSectionId);
       replacePath(buildFeedHref(fallbackSection ? getSectionSlug(fallbackSection) : null));
       pendingAdminPath = false;
     } else {
@@ -435,7 +400,6 @@
       if ($activeSection?.id !== preferredSection.id) {
         sectionStore.setActiveSection(preferredSection);
       }
-      sectionSubview = 'feed';
       if ($activeView !== 'feed') {
         uiStore.setActiveView('feed');
       }
@@ -444,36 +408,8 @@
     }
   }
 
-  $: if (
-    typeof window !== 'undefined' &&
-    isBookshelfPath(window.location.pathname) &&
-    $isAuthenticated
-  ) {
-    const preferredSection =
-      getPreferredBooksSection($sections) ??
-      (isBooksSection($activeSection) ? $activeSection : null);
-    if (preferredSection && $activeSection?.id !== preferredSection.id) {
-      sectionStore.setActiveSection(preferredSection);
-    }
-    if ($activeView !== 'bookshelf') {
-      uiStore.setActiveView('bookshelf');
-    }
-    threadRouteStore.clearTarget();
-    sectionSubview = 'bookshelf';
-  }
-
-  $: if (sectionSubview === 'bookshelf' && typeof window !== 'undefined') {
-    if (!isBookshelfPath(window.location.pathname)) {
-      sectionSubview = 'feed';
-    }
-  }
-
   $: if (typeof document !== 'undefined') {
-    if (sectionSubview === 'bookshelf' && $activeSection && isBooksSection($activeSection)) {
-      document.title = 'Bookshelf - Clubhouse';
-    } else {
-      document.title = 'Clubhouse';
-    }
+    document.title = 'Clubhouse';
   }
 </script>
 
@@ -487,13 +423,7 @@
           fill="none"
           viewBox="0 0 24 24"
         >
-          <circle
-            class="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
           ></circle>
           <path
             class="opacity-75"
@@ -523,7 +453,9 @@
           {:else}
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h1 class="text-xl font-semibold text-gray-900 mb-2">User not found</h1>
-              <p class="text-gray-600">We couldn’t load that profile. Try selecting a user again.</p>
+              <p class="text-gray-600">
+                We couldn’t load that profile. Try selecting a user again.
+              </p>
             </div>
           {/if}
         {:else if $activeView === 'settings'}
@@ -540,81 +472,42 @@
           <ThreadView {highlightCommentId} />
         {:else if $activeSection}
           {@const supportsWatchlist = isWatchlistSection($activeSection)}
-          {@const supportsBookshelf = isBooksSection($activeSection)}
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-3">
               <span class="text-3xl">{$activeSection.icon}</span>
               <h1 class="text-2xl font-bold text-gray-900">{$activeSection.name}</h1>
             </div>
-            {#if supportsBookshelf}
-              <div
-                class="inline-flex items-center gap-1 rounded-full bg-gray-100 p-1"
-                role="tablist"
-                aria-label={`${$activeSection.name} section views`}
-              >
-                <button
-                  type="button"
-                  role="tab"
-                  class={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                    sectionSubview === 'feed'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                  aria-selected={sectionSubview === 'feed'}
-                  on:click={openSectionFeedView}
-                  data-testid="section-tab-feed"
-                >
-                  Feed
-                </button>
-                {#if supportsBookshelf}
-                  <button
-                    type="button"
-                    role="tab"
-                    class={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                      sectionSubview === 'bookshelf'
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-800'
-                    }`}
-                    aria-selected={sectionSubview === 'bookshelf'}
-                    on:click={openSectionBookshelfView}
-                    data-testid="section-tab-bookshelf"
-                  >
-                    Bookshelf
-                  </button>
-                {/if}
-              </div>
-            {/if}
           </div>
 
-          {#if supportsBookshelf && sectionSubview === 'bookshelf'}
-            <Bookshelf />
-          {:else}
-            <!-- Section-specific components should render above PostForm for consistency. -->
-            {#if supportsWatchlist}
-              <Watchlist sectionType={$activeSection.type === 'series' ? 'series' : 'movie'} />
-            {/if}
+          <!-- Section-specific components should render above PostForm for consistency. -->
+          {#if supportsWatchlist}
+            <Watchlist sectionType={$activeSection.type === 'series' ? 'series' : 'movie'} />
+          {/if}
 
-            {#if $activeSection.type === 'recipe'}
-              <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <Cookbook />
-              </div>
-            {/if}
-
-            {#if $activeSection.type === 'podcast'}
-              <PodcastsTopContainer />
-            {/if}
-
-            <MusicLinksContainer />
-
+          {#if $activeSection.type === 'recipe'}
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-              <PostForm />
+              <Cookbook />
             </div>
+          {/if}
 
-            {#if $isSearching || $searchError || $lastSearchQuery.trim().length > 0}
-              <SearchResults />
-            {:else}
-              <SectionFeed />
-            {/if}
+          {#if $activeSection.type === 'book'}
+            <Bookshelf />
+          {/if}
+
+          {#if $activeSection.type === 'podcast'}
+            <PodcastsTopContainer />
+          {/if}
+
+          <MusicLinksContainer />
+
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <PostForm />
+          </div>
+
+          {#if $isSearching || $searchError || $lastSearchQuery.trim().length > 0}
+            <SearchResults />
+          {:else}
+            <SectionFeed />
           {/if}
         {:else}
           <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

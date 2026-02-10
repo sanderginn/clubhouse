@@ -3,7 +3,7 @@ import { writable, derived } from 'svelte/store';
 interface UIState {
   sidebarOpen: boolean;
   isMobile: boolean;
-  activeView: 'feed' | 'admin' | 'profile' | 'settings' | 'thread' | 'bookshelf';
+  activeView: 'feed' | 'admin' | 'profile' | 'settings' | 'thread';
   activeProfileUserId: string | null;
 }
 
@@ -25,7 +25,7 @@ function createUIStore() {
         isMobile,
         sidebarOpen: isMobile ? false : state.sidebarOpen,
       })),
-    setActiveView: (activeView: 'feed' | 'admin' | 'profile' | 'settings' | 'thread' | 'bookshelf') =>
+    setActiveView: (activeView: 'feed' | 'admin' | 'profile' | 'settings' | 'thread') =>
       update((state) => ({
         ...state,
         activeView,
@@ -43,7 +43,4 @@ function createUIStore() {
 export const uiStore = createUIStore();
 
 export const activeView = derived(uiStore, ($uiStore) => $uiStore.activeView);
-export const activeProfileUserId = derived(
-  uiStore,
-  ($uiStore) => $uiStore.activeProfileUserId
-);
+export const activeProfileUserId = derived(uiStore, ($uiStore) => $uiStore.activeProfileUserId);
