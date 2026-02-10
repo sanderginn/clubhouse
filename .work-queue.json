@@ -36,6 +36,7 @@
     870,
     871,
     872,
+    874,
     876,
     877,
     878,
@@ -697,7 +698,7 @@
     {
       "issue_number": 874,
       "title": "[Books] Add Bookshelf route and navigation",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         872
       ],
@@ -710,7 +711,9 @@
       "assigned_to": "agent-1770713159-84210",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770713159-84210",
       "branch": "feat/issue-874-books-add-bookshelf-route-and-navigation",
-      "claimed_at": "2026-02-10T08:45:59Z"
+      "claimed_at": "2026-02-10T08:45:59Z",
+      "pr_number": 956,
+      "completed_at": "2026-02-10T09:06:41Z"
     },
     {
       "issue_number": 875,
