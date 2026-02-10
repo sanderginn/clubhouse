@@ -36,7 +36,8 @@
     878,
     883,
     884,
-    887
+    887,
+    891
   ],
   "issues": [
     {
@@ -941,7 +942,7 @@
     {
       "issue_number": 891,
       "title": "[Podcasts] Add podcast_saves table migration",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         887
       ],
@@ -955,7 +956,9 @@
       "assigned_to": "agent-1770699258-53944",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770699258-53944",
       "branch": "feat/issue-891-podcasts-add-podcastsaves-table-migratio",
-      "claimed_at": "2026-02-10T04:54:18Z"
+      "claimed_at": "2026-02-10T04:54:18Z",
+      "pr_number": 936,
+      "completed_at": "2026-02-10T07:01:06Z"
     },
     {
       "issue_number": 892,
