@@ -161,3 +161,71 @@ func (h *SectionHandler) GetSectionLinks(w http.ResponseWriter, r *http.Request)
 		})
 	}
 }
+
+// GetRecentPodcasts handles GET /api/v1/sections/{sectionId}/podcasts/recent
+func (h *SectionHandler) GetRecentPodcasts(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(r.Context(), w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only GET requests are allowed")
+		return
+	}
+
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 7 {
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_REQUEST", "Section ID is required")
+		return
+	}
+
+	sectionIDStr := pathParts[4]
+	sectionID, err := uuid.Parse(sectionIDStr)
+	if err != nil {
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_SECTION_ID", "Invalid section ID format")
+		return
+	}
+
+	cursor := r.URL.Query().Get("cursor")
+	limitStr := r.URL.Query().Get("limit")
+
+	limit := 20
+	if limitStr != "" {
+		if parsedLimit, err := parseIntParam(limitStr); err == nil && parsedLimit > 0 {
+			limit = parsedLimit
+		}
+	}
+	if limit > 50 {
+		limit = 50
+	}
+
+	var cursorPtr *string
+	if cursor != "" {
+		cursorPtr = &cursor
+	}
+
+	response, err := h.sectionService.GetRecentPodcasts(r.Context(), sectionID, cursorPtr, limit)
+	if err != nil {
+		switch err.Error() {
+		case "section not found":
+			writeError(r.Context(), w, http.StatusNotFound, "SECTION_NOT_FOUND", "Section not found")
+			return
+		case "section is not podcast":
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_SECTION_TYPE", "Section must be a podcast section")
+			return
+		case "invalid cursor":
+			writeError(r.Context(), w, http.StatusBadRequest, "INVALID_CURSOR", "Invalid cursor format")
+			return
+		default:
+			writeError(r.Context(), w, http.StatusInternalServerError, "GET_RECENT_PODCASTS_FAILED", "Failed to get recent podcasts")
+			return
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		observability.LogError(r.Context(), observability.ErrorLog{
+			Message:    "failed to encode section recent podcasts response",
+			Code:       "ENCODE_FAILED",
+			StatusCode: http.StatusOK,
+			Err:        err,
+		})
+	}
+}

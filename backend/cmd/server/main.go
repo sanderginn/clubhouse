@@ -206,10 +206,11 @@ func main() {
 	mux.HandleFunc("/api/v1/auth/password-reset/redeem", authHandler.RedeemPasswordResetToken)
 	mux.Handle("/api/v1/sections", requireAuth(http.HandlerFunc(sectionHandler.ListSections)))
 	sectionRouteHandler := newSectionRouteHandler(requireAuth, sectionRouteDeps{
-		listSections: sectionHandler.ListSections,
-		getSection:   sectionHandler.GetSection,
-		getFeed:      postHandler.GetFeed,
-		getLinks:     sectionHandler.GetSectionLinks,
+		listSections:      sectionHandler.ListSections,
+		getSection:        sectionHandler.GetSection,
+		getFeed:           postHandler.GetFeed,
+		getLinks:          sectionHandler.GetSectionLinks,
+		getRecentPodcasts: sectionHandler.GetRecentPodcasts,
 	})
 	mux.Handle("/api/v1/sections/", sectionRouteHandler)
 
