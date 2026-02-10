@@ -538,7 +538,7 @@
     {
       "issue_number": 867,
       "title": "[Books] Create bookStore",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         866
       ],
@@ -547,7 +547,11 @@
         "frontend",
         "books"
       ],
-      "priority": 75
+      "priority": 75,
+      "assigned_to": "agent-1770706700-78076",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770706700-78076",
+      "branch": "feat/issue-867-books-create-bookstore",
+      "claimed_at": "2026-02-10T06:58:20Z"
     },
     {
       "issue_number": 868,
