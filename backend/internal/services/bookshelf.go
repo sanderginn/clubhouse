@@ -389,72 +389,16 @@ func (s *BookshelfService) AddToBookshelf(ctx context.Context, userID, postID uu
 		return err
 	}
 
-	query := `
-		SELECT id, category_id, deleted_at
-		FROM bookshelf_items
-		WHERE user_id = $1 AND post_id = $2
-		ORDER BY created_at DESC, id DESC
-		LIMIT 1
-	`
-
-	var (
-		existingID         uuid.UUID
-		existingCategoryID uuid.NullUUID
-		existingDeletedAt  sql.NullTime
-	)
-	err = tx.QueryRowContext(ctx, query, userID, postID).Scan(&existingID, &existingCategoryID, &existingDeletedAt)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	changed, err := s.restoreDeletedBookshelfItem(ctx, tx, userID, postID, selectedCategoryID)
+	if err != nil {
 		recordSpanError(span, err)
-		return fmt.Errorf("failed to query existing bookshelf item: %w", err)
+		return err
 	}
-
-	changed := false
-	if errors.Is(err, sql.ErrNoRows) {
-		if _, err := tx.ExecContext(
-			ctx,
-			`INSERT INTO bookshelf_items (id, user_id, post_id, category_id, created_at)
-			VALUES ($1, $2, $3, $4, now())`,
-			uuid.New(),
-			userID,
-			postID,
-			uuidPointerValue(selectedCategoryID),
-		); err != nil {
+	if !changed {
+		changed, err = s.upsertActiveBookshelfItem(ctx, tx, userID, postID, selectedCategoryID)
+		if err != nil {
 			recordSpanError(span, err)
-			return fmt.Errorf("failed to create bookshelf item: %w", err)
-		}
-		changed = true
-	} else {
-		var existingCategoryPointer *uuid.UUID
-		if existingCategoryID.Valid {
-			existingCategoryPointer = &existingCategoryID.UUID
-		}
-
-		if existingDeletedAt.Valid {
-			if _, err := tx.ExecContext(
-				ctx,
-				`UPDATE bookshelf_items
-				SET category_id = $2, deleted_at = NULL
-				WHERE id = $1`,
-				existingID,
-				uuidPointerValue(selectedCategoryID),
-			); err != nil {
-				recordSpanError(span, err)
-				return fmt.Errorf("failed to restore bookshelf item: %w", err)
-			}
-			changed = true
-		} else if !equalUUIDPointers(existingCategoryPointer, selectedCategoryID) {
-			if _, err := tx.ExecContext(
-				ctx,
-				`UPDATE bookshelf_items
-				SET category_id = $2
-				WHERE id = $1`,
-				existingID,
-				uuidPointerValue(selectedCategoryID),
-			); err != nil {
-				recordSpanError(span, err)
-				return fmt.Errorf("failed to update bookshelf item category: %w", err)
-			}
-			changed = true
+			return err
 		}
 	}
 
@@ -484,6 +428,67 @@ func (s *BookshelfService) AddToBookshelf(ctx context.Context, userID, postID uu
 	}
 
 	return nil
+}
+
+func (s *BookshelfService) restoreDeletedBookshelfItem(
+	ctx context.Context,
+	tx *sql.Tx,
+	userID, postID uuid.UUID,
+	categoryID *uuid.UUID,
+) (bool, error) {
+	query := `
+		WITH candidate AS (
+			SELECT id
+			FROM bookshelf_items
+			WHERE user_id = $1 AND post_id = $2 AND deleted_at IS NOT NULL
+			ORDER BY created_at DESC, id DESC
+			LIMIT 1
+			FOR UPDATE
+		)
+		UPDATE bookshelf_items bi
+		SET category_id = $3, deleted_at = NULL
+		FROM candidate
+		WHERE bi.id = candidate.id
+		RETURNING bi.id
+	`
+
+	var restoredID uuid.UUID
+	err := tx.QueryRowContext(ctx, query, userID, postID, uuidPointerValue(categoryID)).Scan(&restoredID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("failed to restore bookshelf item: %w", err)
+	}
+
+	return true, nil
+}
+
+func (s *BookshelfService) upsertActiveBookshelfItem(
+	ctx context.Context,
+	tx *sql.Tx,
+	userID, postID uuid.UUID,
+	categoryID *uuid.UUID,
+) (bool, error) {
+	query := `
+		INSERT INTO bookshelf_items (id, user_id, post_id, category_id, created_at)
+		VALUES ($1, $2, $3, $4, now())
+		ON CONFLICT (user_id, post_id) WHERE deleted_at IS NULL
+		DO UPDATE SET category_id = EXCLUDED.category_id
+		WHERE bookshelf_items.category_id IS DISTINCT FROM EXCLUDED.category_id
+		RETURNING id
+	`
+
+	var affectedID uuid.UUID
+	err := tx.QueryRowContext(ctx, query, uuid.New(), userID, postID, uuidPointerValue(categoryID)).Scan(&affectedID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("failed to create or update bookshelf item: %w", err)
+	}
+
+	return true, nil
 }
 
 // RemoveFromBookshelf soft deletes an active bookshelf item.
@@ -1039,16 +1044,6 @@ func normalizeBookshelfCategoriesForAdd(categories []string) ([]string, error) {
 	}
 
 	return normalized, nil
-}
-
-func equalUUIDPointers(left *uuid.UUID, right *uuid.UUID) bool {
-	if left == nil && right == nil {
-		return true
-	}
-	if left == nil || right == nil {
-		return false
-	}
-	return *left == *right
 }
 
 func uuidPointerValue(value *uuid.UUID) interface{} {

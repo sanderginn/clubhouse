@@ -51,6 +51,47 @@ func TestBookshelfAddRemoveAndAudit(t *testing.T) {
 	}
 }
 
+func TestBookshelfAddIsIdempotentForActiveItemRetry(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := uuid.MustParse(testutil.CreateTestUser(t, db, "bookshelfretry", "bookshelfretry@test.com", false, true))
+	sectionID := testutil.CreateTestSection(t, db, "Books", "book")
+	postID := uuid.MustParse(testutil.CreateTestPost(t, db, userID.String(), sectionID, "Book post"))
+
+	service := NewBookshelfService(db)
+	if err := service.AddToBookshelf(context.Background(), userID, postID, []string{"Retry Shelf"}); err != nil {
+		t.Fatalf("first AddToBookshelf failed: %v", err)
+	}
+	if err := service.AddToBookshelf(context.Background(), userID, postID, []string{"Retry Shelf"}); err != nil {
+		t.Fatalf("second AddToBookshelf retry failed: %v", err)
+	}
+
+	var activeCount int
+	if err := db.QueryRowContext(context.Background(), `
+		SELECT COUNT(*)
+		FROM bookshelf_items
+		WHERE user_id = $1 AND post_id = $2 AND deleted_at IS NULL
+	`, userID, postID).Scan(&activeCount); err != nil {
+		t.Fatalf("failed to query active bookshelf item count: %v", err)
+	}
+	if activeCount != 1 {
+		t.Fatalf("expected 1 active bookshelf item after retry, got %d", activeCount)
+	}
+
+	var addAuditCount int
+	if err := db.QueryRowContext(context.Background(), `
+		SELECT COUNT(*)
+		FROM audit_logs
+		WHERE action = 'add_to_bookshelf' AND target_user_id = $1
+	`, userID).Scan(&addAuditCount); err != nil {
+		t.Fatalf("failed to query add_to_bookshelf audit count: %v", err)
+	}
+	if addAuditCount != 1 {
+		t.Fatalf("expected 1 add_to_bookshelf audit entry after idempotent retry, got %d", addAuditCount)
+	}
+}
+
 func TestBookshelfCategoryCRUDWithDeleteRecategorization(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
