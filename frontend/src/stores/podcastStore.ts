@@ -102,6 +102,22 @@ function isPostSaved(state: PodcastStoreState, postId: string): boolean {
   return state.saveInfoByPostId[postId]?.viewerSaved ?? state.savedPostIds.has(postId);
 }
 
+function pruneDeletedPostData(state: PodcastStoreState, postId: string): PodcastStoreState {
+  const nextSaveInfo = { ...state.saveInfoByPostId };
+  delete nextSaveInfo[postId];
+
+  const nextSavedIds = new Set(state.savedPostIds);
+  nextSavedIds.delete(postId);
+
+  return {
+    ...state,
+    recentItems: state.recentItems.filter((item) => item.postId !== postId),
+    saveInfoByPostId: nextSaveInfo,
+    savedPosts: state.savedPosts.filter((post) => post.id !== postId),
+    savedPostIds: nextSavedIds,
+  };
+}
+
 function createPodcastStore() {
   const { subscribe, update, set } = writable<PodcastStoreState>({
     ...initialState,
@@ -242,6 +258,7 @@ function createPodcastStore() {
         savedPosts: state.savedPosts.filter((post) => post.id !== postId),
         savedPostIds: new Set([...state.savedPostIds].filter((id) => id !== postId)),
       })),
+    handlePostDeleted: (postId: string) => update((state) => pruneDeletedPostData(state, postId)),
     loadRecentPodcasts: async (sectionId: string, limit = DEFAULT_PAGE_SIZE): Promise<void> => {
       const requestGeneration = ++recentRequestGeneration;
       podcastStore.setLoadingRecent(true);

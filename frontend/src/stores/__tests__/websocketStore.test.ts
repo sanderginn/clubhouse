@@ -63,6 +63,7 @@ const storeRefs = {
   },
   postStore: {
     upsertPost: vi.fn(),
+    removePost: vi.fn(),
     incrementCommentCount: vi.fn(),
     updateReactionCount: vi.fn(),
     updateHighlightReaction: vi.fn(),
@@ -162,6 +163,7 @@ beforeEach(() => {
   storeRefs.isAuthenticated.set(false);
   storeRefs.currentUser.set(null);
   storeRefs.postStore.upsertPost.mockReset();
+  storeRefs.postStore.removePost.mockReset();
   storeRefs.postStore.incrementCommentCount.mockReset();
   storeRefs.postStore.updateReactionCount.mockReset();
   storeRefs.postStore.updateHighlightReaction.mockReset();
@@ -269,6 +271,25 @@ describe('websocketStore', () => {
     });
 
     expect(storeRefs.postStore.upsertPost).toHaveBeenCalledWith({ id: 'post-1' });
+  });
+
+  it('handles post_deleted event', async () => {
+    storeRefs.isAuthenticated.set(true);
+    const { websocketStore } = await import('../websocketStore');
+
+    websocketStore.init();
+    const socket = MockWebSocket.instances[0];
+    socket.open();
+
+    socket.emit('message', {
+      data: JSON.stringify({
+        type: 'post_deleted',
+        data: { post_id: 'post-1' },
+        timestamp: 'now',
+      }),
+    });
+
+    expect(storeRefs.postStore.removePost).toHaveBeenCalledWith('post-1');
   });
 
   it('handles link_metadata_updated event', async () => {

@@ -1,4 +1,5 @@
 import { writable, derived } from 'svelte/store';
+import { podcastStore } from './podcastStore';
 
 export interface Highlight {
   id?: string;
@@ -324,10 +325,13 @@ function createPostStore() {
         };
       }),
     removePost: (postId: string) =>
-      update((state) => ({
-        ...state,
-        posts: state.posts.filter((p) => p.id !== postId),
-      })),
+      update((state) => {
+        podcastStore.handlePostDeleted(postId);
+        return {
+          ...state,
+          posts: state.posts.filter((p) => p.id !== postId),
+        };
+      }),
     incrementCommentCount: (postId: string, delta: number) =>
       update((state) => ({
         ...state,

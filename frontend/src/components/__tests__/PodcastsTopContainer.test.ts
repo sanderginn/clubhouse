@@ -38,12 +38,12 @@ function setActiveSection(type: 'podcast' | 'general') {
   });
 }
 
-function buildSavedPost(): Post {
+function buildSavedPost(id = 'post-1', title = 'Saved episode'): Post {
   return {
-    id: 'post-1',
+    id,
     userId: 'user-1',
     sectionId: 'section-1',
-    content: 'Saved podcast post',
+    content: `Saved podcast post ${id}`,
     createdAt: '2026-02-10T10:00:00Z',
     user: {
       id: 'user-1',
@@ -53,7 +53,7 @@ function buildSavedPost(): Post {
       {
         url: 'https://example.com/podcast/episode',
         metadata: {
-          title: 'Saved episode',
+          title,
           podcast: {
             kind: 'episode',
           },
@@ -203,6 +203,34 @@ describe('PodcastsTopContainer', () => {
     await waitFor(() => {
       expect(apiGetSectionSavedPodcasts).toHaveBeenCalledTimes(2);
     });
+  });
+
+  it('reactively removes deleted posts from the saved tab without a refresh', async () => {
+    apiGetSectionRecentPodcasts.mockResolvedValue({
+      items: [],
+      hasMore: false,
+      nextCursor: undefined,
+    });
+    apiGetSectionSavedPodcasts.mockResolvedValue({
+      posts: [buildSavedPost('post-1', 'Saved episode A'), buildSavedPost('post-2', 'Saved episode B')],
+      hasMore: false,
+      nextCursor: undefined,
+    });
+
+    setActiveSection('podcast');
+    render(PodcastsTopContainer);
+
+    await screen.findByTestId('podcasts-recent-empty');
+    await fireEvent.click(screen.getByTestId('podcasts-mode-saved'));
+    expect(await screen.findByText('Saved episode A')).toBeInTheDocument();
+    expect(screen.getByText('Saved episode B')).toBeInTheDocument();
+
+    podcastStore.handlePostDeleted('post-1');
+
+    await waitFor(() => {
+      expect(screen.queryByText('Saved episode A')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('Saved episode B')).toBeInTheDocument();
   });
 
   it('keeps latest recent podcasts after navigation when an older request resolves late', async () => {
