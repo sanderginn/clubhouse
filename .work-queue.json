@@ -641,7 +641,7 @@
     {
       "issue_number": 877,
       "title": "[Books] Create BookQuote model and types",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         876
       ],
@@ -650,7 +650,11 @@
         "backend",
         "books"
       ],
-      "priority": 85
+      "priority": 85,
+      "assigned_to": "agent-1770696154-90485",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770696154-90485",
+      "branch": "feat/issue-877-books-create-bookquote-model-and-types",
+      "claimed_at": "2026-02-10T04:02:34Z"
     },
     {
       "issue_number": 878,
