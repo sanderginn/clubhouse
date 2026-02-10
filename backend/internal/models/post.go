@@ -27,6 +27,7 @@ type Post struct {
 	ReactionCounts  map[string]int `json:"reaction_counts,omitempty"`
 	ViewerReactions []string       `json:"viewer_reactions,omitempty"`
 	RecipeStats     *RecipeStats   `json:"recipe_stats,omitempty"`
+	BookStats       *BookStats     `json:"book_stats,omitempty"`
 	MovieStats      *MovieStats    `json:"movie_stats,omitempty"`
 }
 

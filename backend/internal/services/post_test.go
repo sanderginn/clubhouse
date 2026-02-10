@@ -761,6 +761,310 @@ func TestGetFeedIncludesMovieStatsForMovieSection(t *testing.T) {
 	}
 }
 
+func TestGetPostByIDIncludesBookStats(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	viewerID := testutil.CreateTestUser(t, db, "bookstatsviewer", "bookstatsviewer@test.com", false, true)
+	otherID := testutil.CreateTestUser(t, db, "bookstatsother", "bookstatsother@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Books", "book")
+	postID := testutil.CreateTestPost(t, db, viewerID, sectionID, "Book content")
+
+	viewerCategoryID := uuid.New()
+	_, err := db.ExecContext(context.Background(), `
+		INSERT INTO bookshelf_categories (id, user_id, name, position, created_at)
+		VALUES ($1, $2, $3, $4, now())
+	`, viewerCategoryID, uuid.MustParse(viewerID), "Favorites", 0)
+	if err != nil {
+		t.Fatalf("failed to insert viewer bookshelf category: %v", err)
+	}
+
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO bookshelf_items (id, user_id, post_id, category_id, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(viewerID), uuid.MustParse(postID), viewerCategoryID)
+	if err != nil {
+		t.Fatalf("failed to insert viewer bookshelf item: %v", err)
+	}
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO bookshelf_items (id, user_id, post_id, created_at)
+		VALUES (gen_random_uuid(), $1, $2, now())
+	`, uuid.MustParse(otherID), uuid.MustParse(postID))
+	if err != nil {
+		t.Fatalf("failed to insert other bookshelf item: %v", err)
+	}
+
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO read_logs (id, user_id, post_id, rating, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(viewerID), uuid.MustParse(postID), 4)
+	if err != nil {
+		t.Fatalf("failed to insert viewer read log: %v", err)
+	}
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO read_logs (id, user_id, post_id, rating, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(otherID), uuid.MustParse(postID), 5)
+	if err != nil {
+		t.Fatalf("failed to insert other read log: %v", err)
+	}
+
+	service := NewPostService(db)
+	post, err := service.GetPostByID(context.Background(), uuid.MustParse(postID), uuid.MustParse(viewerID))
+	if err != nil {
+		t.Fatalf("GetPostByID failed: %v", err)
+	}
+
+	if post.BookStats == nil {
+		t.Fatalf("expected book stats to be populated")
+	}
+	if post.BookStats.BookshelfCount != 2 {
+		t.Fatalf("expected bookshelf count 2, got %d", post.BookStats.BookshelfCount)
+	}
+	if post.BookStats.ReadCount != 2 {
+		t.Fatalf("expected read count 2, got %d", post.BookStats.ReadCount)
+	}
+	if post.BookStats.AverageRating != 4.5 {
+		t.Fatalf("expected average rating 4.5, got %f", post.BookStats.AverageRating)
+	}
+	if !post.BookStats.ViewerOnBookshelf {
+		t.Fatalf("expected viewer_on_bookshelf true")
+	}
+	if len(post.BookStats.ViewerCategories) != 1 || post.BookStats.ViewerCategories[0] != "Favorites" {
+		t.Fatalf("expected viewer categories [Favorites], got %v", post.BookStats.ViewerCategories)
+	}
+	if !post.BookStats.ViewerRead {
+		t.Fatalf("expected viewer_read true")
+	}
+	if post.BookStats.ViewerRating == nil || *post.BookStats.ViewerRating != 4 {
+		t.Fatalf("expected viewer rating 4, got %v", post.BookStats.ViewerRating)
+	}
+}
+
+func TestGetPostByIDNonBookOmitsBookStats(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "nonbookuser", "nonbookuser@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "General", "general")
+	postID := testutil.CreateTestPost(t, db, userID, sectionID, "General content")
+
+	service := NewPostService(db)
+	post, err := service.GetPostByID(context.Background(), uuid.MustParse(postID), uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("GetPostByID failed: %v", err)
+	}
+
+	if post.BookStats != nil {
+		t.Fatalf("expected book stats to be omitted for non-book posts")
+	}
+}
+
+func TestGetFeedIncludesBookStatsForBookSection(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	viewerID := testutil.CreateTestUser(t, db, "feedbookviewer", "feedbookviewer@test.com", false, true)
+	otherID := testutil.CreateTestUser(t, db, "feedbookother", "feedbookother@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Books", "book")
+	postIDWithStats := testutil.CreateTestPost(t, db, viewerID, sectionID, "Book with stats")
+	postIDNoStats := testutil.CreateTestPost(t, db, viewerID, sectionID, "Book without stats")
+
+	viewerCategoryID := uuid.New()
+	_, err := db.ExecContext(context.Background(), `
+		INSERT INTO bookshelf_categories (id, user_id, name, position, created_at)
+		VALUES ($1, $2, $3, $4, now())
+	`, viewerCategoryID, uuid.MustParse(viewerID), "Classics", 0)
+	if err != nil {
+		t.Fatalf("failed to insert viewer bookshelf category: %v", err)
+	}
+
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO bookshelf_items (id, user_id, post_id, category_id, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(viewerID), uuid.MustParse(postIDWithStats), viewerCategoryID)
+	if err != nil {
+		t.Fatalf("failed to insert viewer bookshelf item: %v", err)
+	}
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO bookshelf_items (id, user_id, post_id, created_at)
+		VALUES (gen_random_uuid(), $1, $2, now())
+	`, uuid.MustParse(otherID), uuid.MustParse(postIDWithStats))
+	if err != nil {
+		t.Fatalf("failed to insert other bookshelf item: %v", err)
+	}
+
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO read_logs (id, user_id, post_id, rating, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(viewerID), uuid.MustParse(postIDWithStats), 5)
+	if err != nil {
+		t.Fatalf("failed to insert viewer read log: %v", err)
+	}
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO read_logs (id, user_id, post_id, rating, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(otherID), uuid.MustParse(postIDWithStats), 3)
+	if err != nil {
+		t.Fatalf("failed to insert other read log: %v", err)
+	}
+
+	service := NewPostService(db)
+	feed, err := service.GetFeed(context.Background(), uuid.MustParse(sectionID), nil, 10, uuid.MustParse(viewerID))
+	if err != nil {
+		t.Fatalf("GetFeed failed: %v", err)
+	}
+
+	postByID := make(map[string]*models.Post)
+	for _, post := range feed.Posts {
+		postByID[post.ID.String()] = post
+	}
+
+	bookWithStats := postByID[postIDWithStats]
+	if bookWithStats == nil || bookWithStats.BookStats == nil {
+		t.Fatalf("expected book stats for post with stats")
+	}
+	if bookWithStats.BookStats.BookshelfCount != 2 {
+		t.Fatalf("expected bookshelf count 2, got %d", bookWithStats.BookStats.BookshelfCount)
+	}
+	if bookWithStats.BookStats.ReadCount != 2 {
+		t.Fatalf("expected read count 2, got %d", bookWithStats.BookStats.ReadCount)
+	}
+	if bookWithStats.BookStats.AverageRating != 4 {
+		t.Fatalf("expected average rating 4, got %f", bookWithStats.BookStats.AverageRating)
+	}
+	if !bookWithStats.BookStats.ViewerOnBookshelf {
+		t.Fatalf("expected viewer_on_bookshelf true")
+	}
+	if len(bookWithStats.BookStats.ViewerCategories) != 1 || bookWithStats.BookStats.ViewerCategories[0] != "Classics" {
+		t.Fatalf("expected viewer categories [Classics], got %v", bookWithStats.BookStats.ViewerCategories)
+	}
+	if !bookWithStats.BookStats.ViewerRead {
+		t.Fatalf("expected viewer_read true")
+	}
+	if bookWithStats.BookStats.ViewerRating == nil || *bookWithStats.BookStats.ViewerRating != 5 {
+		t.Fatalf("expected viewer rating 5, got %v", bookWithStats.BookStats.ViewerRating)
+	}
+
+	bookNoStats := postByID[postIDNoStats]
+	if bookNoStats == nil || bookNoStats.BookStats == nil {
+		t.Fatalf("expected book stats for post without stats")
+	}
+	if bookNoStats.BookStats.BookshelfCount != 0 || bookNoStats.BookStats.ReadCount != 0 {
+		t.Fatalf("expected zero stats for post without stats, got %+v", bookNoStats.BookStats)
+	}
+	if bookNoStats.BookStats.AverageRating != 0 {
+		t.Fatalf("expected average rating 0 for post without stats, got %f", bookNoStats.BookStats.AverageRating)
+	}
+	if bookNoStats.BookStats.ViewerOnBookshelf {
+		t.Fatalf("expected viewer_on_bookshelf false for post without stats")
+	}
+	if bookNoStats.BookStats.ViewerRead {
+		t.Fatalf("expected viewer_read false for post without stats")
+	}
+	if bookNoStats.BookStats.ViewerRating != nil {
+		t.Fatalf("expected nil viewer rating for post without stats, got %v", bookNoStats.BookStats.ViewerRating)
+	}
+}
+
+func TestGetPostsByUserIDIncludesBookStatsForBookPosts(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	authorID := testutil.CreateTestUser(t, db, "bookauthor", "bookauthor@test.com", false, true)
+	viewerID := testutil.CreateTestUser(t, db, "bookviewer", "bookviewer@test.com", false, true)
+	otherID := testutil.CreateTestUser(t, db, "bookviewerother", "bookviewerother@test.com", false, true)
+	bookSectionID := testutil.CreateTestSection(t, db, "Books", "book")
+	generalSectionID := testutil.CreateTestSection(t, db, "General", "general")
+
+	bookPostID := testutil.CreateTestPost(t, db, authorID, bookSectionID, "Book post")
+	generalPostID := testutil.CreateTestPost(t, db, authorID, generalSectionID, "General post")
+
+	viewerCategoryID := uuid.New()
+	_, err := db.ExecContext(context.Background(), `
+		INSERT INTO bookshelf_categories (id, user_id, name, position, created_at)
+		VALUES ($1, $2, $3, $4, now())
+	`, viewerCategoryID, uuid.MustParse(viewerID), "Want to Read", 0)
+	if err != nil {
+		t.Fatalf("failed to insert viewer bookshelf category: %v", err)
+	}
+
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO bookshelf_items (id, user_id, post_id, category_id, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(viewerID), uuid.MustParse(bookPostID), viewerCategoryID)
+	if err != nil {
+		t.Fatalf("failed to insert viewer bookshelf item: %v", err)
+	}
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO bookshelf_items (id, user_id, post_id, created_at)
+		VALUES (gen_random_uuid(), $1, $2, now())
+	`, uuid.MustParse(authorID), uuid.MustParse(bookPostID))
+	if err != nil {
+		t.Fatalf("failed to insert author bookshelf item: %v", err)
+	}
+
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO read_logs (id, user_id, post_id, rating, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(viewerID), uuid.MustParse(bookPostID), 2)
+	if err != nil {
+		t.Fatalf("failed to insert viewer read log: %v", err)
+	}
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO read_logs (id, user_id, post_id, rating, created_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, now())
+	`, uuid.MustParse(otherID), uuid.MustParse(bookPostID), 4)
+	if err != nil {
+		t.Fatalf("failed to insert other read log: %v", err)
+	}
+
+	service := NewPostService(db)
+	feed, err := service.GetPostsByUserID(context.Background(), uuid.MustParse(authorID), nil, 10, uuid.MustParse(viewerID))
+	if err != nil {
+		t.Fatalf("GetPostsByUserID failed: %v", err)
+	}
+
+	postByID := make(map[string]*models.Post)
+	for _, post := range feed.Posts {
+		postByID[post.ID.String()] = post
+	}
+
+	bookPost := postByID[bookPostID]
+	if bookPost == nil || bookPost.BookStats == nil {
+		t.Fatalf("expected book stats for book post")
+	}
+	if bookPost.BookStats.BookshelfCount != 2 {
+		t.Fatalf("expected bookshelf count 2, got %d", bookPost.BookStats.BookshelfCount)
+	}
+	if bookPost.BookStats.ReadCount != 2 {
+		t.Fatalf("expected read count 2, got %d", bookPost.BookStats.ReadCount)
+	}
+	if bookPost.BookStats.AverageRating != 3 {
+		t.Fatalf("expected average rating 3, got %f", bookPost.BookStats.AverageRating)
+	}
+	if !bookPost.BookStats.ViewerOnBookshelf {
+		t.Fatalf("expected viewer_on_bookshelf true")
+	}
+	if len(bookPost.BookStats.ViewerCategories) != 1 || bookPost.BookStats.ViewerCategories[0] != "Want to Read" {
+		t.Fatalf("expected viewer categories [Want to Read], got %v", bookPost.BookStats.ViewerCategories)
+	}
+	if !bookPost.BookStats.ViewerRead {
+		t.Fatalf("expected viewer_read true")
+	}
+	if bookPost.BookStats.ViewerRating == nil || *bookPost.BookStats.ViewerRating != 2 {
+		t.Fatalf("expected viewer rating 2, got %v", bookPost.BookStats.ViewerRating)
+	}
+
+	generalPost := postByID[generalPostID]
+	if generalPost == nil {
+		t.Fatalf("expected general post in response")
+	}
+	if generalPost.BookStats != nil {
+		t.Fatalf("expected book stats omitted for non-book post")
+	}
+}
+
 func TestGetMovieFeedIncludesMovieAndSeriesWithPagination(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
