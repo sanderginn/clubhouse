@@ -456,9 +456,34 @@ func TestCreatePostAutoDetectsPodcastKindWhenOmitted(t *testing.T) {
 		wantKind string
 	}{
 		{
-			name:     "detect show from spotify path",
-			url:      "https://open.spotify.com/show/2rN1dT9uLw8wKjtBF6qWvG",
+			name:     "detect show from spotify issue example",
+			url:      "https://open.spotify.com/show/4J3UybFDArcDcxJPKj0OyH",
 			wantKind: "show",
+		},
+		{
+			name:     "detect episode from spotify issue example",
+			url:      "https://open.spotify.com/episode/4qrnpiJaEEmHxkZy7RHh5h",
+			wantKind: "episode",
+		},
+		{
+			name:     "detect show from localized spotify path",
+			url:      "https://open.spotify.com/intl-en/show/4J3UybFDArcDcxJPKj0OyH",
+			wantKind: "show",
+		},
+		{
+			name:     "detect episode from localized spotify path",
+			url:      "https://open.spotify.com/intl-en/episode/4qrnpiJaEEmHxkZy7RHh5h",
+			wantKind: "episode",
+		},
+		{
+			name:     "detect show from spotify embed path",
+			url:      "https://open.spotify.com/embed/show/4J3UybFDArcDcxJPKj0OyH",
+			wantKind: "show",
+		},
+		{
+			name:     "detect episode from spotify embed path",
+			url:      "https://open.spotify.com/embed/episode/4qrnpiJaEEmHxkZy7RHh5h",
+			wantKind: "episode",
 		},
 		{
 			name:     "detect episode from apple podcasts query param",
@@ -493,6 +518,69 @@ func TestCreatePostAutoDetectsPodcastKindWhenOmitted(t *testing.T) {
 				t.Fatalf("expected podcast kind %q, got %q", tt.wantKind, post.Links[0].Podcast.Kind)
 			}
 		})
+	}
+}
+
+func TestCreatePostAutoDetectedSpotifyKindIsStoredInLinkMetadata(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	disableLinkMetadata(t)
+
+	userID := testutil.CreateTestUser(t, db, "podcastautodetectstore", "podcastautodetectstore@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Podcast Section", "podcast")
+	service := NewPostService(db)
+
+	req := &models.CreatePostRequest{
+		SectionID: sectionID,
+		Content:   "Podcast autodetect persistence",
+		Links: []models.LinkRequest{
+			{
+				URL: "https://open.spotify.com/show/4J3UybFDArcDcxJPKj0OyH",
+				Podcast: &models.PodcastMetadata{
+					Kind: "",
+				},
+			},
+		},
+	}
+
+	post, err := service.CreatePost(context.Background(), req, uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("CreatePost failed: %v", err)
+	}
+	if len(post.Links) != 1 || post.Links[0].Podcast == nil {
+		t.Fatalf("expected one podcast link")
+	}
+	if post.Links[0].Podcast.Kind != "show" {
+		t.Fatalf("expected response podcast kind show, got %q", post.Links[0].Podcast.Kind)
+	}
+
+	var rawMetadata []byte
+	if err := db.QueryRow(`SELECT metadata FROM links WHERE post_id = $1 LIMIT 1`, post.ID).Scan(&rawMetadata); err != nil {
+		t.Fatalf("failed querying link metadata: %v", err)
+	}
+
+	var metadata map[string]interface{}
+	if err := json.Unmarshal(rawMetadata, &metadata); err != nil {
+		t.Fatalf("failed to unmarshal metadata: %v", err)
+	}
+
+	rawPodcast, ok := metadata["podcast"]
+	if !ok {
+		t.Fatalf("expected podcast metadata key in stored JSONB")
+	}
+
+	encoded, err := json.Marshal(rawPodcast)
+	if err != nil {
+		t.Fatalf("failed to marshal stored podcast metadata: %v", err)
+	}
+
+	var storedPodcast models.PodcastMetadata
+	if err := json.Unmarshal(encoded, &storedPodcast); err != nil {
+		t.Fatalf("failed to unmarshal stored podcast metadata: %v", err)
+	}
+	if storedPodcast.Kind != "show" {
+		t.Fatalf("expected stored podcast kind show, got %q", storedPodcast.Kind)
 	}
 }
 

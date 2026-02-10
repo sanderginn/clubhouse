@@ -170,8 +170,13 @@ func detectPodcastKindFromURL(rawURL string) (string, bool) {
 	host := strings.ToLower(strings.TrimSuffix(parsed.Hostname(), "."))
 	pathSegments := splitPathSegments(parsed.Path)
 
-	if kind, ok := detectSpotifyPodcastKind(pathSegments); ok {
-		return kind, true
+	if host == "open.spotify.com" {
+		if kind, ok := detectSpotifyPodcastKind(host, pathSegments); ok {
+			return kind, true
+		}
+		if segmentsContainAny(pathSegments, "show", "episode") {
+			return "", false
+		}
 	}
 
 	query := parsed.Query()
@@ -201,20 +206,22 @@ func detectPodcastKindFromURL(rawURL string) (string, bool) {
 	return "", false
 }
 
-func detectSpotifyPodcastKind(pathSegments []string) (string, bool) {
-	if len(pathSegments) == 0 {
+func detectSpotifyPodcastKind(host string, pathSegments []string) (string, bool) {
+	if host != "open.spotify.com" || len(pathSegments) == 0 {
 		return "", false
 	}
 
 	index := 0
-	if strings.HasPrefix(pathSegments[index], "intl-") && len(pathSegments) > index+1 {
-		index++
-	}
-	if index < len(pathSegments) && pathSegments[index] == "embed" && len(pathSegments) > index+2 {
-		index++
+	for index < len(pathSegments) {
+		segment := pathSegments[index]
+		if strings.HasPrefix(segment, "intl-") || segment == "embed" {
+			index++
+			continue
+		}
+		break
 	}
 
-	if len(pathSegments) <= index {
+	if len(pathSegments) <= index+1 {
 		return "", false
 	}
 
