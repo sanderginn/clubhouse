@@ -13,6 +13,7 @@ export interface ApiNotification {
   related_post_id?: string | null;
   related_comment_id?: string | null;
   related_user_id?: string | null;
+  contains_spoiler?: boolean | null;
   related_user?: ApiNotificationUser | null;
   content_excerpt?: string | null;
   read_at?: string | null;
@@ -25,6 +26,13 @@ function readString(value: unknown): string | undefined {
   }
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function readBoolean(value: unknown): boolean | undefined {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  return undefined;
 }
 
 function mapRelatedUser(raw: unknown): Notification['relatedUser'] | undefined {
@@ -56,6 +64,10 @@ export function mapApiNotification(apiNotification: ApiNotification): Notificati
     relatedPostId: apiNotification.related_post_id ?? null,
     relatedCommentId: apiNotification.related_comment_id ?? null,
     relatedUserId: apiNotification.related_user_id ?? null,
+    containsSpoiler:
+      typeof apiNotification.contains_spoiler === 'boolean'
+        ? apiNotification.contains_spoiler
+        : undefined,
     relatedUser: apiNotification.related_user
       ? {
           id: apiNotification.related_user.id,
@@ -99,6 +111,7 @@ export function mapNotificationPayload(payload: unknown): Notification | null {
     relatedPostId: readString(record.related_post_id ?? record.relatedPostId) ?? null,
     relatedCommentId: readString(record.related_comment_id ?? record.relatedCommentId) ?? null,
     relatedUserId: readString(record.related_user_id ?? record.relatedUserId) ?? null,
+    containsSpoiler: readBoolean(record.contains_spoiler ?? record.containsSpoiler),
     relatedUser,
     contentExcerpt: readString(record.content_excerpt ?? record.contentExcerpt) ?? null,
     readAt: readString(record.read_at ?? record.readAt) ?? null,

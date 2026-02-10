@@ -7,9 +7,11 @@
   import type { Comment } from '../../stores/commentStore';
   import { parseHighlightTimestamp } from '../../lib/highlights';
   import MentionTextarea from '../mentions/MentionTextarea.svelte';
+  import SpoilerToggle from '../books/SpoilerToggle.svelte';
 
   export let postId: string;
   export let allowTimestamp = false;
+  export let allowSpoiler = false;
   export let imageContext:
     | {
         id?: string;
@@ -23,6 +25,7 @@
   const dispatch = createEventDispatcher<{ submit: Comment }>();
 
   let content = '';
+  let containsSpoiler = false;
   let timestampInput = '';
   let timestampError: string | null = null;
   let mentionUsernames: string[] = [];
@@ -61,6 +64,7 @@
         postId,
         imageId: imageContext?.id,
         content: content.trim(),
+        ...(allowSpoiler ? { containsSpoiler } : {}),
         timestampSeconds,
         mentionUsernames,
       });
@@ -71,6 +75,7 @@
         postStore.incrementCommentCount(postId, 1);
       }
       content = '';
+      containsSpoiler = false;
       timestampInput = '';
       mentionUsernames = [];
       onClearImageContext?.();
@@ -124,6 +129,14 @@
     disabled={isSubmitting}
     className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:bg-gray-100"
   />
+  {#if allowSpoiler}
+    <SpoilerToggle
+      checked={containsSpoiler}
+      on:change={(event) => {
+        containsSpoiler = event.detail;
+      }}
+    />
+  {/if}
   {#if allowTimestamp}
     <div class="space-y-1">
       <label class="text-xs font-medium text-gray-600" for="comment-timestamp">

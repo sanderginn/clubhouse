@@ -8,6 +8,7 @@ const apiComment = {
   parent_comment_id: null,
   image_id: 'image-1',
   content: 'Hello',
+  contains_spoiler: true,
   created_at: '2025-01-01T00:00:00Z',
   user: {
     id: 'user-1',
@@ -53,6 +54,7 @@ describe('mapApiComment', () => {
     expect(comment.replies).toHaveLength(1);
     expect(comment.replies?.[0].parentCommentId).toBe('comment-1');
     expect(comment.imageId).toBe('image-1');
+    expect(comment.containsSpoiler).toBe(true);
   });
 
   it('maps API comment without metadata', () => {

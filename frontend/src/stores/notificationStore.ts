@@ -11,6 +11,7 @@ export interface Notification {
   relatedPostId?: string | null;
   relatedCommentId?: string | null;
   relatedUserId?: string | null;
+  containsSpoiler?: boolean;
   relatedUser?: {
     id: string;
     username: string;

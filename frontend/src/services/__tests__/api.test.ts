@@ -318,6 +318,7 @@ describe('api client', () => {
       parentCommentId: 'comment-1',
       imageId: 'image-1',
       content: 'Reply',
+      containsSpoiler: true,
       links: [{ url: 'https://example.com' }],
     });
 
@@ -326,6 +327,7 @@ describe('api client', () => {
     expect(body.post_id).toBe('post-1');
     expect(body.parent_comment_id).toBe('comment-1');
     expect(body.image_id).toBe('image-1');
+    expect(body.contains_spoiler).toBe(true);
   });
 
   it('getFeed builds query params', async () => {

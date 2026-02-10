@@ -105,6 +105,13 @@
     markAllNotificationsRead();
   }
 
+  function notificationPreview(notification: Notification): string | null {
+    if (notification.relatedCommentId && notification.containsSpoiler) {
+      return '[Spoiler]';
+    }
+    return notification.contentExcerpt ?? null;
+  }
+
 </script>
 
 <svelte:window on:click={closeMenu} />
@@ -186,8 +193,8 @@
                         className="text-xs text-gray-400"
                       />
                     </div>
-                    {#if notification.contentExcerpt}
-                      <p class="mt-1 text-xs text-gray-500">{notification.contentExcerpt}</p>
+                    {#if notificationPreview(notification)}
+                      <p class="mt-1 text-xs text-gray-500">{notificationPreview(notification)}</p>
                     {/if}
                   </div>
                 </div>
