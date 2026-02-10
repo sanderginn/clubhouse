@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { get } from 'svelte/store';
 import type { Post } from '../postStore';
+import type { RecentPodcastItem } from '../../services/api';
 
 const apiSavePodcast = vi.hoisted(() => vi.fn());
 const apiUnsavePodcast = vi.hoisted(() => vi.fn());
 const apiGetPostPodcastSaveInfo = vi.hoisted(() => vi.fn());
 const apiGetSectionSavedPodcasts = vi.hoisted(() => vi.fn());
+const apiGetSectionRecentPodcasts = vi.hoisted(() => vi.fn());
 
 vi.mock('../../services/api', () => ({
   api: {
@@ -13,6 +15,7 @@ vi.mock('../../services/api', () => ({
     unsavePodcast: apiUnsavePodcast,
     getPostPodcastSaveInfo: apiGetPostPodcastSaveInfo,
     getSectionSavedPodcasts: apiGetSectionSavedPodcasts,
+    getSectionRecentPodcasts: apiGetSectionRecentPodcasts,
   },
 }));
 
@@ -28,12 +31,28 @@ function buildPost(id: string, sectionId = 'section-podcast'): Post {
   };
 }
 
+function buildRecentItem(id: string, kind: 'show' | 'episode' = 'show'): RecentPodcastItem {
+  return {
+    postId: `post-${id}`,
+    linkId: `link-${id}`,
+    url: `https://example.com/podcast/${id}`,
+    podcast: {
+      kind,
+    },
+    userId: 'user-1',
+    username: 'sander',
+    postCreatedAt: '2026-02-10T10:00:00Z',
+    linkCreatedAt: `2026-02-10T10:00:0${id}Z`,
+  };
+}
+
 beforeEach(() => {
   podcastStore.reset();
   apiSavePodcast.mockReset();
   apiUnsavePodcast.mockReset();
   apiGetPostPodcastSaveInfo.mockReset();
   apiGetSectionSavedPodcasts.mockReset();
+  apiGetSectionRecentPodcasts.mockReset();
 });
 
 describe('podcastStore', () => {
@@ -136,19 +155,57 @@ describe('podcastStore', () => {
     expect(state.cursor).toBeNull();
   });
 
+  it('loadRecentPodcasts and loadMoreRecentPodcasts handle cursor pagination', async () => {
+    apiGetSectionRecentPodcasts
+      .mockResolvedValueOnce({
+        items: [buildRecentItem('1', 'show')],
+        hasMore: true,
+        nextCursor: 'cursor-recent-next',
+      })
+      .mockResolvedValueOnce({
+        items: [buildRecentItem('1', 'show'), buildRecentItem('2', 'episode')],
+        hasMore: false,
+        nextCursor: undefined,
+      });
+
+    await podcastStore.loadRecentPodcasts('section-podcast', 1);
+    await podcastStore.loadMoreRecentPodcasts(2);
+
+    const state = get(podcastStore);
+    expect(apiGetSectionRecentPodcasts).toHaveBeenNthCalledWith(1, 'section-podcast', 1);
+    expect(apiGetSectionRecentPodcasts).toHaveBeenNthCalledWith(
+      2,
+      'section-podcast',
+      2,
+      'cursor-recent-next'
+    );
+    expect(state.recentItems.map((item) => item.linkId)).toEqual(['link-1', 'link-2']);
+    expect(state.recentHasMore).toBe(false);
+    expect(state.recentCursor).toBeNull();
+  });
+
   it('sets error on load failure and reset clears store state', async () => {
     apiGetSectionSavedPodcasts.mockRejectedValue(new Error('Failed to load saved podcasts'));
+    apiGetSectionRecentPodcasts.mockRejectedValue(new Error('Failed to load recent podcasts'));
 
     await podcastStore.loadSavedPodcasts('section-podcast');
+    await podcastStore.loadRecentPodcasts('section-podcast');
     let state = get(podcastStore);
     expect(state.error).toBe('Failed to load saved podcasts');
+    expect(state.recentError).toBe('Failed to load recent podcasts');
     expect(state.isLoadingSaved).toBe(false);
+    expect(state.isLoadingRecent).toBe(false);
 
     podcastStore.reset();
     state = get(podcastStore);
     expect(state.error).toBeNull();
+    expect(state.recentError).toBeNull();
+    expect(state.recentItems).toHaveLength(0);
     expect(state.savedPosts).toHaveLength(0);
     expect(state.savedPostIds.size).toBe(0);
+    expect(state.recentCursor).toBeNull();
+    expect(state.recentHasMore).toBe(false);
+    expect(state.recentSectionId).toBeNull();
     expect(state.cursor).toBeNull();
     expect(state.hasMore).toBe(false);
     expect(state.sectionId).toBeNull();

@@ -3,6 +3,8 @@ import type {
   CreatePostRequest,
   LinkMetadata,
   PodcastMetadataInput,
+  PodcastMetadata,
+  PodcastHighlightEpisode,
 } from '../stores/postStore';
 import type { CreateCommentRequest, Comment } from '../stores/commentStore';
 import type { SectionLink } from '../stores/sectionLinksStore';
@@ -124,6 +126,35 @@ interface ApiPostPodcastSaveInfo {
   save_count: number;
   users: ApiReactionUser[];
   viewer_saved: boolean;
+}
+
+interface ApiPodcastHighlightEpisodeResponse {
+  title?: string;
+  url?: string;
+  note?: string | null;
+}
+
+interface ApiPodcastMetadataResponse {
+  kind?: string;
+  highlight_episodes?: ApiPodcastHighlightEpisodeResponse[];
+  highlightEpisodes?: ApiPodcastHighlightEpisodeResponse[];
+}
+
+interface ApiRecentPodcastItem {
+  post_id: string;
+  link_id: string;
+  url: string;
+  podcast?: ApiPodcastMetadataResponse;
+  user_id: string;
+  username: string;
+  post_created_at: string;
+  link_created_at: string;
+}
+
+interface ApiSectionRecentPodcastsResponse {
+  items?: ApiRecentPodcastItem[];
+  has_more?: boolean;
+  next_cursor?: string | null;
 }
 
 interface ApiWatchLog {
@@ -362,6 +393,55 @@ function mapApiPodcastSaveUser(user: ApiReactionUser): PodcastSaveUser {
   };
 }
 
+function mapApiPodcastHighlightEpisode(
+  episode: ApiPodcastHighlightEpisodeResponse
+): PodcastHighlightEpisode | null {
+  const title = typeof episode.title === 'string' ? episode.title.trim() : '';
+  const url = typeof episode.url === 'string' ? episode.url.trim() : '';
+  if (!title || !url) {
+    return null;
+  }
+
+  const note =
+    typeof episode.note === 'string' && episode.note.trim().length > 0
+      ? episode.note.trim()
+      : undefined;
+  return {
+    title,
+    url,
+    ...(note ? { note } : {}),
+  };
+}
+
+function mapApiPodcastMetadata(podcast?: ApiPodcastMetadataResponse): PodcastMetadata {
+  const rawKind = typeof podcast?.kind === 'string' ? podcast.kind.trim().toLowerCase() : '';
+  const kind = rawKind === 'show' || rawKind === 'episode' ? rawKind : undefined;
+  const rawEpisodes = podcast?.highlight_episodes ?? podcast?.highlightEpisodes;
+  const highlightEpisodes = Array.isArray(rawEpisodes)
+    ? rawEpisodes
+        .map(mapApiPodcastHighlightEpisode)
+        .filter((episode): episode is PodcastHighlightEpisode => episode !== null)
+    : undefined;
+
+  return {
+    ...(kind ? { kind } : {}),
+    ...(highlightEpisodes && highlightEpisodes.length > 0 ? { highlightEpisodes } : {}),
+  };
+}
+
+function mapApiRecentPodcastItem(item: ApiRecentPodcastItem): RecentPodcastItem {
+  return {
+    postId: item.post_id,
+    linkId: item.link_id,
+    url: item.url,
+    podcast: mapApiPodcastMetadata(item.podcast),
+    userId: item.user_id,
+    username: item.username,
+    postCreatedAt: item.post_created_at,
+    linkCreatedAt: item.link_created_at,
+  };
+}
+
 function mapApiWatchLogUser(user: ApiWatchLogUser): WatchLogUser {
   return {
     id: user.id,
@@ -588,6 +668,23 @@ export interface PostPodcastSaveInfo {
   saveCount: number;
   users: PodcastSaveUser[];
   viewerSaved: boolean;
+}
+
+export interface RecentPodcastItem {
+  postId: string;
+  linkId: string;
+  url: string;
+  podcast: PodcastMetadata;
+  userId: string;
+  username: string;
+  postCreatedAt: string;
+  linkCreatedAt: string;
+}
+
+export interface SectionRecentPodcastsResponse {
+  items: RecentPodcastItem[];
+  hasMore: boolean;
+  nextCursor?: string;
 }
 
 export interface WatchlistItemWithPost extends WatchlistItem {
@@ -1381,6 +1478,25 @@ class ApiClient {
     }>(`/sections/${sectionId}/podcast-saved?${params.toString()}`);
     return {
       posts: (response.posts ?? []).map(mapApiPost),
+      hasMore: response.has_more ?? false,
+      nextCursor: response.next_cursor ?? undefined,
+    };
+  }
+
+  async getSectionRecentPodcasts(
+    sectionId: string,
+    limit = 20,
+    cursor?: string
+  ): Promise<SectionRecentPodcastsResponse> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (cursor) {
+      params.set('cursor', cursor);
+    }
+    const response = await this.get<ApiSectionRecentPodcastsResponse>(
+      `/sections/${sectionId}/podcasts/recent?${params.toString()}`
+    );
+    return {
+      items: (response.items ?? []).map(mapApiRecentPodcastItem),
       hasMore: response.has_more ?? false,
       nextCursor: response.next_cursor ?? undefined,
     };
