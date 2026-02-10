@@ -2249,7 +2249,7 @@
 
       {#if isPodcastSection}
         <div class="mt-3">
-          <PodcastSaveButton postId={post.id} />
+          <PodcastSaveButton postId={post.id} {post} />
         </div>
       {/if}
 

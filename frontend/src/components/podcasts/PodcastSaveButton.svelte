@@ -1,9 +1,11 @@
 <script lang="ts">
   import type { PostPodcastSaveInfo } from '../../services/api';
   import { api } from '../../services/api';
+  import type { Post } from '../../stores/postStore';
   import { podcastSaveInfoByPostId, podcastStore } from '../../stores/podcastStore';
 
   export let postId: string;
+  export let post: Post | null = null;
   export let initialSaved = false;
   export let initialSaveCount = 0;
 
@@ -76,6 +78,12 @@
     };
 
     applySaveInfo(optimistic);
+    if (nextSaved && post) {
+      podcastStore.addSavedPost(post);
+    }
+    if (!nextSaved) {
+      podcastStore.removeSavedPost(postId);
+    }
 
     try {
       if (nextSaved) {
@@ -86,11 +94,19 @@
 
       const persisted = await api.getPostPodcastSaveInfo(postId);
       applySaveInfo(persisted);
+      if (persisted.viewerSaved && post) {
+        podcastStore.addSavedPost(post);
+      }
       if (!persisted.viewerSaved) {
         podcastStore.removeSavedPost(postId);
       }
     } catch (error) {
       applySaveInfo(previous);
+      if (nextSaved) {
+        podcastStore.removeSavedPost(postId);
+      } else if (post) {
+        podcastStore.addSavedPost(post);
+      }
       errorMessage = error instanceof Error ? error.message : 'Failed to update podcast save.';
     } finally {
       isSaving = false;
