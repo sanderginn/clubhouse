@@ -10,7 +10,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
-	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/observability"
 	linkmeta "github.com/sanderginn/clubhouse/internal/services/links"
 )
@@ -239,7 +238,12 @@ func (w *MetadataWorker) publishLinkMetadataUpdated(ctx context.Context, section
 }
 
 func (w *MetadataWorker) updateLinkMetadata(ctx context.Context, linkID uuid.UUID, metadata map[string]interface{}) error {
-	currentHighlights, err := w.getExistingHighlights(ctx, linkID)
+	existingMetadata, err := w.getExistingLinkMetadata(ctx, linkID)
+	if err != nil {
+		return err
+	}
+
+	currentHighlights, err := extractHighlightsFromMetadata(existingMetadata)
 	if err != nil {
 		return err
 	}
@@ -248,6 +252,12 @@ func (w *MetadataWorker) updateLinkMetadata(ctx context.Context, linkID uuid.UUI
 			metadata = map[string]interface{}{}
 		}
 		metadata["highlights"] = currentHighlights
+	}
+	if existingPodcast, ok := existingMetadata["podcast"]; ok && existingPodcast != nil {
+		if metadata == nil {
+			metadata = map[string]interface{}{}
+		}
+		metadata["podcast"] = existingPodcast
 	}
 
 	metadataJSON, err := json.Marshal(metadata)
@@ -273,7 +283,7 @@ func (w *MetadataWorker) updateLinkMetadata(ctx context.Context, linkID uuid.UUI
 	return nil
 }
 
-func (w *MetadataWorker) getExistingHighlights(ctx context.Context, linkID uuid.UUID) ([]models.Highlight, error) {
+func (w *MetadataWorker) getExistingLinkMetadata(ctx context.Context, linkID uuid.UUID) (map[string]interface{}, error) {
 	var metadataJSON sql.NullString
 	if err := w.db.QueryRowContext(ctx, "SELECT metadata FROM links WHERE id = $1", linkID).Scan(&metadataJSON); err != nil {
 		return nil, err
@@ -286,13 +296,7 @@ func (w *MetadataWorker) getExistingHighlights(ctx context.Context, linkID uuid.
 	if err := json.Unmarshal([]byte(metadataJSON.String), &metadata); err != nil {
 		return nil, err
 	}
-
-	highlights, err := extractHighlightsFromMetadata(metadata)
-	if err != nil {
-		return nil, err
-	}
-
-	return highlights, nil
+	return metadata, nil
 }
 
 // DefaultMetadataFetcher wraps the links.FetchMetadata function

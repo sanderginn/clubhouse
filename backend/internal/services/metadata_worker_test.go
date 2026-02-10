@@ -223,7 +223,7 @@ func TestMetadataWorker_ProcessMultipleJobs(t *testing.T) {
 	assert.Equal(t, int64(0), processingLen)
 }
 
-func TestMetadataWorker_PreservesHighlights(t *testing.T) {
+func TestMetadataWorker_PreservesHighlightsAndPodcastMetadata(t *testing.T) {
 	rdb := setupMetadataWorkerTestRedis(t)
 	db := setupMetadataWorkerTestDB(t)
 	ctx := context.Background()
@@ -237,10 +237,21 @@ func TestMetadataWorker_PreservesHighlights(t *testing.T) {
 		{Timestamp: 12, Label: "Intro"},
 		{Timestamp: 42, Label: "Drop"},
 	}
-	highlightsPayload, err := json.Marshal(map[string]interface{}{"highlights": highlights})
+	existingPayload, err := json.Marshal(map[string]interface{}{
+		"highlights": highlights,
+		"podcast": map[string]interface{}{
+			"kind": "show",
+			"highlight_episodes": []map[string]interface{}{
+				{
+					"title": "Episode One",
+					"url":   "https://example.com/podcast/episode-1",
+				},
+			},
+		},
+	})
 	require.NoError(t, err)
 
-	_, err = db.Exec(`UPDATE links SET metadata = $1 WHERE id = $2`, highlightsPayload, linkID)
+	_, err = db.Exec(`UPDATE links SET metadata = $1 WHERE id = $2`, existingPayload, linkID)
 	require.NoError(t, err)
 
 	fetcher := &mockMetadataFetcher{
@@ -283,6 +294,14 @@ func TestMetadataWorker_PreservesHighlights(t *testing.T) {
 	assert.Equal(t, "Intro", storedHighlights[0].Label)
 	assert.Equal(t, 42, storedHighlights[1].Timestamp)
 	assert.Equal(t, "Drop", storedHighlights[1].Label)
+
+	podcast, err := extractPodcastFromMetadata(parsed)
+	require.NoError(t, err)
+	require.NotNil(t, podcast)
+	assert.Equal(t, "show", podcast.Kind)
+	require.Len(t, podcast.HighlightEpisodes, 1)
+	assert.Equal(t, "Episode One", podcast.HighlightEpisodes[0].Title)
+	assert.Equal(t, "https://example.com/podcast/episode-1", podcast.HighlightEpisodes[0].URL)
 }
 
 func TestMetadataWorker_FetchError(t *testing.T) {
