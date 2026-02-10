@@ -347,6 +347,208 @@ func TestCreatePostRejectsHighlightsForNonMusicSection(t *testing.T) {
 	}
 }
 
+func TestCreatePostWithPodcastMetadataStoresPodcastPayload(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	disableLinkMetadata(t)
+
+	userID := testutil.CreateTestUser(t, db, "podcastmeta", "podcastmeta@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Podcast Section", "podcast")
+
+	service := NewPostService(db)
+	req := &models.CreatePostRequest{
+		SectionID: sectionID,
+		Content:   "Podcast show",
+		Links: []models.LinkRequest{
+			{
+				URL: "https://example.com/show",
+				Podcast: &models.PodcastMetadata{
+					Kind: "show",
+					HighlightEpisodes: []models.PodcastHighlightEpisode{
+						{
+							Title: "Episode 1",
+							URL:   "https://example.com/show/episodes/1",
+							Note:  stringPtr("Kickoff"),
+						},
+						{
+							Title: "Episode 2",
+							URL:   "https://example.com/show/episodes/2",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	post, err := service.CreatePost(context.Background(), req, uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("CreatePost failed: %v", err)
+	}
+
+	if len(post.Links) != 1 {
+		t.Fatalf("expected 1 link, got %d", len(post.Links))
+	}
+	if post.Links[0].Podcast == nil {
+		t.Fatalf("expected podcast metadata on response link")
+	}
+	if post.Links[0].Podcast.Kind != "show" {
+		t.Fatalf("expected podcast kind show, got %q", post.Links[0].Podcast.Kind)
+	}
+	if len(post.Links[0].Podcast.HighlightEpisodes) != 2 {
+		t.Fatalf("expected 2 highlight episodes, got %d", len(post.Links[0].Podcast.HighlightEpisodes))
+	}
+
+	var metadataBytes []byte
+	if err := db.QueryRow(`SELECT metadata FROM links WHERE post_id = $1`, post.ID).Scan(&metadataBytes); err != nil {
+		t.Fatalf("failed to query link metadata: %v", err)
+	}
+	var metadata map[string]interface{}
+	if err := json.Unmarshal(metadataBytes, &metadata); err != nil {
+		t.Fatalf("failed to unmarshal link metadata: %v", err)
+	}
+	rawPodcast, ok := metadata["podcast"]
+	if !ok {
+		t.Fatalf("expected podcast metadata to be persisted")
+	}
+	encoded, err := json.Marshal(rawPodcast)
+	if err != nil {
+		t.Fatalf("failed to marshal podcast metadata: %v", err)
+	}
+	var storedPodcast models.PodcastMetadata
+	if err := json.Unmarshal(encoded, &storedPodcast); err != nil {
+		t.Fatalf("failed to unmarshal podcast metadata: %v", err)
+	}
+	if storedPodcast.Kind != "show" {
+		t.Fatalf("expected stored kind show, got %q", storedPodcast.Kind)
+	}
+	if len(storedPodcast.HighlightEpisodes) != 2 {
+		t.Fatalf("expected 2 stored highlight episodes, got %d", len(storedPodcast.HighlightEpisodes))
+	}
+
+	loaded, err := service.GetPostByID(context.Background(), post.ID, uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("GetPostByID failed: %v", err)
+	}
+	if len(loaded.Links) != 1 || loaded.Links[0].Podcast == nil {
+		t.Fatalf("expected podcast metadata to be extracted from stored link metadata")
+	}
+	if loaded.Links[0].Metadata != nil {
+		if _, exists := loaded.Links[0].Metadata["podcast"]; exists {
+			t.Fatalf("expected podcast key to be stripped from generic metadata")
+		}
+	}
+}
+
+func TestCreatePostRejectsPodcastMetadataValidation(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	disableLinkMetadata(t)
+
+	userID := testutil.CreateTestUser(t, db, "podcastreject", "podcastreject@test.com", false, true)
+	podcastSectionID := testutil.CreateTestSection(t, db, "Podcast Section", "podcast")
+	generalSectionID := testutil.CreateTestSection(t, db, "General Section", "general")
+	service := NewPostService(db)
+
+	tests := []struct {
+		name      string
+		sectionID string
+		podcast   *models.PodcastMetadata
+		wantErr   string
+	}{
+		{
+			name:      "podcast metadata not allowed outside podcast section",
+			sectionID: generalSectionID,
+			podcast: &models.PodcastMetadata{
+				Kind: "show",
+			},
+			wantErr: "podcast metadata is not allowed",
+		},
+		{
+			name:      "episode kind rejects highlight episodes",
+			sectionID: podcastSectionID,
+			podcast: &models.PodcastMetadata{
+				Kind: "episode",
+				HighlightEpisodes: []models.PodcastHighlightEpisode{
+					{Title: "Episode 1", URL: "https://example.com/episodes/1"},
+				},
+			},
+			wantErr: "only allowed for kind",
+		},
+		{
+			name:      "invalid highlight episode url",
+			sectionID: podcastSectionID,
+			podcast: &models.PodcastMetadata{
+				Kind: "show",
+				HighlightEpisodes: []models.PodcastHighlightEpisode{
+					{Title: "Episode 1", URL: "ftp://example.com/episodes/1"},
+				},
+			},
+			wantErr: "valid http or https URL",
+		},
+		{
+			name:      "too many highlight episodes",
+			sectionID: podcastSectionID,
+			podcast: &models.PodcastMetadata{
+				Kind: "show",
+				HighlightEpisodes: []models.PodcastHighlightEpisode{
+					{Title: "1", URL: "https://example.com/e/1"},
+					{Title: "2", URL: "https://example.com/e/2"},
+					{Title: "3", URL: "https://example.com/e/3"},
+					{Title: "4", URL: "https://example.com/e/4"},
+					{Title: "5", URL: "https://example.com/e/5"},
+					{Title: "6", URL: "https://example.com/e/6"},
+					{Title: "7", URL: "https://example.com/e/7"},
+					{Title: "8", URL: "https://example.com/e/8"},
+					{Title: "9", URL: "https://example.com/e/9"},
+					{Title: "10", URL: "https://example.com/e/10"},
+					{Title: "11", URL: "https://example.com/e/11"},
+				},
+			},
+			wantErr: "too many podcast highlight episodes",
+		},
+		{
+			name:      "highlight note too long",
+			sectionID: podcastSectionID,
+			podcast: &models.PodcastMetadata{
+				Kind: "show",
+				HighlightEpisodes: []models.PodcastHighlightEpisode{
+					{
+						Title: "Episode 1",
+						URL:   "https://example.com/e/1",
+						Note:  stringPtr(strings.Repeat("n", 501)),
+					},
+				},
+			},
+			wantErr: "note must be less than",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := &models.CreatePostRequest{
+				SectionID: tt.sectionID,
+				Content:   "Podcast post",
+				Links: []models.LinkRequest{
+					{
+						URL:     "https://example.com/show",
+						Podcast: tt.podcast,
+					},
+				},
+			}
+
+			_, err := service.CreatePost(context.Background(), req, uuid.MustParse(userID))
+			if err == nil {
+				t.Fatalf("expected validation error")
+			}
+			if !strings.Contains(err.Error(), tt.wantErr) {
+				t.Fatalf("expected error containing %q, got %v", tt.wantErr, err)
+			}
+		})
+	}
+}
+
 func TestCreatePostWithLinksNoContent(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
@@ -1671,6 +1873,61 @@ func TestUpdatePostHighlights(t *testing.T) {
 	}
 }
 
+func TestUpdatePostRejectsPodcastEpisodeHighlightEpisodes(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	disableLinkMetadata(t)
+
+	userID := testutil.CreateTestUser(t, db, "updatepodcastreject", "updatepodcastreject@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Update Podcast Section", "podcast")
+
+	service := NewPostService(db)
+	createReq := &models.CreatePostRequest{
+		SectionID: sectionID,
+		Content:   "Podcast post",
+		Links: []models.LinkRequest{
+			{
+				URL: "https://example.com/show",
+				Podcast: &models.PodcastMetadata{
+					Kind: "show",
+				},
+			},
+		},
+	}
+
+	post, err := service.CreatePost(context.Background(), createReq, uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("CreatePost failed: %v", err)
+	}
+
+	updateReq := &models.UpdatePostRequest{
+		Content: "Podcast post",
+		Links: &[]models.LinkRequest{
+			{
+				URL: "https://example.com/show",
+				Podcast: &models.PodcastMetadata{
+					Kind: "episode",
+					HighlightEpisodes: []models.PodcastHighlightEpisode{
+						{
+							Title: "Episode 1",
+							URL:   "https://example.com/show/episodes/1",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, err = service.UpdatePost(context.Background(), post.ID, uuid.MustParse(userID), updateReq)
+	if err == nil {
+		t.Fatalf("expected validation error")
+	}
+	if !strings.Contains(err.Error(), "only allowed for kind") {
+		t.Fatalf("expected episode highlight validation error, got %v", err)
+	}
+}
+
 func TestDeletePostOwner(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
@@ -1919,6 +2176,47 @@ func TestAdminDeletePostCreatesAuditLogWithMetadata(t *testing.T) {
 	}
 	if len([]rune(excerpt)) != auditExcerptLimit {
 		t.Errorf("expected content_excerpt length %d, got %d", auditExcerptLimit, len([]rune(excerpt)))
+	}
+}
+
+func TestLinkRequestsMatchExistingLinks_PodcastNotesUseValueComparison(t *testing.T) {
+	existingNote := "Same note value"
+	requestedNote := "Same note value"
+
+	existing := []models.Link{
+		{
+			URL: "https://example.com/show",
+			Podcast: &models.PodcastMetadata{
+				Kind: "show",
+				HighlightEpisodes: []models.PodcastHighlightEpisode{
+					{
+						Title: "Episode 1",
+						URL:   "https://example.com/show/1",
+						Note:  &existingNote,
+					},
+				},
+			},
+		},
+	}
+
+	requested := []models.LinkRequest{
+		{
+			URL: "https://example.com/show",
+			Podcast: &models.PodcastMetadata{
+				Kind: "show",
+				HighlightEpisodes: []models.PodcastHighlightEpisode{
+					{
+						Title: "Episode 1",
+						URL:   "https://example.com/show/1",
+						Note:  &requestedNote,
+					},
+				},
+			},
+		},
+	}
+
+	if !linkRequestsMatchExistingLinks(existing, requested) {
+		t.Fatalf("expected links to match when note values are equal but pointers differ")
 	}
 }
 

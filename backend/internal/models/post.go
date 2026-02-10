@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -56,6 +58,7 @@ type Link struct {
 	URL        string                 `json:"url"`
 	Metadata   map[string]interface{} `json:"metadata,omitempty"`
 	Highlights []Highlight            `json:"highlights,omitempty"`
+	Podcast    *PodcastMetadata       `json:"podcast,omitempty"`
 	CreatedAt  time.Time              `json:"created_at"`
 }
 
@@ -81,8 +84,9 @@ type CreatePostRequest struct {
 
 // LinkRequest represents a link in the request
 type LinkRequest struct {
-	URL        string      `json:"url"`
-	Highlights []Highlight `json:"highlights,omitempty"`
+	URL        string           `json:"url"`
+	Highlights []Highlight      `json:"highlights,omitempty"`
+	Podcast    *PodcastMetadata `json:"podcast,omitempty"`
 }
 
 // Highlight represents a timestamped highlight for a link.
@@ -94,9 +98,23 @@ type Highlight struct {
 	ViewerReacted bool   `json:"viewer_reacted,omitempty"`
 }
 
+type PodcastMetadata struct {
+	Kind              string                    `json:"kind"`
+	HighlightEpisodes []PodcastHighlightEpisode `json:"highlight_episodes,omitempty"`
+}
+
+type PodcastHighlightEpisode struct {
+	Title string  `json:"title"`
+	URL   string  `json:"url"`
+	Note  *string `json:"note,omitempty"`
+}
+
 const (
-	maxHighlightsPerLink    = 20
-	maxHighlightLabelLength = 100
+	maxHighlightsPerLink                = 20
+	maxHighlightLabelLength             = 100
+	maxPodcastHighlightEpisodesPerLink  = 10
+	maxPodcastHighlightEpisodeTitleSize = 200
+	maxPodcastHighlightEpisodeNoteSize  = 500
 )
 
 var highlightAllowedSectionTypes = map[string]struct{}{
@@ -126,6 +144,70 @@ func ValidateHighlights(sectionType string, highlights []Highlight) error {
 	}
 
 	return nil
+}
+
+func ValidatePodcastMetadata(sectionType string, podcast *PodcastMetadata) error {
+	if podcast == nil {
+		return nil
+	}
+
+	if sectionType != "podcast" {
+		return fmt.Errorf("podcast metadata is not allowed for section type %q", sectionType)
+	}
+
+	kind := strings.ToLower(strings.TrimSpace(podcast.Kind))
+	if kind == "" {
+		return fmt.Errorf("podcast kind is required")
+	}
+	if kind != "show" && kind != "episode" {
+		return fmt.Errorf("podcast kind must be either \"show\" or \"episode\"")
+	}
+
+	if kind == "episode" && len(podcast.HighlightEpisodes) > 0 {
+		return fmt.Errorf("podcast highlight episodes are only allowed for kind \"show\"")
+	}
+
+	if len(podcast.HighlightEpisodes) > maxPodcastHighlightEpisodesPerLink {
+		return fmt.Errorf("too many podcast highlight episodes")
+	}
+
+	for _, episode := range podcast.HighlightEpisodes {
+		title := strings.TrimSpace(episode.Title)
+		if title == "" {
+			return fmt.Errorf("podcast highlight episode title is required")
+		}
+		if len(title) > maxPodcastHighlightEpisodeTitleSize {
+			return fmt.Errorf("podcast highlight episode title must be less than %d characters", maxPodcastHighlightEpisodeTitleSize)
+		}
+
+		episodeURL := strings.TrimSpace(episode.URL)
+		if episodeURL == "" {
+			return fmt.Errorf("podcast highlight episode url is required")
+		}
+		if len(episodeURL) > 2048 {
+			return fmt.Errorf("podcast highlight episode url must be less than 2048 characters")
+		}
+		if !isValidHTTPURL(episodeURL) {
+			return fmt.Errorf("podcast highlight episode url must be a valid http or https URL")
+		}
+
+		if episode.Note != nil && len(strings.TrimSpace(*episode.Note)) > maxPodcastHighlightEpisodeNoteSize {
+			return fmt.Errorf("podcast highlight episode note must be less than %d characters", maxPodcastHighlightEpisodeNoteSize)
+		}
+	}
+
+	return nil
+}
+
+func isValidHTTPURL(raw string) bool {
+	parsed, err := url.Parse(raw)
+	if err != nil {
+		return false
+	}
+	if parsed.Host == "" {
+		return false
+	}
+	return parsed.Scheme == "http" || parsed.Scheme == "https"
 }
 
 // PostImageRequest represents an image in the request.

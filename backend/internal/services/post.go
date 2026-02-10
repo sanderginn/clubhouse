@@ -106,6 +106,10 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 			recordSpanError(span, err)
 			return nil, err
 		}
+		if err := models.ValidatePodcastMetadata(sectionType, link.Podcast); err != nil {
+			recordSpanError(span, err)
+			return nil, err
+		}
 	}
 	highlightCount := countLinkHighlights(req.Links)
 	if highlightCount > 0 {
@@ -152,7 +156,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 		for _, linkReq := range req.Links {
 			linkID := uuid.New()
 
-			mergedMetadata, sortedHighlights := mergeHighlightsIntoMetadata(linkReq, nil)
+			mergedMetadata, sortedHighlights, podcast := mergeHighlightsIntoMetadata(linkReq, nil)
 			metadataValue := interface{}(nil)
 			if len(mergedMetadata) > 0 {
 				metadataValue = mergedMetadata
@@ -179,6 +183,9 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 			}
 			if len(sortedHighlights) > 0 {
 				link.Highlights = sortedHighlights
+			}
+			if podcast != nil {
+				link.Podcast = podcast
 			}
 
 			post.Links = append(post.Links, link)
@@ -353,6 +360,10 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 				recordSpanError(span, err)
 				return nil, err
 			}
+			if err := models.ValidatePodcastMetadata(sectionType, link.Podcast); err != nil {
+				recordSpanError(span, err)
+				return nil, err
+			}
 		}
 
 		linksChanged = !linkRequestsMatchExistingLinks(existingLinks, *req.Links)
@@ -406,7 +417,7 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 					fetchedMetadata = linkMetadata[i]
 				}
 
-				mergedMetadata, _ := mergeHighlightsIntoMetadata(linkReq, fetchedMetadata)
+				mergedMetadata, _, _ := mergeHighlightsIntoMetadata(linkReq, fetchedMetadata)
 				metadataValue := interface{}(nil)
 				if len(mergedMetadata) > 0 {
 					metadataValue = mergedMetadata
@@ -656,6 +667,13 @@ func (s *PostService) getPostLinks(ctx context.Context, postID uuid.UUID, viewer
 					highlightCount += len(highlights)
 					delete(metadata, "highlights")
 				}
+				podcast, err := extractPodcastFromMetadata(metadata)
+				if err != nil {
+					observability.LogWarn(ctx, "failed to parse podcast metadata", "post_id", postID.String(), "link_id", link.ID.String())
+				} else if podcast != nil {
+					link.Podcast = podcast
+					delete(metadata, "podcast")
+				}
 				if len(metadata) > 0 {
 					link.Metadata = metadata
 				}
@@ -897,10 +915,11 @@ func countLinkHighlights(links []models.LinkRequest) int {
 	return count
 }
 
-func mergeHighlightsIntoMetadata(link models.LinkRequest, fetched models.JSONMap) (models.JSONMap, []models.Highlight) {
+func mergeHighlightsIntoMetadata(link models.LinkRequest, fetched models.JSONMap) (models.JSONMap, []models.Highlight, *models.PodcastMetadata) {
 	sortedHighlights := sortHighlights(sanitizeHighlights(link.Highlights))
-	if len(sortedHighlights) == 0 && len(fetched) == 0 {
-		return nil, sortedHighlights
+	sanitizedPodcast := sanitizePodcastMetadata(link.Podcast)
+	if len(sortedHighlights) == 0 && sanitizedPodcast == nil && len(fetched) == 0 {
+		return nil, sortedHighlights, nil
 	}
 	metadata := make(models.JSONMap)
 	for key, value := range fetched {
@@ -909,7 +928,10 @@ func mergeHighlightsIntoMetadata(link models.LinkRequest, fetched models.JSONMap
 	if len(sortedHighlights) > 0 {
 		metadata["highlights"] = sortedHighlights
 	}
-	return metadata, sortedHighlights
+	if sanitizedPodcast != nil {
+		metadata["podcast"] = sanitizedPodcast
+	}
+	return metadata, sortedHighlights, sanitizedPodcast
 }
 
 func stripHighlightsFromMetadata(metadata models.JSONMap) map[string]interface{} {
@@ -918,7 +940,7 @@ func stripHighlightsFromMetadata(metadata models.JSONMap) map[string]interface{}
 	}
 	trimmed := make(map[string]interface{}, len(metadata))
 	for key, value := range metadata {
-		if key == "highlights" {
+		if key == "highlights" || key == "podcast" {
 			continue
 		}
 		trimmed[key] = value
@@ -945,6 +967,22 @@ func extractHighlightsFromMetadata(metadata map[string]interface{}) ([]models.Hi
 	return sortHighlights(highlights), nil
 }
 
+func extractPodcastFromMetadata(metadata map[string]interface{}) (*models.PodcastMetadata, error) {
+	raw, ok := metadata["podcast"]
+	if !ok {
+		return nil, nil
+	}
+	encoded, err := json.Marshal(raw)
+	if err != nil {
+		return nil, err
+	}
+	var podcast models.PodcastMetadata
+	if err := json.Unmarshal(encoded, &podcast); err != nil {
+		return nil, err
+	}
+	return sanitizePodcastMetadata(&podcast), nil
+}
+
 func sanitizeHighlights(highlights []models.Highlight) []models.Highlight {
 	if len(highlights) == 0 {
 		return nil
@@ -954,6 +992,28 @@ func sanitizeHighlights(highlights []models.Highlight) []models.Highlight {
 		sanitized = append(sanitized, models.Highlight{
 			Timestamp: highlight.Timestamp,
 			Label:     highlight.Label,
+		})
+	}
+	return sanitized
+}
+
+func sanitizePodcastMetadata(podcast *models.PodcastMetadata) *models.PodcastMetadata {
+	if podcast == nil {
+		return nil
+	}
+	sanitized := &models.PodcastMetadata{
+		Kind: strings.ToLower(strings.TrimSpace(podcast.Kind)),
+	}
+	if len(podcast.HighlightEpisodes) == 0 {
+		return sanitized
+	}
+
+	sanitized.HighlightEpisodes = make([]models.PodcastHighlightEpisode, 0, len(podcast.HighlightEpisodes))
+	for _, episode := range podcast.HighlightEpisodes {
+		sanitized.HighlightEpisodes = append(sanitized.HighlightEpisodes, models.PodcastHighlightEpisode{
+			Title: strings.TrimSpace(episode.Title),
+			URL:   strings.TrimSpace(episode.URL),
+			Note:  normalizeOptionalText(episode.Note),
 		})
 	}
 	return sanitized
@@ -988,8 +1048,49 @@ func linkRequestsMatchExistingLinks(existing []models.Link, requested []models.L
 				return false
 			}
 		}
+		if !podcastMetadataMatches(existing[i].Podcast, link.Podcast) {
+			return false
+		}
 	}
 	return true
+}
+
+func podcastMetadataMatches(existing *models.PodcastMetadata, requested *models.PodcastMetadata) bool {
+	existingSanitized := sanitizePodcastMetadata(existing)
+	requestedSanitized := sanitizePodcastMetadata(requested)
+
+	if existingSanitized == nil || requestedSanitized == nil {
+		return existingSanitized == nil && requestedSanitized == nil
+	}
+
+	if existingSanitized.Kind != requestedSanitized.Kind {
+		return false
+	}
+	if len(existingSanitized.HighlightEpisodes) != len(requestedSanitized.HighlightEpisodes) {
+		return false
+	}
+	for i := range existingSanitized.HighlightEpisodes {
+		existingEpisode := existingSanitized.HighlightEpisodes[i]
+		requestedEpisode := requestedSanitized.HighlightEpisodes[i]
+		if existingEpisode.Title != requestedEpisode.Title {
+			return false
+		}
+		if existingEpisode.URL != requestedEpisode.URL {
+			return false
+		}
+		if !optionalStringPtrEqual(existingEpisode.Note, requestedEpisode.Note) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func optionalStringPtrEqual(left *string, right *string) bool {
+	if left == nil || right == nil {
+		return left == nil && right == nil
+	}
+	return *left == *right
 }
 
 func findPrimaryNonImageLink(links []models.Link) *models.Link {
