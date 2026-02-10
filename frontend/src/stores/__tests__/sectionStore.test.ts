@@ -23,16 +23,18 @@ describe('sectionStore', () => {
         { id: 'section-1', name: 'Music', type: 'music' },
         { id: 'section-2', name: 'General', type: 'general' },
         { id: 'section-3', name: 'Books', type: 'book' },
+        { id: 'section-4', name: 'Podcasts', type: 'podcast' },
       ],
     });
 
     await sectionStore.loadSections();
     const state = get(sectionStore);
 
-    expect(state.sections).toHaveLength(3);
+    expect(state.sections).toHaveLength(4);
     expect(state.sections[0].icon).toBe('💬');
     expect(state.sections[1].icon).toBe('🎵');
-    expect(state.sections[2].icon).toBe('📚');
+    expect(state.sections[2].icon).toBe('🎙️');
+    expect(state.sections[3].icon).toBe('📚');
     expect(state.activeSection?.id).toBe('section-2');
     expect(state.isLoading).toBe(false);
   });
@@ -110,5 +112,24 @@ describe('sectionStore', () => {
 
     const state = get(sectionStore);
     expect(state.sections[0].icon).toBe('📁');
+  });
+
+  it('orders sections deterministically with podcast support', () => {
+    sectionStore.setSections([
+      { id: 'section-1', name: 'Events', type: 'event', icon: '📅', slug: 'events' },
+      { id: 'section-2', name: 'Podcasts', type: 'podcast', icon: '🎙️', slug: 'podcasts' },
+      { id: 'section-3', name: 'Music', type: 'music', icon: '🎵', slug: 'music' },
+      { id: 'section-4', name: 'General', type: 'general', icon: '💬', slug: 'general' },
+      { id: 'section-5', name: 'Movies', type: 'movie', icon: '🎬', slug: 'movies' },
+    ]);
+
+    const state = get(sectionStore);
+    expect(state.sections.map((section) => section.type)).toEqual([
+      'general',
+      'music',
+      'podcast',
+      'movie',
+      'event',
+    ]);
   });
 });

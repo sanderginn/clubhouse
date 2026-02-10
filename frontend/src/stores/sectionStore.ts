@@ -10,10 +10,19 @@ export interface Section {
   slug: string;
 }
 
-export type SectionType = 'music' | 'series' | 'event' | 'recipe' | 'book' | 'movie' | 'general';
+export type SectionType =
+  | 'music'
+  | 'podcast'
+  | 'series'
+  | 'event'
+  | 'recipe'
+  | 'book'
+  | 'movie'
+  | 'general';
 
 const sectionIcons: Record<SectionType, string> = {
   music: '🎵',
+  podcast: '🎙️',
   series: '📺',
   event: '📅',
   recipe: '🍳',
@@ -37,6 +46,7 @@ interface SectionState {
 const sectionOrder: SectionType[] = [
   'general',
   'music',
+  'podcast',
   'movie',
   'series',
   'recipe',

@@ -6,10 +6,17 @@ import { movieStore } from '../stores/movieStore';
 const loadFeedMock = vi.hoisted(() => vi.fn());
 const loadMorePostsMock = vi.hoisted(() => vi.fn());
 const loadThreadTargetPostMock = vi.hoisted(() => vi.fn());
+const loadSectionLinksMock = vi.hoisted(() => vi.fn());
+const loadMoreSectionLinksMock = vi.hoisted(() => vi.fn());
 
 vi.mock('../stores/feedStore', () => ({
   loadFeed: loadFeedMock,
   loadMorePosts: loadMorePostsMock,
+}));
+
+vi.mock('../stores/sectionLinksFeedStore', () => ({
+  loadSectionLinks: loadSectionLinksMock,
+  loadMoreSectionLinks: loadMoreSectionLinksMock,
 }));
 
 vi.mock('../stores/threadRouteStore', async () => {
@@ -57,6 +64,8 @@ beforeEach(() => {
   loadFeedMock.mockResolvedValue(undefined);
   loadMorePostsMock.mockResolvedValue(undefined);
   loadThreadTargetPostMock.mockResolvedValue(undefined);
+  loadSectionLinksMock.mockResolvedValue(undefined);
+  loadMoreSectionLinksMock.mockResolvedValue(undefined);
 
   stores.authStore.setUser(null);
   stores.sectionStore.setSections([
@@ -145,5 +154,51 @@ describe('App watchlist routing', () => {
       expect(screen.getByRole('heading', { name: 'Sign in to Clubhouse' })).toBeInTheDocument();
     });
     expect(screen.queryByRole('heading', { name: 'Create your account' })).not.toBeInTheDocument();
+  });
+
+  it('renders podcast top container only for podcast sections', async () => {
+    stores.authStore.setUser(defaultUser);
+    stores.sectionStore.setSections([
+      { id: 'section-general', name: 'General', type: 'general', icon: '💬', slug: 'general' },
+      { id: 'section-podcasts', name: 'Podcasts', type: 'podcast', icon: '🎙️', slug: 'podcasts' },
+    ]);
+    stores.sectionStore.setActiveSection({
+      id: 'section-podcasts',
+      name: 'Podcasts',
+      type: 'podcast',
+      icon: '🎙️',
+      slug: 'podcasts',
+    });
+    window.history.replaceState(null, '', '/');
+
+    render(App);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('podcasts-top-container')).toBeInTheDocument();
+    });
+  });
+
+  it('does not render podcast top container for non-podcast sections', async () => {
+    stores.authStore.setUser(defaultUser);
+    stores.sectionStore.setSections([
+      { id: 'section-general', name: 'General', type: 'general', icon: '💬', slug: 'general' },
+      { id: 'section-music', name: 'Music', type: 'music', icon: '🎵', slug: 'music' },
+      { id: 'section-podcasts', name: 'Podcasts', type: 'podcast', icon: '🎙️', slug: 'podcasts' },
+    ]);
+    stores.sectionStore.setActiveSection({
+      id: 'section-music',
+      name: 'Music',
+      type: 'music',
+      icon: '🎵',
+      slug: 'music',
+    });
+    window.history.replaceState(null, '', '/');
+
+    render(App);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Music' })).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('podcasts-top-container')).not.toBeInTheDocument();
   });
 });
