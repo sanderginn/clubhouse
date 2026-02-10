@@ -1,4 +1,9 @@
-import type { Post, CreatePostRequest, LinkMetadata } from '../stores/postStore';
+import type {
+  Post,
+  CreatePostRequest,
+  LinkMetadata,
+  PodcastMetadataInput,
+} from '../stores/postStore';
 import type { CreateCommentRequest, Comment } from '../stores/commentStore';
 import type { SectionLink } from '../stores/sectionLinksStore';
 import { mapApiComment, type ApiComment } from '../stores/commentMapper';
@@ -16,6 +21,9 @@ const CSRF_EXEMPT_ENDPOINTS = new Set([
   '/auth/password-reset/redeem',
 ]);
 const CSRF_ERROR_CODES = new Set(['CSRF_TOKEN_REQUIRED', 'INVALID_CSRF_TOKEN']);
+const PODCAST_KIND_SELECTION_REQUIRED_CODE = 'PODCAST_KIND_SELECTION_REQUIRED';
+const PODCAST_KIND_SELECTION_REQUIRED_MESSAGE =
+  'Could not determine whether this podcast link is a show or an episode. Please select one and try again.';
 
 interface ApiError {
   error: string;
@@ -23,6 +31,12 @@ interface ApiError {
   mfa_required?: boolean;
   mfaRequired?: boolean;
 }
+
+type ApiClientError = Error & {
+  code?: string;
+  mfaRequired?: boolean;
+  podcastKindSelectionRequired?: boolean;
+};
 
 interface ApiResponse<T> {
   data: T;
@@ -47,6 +61,34 @@ interface ApiSectionLinksResponse {
   has_more?: boolean;
   next_cursor?: string | null;
 }
+
+type PostHighlightRequest = {
+  timestamp: number;
+  label?: string;
+};
+
+type PostLinkRequest = {
+  url: string;
+  highlights?: PostHighlightRequest[];
+  podcast?: PodcastMetadataInput;
+};
+
+type ApiPodcastHighlightEpisodeRequest = {
+  title: string;
+  url: string;
+  note?: string;
+};
+
+type ApiPodcastMetadataRequest = {
+  kind?: string;
+  highlight_episodes?: ApiPodcastHighlightEpisodeRequest[];
+};
+
+type ApiPostLinkRequest = {
+  url: string;
+  highlights?: PostHighlightRequest[];
+  podcast?: ApiPodcastMetadataRequest;
+};
 
 interface ApiWatchlistItem {
   id: string;
@@ -176,6 +218,80 @@ function mapApiSectionLink(link: ApiSectionLink): SectionLink {
     userId: link.user_id,
     username: link.username,
     createdAt: link.created_at,
+  };
+}
+
+function toApiClientError(errorData: ApiError | null, fallbackMessage: string): ApiClientError {
+  const code = errorData?.code ?? 'UNKNOWN_ERROR';
+  const podcastKindSelectionRequired = code === PODCAST_KIND_SELECTION_REQUIRED_CODE;
+  const message = podcastKindSelectionRequired
+    ? PODCAST_KIND_SELECTION_REQUIRED_MESSAGE
+    : errorData?.error ?? fallbackMessage;
+
+  const error = new Error(message) as ApiClientError;
+  error.code = code;
+  error.mfaRequired = errorData?.mfa_required ?? errorData?.mfaRequired ?? false;
+  error.podcastKindSelectionRequired = podcastKindSelectionRequired;
+  return error;
+}
+
+function mapPodcastMetadataRequest(
+  podcast?: PodcastMetadataInput
+): ApiPodcastMetadataRequest | undefined {
+  if (!podcast) {
+    return undefined;
+  }
+
+  const kind =
+    typeof podcast.kind === 'string' && podcast.kind.trim().length > 0
+      ? podcast.kind.trim().toLowerCase()
+      : undefined;
+  const rawHighlightEpisodes = podcast.highlight_episodes ?? podcast.highlightEpisodes;
+  const highlightEpisodes = Array.isArray(rawHighlightEpisodes)
+    ? rawHighlightEpisodes
+        .map((episode): ApiPodcastHighlightEpisodeRequest | null => {
+          const title =
+            typeof episode?.title === 'string' && episode.title.trim().length > 0
+              ? episode.title.trim()
+              : undefined;
+          const url =
+            typeof episode?.url === 'string' && episode.url.trim().length > 0
+              ? episode.url.trim()
+              : undefined;
+          if (!title || !url) {
+            return null;
+          }
+          const note =
+            typeof episode?.note === 'string' && episode.note.trim().length > 0
+              ? episode.note.trim()
+              : undefined;
+          return {
+            title,
+            url,
+            ...(note ? { note } : {}),
+          };
+        })
+        .filter((episode): episode is ApiPodcastHighlightEpisodeRequest => episode !== null)
+    : undefined;
+
+  if (!kind && !(highlightEpisodes && highlightEpisodes.length > 0)) {
+    return undefined;
+  }
+
+  return {
+    ...(kind ? { kind } : {}),
+    ...(highlightEpisodes && highlightEpisodes.length > 0
+      ? { highlight_episodes: highlightEpisodes }
+      : {}),
+  };
+}
+
+function mapPostLinkRequest(link: PostLinkRequest): ApiPostLinkRequest {
+  const podcast = mapPodcastMetadataRequest(link.podcast);
+  return {
+    url: link.url,
+    ...(link.highlights && link.highlights.length > 0 ? { highlights: link.highlights } : {}),
+    ...(podcast ? { podcast } : {}),
   };
 }
 
@@ -698,13 +814,7 @@ class ApiClient {
           return this.request<T>(endpoint, options, false, logOptions);
         }
 
-        const error = new Error(errorData?.error ?? 'An unexpected error occurred') as Error & {
-          code?: string;
-          mfaRequired?: boolean;
-        };
-        error.code = errorData?.code ?? 'UNKNOWN_ERROR';
-        error.mfaRequired =
-          errorData?.mfa_required ?? errorData?.mfaRequired ?? false;
+        const error = toApiClientError(errorData, 'An unexpected error occurred');
         const logContext = {
           endpoint,
           method,
@@ -872,8 +982,7 @@ class ApiClient {
           }
 
           span.setStatus({ code: SpanStatusCode.ERROR });
-          const error = new Error(errorData?.error ?? 'Upload failed') as Error & { code?: string };
-          error.code = errorData?.code ?? 'UNKNOWN_ERROR';
+          const error = toApiClientError(errorData, 'Upload failed');
           const logContext = {
             endpoint: '/uploads',
             method: 'POST',
@@ -901,10 +1010,11 @@ class ApiClient {
   }
 
   async createPost(data: CreatePostRequest): Promise<{ post: Post }> {
+    const mappedLinks = data.links?.map(mapPostLinkRequest);
     const response = await this.post<{ post: ApiPost }>('/posts', {
       section_id: data.sectionId,
       content: data.content,
-      links: data.links,
+      links: mappedLinks,
       images: data.images?.map((image) => ({
         url: image.url,
         caption: image.caption,
@@ -975,14 +1085,15 @@ class ApiClient {
     postId: string,
     data: {
       content: string;
-      links?: { url: string; highlights?: { timestamp: number; label?: string }[] }[] | null;
+      links?: PostLinkRequest[] | null;
       removeLinkMetadata?: boolean;
       mentionUsernames?: string[];
     }
   ): Promise<{ post: Post }> {
+    const mappedLinks = data.links?.map(mapPostLinkRequest);
     const response = await this.patch<{ post: ApiPost }>(`/posts/${postId}`, {
       content: data.content,
-      links: data.links ?? undefined,
+      links: mappedLinks ?? undefined,
       remove_link_metadata: data.removeLinkMetadata ?? undefined,
       mention_usernames: data.mentionUsernames ?? [],
     });

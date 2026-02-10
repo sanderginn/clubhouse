@@ -283,6 +283,81 @@ describe('mapApiPost', () => {
     expect(movie?.metacriticScore).toBe(73);
   });
 
+  it('maps podcast metadata from link podcast payload', () => {
+    const post = mapApiPost({
+      id: 'post-podcast-metadata',
+      user_id: 'user-podcast-metadata',
+      section_id: 'section-podcast',
+      content: 'Podcast metadata',
+      created_at: '2025-01-01T00:00:00Z',
+      links: [
+        {
+          id: 'link-podcast',
+          url: 'https://podcasts.apple.com/us/podcast/example/id123456789',
+          metadata: {
+            title: 'Example Show',
+          },
+          podcast: {
+            kind: 'show',
+            highlight_episodes: [
+              {
+                title: 'Episode 1',
+                url: 'https://example.com/episode-1',
+                note: 'Start here',
+              },
+            ],
+          },
+        },
+      ],
+    });
+
+    const podcast = post.links?.[0].metadata?.podcast;
+    expect(podcast?.kind).toBe('show');
+    expect(podcast?.highlightEpisodes).toEqual([
+      {
+        title: 'Episode 1',
+        url: 'https://example.com/episode-1',
+        note: 'Start here',
+      },
+    ]);
+    expect(post.links?.[0].metadata?.title).toBe('Example Show');
+  });
+
+  it('maps podcast metadata from nested metadata payload', () => {
+    const post = mapApiPost({
+      id: 'post-podcast-nested-metadata',
+      user_id: 'user-podcast-nested',
+      section_id: 'section-podcast',
+      content: 'Podcast metadata nested',
+      created_at: '2025-01-01T00:00:00Z',
+      links: [
+        {
+          id: 'link-podcast-nested',
+          url: 'https://open.spotify.com/show/abc123',
+          metadata: {
+            podcast: {
+              kind: 'episode',
+              highlightEpisodes: [
+                {
+                  title: 'Episode 2',
+                  url: 'https://example.com/episode-2',
+                },
+              ],
+            },
+          },
+        },
+      ],
+    });
+    const podcast = post.links?.[0].metadata?.podcast;
+    expect(podcast?.kind).toBe('episode');
+    expect(podcast?.highlightEpisodes).toEqual([
+      {
+        title: 'Episode 2',
+        url: 'https://example.com/episode-2',
+      },
+    ]);
+  });
+
   it('handles missing user and links gracefully', () => {
     const post = mapApiPost({
       id: 'post-2',

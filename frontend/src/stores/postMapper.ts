@@ -12,6 +12,8 @@ import type {
   MovieMetadata,
   MovieCastMember,
   MovieSeason,
+  PodcastMetadata,
+  PodcastHighlightEpisode,
 } from './postStore';
 
 export interface ApiUser {
@@ -24,6 +26,7 @@ export interface ApiLink {
   id?: string;
   url: string;
   metadata?: Record<string, unknown> | string | null;
+  podcast?: unknown;
   highlights?: unknown;
 }
 
@@ -186,6 +189,85 @@ function normalizeTMDBMediaType(value: unknown): 'movie' | 'tv' | undefined {
     return 'tv';
   }
   return undefined;
+}
+
+function normalizePodcastKind(value: unknown): 'show' | 'episode' | undefined {
+  const normalized = normalizeString(value)?.toLowerCase();
+  if (normalized === 'show') {
+    return 'show';
+  }
+  if (normalized === 'episode') {
+    return 'episode';
+  }
+  return undefined;
+}
+
+function normalizePodcastHighlightEpisodes(rawEpisodes: unknown): PodcastHighlightEpisode[] | undefined {
+  if (!Array.isArray(rawEpisodes)) {
+    return undefined;
+  }
+
+  const episodes = rawEpisodes
+    .map((rawEpisode): PodcastHighlightEpisode | null => {
+      if (!rawEpisode || typeof rawEpisode !== 'object' || Array.isArray(rawEpisode)) {
+        return null;
+      }
+
+      const record = rawEpisode as Record<string, unknown>;
+      const title = normalizeString(record.title);
+      const url = normalizeString(record.url);
+      if (!title || !url) {
+        return null;
+      }
+
+      const note = normalizeString(record.note);
+      return {
+        title,
+        url,
+        ...(note ? { note } : {}),
+      };
+    })
+    .filter((episode): episode is PodcastHighlightEpisode => episode !== null);
+
+  return episodes.length > 0 ? episodes : undefined;
+}
+
+function normalizePodcastMetadata(rawPodcast: unknown): PodcastMetadata | undefined {
+  if (!rawPodcast) {
+    return undefined;
+  }
+
+  let podcast: Record<string, unknown> | null = null;
+  if (typeof rawPodcast === 'string') {
+    try {
+      const parsed = JSON.parse(rawPodcast) as unknown;
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        podcast = parsed as Record<string, unknown>;
+      }
+    } catch {
+      return undefined;
+    }
+  } else if (typeof rawPodcast === 'object' && !Array.isArray(rawPodcast)) {
+    podcast = rawPodcast as Record<string, unknown>;
+  }
+
+  if (!podcast) {
+    return undefined;
+  }
+
+  const kind = normalizePodcastKind(podcast.kind);
+  const highlightEpisodes = normalizePodcastHighlightEpisodes(
+    podcast.highlight_episodes ?? podcast.highlightEpisodes
+  );
+
+  if (!kind && !highlightEpisodes) {
+    return undefined;
+  }
+
+  return {
+    ...(kind ? { kind } : {}),
+    ...(highlightEpisodes ? { highlightEpisodes } : {}),
+  };
 }
 
 function normalizeMovieSeasons(rawSeasons: unknown): MovieSeason[] | undefined {
@@ -580,6 +662,35 @@ function normalizeEmbedData(rawEmbed: unknown): EmbedData | undefined {
   };
 }
 
+function mergePodcastIntoMetadata(rawMetadata: unknown, rawPodcast: unknown): unknown {
+  if (!rawPodcast) {
+    return rawMetadata;
+  }
+
+  if (rawMetadata && typeof rawMetadata === 'object' && !Array.isArray(rawMetadata)) {
+    return {
+      ...(rawMetadata as Record<string, unknown>),
+      podcast: rawPodcast,
+    };
+  }
+
+  if (typeof rawMetadata === 'string') {
+    try {
+      const parsed = JSON.parse(rawMetadata) as unknown;
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return {
+          ...(parsed as Record<string, unknown>),
+          podcast: rawPodcast,
+        };
+      }
+    } catch {
+      // Fall through and preserve podcast metadata even if metadata string is invalid.
+    }
+  }
+
+  return { podcast: rawPodcast };
+}
+
 function normalizeHighlights(rawHighlights: unknown): Highlight[] | undefined {
   if (!Array.isArray(rawHighlights)) {
     return undefined;
@@ -687,6 +798,7 @@ export function normalizeLinkMetadata(
     normalizeString(metadata.ogType);
   const recipe = normalizeRecipeMetadata(metadata.recipe);
   const movie = normalizeMovieMetadata(metadata.movie);
+  const podcast = normalizePodcastMetadata(metadata.podcast);
 
   const hasMetadata =
     !!provider ||
@@ -699,7 +811,8 @@ export function normalizeLinkMetadata(
     !!embed ||
     !!type ||
     !!recipe ||
-    !!movie;
+    !!movie ||
+    !!podcast;
   if (!hasMetadata) {
     return undefined;
   }
@@ -717,6 +830,7 @@ export function normalizeLinkMetadata(
     type,
     ...(recipe ? { recipe } : {}),
     ...(movie ? { movie } : {}),
+    ...(podcast ? { podcast } : {}),
   };
 }
 
@@ -738,7 +852,10 @@ export function mapApiPost(apiPost: ApiPost): Post {
     links: apiPost.links?.map((link): Link => ({
       id: link.id,
       url: link.url,
-      metadata: normalizeLinkMetadata(link.metadata, link.url),
+      metadata: normalizeLinkMetadata(
+        mergePodcastIntoMetadata(link.metadata, link.podcast),
+        link.url
+      ),
       highlights: normalizeHighlights(link.highlights),
     })),
     images,
