@@ -1171,7 +1171,7 @@
     {
       "issue_number": 897,
       "title": "[Podcasts] Add podcast fields to PostForm (kind selector + highlight episodes editor)",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         896
       ],
@@ -1180,7 +1180,11 @@
         "frontend",
         "podcasts"
       ],
-      "priority": 105
+      "priority": 105,
+      "assigned_to": "agent-1770715917-40980",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770715917-40980",
+      "branch": "feat/issue-897-podcasts-add-podcast-fields-to-postform-",
+      "claimed_at": "2026-02-10T09:31:57Z"
     },
     {
       "issue_number": 898,
