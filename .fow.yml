@@ -1,0 +1,78 @@
+project:
+  name: clubhouse
+
+analyzers:
+  - profile: go-otel
+    paths:
+      - backend/
+    roles:
+      handler:
+        directories:
+          - backend/internal/handlers/
+        type_suffix: Handler
+      service:
+        directories:
+          - backend/internal/services/
+        type_suffix: Service
+      external_call:
+        directories:
+          - backend/internal/services/links/
+    call_graph:
+      transitive_credit:
+        - function: handlers.writeError
+          provides: log
+        - function: handlers.writeErrorWithMFARequired
+          provides: log
+        - function: services.AuditService.LogAudit
+          provides: audit
+        - function: services.AuditService.LogAuditWithMetadata
+          provides: audit
+        - function: services.AuditService.LogModerationAudit
+          provides: audit
+      entry_points:
+        route_file: backend/cmd/server/main.go
+
+  - profile: typescript-otel
+    paths:
+      - frontend/src/
+    roles:
+      external_call:
+        directories:
+          - frontend/src/services/
+        type_suffix: Client
+      utility:
+        directories:
+          - frontend/src/
+    signals:
+      trace:
+        - pattern: call_method
+          method: startSpan
+
+rules:
+  - id: handler-logging
+    severity: error
+    applies_to: [handler]
+    requires: [log]
+    message: Handler must have logging coverage
+    fix: Add observability.LogError() or route errors through writeError()
+
+  - id: service-trace-span
+    severity: error
+    applies_to: [service]
+    requires: [trace]
+    message: Service methods must create trace spans
+    fix: Add otel.Tracer(...).Start(ctx, ...), then defer span.End().
+
+  - id: external-call-trace-span
+    severity: warning
+    applies_to: [external_call]
+    requires: [trace]
+    message: External calls should be wrapped in a trace span
+    fix: Start a span in this method before the outbound request.
+
+  - id: state-change-audit
+    severity: warning
+    applies_to: [service]
+    requires: [audit]
+    message: State-changing service methods must emit audit signals
+    fix: Add an audit log write for this state transition.
