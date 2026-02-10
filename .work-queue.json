@@ -632,7 +632,7 @@
     {
       "issue_number": 871,
       "title": "[Books] Create BookStatsBar component",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         869,
         870
@@ -642,7 +642,11 @@
         "frontend",
         "books"
       ],
-      "priority": 79
+      "priority": 79,
+      "assigned_to": "agent-1770713157-84201",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770713157-84201",
+      "branch": "feat/issue-871-books-create-bookstatsbar-component",
+      "claimed_at": "2026-02-10T08:45:57Z"
     },
     {
       "issue_number": 872,
