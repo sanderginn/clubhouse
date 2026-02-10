@@ -49,6 +49,7 @@
     883,
     884,
     885,
+    886,
     887,
     888,
     889,
@@ -955,7 +956,7 @@
     {
       "issue_number": 886,
       "title": "[Books] Integrate spoiler UI in comment composer for book section",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         885,
         873
@@ -969,7 +970,9 @@
       "assigned_to": "agent-1770715915-40974",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770715915-40974",
       "branch": "feat/issue-886-books-integrate-spoiler-ui-in-comment-co",
-      "claimed_at": "2026-02-10T09:31:55Z"
+      "claimed_at": "2026-02-10T09:31:55Z",
+      "pr_number": 968,
+      "completed_at": "2026-02-10T09:49:40Z"
     },
     {
       "issue_number": 887,
