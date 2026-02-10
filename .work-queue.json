@@ -32,6 +32,7 @@
     866,
     867,
     868,
+    870,
     876,
     877,
     878,
@@ -603,7 +604,7 @@
     {
       "issue_number": 870,
       "title": "[Books] Create ReadButton component",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         867
       ],
@@ -616,7 +617,9 @@
       "assigned_to": "agent-1770708514-18235",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770708514-18235",
       "branch": "feat/issue-870-books-create-readbutton-component",
-      "claimed_at": "2026-02-10T07:28:34Z"
+      "claimed_at": "2026-02-10T07:28:34Z",
+      "pr_number": 943,
+      "completed_at": "2026-02-10T07:38:36Z"
     },
     {
       "issue_number": 871,
