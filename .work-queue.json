@@ -14,6 +14,7 @@
     848,
     849,
     850,
+    851,
     852,
     853,
     854,
@@ -201,7 +202,7 @@
     {
       "issue_number": 851,
       "title": "Separate Watchlist by section type and display in Series section",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         846
       ],
@@ -215,7 +216,9 @@
       "assigned_to": "agent-1770678385-25581",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770678385-25581",
       "branch": "feat/issue-851-separate-watchlist-by-section-type-and-d",
-      "claimed_at": "2026-02-09T23:06:25Z"
+      "claimed_at": "2026-02-09T23:06:25Z",
+      "pr_number": 919,
+      "completed_at": "2026-02-10T04:00:11Z"
     },
     {
       "issue_number": 852,
