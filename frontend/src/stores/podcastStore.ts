@@ -55,6 +55,17 @@ function dedupePosts(existing: Post[], nextPosts: Post[]): Post[] {
   return merged;
 }
 
+function upsertSavedPost(posts: Post[], post: Post): Post[] {
+  const existingIndex = posts.findIndex((item) => item.id === post.id);
+  if (existingIndex === -1) {
+    return [post, ...posts];
+  }
+
+  const nextPosts = [...posts];
+  nextPosts[existingIndex] = post;
+  return nextPosts;
+}
+
 function dedupeRecentPodcasts(
   existing: RecentPodcastItem[],
   nextItems: RecentPodcastItem[]
@@ -210,6 +221,17 @@ function createPodcastStore() {
           hasMore,
           isLoadingSaved: false,
           error: null,
+        };
+      }),
+    addSavedPost: (post: Post) =>
+      update((state) => {
+        const mergedPosts = upsertSavedPost(state.savedPosts, post);
+        const nextSavedIds = new Set(state.savedPostIds);
+        nextSavedIds.add(post.id);
+        return {
+          ...state,
+          savedPosts: mergedPosts,
+          savedPostIds: nextSavedIds,
         };
       }),
     removeSavedPost: (postId: string) =>

@@ -1,6 +1,8 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { get } from 'svelte/store';
 import type { PodcastSave } from '../../services/api';
+import type { Post } from '../../stores/postStore';
 
 const apiSavePodcast = vi.hoisted(() => vi.fn());
 const apiUnsavePodcast = vi.hoisted(() => vi.fn());
@@ -16,6 +18,16 @@ vi.mock('../../services/api', () => ({
 
 const { podcastStore } = await import('../../stores/podcastStore');
 const { default: PodcastSaveButton } = await import('../podcasts/PodcastSaveButton.svelte');
+
+function buildPost(id: string): Post {
+  return {
+    id,
+    userId: 'user-1',
+    sectionId: 'section-podcast',
+    content: `Podcast ${id}`,
+    createdAt: '2026-02-10T10:00:00Z',
+  };
+}
 
 const createDeferred = <T>() => {
   let resolve!: (value: T) => void;
@@ -71,6 +83,7 @@ describe('PodcastSaveButton', () => {
 
     render(PodcastSaveButton, {
       postId: 'post-1',
+      post: buildPost('post-1'),
       initialSaved: false,
       initialSaveCount: 2,
     });
@@ -80,6 +93,7 @@ describe('PodcastSaveButton', () => {
     expect(screen.getByText('Saved')).toBeInTheDocument();
     expect(screen.getByTestId('podcast-save-count')).toHaveTextContent('3');
     expect(screen.getByTestId('podcast-save-spinner')).toBeInTheDocument();
+    expect(get(podcastStore).savedPosts.map((post) => post.id)).toEqual(['post-1']);
 
     deferredSave.resolve({
       id: 'save-1',
@@ -98,14 +112,18 @@ describe('PodcastSaveButton', () => {
   });
 
   it('supports unsaving previously saved podcast posts', async () => {
+    const deferredUnsave = createDeferred<void>();
+    apiUnsavePodcast.mockReturnValueOnce(deferredUnsave.promise);
     apiGetPostPodcastSaveInfo.mockResolvedValueOnce({
       saveCount: 1,
       users: [],
       viewerSaved: false,
     });
+    podcastStore.addSavedPost(buildPost('post-1'));
 
     render(PodcastSaveButton, {
       postId: 'post-1',
+      post: buildPost('post-1'),
       initialSaved: true,
       initialSaveCount: 2,
     });
@@ -114,6 +132,9 @@ describe('PodcastSaveButton', () => {
 
     expect(screen.getByText('Save for later')).toBeInTheDocument();
     expect(screen.getByTestId('podcast-save-count')).toHaveTextContent('1');
+    expect(get(podcastStore).savedPosts).toHaveLength(0);
+
+    deferredUnsave.resolve();
 
     await waitFor(() => {
       expect(apiUnsavePodcast).toHaveBeenCalledWith('post-1');
@@ -127,6 +148,7 @@ describe('PodcastSaveButton', () => {
 
     render(PodcastSaveButton, {
       postId: 'post-1',
+      post: buildPost('post-1'),
       initialSaved: false,
       initialSaveCount: 0,
     });
@@ -142,6 +164,33 @@ describe('PodcastSaveButton', () => {
 
     expect(screen.getByText('Save for later')).toBeInTheDocument();
     expect(screen.queryByText('Saved')).not.toBeInTheDocument();
+    expect(get(podcastStore).savedPosts).toHaveLength(0);
+    expect(apiGetPostPodcastSaveInfo).not.toHaveBeenCalled();
+  });
+
+  it('rolls back optimistic removal when unsave fails', async () => {
+    const deferredUnsave = createDeferred<void>();
+    apiUnsavePodcast.mockReturnValueOnce(deferredUnsave.promise);
+    podcastStore.addSavedPost(buildPost('post-1'));
+
+    render(PodcastSaveButton, {
+      postId: 'post-1',
+      post: buildPost('post-1'),
+      initialSaved: true,
+      initialSaveCount: 1,
+    });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Remove podcast from saved for later' }));
+    expect(get(podcastStore).savedPosts).toHaveLength(0);
+
+    deferredUnsave.reject(new Error('Unsave failed'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('podcast-save-error')).toHaveTextContent('Unsave failed');
+    });
+
+    expect(screen.getByText('Saved')).toBeInTheDocument();
+    expect(get(podcastStore).savedPosts.map((post) => post.id)).toEqual(['post-1']);
     expect(apiGetPostPodcastSaveInfo).not.toHaveBeenCalled();
   });
 });
