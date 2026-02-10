@@ -23,6 +23,7 @@
     857,
     858,
     859,
+    860,
     861,
     876,
     877,
@@ -382,7 +383,7 @@
     {
       "issue_number": 860,
       "title": "[Books] Create bookshelf service",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         854,
         855,
@@ -397,7 +398,9 @@
       "assigned_to": "agent-1770695578-76301",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770695578-76301",
       "branch": "feat/issue-860-books-create-bookshelf-service",
-      "claimed_at": "2026-02-10T03:52:58Z"
+      "claimed_at": "2026-02-10T03:52:58Z",
+      "pr_number": 923,
+      "completed_at": "2026-02-10T04:22:02Z"
     },
     {
       "issue_number": 861,
