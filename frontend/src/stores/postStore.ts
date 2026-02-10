@@ -88,6 +88,8 @@ export interface MovieMetadata {
   tmdbRating?: number;
   rottenTomatoesScore?: number;
   metacriticScore?: number;
+  imdbId?: string;
+  rottenTomatoesUrl?: string;
   trailerKey?: string;
   tmdbId?: number;
   tmdbMediaType?: 'movie' | 'tv';

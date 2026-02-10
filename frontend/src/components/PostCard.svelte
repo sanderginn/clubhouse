@@ -88,6 +88,10 @@
     rotten_tomatoes_score?: number | string;
     metacriticScore?: number | string;
     metacritic_score?: number | string;
+    imdbId?: string;
+    imdb_id?: string;
+    rottenTomatoesUrl?: string;
+    rotten_tomatoes_url?: string;
     trailerKey?: string;
     trailer_key?: string;
     tmdbId?: number;
@@ -117,6 +121,8 @@
     tmdbRating?: number;
     rottenTomatoesScore?: number;
     metacriticScore?: number;
+    imdbId?: string;
+    rottenTomatoesUrl?: string;
     trailerKey?: string;
     tmdbId?: number;
     tmdbMediaType?: 'movie' | 'tv';
@@ -835,6 +841,15 @@
       movie.metacriticScore,
       movie.metacritic_score
     );
+    const normalizedIMDBIDRaw =
+      (typeof movie.imdbId === 'string' ? movie.imdbId : undefined) ??
+      (typeof movie.imdb_id === 'string' ? movie.imdb_id : undefined);
+    const normalizedIMDBID = normalizedIMDBIDRaw?.trim().toLowerCase();
+    const imdbId = normalizedIMDBID && /^tt\d+$/.test(normalizedIMDBID) ? normalizedIMDBID : undefined;
+    const normalizedRottenTomatoesURL =
+      (typeof movie.rottenTomatoesUrl === 'string' ? movie.rottenTomatoesUrl : undefined) ??
+      (typeof movie.rotten_tomatoes_url === 'string' ? movie.rotten_tomatoes_url : undefined);
+    const rottenTomatoesUrl = normalizedRottenTomatoesURL?.trim();
     const normalizedRuntime =
       typeof movie.runtime === 'number' && Number.isFinite(movie.runtime) ? movie.runtime : undefined;
     const normalizedGenres =
@@ -933,6 +948,8 @@
       ...(typeof normalizedMetacriticScore === 'number'
         ? { metacriticScore: normalizedMetacriticScore }
         : {}),
+      ...(imdbId ? { imdbId } : {}),
+      ...(rottenTomatoesUrl ? { rottenTomatoesUrl } : {}),
       ...(normalizedTrailerKey ? { trailerKey: normalizedTrailerKey } : {}),
       ...(typeof normalizedTMDBID === 'number' ? { tmdbId: normalizedTMDBID } : {}),
       ...(normalizedTMDBMediaType ? { tmdbMediaType: normalizedTMDBMediaType } : {}),

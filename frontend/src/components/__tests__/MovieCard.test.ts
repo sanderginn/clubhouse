@@ -18,6 +18,10 @@ type MovieMetadata = {
   rotten_tomatoes_score?: number | string;
   metacriticScore?: number | string;
   metacritic_score?: number | string;
+  imdbId?: string;
+  imdb_id?: string;
+  rottenTomatoesUrl?: string;
+  rotten_tomatoes_url?: string;
   trailerKey?: string;
   tmdbId?: number;
   tmdbMediaType?: 'movie' | 'tv';
@@ -241,6 +245,45 @@ describe('MovieCard', () => {
     expect(tmdbLink).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
+  it('renders TMDB, IMDb, and Rotten Tomatoes links when available', () => {
+    render(MovieCard, {
+      movie: {
+        ...fullMovie,
+        imdbId: 'tt0816692',
+        rottenTomatoesUrl: 'https://www.rottentomatoes.com/m/interstellar_2014',
+      },
+    });
+
+    const tmdbLink = screen.getByTestId('movie-tmdb-link');
+    const imdbLink = screen.getByTestId('movie-imdb-link');
+    const rtLink = screen.getByTestId('movie-rotten-tomatoes-link');
+
+    expect(tmdbLink).toHaveAttribute('href', 'https://www.themoviedb.org/movie/157336');
+    expect(imdbLink).toHaveAttribute('href', 'https://www.imdb.com/title/tt0816692');
+    expect(rtLink).toHaveAttribute(
+      'href',
+      'https://www.rottentomatoes.com/m/interstellar_2014'
+    );
+    expect(imdbLink).toHaveAttribute('target', '_blank');
+    expect(rtLink).toHaveAttribute('target', '_blank');
+    expect(imdbLink).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(rtLink).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(imdbLink).toHaveClass(
+      'rounded-md',
+      'border',
+      'bg-slate-50',
+      'text-sm',
+      'focus-visible:outline'
+    );
+    expect(rtLink).toHaveClass(
+      'rounded-md',
+      'border',
+      'bg-slate-50',
+      'text-sm',
+      'focus-visible:outline'
+    );
+  });
+
   it('does not render TMDB link when tmdb id is missing', () => {
     render(MovieCard, {
       movie: {
@@ -250,6 +293,19 @@ describe('MovieCard', () => {
     });
 
     expect(screen.queryByTestId('movie-tmdb-link')).not.toBeInTheDocument();
+  });
+
+  it('omits IMDb and Rotten Tomatoes links when metadata is unavailable', () => {
+    render(MovieCard, {
+      movie: {
+        ...fullMovie,
+        imdbId: 'invalid-id',
+        rottenTomatoesUrl: '',
+      },
+    });
+
+    expect(screen.queryByTestId('movie-imdb-link')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('movie-rotten-tomatoes-link')).not.toBeInTheDocument();
   });
 
   it('renders fallback content for minimal metadata', () => {

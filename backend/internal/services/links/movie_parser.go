@@ -20,6 +20,7 @@ const (
 	tmdbPosterSize           = "w500"
 	tmdbBackdropSize         = "w1280"
 	movieMetadataCastMaxSize = 5
+	rottenTomatoesBaseURL    = "https://www.rottentomatoes.com"
 )
 
 var (
@@ -27,6 +28,7 @@ var (
 	leadingDigitsRegexp     = regexp.MustCompile(`^(\d+)`)
 	trailingRTYearPattern   = regexp.MustCompile(`[_-](19\d{2}|20\d{2})$`)
 	rtDelimiterStripPattern = regexp.MustCompile(`[_-]+`)
+	rtSlugStripPattern      = regexp.MustCompile(`[^a-z0-9]+`)
 )
 
 type MovieData = models.MovieData
@@ -213,7 +215,9 @@ func parseTMDBMovieMetadata(ctx context.Context, client *TMDBClient, omdbClient 
 			return nil, fmt.Errorf("get tmdb movie details for id %d: %w", tmdbID, err)
 		}
 		movieData := movieDataFromMovieDetails(details, mediaType)
-		enrichMovieDataWithOMDB(ctx, omdbClient, firstNonEmpty(details.IMDBID, details.ExternalIDs.IMDBID), movieData)
+		imdbID := firstNonEmpty(details.IMDBID, details.ExternalIDs.IMDBID)
+		setMovieExternalLinks(movieData, mediaType, imdbID, "")
+		enrichMovieDataWithOMDB(ctx, omdbClient, imdbID, movieData)
 		return movieData, nil
 	case "tv":
 		details, err := client.GetTVDetails(ctx, tmdbID)
@@ -221,7 +225,9 @@ func parseTMDBMovieMetadata(ctx context.Context, client *TMDBClient, omdbClient 
 			return nil, fmt.Errorf("get tmdb tv details for id %d: %w", tmdbID, err)
 		}
 		movieData := movieDataFromTVDetails(details, mediaType)
-		enrichMovieDataWithOMDB(ctx, omdbClient, details.ExternalIDs.IMDBID, movieData)
+		imdbID := details.ExternalIDs.IMDBID
+		setMovieExternalLinks(movieData, mediaType, imdbID, "")
+		enrichMovieDataWithOMDB(ctx, omdbClient, imdbID, movieData)
 		return movieData, nil
 	default:
 		return nil, nil
@@ -261,7 +267,12 @@ func parseRottenTomatoesMovieMetadata(ctx context.Context, client *TMDBClient, o
 		if !ok {
 			return nil, nil
 		}
-		return parseTMDBMovieMetadata(ctx, client, omdbClient, "movie", match.ID)
+		movieData, err := parseTMDBMovieMetadata(ctx, client, omdbClient, "movie", match.ID)
+		if err != nil || movieData == nil {
+			return movieData, err
+		}
+		setMovieExternalLinks(movieData, "movie", movieData.IMDBID, slug)
+		return movieData, nil
 	case "tv":
 		results, err := client.SearchTV(ctx, titleQuery)
 		if err != nil {
@@ -271,7 +282,12 @@ func parseRottenTomatoesMovieMetadata(ctx context.Context, client *TMDBClient, o
 		if !ok {
 			return nil, nil
 		}
-		return parseTMDBMovieMetadata(ctx, client, omdbClient, "tv", match.ID)
+		movieData, err := parseTMDBMovieMetadata(ctx, client, omdbClient, "tv", match.ID)
+		if err != nil || movieData == nil {
+			return movieData, err
+		}
+		setMovieExternalLinks(movieData, "tv", movieData.IMDBID, slug)
+		return movieData, nil
 	default:
 		return nil, nil
 	}
@@ -495,6 +511,60 @@ func enrichMovieDataWithOMDB(ctx context.Context, omdbClient *OMDBClient, imdbID
 
 	movieData.RottenTomatoesScore = ratings.RottenTomatoesScore
 	movieData.MetacriticScore = ratings.MetacriticScore
+}
+
+func setMovieExternalLinks(movieData *MovieData, mediaType, imdbID, rottenTomatoesSlug string) {
+	if movieData == nil {
+		return
+	}
+
+	normalizedIMDBID := strings.ToLower(strings.TrimSpace(imdbID))
+	if imdbIDPattern.MatchString(normalizedIMDBID) {
+		movieData.IMDBID = normalizedIMDBID
+	}
+
+	normalizedSlug := normalizeRottenTomatoesSlug(rottenTomatoesSlug)
+	if normalizedSlug == "" {
+		normalizedSlug = normalizeRottenTomatoesSlug(movieData.Title)
+	}
+	if normalizedSlug == "" {
+		return
+	}
+
+	movieData.RottenTomatoesURL = buildRottenTomatoesURL(mediaType, normalizedSlug)
+}
+
+func normalizeRottenTomatoesSlug(raw string) string {
+	slug := strings.ToLower(strings.TrimSpace(raw))
+	if slug == "" {
+		return ""
+	}
+
+	slug = strings.Trim(slug, "/")
+	if strings.HasPrefix(slug, "m/") || strings.HasPrefix(slug, "tv/") {
+		parts := strings.SplitN(slug, "/", 2)
+		if len(parts) == 2 {
+			slug = parts[1]
+		}
+	}
+
+	slug = strings.ReplaceAll(slug, "-", "_")
+	slug = rtSlugStripPattern.ReplaceAllString(slug, "_")
+	slug = strings.Trim(slug, "_")
+	slug = strings.Join(strings.FieldsFunc(slug, func(r rune) bool { return r == '_' }), "_")
+	return slug
+}
+
+func buildRottenTomatoesURL(mediaType, slug string) string {
+	if slug == "" {
+		return ""
+	}
+
+	normalizedMediaType := strings.ToLower(strings.TrimSpace(mediaType))
+	if normalizedMediaType == "tv" || normalizedMediaType == "series" {
+		return rottenTomatoesBaseURL + "/tv/" + slug
+	}
+	return rottenTomatoesBaseURL + "/m/" + slug
 }
 
 func tmdbImageURL(pathValue, size string) string {
