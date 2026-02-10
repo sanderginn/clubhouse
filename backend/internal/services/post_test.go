@@ -440,6 +440,94 @@ func TestCreatePostWithPodcastMetadataStoresPodcastPayload(t *testing.T) {
 	}
 }
 
+func TestCreatePostAutoDetectsPodcastKindWhenOmitted(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	disableLinkMetadata(t)
+
+	userID := testutil.CreateTestUser(t, db, "podcastautodetect", "podcastautodetect@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Podcast Section", "podcast")
+	service := NewPostService(db)
+
+	tests := []struct {
+		name     string
+		url      string
+		wantKind string
+	}{
+		{
+			name:     "detect show from spotify path",
+			url:      "https://open.spotify.com/show/2rN1dT9uLw8wKjtBF6qWvG",
+			wantKind: "show",
+		},
+		{
+			name:     "detect episode from apple podcasts query param",
+			url:      "https://podcasts.apple.com/us/podcast/example/id123456789?i=1000123456789",
+			wantKind: "episode",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := &models.CreatePostRequest{
+				SectionID: sectionID,
+				Content:   "Podcast autodetect",
+				Links: []models.LinkRequest{
+					{
+						URL: tt.url,
+						Podcast: &models.PodcastMetadata{
+							Kind: "",
+						},
+					},
+				},
+			}
+
+			post, err := service.CreatePost(context.Background(), req, uuid.MustParse(userID))
+			if err != nil {
+				t.Fatalf("CreatePost failed: %v", err)
+			}
+			if len(post.Links) != 1 || post.Links[0].Podcast == nil {
+				t.Fatalf("expected podcast metadata in response link")
+			}
+			if post.Links[0].Podcast.Kind != tt.wantKind {
+				t.Fatalf("expected podcast kind %q, got %q", tt.wantKind, post.Links[0].Podcast.Kind)
+			}
+		})
+	}
+}
+
+func TestCreatePostRejectsPodcastKindWhenDetectionIsUncertain(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	disableLinkMetadata(t)
+
+	userID := testutil.CreateTestUser(t, db, "podcastuncertain", "podcastuncertain@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Podcast Section", "podcast")
+	service := NewPostService(db)
+
+	req := &models.CreatePostRequest{
+		SectionID: sectionID,
+		Content:   "Podcast uncertain",
+		Links: []models.LinkRequest{
+			{
+				URL: "https://example.com/listen",
+				Podcast: &models.PodcastMetadata{
+					Kind: "",
+				},
+			},
+		},
+	}
+
+	_, err := service.CreatePost(context.Background(), req, uuid.MustParse(userID))
+	if err == nil {
+		t.Fatalf("expected uncertain podcast kind error")
+	}
+	if err.Error() != errPodcastKindSelectionRequired.Error() {
+		t.Fatalf("expected %q, got %q", errPodcastKindSelectionRequired.Error(), err.Error())
+	}
+}
+
 func TestCreatePostRejectsPodcastMetadataValidation(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
@@ -1925,6 +2013,107 @@ func TestUpdatePostRejectsPodcastEpisodeHighlightEpisodes(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "only allowed for kind") {
 		t.Fatalf("expected episode highlight validation error, got %v", err)
+	}
+}
+
+func TestUpdatePostAutoDetectsPodcastKindWhenOmitted(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	disableLinkMetadata(t)
+
+	userID := testutil.CreateTestUser(t, db, "updatepodcastautodetect", "updatepodcastautodetect@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Update Podcast Section", "podcast")
+	service := NewPostService(db)
+
+	createReq := &models.CreatePostRequest{
+		SectionID: sectionID,
+		Content:   "Podcast post",
+		Links: []models.LinkRequest{
+			{
+				URL: "https://open.spotify.com/show/2rN1dT9uLw8wKjtBF6qWvG",
+				Podcast: &models.PodcastMetadata{
+					Kind: "show",
+				},
+			},
+		},
+	}
+
+	post, err := service.CreatePost(context.Background(), createReq, uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("CreatePost failed: %v", err)
+	}
+
+	updateReq := &models.UpdatePostRequest{
+		Content: "Podcast post updated",
+		Links: &[]models.LinkRequest{
+			{
+				URL: "https://podcasts.apple.com/us/podcast/example/id123456789?i=1000123456789",
+				Podcast: &models.PodcastMetadata{
+					Kind: "",
+				},
+			},
+		},
+	}
+
+	updated, err := service.UpdatePost(context.Background(), post.ID, uuid.MustParse(userID), updateReq)
+	if err != nil {
+		t.Fatalf("UpdatePost failed: %v", err)
+	}
+	if len(updated.Links) != 1 || updated.Links[0].Podcast == nil {
+		t.Fatalf("expected one link with podcast metadata")
+	}
+	if updated.Links[0].Podcast.Kind != "episode" {
+		t.Fatalf("expected podcast kind episode, got %q", updated.Links[0].Podcast.Kind)
+	}
+}
+
+func TestUpdatePostRejectsPodcastKindWhenDetectionIsUncertain(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	disableLinkMetadata(t)
+
+	userID := testutil.CreateTestUser(t, db, "updatepodcastuncertain", "updatepodcastuncertain@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Update Podcast Section", "podcast")
+	service := NewPostService(db)
+
+	createReq := &models.CreatePostRequest{
+		SectionID: sectionID,
+		Content:   "Podcast post",
+		Links: []models.LinkRequest{
+			{
+				URL: "https://open.spotify.com/show/2rN1dT9uLw8wKjtBF6qWvG",
+				Podcast: &models.PodcastMetadata{
+					Kind: "show",
+				},
+			},
+		},
+	}
+
+	post, err := service.CreatePost(context.Background(), createReq, uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("CreatePost failed: %v", err)
+	}
+
+	updateReq := &models.UpdatePostRequest{
+		Content: "Podcast post updated",
+		Links: &[]models.LinkRequest{
+			{
+				URL: "https://example.com/listen",
+				Podcast: &models.PodcastMetadata{
+					Kind: "",
+				},
+			},
+		},
+	}
+
+	_, err = service.UpdatePost(context.Background(), post.ID, uuid.MustParse(userID), updateReq)
+	if err == nil {
+		t.Fatalf("expected uncertain podcast kind error")
+	}
+	if err.Error() != errPodcastKindSelectionRequired.Error() {
+		t.Fatalf("expected %q, got %q", errPodcastKindSelectionRequired.Error(), err.Error())
 	}
 }
 

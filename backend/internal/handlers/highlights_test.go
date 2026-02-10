@@ -28,6 +28,11 @@ func TestWriteHighlightValidationError_PodcastErrors(t *testing.T) {
 			code:    "PODCAST_KIND_REQUIRED",
 		},
 		{
+			name:    "kind selection required",
+			message: "podcast kind could not be detected; explicit selection required",
+			code:    "PODCAST_KIND_SELECTION_REQUIRED",
+		},
+		{
 			name:    "episode highlights not allowed",
 			message: `podcast highlight episodes are only allowed for kind "show"`,
 			code:    "PODCAST_HIGHLIGHT_EPISODES_NOT_ALLOWED",

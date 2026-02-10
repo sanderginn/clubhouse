@@ -28,6 +28,9 @@ func writeHighlightValidationError(ctx context.Context, w http.ResponseWriter, e
 	case strings.HasPrefix(message, "podcast metadata is not allowed"):
 		writeError(ctx, w, http.StatusBadRequest, "PODCAST_METADATA_NOT_ALLOWED", message)
 		return true
+	case message == "podcast kind could not be detected; explicit selection required":
+		writeError(ctx, w, http.StatusBadRequest, "PODCAST_KIND_SELECTION_REQUIRED", message)
+		return true
 	case message == "podcast kind is required":
 		writeError(ctx, w, http.StatusBadRequest, "PODCAST_KIND_REQUIRED", message)
 		return true
