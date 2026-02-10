@@ -99,6 +99,50 @@ interface ApiPostWatchLogsResponse {
   viewer_rating?: number | null;
 }
 
+interface ApiBookshelfCategory {
+  id: string;
+  name: string;
+  position: number;
+}
+
+interface ApiBookshelfItem {
+  id: string;
+  user_id: string;
+  post_id: string;
+  category_id?: string | null;
+  created_at: string;
+  deleted_at?: string | null;
+}
+
+interface ApiBookshelfResponse {
+  bookshelf_items: ApiBookshelfItem[];
+  next_cursor?: string | null;
+}
+
+interface ApiReadLog {
+  id: string;
+  user_id: string;
+  post_id: string;
+  rating?: number | null;
+  created_at: string;
+  deleted_at?: string | null;
+}
+
+interface ApiReadLogReader {
+  id: string;
+  username: string;
+  profile_picture_url?: string | null;
+  rating?: number | null;
+}
+
+interface ApiPostReadLogsResponse {
+  read_count: number;
+  average_rating: number;
+  viewer_read: boolean;
+  viewer_rating?: number | null;
+  readers: ApiReadLogReader[];
+}
+
 interface SectionLinksResponse {
   links: SectionLink[];
   hasMore: boolean;
@@ -176,6 +220,46 @@ function mapApiWatchLogWithPost(log: ApiWatchLog): WatchLogWithPost {
   return {
     ...mapApiWatchLog(log),
     post: log.post,
+  };
+}
+
+function mapApiBookshelfCategory(category: ApiBookshelfCategory): BookshelfCategory {
+  return {
+    id: category.id,
+    name: category.name,
+    position: category.position,
+  };
+}
+
+function mapApiBookshelfItem(item: ApiBookshelfItem): BookshelfItem {
+  return {
+    id: item.id,
+    userId: item.user_id,
+    postId: item.post_id,
+    categoryId: item.category_id ?? undefined,
+    createdAt: item.created_at,
+    deletedAt: item.deleted_at ?? undefined,
+  };
+}
+
+function mapApiReadLog(log: ApiReadLog): ReadLog {
+  return {
+    id: log.id,
+    userId: log.user_id,
+    postId: log.post_id,
+    rating: log.rating ?? undefined,
+    createdAt: log.created_at,
+    deletedAt: log.deleted_at ?? undefined,
+  };
+}
+
+function mapApiReadLogReader(reader: ApiReadLogReader): ReadLogReader {
+  return {
+    id: reader.id,
+    username: reader.username,
+    displayName: reader.username,
+    avatar: reader.profile_picture_url ?? undefined,
+    rating: reader.rating ?? undefined,
   };
 }
 
@@ -326,6 +410,56 @@ export interface PostWatchLogsResponse {
 
 export interface WatchLogWithPost extends WatchLog {
   post?: ApiPost;
+}
+
+export interface BookshelfCategory {
+  id: string;
+  name: string;
+  position: number;
+}
+
+export interface BookshelfItem {
+  id: string;
+  userId: string;
+  postId: string;
+  categoryId?: string;
+  createdAt: string;
+  deletedAt?: string;
+}
+
+export interface BookshelfResponse {
+  bookshelfItems: BookshelfItem[];
+  nextCursor?: string;
+}
+
+export interface ReadLog {
+  id: string;
+  userId: string;
+  postId: string;
+  rating?: number;
+  createdAt: string;
+  deletedAt?: string;
+}
+
+export interface ReadLogReader {
+  id: string;
+  username: string;
+  displayName: string;
+  avatar?: string;
+  rating?: number;
+}
+
+export interface PostReadLogsResponse {
+  readCount: number;
+  averageRating: number;
+  viewerRead: boolean;
+  viewerRating?: number;
+  readers: ReadLogReader[];
+}
+
+export interface ReadHistoryResponse {
+  readLogs: ReadLog[];
+  nextCursor?: string;
 }
 
 class ApiClient {
@@ -1096,6 +1230,131 @@ class ApiClient {
     }>(`/me/watch-logs${query ? `?${query}` : ''}`);
     return {
       watchLogs: (response.watch_logs ?? []).map(mapApiWatchLogWithPost),
+      nextCursor: response.next_cursor ?? undefined,
+    };
+  }
+
+  async createBookshelfCategory(name: string): Promise<{ category: BookshelfCategory }> {
+    const response = await this.post<{ category: ApiBookshelfCategory }>('/bookshelf/categories', {
+      name,
+    });
+    return { category: mapApiBookshelfCategory(response.category) };
+  }
+
+  async getBookshelfCategories(): Promise<{ categories: BookshelfCategory[] }> {
+    const response = await this.get<{ categories: ApiBookshelfCategory[] }>('/bookshelf/categories');
+    return { categories: (response.categories ?? []).map(mapApiBookshelfCategory) };
+  }
+
+  async updateBookshelfCategory(
+    id: string,
+    name: string,
+    position: number
+  ): Promise<{ category: BookshelfCategory }> {
+    const response = await this.put<{ category: ApiBookshelfCategory }>(`/bookshelf/categories/${id}`, {
+      name,
+      position,
+    });
+    return { category: mapApiBookshelfCategory(response.category) };
+  }
+
+  async deleteBookshelfCategory(id: string): Promise<void> {
+    return this.delete(`/bookshelf/categories/${id}`);
+  }
+
+  async reorderBookshelfCategories(categoryIds: string[]): Promise<void> {
+    await this.post('/bookshelf/categories/reorder', { category_ids: categoryIds });
+  }
+
+  async addToBookshelf(postId: string, categories: string[]): Promise<void> {
+    await this.post(`/posts/${postId}/bookshelf`, { categories });
+  }
+
+  async removeFromBookshelf(postId: string): Promise<void> {
+    return this.delete(`/posts/${postId}/bookshelf`);
+  }
+
+  async getMyBookshelf(category?: string, cursor?: string, limit?: number): Promise<BookshelfResponse> {
+    const params = new URLSearchParams();
+    if (category) {
+      params.set('category', category);
+    }
+    if (cursor) {
+      params.set('cursor', cursor);
+    }
+    if (limit !== undefined) {
+      params.set('limit', String(limit));
+    }
+    const query = params.toString();
+    const response = await this.get<ApiBookshelfResponse>(`/bookshelf${query ? `?${query}` : ''}`);
+    return {
+      bookshelfItems: (response.bookshelf_items ?? []).map(mapApiBookshelfItem),
+      nextCursor: response.next_cursor ?? undefined,
+    };
+  }
+
+  async getAllBookshelfItems(category?: string, cursor?: string, limit?: number): Promise<BookshelfResponse> {
+    const params = new URLSearchParams();
+    if (category) {
+      params.set('category', category);
+    }
+    if (cursor) {
+      params.set('cursor', cursor);
+    }
+    if (limit !== undefined) {
+      params.set('limit', String(limit));
+    }
+    const query = params.toString();
+    const response = await this.get<ApiBookshelfResponse>(`/bookshelf/all${query ? `?${query}` : ''}`);
+    return {
+      bookshelfItems: (response.bookshelf_items ?? []).map(mapApiBookshelfItem),
+      nextCursor: response.next_cursor ?? undefined,
+    };
+  }
+
+  async logRead(postId: string, rating?: number): Promise<{ readLog: ReadLog }> {
+    const response = await this.post<{ read_log: ApiReadLog }>(`/posts/${postId}/read`, {
+      rating,
+    });
+    return { readLog: mapApiReadLog(response.read_log) };
+  }
+
+  async removeReadLog(postId: string): Promise<void> {
+    return this.delete(`/posts/${postId}/read`);
+  }
+
+  async updateReadRating(postId: string, rating: number): Promise<{ readLog: ReadLog }> {
+    const response = await this.put<{ read_log: ApiReadLog }>(`/posts/${postId}/read`, {
+      rating,
+    });
+    return { readLog: mapApiReadLog(response.read_log) };
+  }
+
+  async getPostReadLogs(postId: string): Promise<PostReadLogsResponse> {
+    const response = await this.get<ApiPostReadLogsResponse>(`/posts/${postId}/read`);
+    return {
+      readCount: response.read_count ?? 0,
+      averageRating: response.average_rating ?? 0,
+      viewerRead: response.viewer_read ?? false,
+      viewerRating: response.viewer_rating ?? undefined,
+      readers: (response.readers ?? []).map(mapApiReadLogReader),
+    };
+  }
+
+  async getReadHistory(cursor?: string, limit?: number): Promise<ReadHistoryResponse> {
+    const params = new URLSearchParams();
+    if (cursor) {
+      params.set('cursor', cursor);
+    }
+    if (limit !== undefined) {
+      params.set('limit', String(limit));
+    }
+    const query = params.toString();
+    const response = await this.get<{ read_logs: ApiReadLog[]; next_cursor?: string | null }>(
+      `/read-history${query ? `?${query}` : ''}`
+    );
+    return {
+      readLogs: (response.read_logs ?? []).map(mapApiReadLog),
       nextCursor: response.next_cursor ?? undefined,
     };
   }
