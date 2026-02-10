@@ -1282,7 +1282,7 @@
     {
       "issue_number": 950,
       "title": "[Movies] Make TMDB link more prominent in MovieCard",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         949
       ],
@@ -1291,7 +1291,11 @@
         "frontend",
         "movies"
       ],
-      "priority": 3
+      "priority": 3,
+      "assigned_to": "agent-1770715224-24945",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770715224-24945",
+      "branch": "feat/issue-950-movies-make-tmdb-link-more-prominent-in-",
+      "claimed_at": "2026-02-10T09:20:24Z"
     },
     {
       "issue_number": 951,
