@@ -29,6 +29,7 @@
     863,
     864,
     865,
+    866,
     868,
     876,
     877,
@@ -516,7 +517,7 @@
     {
       "issue_number": 866,
       "title": "[Books] Add bookshelf and read log API client functions",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         862,
         863
@@ -530,7 +531,9 @@
       "assigned_to": "agent-1770699075-48440",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770699075-48440",
       "branch": "feat/issue-866-books-add-bookshelf-and-read-log-api-cli",
-      "claimed_at": "2026-02-10T04:51:15Z"
+      "claimed_at": "2026-02-10T04:51:15Z",
+      "pr_number": 934,
+      "completed_at": "2026-02-10T05:01:47Z"
     },
     {
       "issue_number": 867,
