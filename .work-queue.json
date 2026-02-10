@@ -50,6 +50,7 @@
     890,
     891,
     895,
+    948,
     951
   ],
   "issues": [
@@ -1211,7 +1212,7 @@
     {
       "issue_number": 948,
       "title": "[Movies] Fix Rotten Tomatoes URL parsing to TMDB metadata",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -1222,7 +1223,9 @@
       "assigned_to": "agent-1770710295-59692",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770710295-59692",
       "branch": "fix/issue-948-movies-fix-rotten-tomatoes-url-parsing-t",
-      "claimed_at": "2026-02-10T07:58:15Z"
+      "claimed_at": "2026-02-10T07:58:15Z",
+      "pr_number": 953,
+      "completed_at": "2026-02-10T08:48:19Z"
     },
     {
       "issue_number": 949,
