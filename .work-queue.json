@@ -715,7 +715,7 @@
     {
       "issue_number": 875,
       "title": "[Books] Create books component index",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         868,
         869,
@@ -728,7 +728,11 @@
         "frontend",
         "books"
       ],
-      "priority": 83
+      "priority": 83,
+      "assigned_to": "agent-1770714193-7747",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770714193-7747",
+      "branch": "feat/issue-875-books-create-books-component-index",
+      "claimed_at": "2026-02-10T09:03:13Z"
     },
     {
       "issue_number": 876,
