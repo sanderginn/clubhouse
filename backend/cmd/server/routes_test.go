@@ -1337,3 +1337,249 @@ func TestSectionRouteHandlerFeedRequiresAuth(t *testing.T) {
 		t.Fatal("expected auth middleware to be called")
 	}
 }
+
+func TestRegisterBookshelfRoutesWiresHandlersAndMiddleware(t *testing.T) {
+	mux := http.NewServeMux()
+
+	authCalled := false
+	csrfAuthCalled := false
+	calledHandler := ""
+
+	requireAuth := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authCalled = true
+			next.ServeHTTP(w, r)
+		})
+	}
+	requireAuthCSRF := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			csrfAuthCalled = true
+			next.ServeHTTP(w, r)
+		})
+	}
+
+	handler := func(name string, status int) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			calledHandler = name
+			w.WriteHeader(status)
+		}
+	}
+
+	registerBookshelfRoutes(mux, requireAuth, requireAuthCSRF, bookshelfRouteDeps{
+		getMyBookshelf:    handler("getMyBookshelf", http.StatusOK),
+		getAllBookshelf:   handler("getAllBookshelf", http.StatusOK),
+		listCategories:    handler("listCategories", http.StatusOK),
+		createCategory:    handler("createCategory", http.StatusCreated),
+		reorderCategories: handler("reorderCategories", http.StatusOK),
+		updateCategory:    handler("updateCategory", http.StatusOK),
+		deleteCategory:    handler("deleteCategory", http.StatusNoContent),
+	})
+
+	tests := []struct {
+		name               string
+		method             string
+		path               string
+		expectedStatus     int
+		expectedHandler    string
+		expectAuth         bool
+		expectAuthWithCSRF bool
+	}{
+		{
+			name:               "GET /api/v1/bookshelf",
+			method:             http.MethodGet,
+			path:               "/api/v1/bookshelf",
+			expectedStatus:     http.StatusOK,
+			expectedHandler:    "getMyBookshelf",
+			expectAuth:         true,
+			expectAuthWithCSRF: false,
+		},
+		{
+			name:               "GET /api/v1/bookshelf/all",
+			method:             http.MethodGet,
+			path:               "/api/v1/bookshelf/all",
+			expectedStatus:     http.StatusOK,
+			expectedHandler:    "getAllBookshelf",
+			expectAuth:         true,
+			expectAuthWithCSRF: false,
+		},
+		{
+			name:               "GET /api/v1/bookshelf/categories",
+			method:             http.MethodGet,
+			path:               "/api/v1/bookshelf/categories",
+			expectedStatus:     http.StatusOK,
+			expectedHandler:    "listCategories",
+			expectAuth:         true,
+			expectAuthWithCSRF: false,
+		},
+		{
+			name:               "POST /api/v1/bookshelf/categories",
+			method:             http.MethodPost,
+			path:               "/api/v1/bookshelf/categories",
+			expectedStatus:     http.StatusCreated,
+			expectedHandler:    "createCategory",
+			expectAuth:         false,
+			expectAuthWithCSRF: true,
+		},
+		{
+			name:               "POST /api/v1/bookshelf/categories/reorder",
+			method:             http.MethodPost,
+			path:               "/api/v1/bookshelf/categories/reorder",
+			expectedStatus:     http.StatusOK,
+			expectedHandler:    "reorderCategories",
+			expectAuth:         false,
+			expectAuthWithCSRF: true,
+		},
+		{
+			name:               "PUT /api/v1/bookshelf/categories/{id}",
+			method:             http.MethodPut,
+			path:               "/api/v1/bookshelf/categories/" + uuid.New().String(),
+			expectedStatus:     http.StatusOK,
+			expectedHandler:    "updateCategory",
+			expectAuth:         false,
+			expectAuthWithCSRF: true,
+		},
+		{
+			name:               "DELETE /api/v1/bookshelf/categories/{id}",
+			method:             http.MethodDelete,
+			path:               "/api/v1/bookshelf/categories/" + uuid.New().String(),
+			expectedStatus:     http.StatusNoContent,
+			expectedHandler:    "deleteCategory",
+			expectAuth:         false,
+			expectAuthWithCSRF: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			authCalled = false
+			csrfAuthCalled = false
+			calledHandler = ""
+
+			req := httptest.NewRequest(tc.method, tc.path, nil)
+			rr := httptest.NewRecorder()
+			mux.ServeHTTP(rr, req)
+
+			if rr.Code != tc.expectedStatus {
+				t.Fatalf("expected status %d, got %d", tc.expectedStatus, rr.Code)
+			}
+			if calledHandler != tc.expectedHandler {
+				t.Fatalf("expected handler %q, got %q", tc.expectedHandler, calledHandler)
+			}
+			if authCalled != tc.expectAuth {
+				t.Fatalf("expected auth middleware called=%t, got %t", tc.expectAuth, authCalled)
+			}
+			if csrfAuthCalled != tc.expectAuthWithCSRF {
+				t.Fatalf("expected CSRF auth middleware called=%t, got %t", tc.expectAuthWithCSRF, csrfAuthCalled)
+			}
+		})
+	}
+}
+
+func TestRegisterBookshelfRoutesRejectsUnsupportedMethods(t *testing.T) {
+	mux := http.NewServeMux()
+
+	authCalled := false
+	csrfAuthCalled := false
+
+	requireAuth := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authCalled = true
+			next.ServeHTTP(w, r)
+		})
+	}
+	requireAuthCSRF := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			csrfAuthCalled = true
+			next.ServeHTTP(w, r)
+		})
+	}
+
+	registerBookshelfRoutes(mux, requireAuth, requireAuthCSRF, bookshelfRouteDeps{
+		getMyBookshelf:    func(w http.ResponseWriter, r *http.Request) { t.Fatal("unexpected getMyBookshelf call") },
+		getAllBookshelf:   func(w http.ResponseWriter, r *http.Request) { t.Fatal("unexpected getAllBookshelf call") },
+		listCategories:    func(w http.ResponseWriter, r *http.Request) { t.Fatal("unexpected listCategories call") },
+		createCategory:    func(w http.ResponseWriter, r *http.Request) { t.Fatal("unexpected createCategory call") },
+		reorderCategories: func(w http.ResponseWriter, r *http.Request) { t.Fatal("unexpected reorderCategories call") },
+		updateCategory:    func(w http.ResponseWriter, r *http.Request) { t.Fatal("unexpected updateCategory call") },
+		deleteCategory:    func(w http.ResponseWriter, r *http.Request) { t.Fatal("unexpected deleteCategory call") },
+	})
+
+	tests := []struct {
+		name   string
+		method string
+		path   string
+	}{
+		{
+			name:   "PUT /api/v1/bookshelf/categories",
+			method: http.MethodPut,
+			path:   "/api/v1/bookshelf/categories",
+		},
+		{
+			name:   "GET /api/v1/bookshelf/categories/reorder",
+			method: http.MethodGet,
+			path:   "/api/v1/bookshelf/categories/reorder",
+		},
+		{
+			name:   "POST /api/v1/bookshelf/categories/{id}",
+			method: http.MethodPost,
+			path:   "/api/v1/bookshelf/categories/" + uuid.New().String(),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			authCalled = false
+			csrfAuthCalled = false
+
+			req := httptest.NewRequest(tc.method, tc.path, nil)
+			rr := httptest.NewRecorder()
+			mux.ServeHTTP(rr, req)
+
+			if rr.Code != http.StatusMethodNotAllowed {
+				t.Fatalf("expected status %d, got %d", http.StatusMethodNotAllowed, rr.Code)
+			}
+
+			var response models.ErrorResponse
+			if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+				t.Fatalf("failed to decode response: %v", err)
+			}
+			if response.Code != "METHOD_NOT_ALLOWED" {
+				t.Fatalf("expected METHOD_NOT_ALLOWED code, got %q", response.Code)
+			}
+
+			if authCalled {
+				t.Fatal("expected auth middleware to not be called")
+			}
+			if csrfAuthCalled {
+				t.Fatal("expected CSRF auth middleware to not be called")
+			}
+		})
+	}
+}
+
+func TestRegisterReadHistoryRouteRequiresAuth(t *testing.T) {
+	mux := http.NewServeMux()
+	authCalled := false
+
+	requireAuth := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authCalled = true
+			w.WriteHeader(http.StatusUnauthorized)
+		})
+	}
+
+	registerReadHistoryRoute(mux, requireAuth, func(w http.ResponseWriter, r *http.Request) {
+		t.Fatal("GetReadHistory handler should not be called when auth middleware blocks")
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/read-history", nil)
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status %d, got %d", http.StatusUnauthorized, rr.Code)
+	}
+	if !authCalled {
+		t.Fatal("expected auth middleware to be called")
+	}
+}

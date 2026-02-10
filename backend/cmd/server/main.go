@@ -408,37 +408,15 @@ func main() {
 	}))
 
 	// Bookshelf routes (protected)
-	mux.Handle("/api/v1/bookshelf", requireAuth(http.HandlerFunc(bookshelfHandler.GetMyBookshelf)))
-	mux.Handle("/api/v1/bookshelf/all", requireAuth(http.HandlerFunc(bookshelfHandler.GetAllBookshelf)))
-	mux.Handle("/api/v1/bookshelf/categories", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			requireAuth(http.HandlerFunc(bookshelfHandler.ListCategories)).ServeHTTP(w, r)
-			return
-		}
-		if r.Method == http.MethodPost {
-			requireAuthCSRF(http.HandlerFunc(bookshelfHandler.CreateCategory)).ServeHTTP(w, r)
-			return
-		}
-		writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
-	}))
-	mux.Handle("/api/v1/bookshelf/categories/reorder", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPost {
-			requireAuthCSRF(http.HandlerFunc(bookshelfHandler.ReorderCategories)).ServeHTTP(w, r)
-			return
-		}
-		writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
-	}))
-	mux.Handle("/api/v1/bookshelf/categories/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPut {
-			requireAuthCSRF(http.HandlerFunc(bookshelfHandler.UpdateCategory)).ServeHTTP(w, r)
-			return
-		}
-		if r.Method == http.MethodDelete {
-			requireAuthCSRF(http.HandlerFunc(bookshelfHandler.DeleteCategory)).ServeHTTP(w, r)
-			return
-		}
-		writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
-	}))
+	registerBookshelfRoutes(mux, requireAuth, requireAuthCSRF, bookshelfRouteDeps{
+		getMyBookshelf:    bookshelfHandler.GetMyBookshelf,
+		getAllBookshelf:   bookshelfHandler.GetAllBookshelf,
+		listCategories:    bookshelfHandler.ListCategories,
+		createCategory:    bookshelfHandler.CreateCategory,
+		reorderCategories: bookshelfHandler.ReorderCategories,
+		updateCategory:    bookshelfHandler.UpdateCategory,
+		deleteCategory:    bookshelfHandler.DeleteCategory,
+	})
 
 	// Search routes (protected)
 	mux.Handle("/api/v1/search", requireAuth(http.HandlerFunc(searchHandler.Search)))
@@ -446,7 +424,7 @@ func main() {
 	// Cook log routes (protected)
 	mux.Handle("/api/v1/me/cook-logs", requireAuth(http.HandlerFunc(cookLogHandler.GetMyCookLogs)))
 	mux.Handle("/api/v1/me/watch-logs", requireAuth(http.HandlerFunc(watchLogHandler.GetMyWatchLogs)))
-	mux.Handle("/api/v1/read-history", requireAuth(http.HandlerFunc(readLogHandler.GetReadHistory)))
+	registerReadHistoryRoute(mux, requireAuth, readLogHandler.GetReadHistory)
 
 	// Link preview route (protected with CSRF - POST only, prevents SSRF)
 	mux.Handle("/api/v1/links/preview", requireAuthCSRF(http.HandlerFunc(linkHandler.PreviewLink)))
