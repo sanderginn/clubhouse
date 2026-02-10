@@ -25,6 +25,7 @@
     859,
     860,
     861,
+    862,
     863,
     864,
     868,
@@ -431,7 +432,7 @@
     {
       "issue_number": 862,
       "title": "[Books] Create bookshelf handler",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         860
       ],
@@ -444,7 +445,9 @@
       "assigned_to": "agent-1770697766-22797",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770697766-22797",
       "branch": "feat/issue-862-books-create-bookshelf-handler",
-      "claimed_at": "2026-02-10T04:29:26Z"
+      "claimed_at": "2026-02-10T04:29:26Z",
+      "pr_number": 931,
+      "completed_at": "2026-02-10T04:50:38Z"
     },
     {
       "issue_number": 863,
