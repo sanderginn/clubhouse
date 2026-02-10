@@ -45,6 +45,7 @@
     887,
     888,
     889,
+    890,
     891,
     895
   ],
@@ -977,7 +978,7 @@
     {
       "issue_number": 890,
       "title": "[Podcasts] Persist and return podcast metadata in create/update/get feed flows",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         889
       ],
@@ -990,7 +991,9 @@
       "assigned_to": "agent-1770709392-38182",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770709392-38182",
       "branch": "feat/issue-890-podcasts-persist-and-return-podcast-meta",
-      "claimed_at": "2026-02-10T07:43:12Z"
+      "claimed_at": "2026-02-10T07:43:12Z",
+      "pr_number": 947,
+      "completed_at": "2026-02-10T07:55:00Z"
     },
     {
       "issue_number": 891,
