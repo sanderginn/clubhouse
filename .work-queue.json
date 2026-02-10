@@ -1391,18 +1391,14 @@
     {
       "issue_number": 972,
       "title": "[Books] Fix link metadata not loading for book posts",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [],
       "labels": [
         "bug",
         "backend",
         "books"
       ],
-      "priority": 1,
-      "assigned_to": "agent-1770725370-84554",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770725370-84554",
-      "branch": "fix/issue-972-books-fix-link-metadata-not-loading-for-",
-      "claimed_at": "2026-02-10T12:09:30Z"
+      "priority": 1
     },
     {
       "issue_number": 973,
@@ -1421,18 +1417,14 @@
     {
       "issue_number": 974,
       "title": "[Books] Fix book stats (saved/read) not updating until page reload",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [],
       "labels": [
         "bug",
         "frontend",
         "books"
       ],
-      "priority": 3,
-      "assigned_to": "agent-1770725372-84643",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770725372-84643",
-      "branch": "fix/issue-974-books-fix-book-stats-savedread-not-updat",
-      "claimed_at": "2026-02-10T12:09:32Z"
+      "priority": 3
     },
     {
       "issue_number": 975,
