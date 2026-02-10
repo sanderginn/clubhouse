@@ -1574,7 +1574,7 @@
     {
       "issue_number": 983,
       "title": "[Podcasts] Fix saved podcast state not persisting after page refresh",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         981
       ],
@@ -1583,7 +1583,11 @@
         "frontend",
         "podcasts"
       ],
-      "priority": 12
+      "priority": 12,
+      "assigned_to": "agent-1770727500-18016",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770727500-18016",
+      "branch": "fix/issue-983-podcasts-fix-saved-podcast-state-not-per",
+      "claimed_at": "2026-02-10T12:45:00Z"
     },
     {
       "issue_number": 984,
