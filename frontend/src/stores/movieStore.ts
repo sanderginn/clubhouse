@@ -375,6 +375,7 @@ const initialState: MovieStoreState = {
 
 function createMovieStore() {
   const { subscribe, update, set } = writable<MovieStoreState>({ ...initialState });
+  let latestWatchlistRequestID = 0;
 
   return {
     subscribe,
@@ -495,12 +496,19 @@ function createMovieStore() {
         ...state,
         watchlist: moveCategoryWatchlistItems(state.watchlist, fromCategory, toCategory),
       })),
-    loadWatchlist: async (): Promise<void> => {
+    loadWatchlist: async (sectionType?: 'movie' | 'series'): Promise<void> => {
+      const requestID = ++latestWatchlistRequestID;
       movieStore.setLoadingWatchlist(true);
       try {
-        const response = await api.getMyWatchlist();
+        const response = await api.getMyWatchlist(sectionType);
+        if (requestID !== latestWatchlistRequestID) {
+          return;
+        }
         movieStore.setWatchlist(buildWatchlistMap(response.categories ?? []));
       } catch (error) {
+        if (requestID !== latestWatchlistRequestID) {
+          return;
+        }
         movieStore.setError(error instanceof Error ? error.message : 'Failed to load watchlist');
       }
     },

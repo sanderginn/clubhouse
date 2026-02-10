@@ -715,10 +715,12 @@ class ApiClient {
 
   async getMoviePosts(
     limit = 20,
-    cursor?: string
+    cursor?: string,
+    sectionType?: 'movie' | 'series'
   ): Promise<{ posts: Post[]; hasMore: boolean; nextCursor?: string }> {
     const params = new URLSearchParams({ limit: String(limit) });
     if (cursor) params.set('cursor', cursor);
+    if (sectionType) params.set('section_type', sectionType);
     const response = await this.get<{
       posts: ApiPost[];
       has_more?: boolean;
@@ -987,10 +989,17 @@ class ApiClient {
     };
   }
 
-  async getMyWatchlist(): Promise<{ categories: { name: string; items: WatchlistItemWithPost[] }[] }> {
+  async getMyWatchlist(
+    sectionType?: 'movie' | 'series'
+  ): Promise<{ categories: { name: string; items: WatchlistItemWithPost[] }[] }> {
+    const params = new URLSearchParams();
+    if (sectionType) {
+      params.set('section_type', sectionType);
+    }
+    const query = params.toString();
     const response = await this.get<{
       categories: { name: string; items: ApiWatchlistItem[] }[];
-    }>('/me/watchlist');
+    }>(query ? `/me/watchlist?${query}` : '/me/watchlist');
     return {
       categories: (response.categories ?? []).map((category) => ({
         name: category.name,

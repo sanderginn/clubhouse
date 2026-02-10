@@ -360,6 +360,11 @@ func (h *PostHandler) GetMovieFeed(w http.ResponseWriter, r *http.Request) {
 
 	cursor := r.URL.Query().Get("cursor")
 	limitStr := r.URL.Query().Get("limit")
+	sectionType, err := parseMovieOrSeriesSectionType(r.URL.Query().Get("section_type"))
+	if err != nil {
+		writeError(r.Context(), w, http.StatusBadRequest, "INVALID_SECTION_TYPE", "section_type must be either movie or series")
+		return
+	}
 
 	limit := 20
 	if limitStr != "" {
@@ -377,7 +382,7 @@ func (h *PostHandler) GetMovieFeed(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID, _ := middleware.GetUserIDFromContext(r.Context())
-	feed, err := h.postService.GetMovieFeed(r.Context(), cursorPtr, limit, userID)
+	feed, err := h.postService.GetMovieFeed(r.Context(), cursorPtr, limit, userID, sectionType)
 	if err != nil {
 		writeError(r.Context(), w, http.StatusInternalServerError, "GET_MOVIE_FEED_FAILED", "Failed to get movie feed")
 		return

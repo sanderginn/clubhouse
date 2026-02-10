@@ -540,7 +540,7 @@
           </div>
 
           {#if supportsWatchlist && sectionSubview === 'watchlist'}
-            <Watchlist />
+            <Watchlist sectionType={$activeSection.type === 'series' ? 'series' : 'movie'} />
           {:else}
             <!-- Section-specific components should render above PostForm for consistency. -->
             {#if $activeSection.type === 'recipe'}

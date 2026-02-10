@@ -537,6 +537,32 @@ func TestGetMovieFeedMethodNotAllowed(t *testing.T) {
 	}
 }
 
+func TestGetMovieFeedRejectsInvalidSectionType(t *testing.T) {
+	db, _, err := setupMockDB(t)
+	if err != nil {
+		t.Fatalf("failed to setup mock db: %v", err)
+	}
+	defer db.Close()
+
+	handler := NewPostHandler(db, nil, nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/posts/movies?section_type=invalid", nil)
+	rr := httptest.NewRecorder()
+
+	handler.GetMovieFeed(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Fatalf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if response.Code != "INVALID_SECTION_TYPE" {
+		t.Fatalf("expected code INVALID_SECTION_TYPE, got %s", response.Code)
+	}
+}
+
 // TestGetFeedInvalidSectionID tests with invalid section ID format
 func TestGetFeedInvalidSectionID(t *testing.T) {
 	db, _, err := setupMockDB(t)

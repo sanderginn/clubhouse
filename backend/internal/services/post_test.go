@@ -827,7 +827,7 @@ func TestGetMovieFeedIncludesMovieAndSeriesWithPagination(t *testing.T) {
 
 	service := NewPostService(db)
 
-	firstPage, err := service.GetMovieFeed(context.Background(), nil, 1, uuid.MustParse(viewerID))
+	firstPage, err := service.GetMovieFeed(context.Background(), nil, 1, uuid.MustParse(viewerID), nil)
 	if err != nil {
 		t.Fatalf("GetMovieFeed first page failed: %v", err)
 	}
@@ -853,7 +853,7 @@ func TestGetMovieFeedIncludesMovieAndSeriesWithPagination(t *testing.T) {
 		t.Fatalf("expected series watch count 1, got %d", firstPost.MovieStats.WatchCount)
 	}
 
-	secondPage, err := service.GetMovieFeed(context.Background(), firstPage.NextCursor, 10, uuid.MustParse(viewerID))
+	secondPage, err := service.GetMovieFeed(context.Background(), firstPage.NextCursor, 10, uuid.MustParse(viewerID), nil)
 	if err != nil {
 		t.Fatalf("GetMovieFeed second page failed: %v", err)
 	}
@@ -883,6 +883,58 @@ func TestGetMovieFeedIncludesMovieAndSeriesWithPagination(t *testing.T) {
 	}
 	if secondPost.MovieStats.ViewerRating == nil || *secondPost.MovieStats.ViewerRating != 4 {
 		t.Fatalf("expected viewer rating 4, got %v", secondPost.MovieStats.ViewerRating)
+	}
+}
+
+func TestGetMovieFeedFiltersBySectionType(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	authorID := testutil.CreateTestUser(t, db, "moviefeedfilterauthor", "moviefeedfilterauthor@test.com", false, true)
+	viewerID := testutil.CreateTestUser(t, db, "moviefeedfilterviewer", "moviefeedfilterviewer@test.com", false, true)
+	movieSectionID := testutil.CreateTestSection(t, db, "Movies", "movie")
+	seriesSectionID := testutil.CreateTestSection(t, db, "Series", "series")
+
+	moviePostID := testutil.CreateTestPost(t, db, authorID, movieSectionID, "Movie post")
+	seriesPostID := testutil.CreateTestPost(t, db, authorID, seriesSectionID, "Series post")
+
+	service := NewPostService(db)
+	seriesType := "series"
+	seriesFeed, err := service.GetMovieFeed(
+		context.Background(),
+		nil,
+		10,
+		uuid.MustParse(viewerID),
+		&seriesType,
+	)
+	if err != nil {
+		t.Fatalf("GetMovieFeed series filter failed: %v", err)
+	}
+
+	if len(seriesFeed.Posts) != 1 {
+		t.Fatalf("expected 1 series post, got %d", len(seriesFeed.Posts))
+	}
+	if seriesFeed.Posts[0].ID != uuid.MustParse(seriesPostID) {
+		t.Fatalf("expected series post %s, got %s", seriesPostID, seriesFeed.Posts[0].ID)
+	}
+
+	movieType := "movie"
+	movieFeed, err := service.GetMovieFeed(
+		context.Background(),
+		nil,
+		10,
+		uuid.MustParse(viewerID),
+		&movieType,
+	)
+	if err != nil {
+		t.Fatalf("GetMovieFeed movie filter failed: %v", err)
+	}
+
+	if len(movieFeed.Posts) != 1 {
+		t.Fatalf("expected 1 movie post, got %d", len(movieFeed.Posts))
+	}
+	if movieFeed.Posts[0].ID != uuid.MustParse(moviePostID) {
+		t.Fatalf("expected movie post %s, got %s", moviePostID, movieFeed.Posts[0].ID)
 	}
 }
 

@@ -259,6 +259,77 @@ func TestListWatchlistHandler(t *testing.T) {
 	}
 }
 
+func TestListWatchlistHandlerFiltersBySectionType(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "listwatchlistfilteruser", "listwatchlistfilter@test.com", false, true)
+	movieSectionID := testutil.CreateTestSection(t, db, "Movies", "movie")
+	seriesSectionID := testutil.CreateTestSection(t, db, "Series", "series")
+	moviePostID := testutil.CreateTestPost(t, db, userID, movieSectionID, "Movie post")
+	seriesPostID := testutil.CreateTestPost(t, db, userID, seriesSectionID, "Series post")
+
+	service := services.NewWatchlistService(db)
+	if _, err := service.AddToWatchlist(reqContext(), uuid.MustParse(userID), uuid.MustParse(moviePostID), nil); err != nil {
+		t.Fatalf("AddToWatchlist movie failed: %v", err)
+	}
+	if _, err := service.AddToWatchlist(reqContext(), uuid.MustParse(userID), uuid.MustParse(seriesPostID), nil); err != nil {
+		t.Fatalf("AddToWatchlist series failed: %v", err)
+	}
+
+	handler := NewWatchlistHandler(db, nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/me/watchlist?section_type=movie", nil)
+	req = req.WithContext(createTestUserContext(req.Context(), uuid.MustParse(userID), "listwatchlistfilteruser", false))
+	rr := httptest.NewRecorder()
+
+	handler.ListWatchlist(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d. Body: %s", rr.Code, rr.Body.String())
+	}
+
+	var response models.WatchlistResponse
+	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if len(response.Categories) != 1 {
+		t.Fatalf("expected 1 category, got %d", len(response.Categories))
+	}
+	if len(response.Categories[0].Items) != 1 {
+		t.Fatalf("expected 1 filtered item, got %d", len(response.Categories[0].Items))
+	}
+	if response.Categories[0].Items[0].PostID != uuid.MustParse(moviePostID) {
+		t.Fatalf("expected filtered movie post %s, got %s", moviePostID, response.Categories[0].Items[0].PostID)
+	}
+}
+
+func TestListWatchlistHandlerRejectsInvalidSectionType(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "invalidsectionfilteruser", "invalidsectionfilter@test.com", false, true)
+	handler := NewWatchlistHandler(db, nil)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/me/watchlist?section_type=invalid", nil)
+	req = req.WithContext(createTestUserContext(req.Context(), uuid.MustParse(userID), "invalidsectionfilteruser", false))
+	rr := httptest.NewRecorder()
+
+	handler.ListWatchlist(rr, req)
+
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d. Body: %s", rr.Code, rr.Body.String())
+	}
+
+	var response models.ErrorResponse
+	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode error response: %v", err)
+	}
+	if response.Code != "INVALID_SECTION_TYPE" {
+		t.Fatalf("expected INVALID_SECTION_TYPE, got %s", response.Code)
+	}
+}
+
 func TestWatchlistCategoryCRUDAndListHandlers(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
