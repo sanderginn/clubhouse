@@ -573,6 +573,26 @@ func TestShouldExtractBookMetadata(t *testing.T) {
 			want: true,
 		},
 		{
+			name: "amazon gp product url",
+			url:  "https://www.amazon.com/gp/product/0441569595",
+			want: true,
+		},
+		{
+			name: "amazon dp 13-digit isbn url",
+			url:  "https://www.amazon.com/dp/9780441569595",
+			want: true,
+		},
+		{
+			name: "amazon gp product 13-digit isbn url",
+			url:  "https://www.amazon.com/gp/product/9780441569595",
+			want: true,
+		},
+		{
+			name: "amazon regional host url",
+			url:  "https://www.amazon.co.uk/dp/0441569595",
+			want: true,
+		},
+		{
 			name: "open library work url",
 			url:  "https://openlibrary.org/works/OL45883W",
 			want: true,
@@ -659,6 +679,82 @@ func TestFetchMetadataBookURLIncludesBookMetadata(t *testing.T) {
 	}
 	if bookData.Title != "Neuromancer" {
 		t.Fatalf("book title = %q, want Neuromancer", bookData.Title)
+	}
+}
+
+func TestFetchMetadataBookURLReturnsBookMetadataWhenFetchFails(t *testing.T) {
+	originalParseBookMetadataFunc := parseBookMetadataFunc
+	t.Cleanup(func() {
+		parseBookMetadataFunc = originalParseBookMetadataFunc
+	})
+
+	parseCalls := 0
+	parseBookMetadataFunc = func(ctx context.Context, rawURL string, client *OpenLibraryClient) (*BookData, error) {
+		parseCalls++
+		return &BookData{Title: "Neuromancer"}, nil
+	}
+
+	fetcher := NewFetcher(&http.Client{
+		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			return nil, errors.New("upstream unavailable")
+		}),
+	})
+	fetcher.resolver = fakeResolver{
+		addrs: map[string][]net.IPAddr{
+			"www.goodreads.com": {{IP: net.ParseIP("93.184.216.34")}},
+		},
+	}
+
+	metadata, err := fetcher.Fetch(context.Background(), "https://www.goodreads.com/book/show/22328-neuromancer")
+	if err != nil {
+		t.Fatalf("Fetch error: %v", err)
+	}
+	if parseCalls != 1 {
+		t.Fatalf("parseCalls = %d, want 1", parseCalls)
+	}
+
+	bookData, ok := metadata["book_data"].(*BookData)
+	if !ok || bookData == nil {
+		t.Fatalf("expected book metadata to be present")
+	}
+	if metadata["provider"] != "www.goodreads.com" {
+		t.Fatalf("provider = %v, want www.goodreads.com", metadata["provider"])
+	}
+}
+
+func TestFetchMetadataBookURLReturnsBookMetadataWhenStatusIsNonSuccess(t *testing.T) {
+	originalParseBookMetadataFunc := parseBookMetadataFunc
+	t.Cleanup(func() {
+		parseBookMetadataFunc = originalParseBookMetadataFunc
+	})
+
+	parseBookMetadataFunc = func(ctx context.Context, rawURL string, client *OpenLibraryClient) (*BookData, error) {
+		return &BookData{Title: "Neuromancer"}, nil
+	}
+
+	fetcher := NewFetcher(&http.Client{
+		Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusServiceUnavailable,
+				Status:     "503 Service Unavailable",
+				Header:     http.Header{"Content-Type": []string{"text/html"}},
+				Body:       io.NopCloser(strings.NewReader("down")),
+				Request:    r,
+			}, nil
+		}),
+	})
+	fetcher.resolver = fakeResolver{
+		addrs: map[string][]net.IPAddr{
+			"www.goodreads.com": {{IP: net.ParseIP("93.184.216.34")}},
+		},
+	}
+
+	metadata, err := fetcher.Fetch(context.Background(), "https://www.goodreads.com/book/show/22328-neuromancer")
+	if err != nil {
+		t.Fatalf("Fetch error: %v", err)
+	}
+	if _, ok := metadata["book_data"].(*BookData); !ok {
+		t.Fatalf("expected book metadata to be present")
 	}
 }
 

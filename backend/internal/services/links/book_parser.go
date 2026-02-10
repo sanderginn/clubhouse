@@ -75,6 +75,15 @@ func ParseBookMetadata(ctx context.Context, rawURL string, client *OpenLibraryCl
 }
 
 func parseGoodreadsBookMetadata(ctx context.Context, rawURL string, client *OpenLibraryClient, goodreadsID string) (*BookData, error) {
+	metadata, err := searchOpenLibraryByIdentifier(ctx, client, "id_goodreads", goodreadsID)
+	if err != nil {
+		return nil, fmt.Errorf("search open library for goodreads id %s: %w", goodreadsID, err)
+	}
+	if metadata != nil {
+		metadata.GoodreadsURL = strings.TrimSpace(rawURL)
+		return metadata, nil
+	}
+
 	title, err := fetchBookPageTitleFunc(ctx, rawURL)
 	if err != nil {
 		return nil, fmt.Errorf("fetch goodreads title for id %s: %w", goodreadsID, err)
@@ -83,7 +92,7 @@ func parseGoodreadsBookMetadata(ctx context.Context, rawURL string, client *Open
 		return nil, nil
 	}
 
-	metadata, err := searchOpenLibraryByTitle(ctx, client, title)
+	metadata, err = searchOpenLibraryByTitle(ctx, client, title)
 	if err != nil {
 		return nil, fmt.Errorf("search open library for goodreads id %s: %w", goodreadsID, err)
 	}
@@ -108,6 +117,17 @@ func parseAmazonBookMetadata(ctx context.Context, rawURL string, client *OpenLib
 		return metadata, nil
 	}
 
+	metadata, err := searchOpenLibraryByIdentifier(ctx, client, "id_amazon", asin)
+	if err != nil {
+		if lookupErr != nil {
+			return nil, lookupErr
+		}
+		return nil, fmt.Errorf("search open library for amazon asin %s: %w", asin, err)
+	}
+	if metadata != nil {
+		return metadata, nil
+	}
+
 	title, err := fetchBookPageTitleFunc(ctx, rawURL)
 	if err != nil {
 		if lookupErr != nil {
@@ -119,7 +139,7 @@ func parseAmazonBookMetadata(ctx context.Context, rawURL string, client *OpenLib
 		return nil, lookupErr
 	}
 
-	metadata, err := searchOpenLibraryByTitle(ctx, client, title)
+	metadata, err = searchOpenLibraryByTitle(ctx, client, title)
 	if err != nil {
 		if lookupErr != nil {
 			return nil, lookupErr
@@ -139,7 +159,26 @@ func searchOpenLibraryByTitle(ctx context.Context, client *OpenLibraryClient, ti
 		return nil, nil
 	}
 
-	results, err := client.SearchBooks(ctx, title)
+	return searchOpenLibrary(ctx, client, title)
+}
+
+func searchOpenLibraryByIdentifier(ctx context.Context, client *OpenLibraryClient, identifierField string, identifierValue string) (*BookData, error) {
+	identifierField = strings.TrimSpace(identifierField)
+	identifierValue = strings.TrimSpace(identifierValue)
+	if identifierField == "" || identifierValue == "" {
+		return nil, nil
+	}
+
+	return searchOpenLibrary(ctx, client, fmt.Sprintf("%s:%s", identifierField, identifierValue))
+}
+
+func searchOpenLibrary(ctx context.Context, client *OpenLibraryClient, query string) (*BookData, error) {
+	query = strings.TrimSpace(query)
+	if query == "" {
+		return nil, nil
+	}
+
+	results, err := client.SearchBooks(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -330,7 +369,10 @@ func isGoodreadsHost(host string) bool {
 
 func isAmazonHost(host string) bool {
 	host = strings.ToLower(strings.TrimSpace(host))
-	return host == "amazon.com" || strings.HasSuffix(host, ".amazon.com")
+	return host == "amazon.com" ||
+		strings.HasSuffix(host, ".amazon.com") ||
+		strings.HasPrefix(host, "amazon.") ||
+		strings.Contains(host, ".amazon.")
 }
 
 func isOpenLibraryHost(host string) bool {
@@ -356,32 +398,54 @@ func parseAmazonASIN(segments []string) (string, bool) {
 		return "", false
 	}
 
-	for i := 0; i < len(segments)-1; i++ {
-		if !strings.EqualFold(segments[i], "dp") {
-			continue
-		}
-
-		asin := strings.TrimSpace(segments[i+1])
-		asin = strings.TrimSuffix(asin, ".html")
-		asin = strings.TrimSuffix(asin, "/")
-		if asin == "" {
-			continue
-		}
-
-		valid := true
-		for _, r := range asin {
-			if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
-				continue
+	for i := 0; i < len(segments); i++ {
+		switch {
+		case strings.EqualFold(segments[i], "dp"):
+			if asin, ok := parseAmazonIdentifierSegment(segments, i+1); ok {
+				return asin, true
 			}
-			valid = false
-			break
-		}
-		if valid {
-			return asin, true
+		case strings.EqualFold(segments[i], "gp"):
+			if i+1 < len(segments) && strings.EqualFold(segments[i+1], "product") {
+				if asin, ok := parseAmazonIdentifierSegment(segments, i+2); ok {
+					return asin, true
+				}
+			}
+		case strings.EqualFold(segments[i], "asin"):
+			if asin, ok := parseAmazonIdentifierSegment(segments, i+1); ok {
+				return asin, true
+			}
 		}
 	}
 
 	return "", false
+}
+
+func parseAmazonIdentifierSegment(segments []string, idx int) (string, bool) {
+	if idx < 0 || idx >= len(segments) {
+		return "", false
+	}
+
+	identifier := strings.TrimSpace(segments[idx])
+	identifier = strings.TrimSuffix(identifier, ".html")
+	identifier = strings.TrimSuffix(identifier, "/")
+	identifier = strings.TrimSpace(identifier)
+	switch len(identifier) {
+	case 10:
+		for _, r := range identifier {
+			if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+				continue
+			}
+			return "", false
+		}
+		return strings.ToUpper(identifier), true
+	case 13:
+		if !isValidISBN13(identifier) {
+			return "", false
+		}
+		return identifier, true
+	default:
+		return "", false
+	}
 }
 
 func parseOpenLibraryWorkKey(segments []string) (string, bool) {
