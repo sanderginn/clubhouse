@@ -576,6 +576,35 @@ describe('PostCard', () => {
     expect(screen.getByTestId('book-stats-bar')).toBeInTheDocument();
   });
 
+  it('renders book stats bar when active section is books during client navigation', () => {
+    sectionStore.setActiveSection({
+      id: 'section-1',
+      name: 'Books',
+      type: 'book',
+      icon: '📚',
+      slug: 'books',
+    });
+
+    const postWithBookStats: Post = {
+      ...basePost,
+      bookStats: {
+        bookshelfCount: 2,
+        readCount: 1,
+        averageRating: 4,
+        viewerOnBookshelf: false,
+        viewerCategories: [],
+        viewerRead: false,
+        viewerRating: null,
+      },
+    };
+
+    render(PostCard, { post: postWithBookStats });
+
+    expect(screen.getByTestId('book-stats-bar')).toBeInTheDocument();
+    expect(screen.getByTestId('book-bookshelf-count')).toHaveTextContent('2');
+    expect(screen.getByTestId('book-read-count')).toHaveTextContent('1');
+  });
+
   it('does not render book components for non-book sections', () => {
     uiStore.setActiveView('thread');
     sectionStore.setSections([
