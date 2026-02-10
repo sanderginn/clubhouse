@@ -184,6 +184,7 @@ func main() {
 	pushHandler := handlers.NewPushHandler(dbConn, pushService)
 	uploadHandler := handlers.NewUploadHandler()
 	savedRecipeHandler := handlers.NewSavedRecipeHandler(dbConn, redisConn)
+	podcastSaveHandler := handlers.NewPodcastSaveHandler(dbConn)
 	watchlistHandler := handlers.NewWatchlistHandler(dbConn, redisConn)
 	requireAuth := middleware.RequireAuth(redisConn, dbConn)
 	requireCSRF := middleware.RequireCSRF(redisConn)
@@ -211,6 +212,7 @@ func main() {
 		getFeed:           postHandler.GetFeed,
 		getLinks:          sectionHandler.GetSectionLinks,
 		getRecentPodcasts: sectionHandler.GetRecentPodcasts,
+		getPodcastSaved:   podcastSaveHandler.ListSectionSavedPodcastPosts,
 	})
 	mux.Handle("/api/v1/sections/", sectionRouteHandler)
 
@@ -330,6 +332,9 @@ func main() {
 		saveRecipe:              savedRecipeHandler.SaveRecipe,
 		unsaveRecipe:            savedRecipeHandler.UnsaveRecipe,
 		getPostSaves:            savedRecipeHandler.GetPostSaves,
+		savePodcast:             podcastSaveHandler.SavePodcast,
+		unsavePodcast:           podcastSaveHandler.UnsavePodcast,
+		getPostPodcastSaveInfo:  podcastSaveHandler.GetPostPodcastSaveInfo,
 		addToWatchlist:          watchlistHandler.AddToWatchlist,
 		removeFromWatchlist:     watchlistHandler.RemoveFromWatchlist,
 		getPostWatchlistInfo:    watchlistHandler.GetPostWatchlistInfo,
