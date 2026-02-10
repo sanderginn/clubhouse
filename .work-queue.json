@@ -36,6 +36,7 @@
     877,
     878,
     879,
+    880,
     883,
     884,
     885,
@@ -782,7 +783,7 @@
     {
       "issue_number": 880,
       "title": "[Books] Add book quote API client functions and store",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         879,
         866
@@ -796,7 +797,9 @@
       "assigned_to": "agent-1770707922-6655",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770707922-6655",
       "branch": "feat/issue-880-books-add-book-quote-api-client-function",
-      "claimed_at": "2026-02-10T07:18:42Z"
+      "claimed_at": "2026-02-10T07:18:42Z",
+      "pr_number": 941,
+      "completed_at": "2026-02-10T07:32:44Z"
     },
     {
       "issue_number": 881,
