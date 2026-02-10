@@ -4,6 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"os"
+	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 
@@ -35,6 +38,124 @@ func TestSectionServiceListSections(t *testing.T) {
 
 	if len(sections) == 0 {
 		t.Error("expected at least one section")
+	}
+}
+
+func TestSectionServiceListSectionsDeterministicOrderIncludesPodcast(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	testutil.CreateTestSection(t, db, "Recipes", "recipe")
+	testutil.CreateTestSection(t, db, "Movies", "movie")
+	testutil.CreateTestSection(t, db, "General", "general")
+	testutil.CreateTestSection(t, db, "Books", "book")
+	testutil.CreateTestSection(t, db, "Series", "series")
+	testutil.CreateTestSection(t, db, "Music", "music")
+	testutil.CreateTestSection(t, db, "Events", "event")
+	testutil.CreateTestSection(t, db, "Podcasts", "podcast")
+	testutil.CreateTestSection(t, db, "Zeta Misc", "zeta")
+	testutil.CreateTestSection(t, db, "Alpha Misc", "alpha")
+
+	service := NewSectionService(db)
+	sections, err := service.ListSections(context.Background())
+	if err != nil {
+		t.Fatalf("ListSections failed: %v", err)
+	}
+
+	gotTypes := make([]string, 0, len(sections))
+	for _, section := range sections {
+		gotTypes = append(gotTypes, section.Type)
+	}
+
+	expectedTypes := []string{
+		"general",
+		"music",
+		"podcast",
+		"movie",
+		"series",
+		"recipe",
+		"book",
+		"event",
+		"alpha",
+		"zeta",
+	}
+
+	if !reflect.DeepEqual(gotTypes, expectedTypes) {
+		t.Fatalf("unexpected section ordering: got %v, want %v", gotTypes, expectedTypes)
+	}
+}
+
+func TestPodcastSectionMigrationIsIdempotent(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	migrationSQL, err := readMigrationFile("../../migrations/042_seed_podcast_section.up.sql")
+	if err != nil {
+		t.Fatalf("failed to read migration file: %v", err)
+	}
+
+	_, err = db.Exec(migrationSQL)
+	if err != nil {
+		t.Fatalf("failed applying migration (first run): %v", err)
+	}
+
+	_, err = db.Exec(migrationSQL)
+	if err != nil {
+		t.Fatalf("failed applying migration (second run): %v", err)
+	}
+
+	var count int
+	err = db.QueryRow(`SELECT COUNT(*) FROM sections WHERE type = 'podcast'`).Scan(&count)
+	if err != nil {
+		t.Fatalf("failed counting podcast sections: %v", err)
+	}
+	if count != 1 {
+		t.Fatalf("expected 1 podcast section after running migration twice, got %d", count)
+	}
+
+	var name string
+	err = db.QueryRow(`SELECT name FROM sections WHERE type = 'podcast' LIMIT 1`).Scan(&name)
+	if err != nil {
+		t.Fatalf("failed reading podcast section: %v", err)
+	}
+	if name != "Podcasts" {
+		t.Fatalf("expected seeded podcast section name to be Podcasts, got %q", name)
+	}
+}
+
+func TestPodcastSectionDownMigrationIsSafeWithDependentRows(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "podcastsubuser", "podcastsubuser@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Podcasts", "podcast")
+
+	_, err := db.Exec(
+		`INSERT INTO section_subscriptions (user_id, section_id, opted_out_at) VALUES ($1, $2, now())`,
+		userID,
+		sectionID,
+	)
+	if err != nil {
+		t.Fatalf("failed to create dependent section subscription: %v", err)
+	}
+
+	downMigrationSQL, err := readMigrationFile("../../migrations/042_seed_podcast_section.down.sql")
+	if err != nil {
+		t.Fatalf("failed to read down migration file: %v", err)
+	}
+
+	_, err = db.Exec(downMigrationSQL)
+	if err != nil {
+		t.Fatalf("expected down migration to be safe with dependent rows, got error: %v", err)
+	}
+
+	var count int
+	err = db.QueryRow(`SELECT COUNT(*) FROM sections WHERE id = $1`, sectionID).Scan(&count)
+	if err != nil {
+		t.Fatalf("failed verifying podcast section existence after down migration: %v", err)
+	}
+	if count != 1 {
+		t.Fatalf("expected existing podcast section to remain after down migration, got count=%d", count)
 	}
 }
 
@@ -144,4 +265,13 @@ func insertTestSectionLink(t *testing.T, db *sql.DB, postID, url string, metadat
 
 func ptr(value string) *string {
 	return &value
+}
+
+func readMigrationFile(relativePath string) (string, error) {
+	path := filepath.Clean(relativePath)
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return string(content), nil
 }

@@ -32,11 +32,12 @@ func (s *SectionService) ListSections(ctx context.Context) ([]models.Section, er
 		ORDER BY CASE type
 			WHEN 'general' THEN 1
 			WHEN 'music' THEN 2
-			WHEN 'movie' THEN 3
-			WHEN 'series' THEN 4
-			WHEN 'recipe' THEN 5
-			WHEN 'book' THEN 6
-			WHEN 'event' THEN 7
+			WHEN 'podcast' THEN 3
+			WHEN 'movie' THEN 4
+			WHEN 'series' THEN 5
+			WHEN 'recipe' THEN 6
+			WHEN 'book' THEN 7
+			WHEN 'event' THEN 8
 			ELSE 100
 		END,
 		name ASC`
