@@ -58,6 +58,7 @@
     894,
     895,
     896,
+    898,
     948,
     949,
     950,
@@ -1189,7 +1190,7 @@
     {
       "issue_number": 898,
       "title": "[Podcasts] Render podcast metadata in PostCard",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         896
       ],
@@ -1202,7 +1203,9 @@
       "assigned_to": "agent-1770715920-41138",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770715920-41138",
       "branch": "feat/issue-898-podcasts-render-podcast-metadata-in-post",
-      "claimed_at": "2026-02-10T09:32:00Z"
+      "claimed_at": "2026-02-10T09:32:00Z",
+      "pr_number": 964,
+      "completed_at": "2026-02-10T09:39:54Z"
     },
     {
       "issue_number": 899,
