@@ -828,7 +828,7 @@
     {
       "issue_number": 885,
       "title": "[Books] Create SpoilerToggle and SpoilerWrapper components",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         884
       ],
@@ -837,7 +837,11 @@
         "frontend",
         "books"
       ],
-      "priority": 93
+      "priority": 93,
+      "assigned_to": "agent-1770699079-48633",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770699079-48633",
+      "branch": "feat/issue-885-books-create-spoilertoggle-and-spoilerwr",
+      "claimed_at": "2026-02-10T04:51:19Z"
     },
     {
       "issue_number": 886,
