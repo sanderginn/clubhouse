@@ -305,17 +305,13 @@
     });
   }
 
-  function selectedCategoryFilter(): string | undefined {
-    return selectedCategory === ALL_CATEGORY_VALUE ? undefined : selectedCategory;
-  }
-
   async function loadMyBooks(reset: boolean): Promise<void> {
     if ($bookStoreMeta.loading.myBookshelf) {
       return;
     }
 
     const cursor = reset ? undefined : get(bookStoreMeta).cursors.myBookshelf ?? undefined;
-    const nextCursor = await bookStore.loadMyBookshelf(selectedCategoryFilter(), cursor);
+    const nextCursor = await bookStore.loadMyBookshelf(undefined, cursor);
     myHasMore = Boolean(nextCursor);
   }
 
@@ -342,7 +338,6 @@
 
   function handleCategorySelect(category: string): void {
     selectedCategory = category;
-    void loadMyBooks(true);
   }
 
   function clearCategoryError(): void {

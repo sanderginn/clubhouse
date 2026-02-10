@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { api, type BookshelfItem } from '../../services/api';
 import { authStore } from '../../stores/authStore';
@@ -250,6 +250,36 @@ describe('Bookshelf', () => {
     expect(screen.getByText('No books in this category')).toBeInTheDocument();
   });
 
+  it('keeps empty-category state and aggregate counts when category click would trigger filtered reload', async () => {
+    bookshelfCategories.set([
+      { id: 'cat-1', name: 'Favorites', position: 1 },
+      { id: 'cat-2', name: 'Classics', position: 2 },
+    ]);
+    myBookshelf.set(
+      new Map([
+        ['Favorites', [createBookshelfItem('my-1', 'user-1', 'post-1', 'cat-1')]],
+      ])
+    );
+
+    const loadMySpy = vi.spyOn(bookStore, 'loadMyBookshelf').mockImplementation(async (category) => {
+      if (category) {
+        myBookshelf.set(new Map());
+      }
+      return undefined;
+    });
+
+    render(Bookshelf);
+    const categoryPanel = screen.getByTestId('bookshelf-category-panel');
+    expect(within(categoryPanel).getByText('1 books')).toBeInTheDocument();
+
+    await fireEvent.click(screen.getByTestId('bookshelf-category-Classics'));
+
+    expect(screen.getByText('No books in this category')).toBeInTheDocument();
+    expect(screen.queryByText('No books saved yet')).not.toBeInTheDocument();
+    expect(within(categoryPanel).getByText('1 books')).toBeInTheDocument();
+    expect(loadMySpy.mock.calls.some(([category]) => Boolean(category))).toBe(false);
+  });
+
   it('supports category create, edit, and delete actions', async () => {
     const createSpy = vi.spyOn(bookStore, 'createCategory').mockResolvedValue();
     const updateSpy = vi.spyOn(bookStore, 'updateCategory').mockResolvedValue();
@@ -281,7 +311,7 @@ describe('Bookshelf', () => {
       expect(screen.queryByTestId('bookshelf-category-edit-input')).not.toBeInTheDocument();
     });
 
-    await fireEvent.click(screen.getByTestId('bookshelf-category-delete-cat-1'));
+    await fireEvent.click(await screen.findByTestId('bookshelf-category-delete-cat-1'));
     await fireEvent.click(screen.getByTestId('bookshelf-category-delete-confirm-button'));
 
     await waitFor(() => {
