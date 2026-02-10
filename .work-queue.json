@@ -1072,7 +1072,7 @@
     {
       "issue_number": 893,
       "title": "[Podcasts] Add podcast save handlers and register routes",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         892
       ],
@@ -1081,7 +1081,11 @@
         "backend",
         "podcasts"
       ],
-      "priority": 101
+      "priority": 101,
+      "assigned_to": "agent-1770714860-17742",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770714860-17742",
+      "branch": "feat/issue-893-podcasts-add-podcast-save-handlers-and-r",
+      "claimed_at": "2026-02-10T09:14:20Z"
     },
     {
       "issue_number": 894,
