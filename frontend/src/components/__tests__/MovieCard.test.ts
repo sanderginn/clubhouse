@@ -14,8 +14,10 @@ type MovieMetadata = {
   cast?: { name: string; character: string }[];
   director?: string;
   tmdbRating?: number;
-  rottenTomatoesScore?: number;
-  metacriticScore?: number;
+  rottenTomatoesScore?: number | string;
+  rotten_tomatoes_score?: number | string;
+  metacriticScore?: number | string;
+  metacritic_score?: number | string;
   trailerKey?: string;
   tmdbId?: number;
   tmdbMediaType?: 'movie' | 'tv';
@@ -155,6 +157,36 @@ describe('MovieCard', () => {
       'text-rose-800',
       'bg-rose-100'
     );
+  });
+
+  it('normalizes snake_case formatted score strings for RT and Metacritic', () => {
+    render(MovieCard, {
+      movie: {
+        ...fullMovie,
+        rotten_tomatoes_score: '91%',
+        metacritic_score: '74/100',
+      },
+    });
+
+    expect(screen.getByTestId('movie-rating-rotten-tomatoes')).toHaveTextContent('🍅 91%');
+    expect(screen.getByTestId('movie-rating-rotten-tomatoes')).toHaveClass(
+      'text-emerald-800',
+      'bg-emerald-100'
+    );
+    expect(screen.getByTestId('movie-rating-metacritic')).toHaveTextContent('MC 74');
+  });
+
+  it('shows RT score when expanded is true', () => {
+    render(MovieCard, {
+      movie: {
+        ...fullMovie,
+        rottenTomatoesScore: 88,
+      },
+      expanded: true,
+    });
+
+    expect(screen.getByTestId('movie-rating-rotten-tomatoes')).toHaveTextContent('🍅 88%');
+    expect(screen.getByTestId('movie-expanded-content')).toBeInTheDocument();
   });
 
   it('renders season summary and expanded season list for series metadata', async () => {

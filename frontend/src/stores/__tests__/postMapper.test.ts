@@ -256,6 +256,33 @@ describe('mapApiPost', () => {
     ]);
   });
 
+  it('normalizes formatted movie score strings in nested metadata', () => {
+    const post = mapApiPost({
+      id: 'post-movie-formatted-scores',
+      user_id: 'user-movie-formatted-scores',
+      section_id: 'section-movie',
+      content: 'Movie metadata with formatted scores',
+      created_at: '2025-01-01T00:00:00Z',
+      links: [
+        {
+          id: 'link-movie-formatted',
+          url: 'https://www.imdb.com/title/tt0133093/',
+          metadata: {
+            movie: {
+              title: 'The Matrix',
+              rotten_tomatoes_score: '88%',
+              metacritic_score: '73/100',
+            },
+          },
+        },
+      ],
+    });
+
+    const movie = post.links?.[0].metadata?.movie;
+    expect(movie?.rottenTomatoesScore).toBe(88);
+    expect(movie?.metacriticScore).toBe(73);
+  });
+
   it('handles missing user and links gracefully', () => {
     const post = mapApiPost({
       id: 'post-2',

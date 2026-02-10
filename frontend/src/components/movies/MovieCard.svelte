@@ -42,10 +42,10 @@
     cast?: CastMember[];
     director?: string;
     tmdbRating?: number;
-    rottenTomatoesScore?: number;
-    rotten_tomatoes_score?: number;
-    metacriticScore?: number;
-    metacritic_score?: number;
+    rottenTomatoesScore?: number | string;
+    rotten_tomatoes_score?: number | string;
+    metacriticScore?: number | string;
+    metacritic_score?: number | string;
     trailerKey?: string;
     tmdbId?: number;
     tmdb_id?: number;
@@ -86,9 +86,10 @@
   $: runtimeLabel = formatRuntime(movie.runtime);
   $: tmdbRatingLabel = formatTMDBRating(movie.tmdbRating);
   $: rottenTomatoesScore = normalizePercentScore(
-    movie.rottenTomatoesScore ?? movie.rotten_tomatoes_score
+    movie.rottenTomatoesScore,
+    movie.rotten_tomatoes_score
   );
-  $: metacriticScore = normalizePercentScore(movie.metacriticScore ?? movie.metacritic_score);
+  $: metacriticScore = normalizePercentScore(movie.metacriticScore, movie.metacritic_score);
   $: visibleGenres = (movie.genres ?? []).filter(Boolean).slice(0, 3);
   $: remainingGenres = Math.max((movie.genres?.length ?? 0) - visibleGenres.length, 0);
   $: directorLabel = movie.director?.trim() || 'Unknown';
@@ -192,15 +193,50 @@
     return value.toFixed(1);
   }
 
-  function normalizePercentScore(value?: number): number | null {
-    if (typeof value !== 'number' || !Number.isFinite(value)) {
+  function parsePercentScore(value: unknown): number | null {
+    let parsedValue: number | null = null;
+
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      parsedValue = value;
+    } else if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return null;
+      }
+
+      const direct = Number(trimmed);
+      if (Number.isFinite(direct)) {
+        parsedValue = direct;
+      } else {
+        const match = trimmed.match(/^(-?\d+(?:\.\d+)?)\s*(?:%|\/\s*100)$/i);
+        if (match?.[1]) {
+          const normalized = Number(match[1]);
+          if (Number.isFinite(normalized)) {
+            parsedValue = normalized;
+          }
+        }
+      }
+    }
+
+    if (parsedValue === null) {
       return null;
     }
-    const rounded = Math.round(value);
+
+    const rounded = Math.round(parsedValue);
     if (rounded < 0 || rounded > 100) {
       return null;
     }
     return rounded;
+  }
+
+  function normalizePercentScore(...values: unknown[]): number | null {
+    for (const value of values) {
+      const parsed = parsePercentScore(value);
+      if (typeof parsed === 'number') {
+        return parsed;
+      }
+    }
+    return null;
   }
 
   function getRottenTomatoesClasses(score: number): string {

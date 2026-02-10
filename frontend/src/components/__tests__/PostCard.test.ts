@@ -36,6 +36,10 @@ type MovieMetadataForTest = {
   release_date?: string;
   director?: string;
   tmdb_rating?: number;
+  rottenTomatoesScore?: number | string;
+  rotten_tomatoes_score?: number | string;
+  metacriticScore?: number | string;
+  metacritic_score?: number | string;
   trailer_key?: string;
   cast?: Array<{ name: string; character: string }>;
 };
@@ -303,6 +307,42 @@ describe('PostCard', () => {
     expect(screen.getByTestId('movie-card')).toBeInTheDocument();
     expect(screen.getByTestId('movie-title')).toHaveTextContent('Interstellar');
     expect(screen.getByTestId('movie-meta-line')).toHaveTextContent('★ 8.6· 2h 49m');
+  });
+
+  it('falls back to valid snake_case score when camelCase score is invalid', () => {
+    sectionStore.setSections([
+      {
+        id: 'section-1',
+        name: 'Movies',
+        type: 'movie',
+        icon: '🎬',
+        slug: 'movies',
+      },
+    ]);
+
+    const postWithMixedScoreFields: Post = {
+      ...basePost,
+      links: [
+        {
+          url: 'https://www.imdb.com/title/tt0133093/',
+          metadata: {
+            url: 'https://www.imdb.com/title/tt0133093/',
+            movie: {
+              title: 'The Matrix',
+              rottenTomatoesScore: 'N/A',
+              rotten_tomatoes_score: 91,
+              metacriticScore: 'N/A',
+              metacritic_score: 74,
+            },
+          },
+        },
+      ],
+    };
+
+    render(PostCard, { post: postWithMixedScoreFields });
+
+    expect(screen.getByTestId('movie-rating-rotten-tomatoes')).toHaveTextContent('🍅 91%');
+    expect(screen.getByTestId('movie-rating-metacritic')).toHaveTextContent('MC 74');
   });
 
   it('does not render movie components for non-movie sections', () => {

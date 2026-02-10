@@ -80,10 +80,10 @@
     director?: string;
     tmdbRating?: number;
     tmdb_rating?: number;
-    rottenTomatoesScore?: number;
-    rotten_tomatoes_score?: number;
-    metacriticScore?: number;
-    metacritic_score?: number;
+    rottenTomatoesScore?: number | string;
+    rotten_tomatoes_score?: number | string;
+    metacriticScore?: number | string;
+    metacritic_score?: number | string;
     trailerKey?: string;
     trailer_key?: string;
     tmdbId?: number;
@@ -629,6 +629,43 @@
     embedController = controller;
   };
 
+  function parseMoviePercentScore(value: unknown): number | undefined {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value !== 'string') {
+      return undefined;
+    }
+
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+
+    const direct = Number(trimmed);
+    if (Number.isFinite(direct)) {
+      return direct;
+    }
+
+    const match = trimmed.match(/^(-?\d+(?:\.\d+)?)\s*(?:%|\/\s*100)$/i);
+    if (!match?.[1]) {
+      return undefined;
+    }
+
+    const parsed = Number(match[1]);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  function normalizeMoviePercentScore(...values: unknown[]): number | undefined {
+    for (const value of values) {
+      const parsed = parseMoviePercentScore(value);
+      if (typeof parsed === 'number') {
+        return parsed;
+      }
+    }
+    return undefined;
+  }
+
   function normalizeMovieMetadata(movie?: MovieMetadata): MovieCardMetadata | null {
     if (!movie) {
       return null;
@@ -652,18 +689,14 @@
         : typeof movie.tmdb_rating === 'number'
           ? movie.tmdb_rating
           : undefined;
-    const normalizedRottenTomatoesScore =
-      typeof movie.rottenTomatoesScore === 'number'
-        ? movie.rottenTomatoesScore
-        : typeof movie.rotten_tomatoes_score === 'number'
-          ? movie.rotten_tomatoes_score
-          : undefined;
-    const normalizedMetacriticScore =
-      typeof movie.metacriticScore === 'number'
-        ? movie.metacriticScore
-        : typeof movie.metacritic_score === 'number'
-          ? movie.metacritic_score
-          : undefined;
+    const normalizedRottenTomatoesScore = normalizeMoviePercentScore(
+      movie.rottenTomatoesScore,
+      movie.rotten_tomatoes_score
+    );
+    const normalizedMetacriticScore = normalizeMoviePercentScore(
+      movie.metacriticScore,
+      movie.metacritic_score
+    );
     const normalizedRuntime =
       typeof movie.runtime === 'number' && Number.isFinite(movie.runtime) ? movie.runtime : undefined;
     const normalizedGenres =
