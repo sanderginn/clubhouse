@@ -737,7 +737,7 @@
     {
       "issue_number": 879,
       "title": "[Books] Create book quote handler and register routes",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [
         878,
         865
@@ -747,11 +747,7 @@
         "backend",
         "books"
       ],
-      "priority": 87,
-      "assigned_to": "agent-1770699532-62388",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770699532-62388",
-      "branch": "feat/issue-879-books-create-book-quote-handler-and-regi",
-      "claimed_at": "2026-02-10T04:58:52Z"
+      "priority": 87
     },
     {
       "issue_number": 880,
@@ -891,7 +887,7 @@
     {
       "issue_number": 888,
       "title": "[Podcasts] Add podcast metadata model and validation for post links",
-      "status": "in_progress",
+      "status": "available",
       "dependencies": [
         887
       ],
@@ -900,11 +896,7 @@
         "backend",
         "podcasts"
       ],
-      "priority": 96,
-      "assigned_to": "agent-1770699255-53579",
-      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770699255-53579",
-      "branch": "feat/issue-888-podcasts-add-podcast-metadata-model-and-",
-      "claimed_at": "2026-02-10T04:54:15Z"
+      "priority": 96
     },
     {
       "issue_number": 889,
