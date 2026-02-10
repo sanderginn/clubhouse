@@ -734,7 +734,7 @@
     {
       "issue_number": 879,
       "title": "[Books] Create book quote handler and register routes",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         878,
         865
@@ -744,7 +744,11 @@
         "backend",
         "books"
       ],
-      "priority": 87
+      "priority": 87,
+      "assigned_to": "agent-1770699532-62388",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770699532-62388",
+      "branch": "feat/issue-879-books-create-book-quote-handler-and-regi",
+      "claimed_at": "2026-02-10T04:58:52Z"
     },
     {
       "issue_number": 880,
