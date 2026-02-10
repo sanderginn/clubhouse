@@ -458,26 +458,26 @@ func TestUpdateCommentSuccess(t *testing.T) {
 	now := time.Now()
 	updatedAt := now.Add(time.Minute)
 
-	body, err := json.Marshal(models.UpdateCommentRequest{Content: "Updated comment"})
+	body, err := json.Marshal(models.UpdateCommentRequest{Content: "Updated comment", ContainsSpoiler: boolPtr(true)})
 	if err != nil {
 		t.Fatalf("failed to marshal body: %v", err)
 	}
 
-	mock.ExpectQuery("SELECT c.user_id, c.content, c.post_id, p.section_id, s.type").WithArgs(commentID).
-		WillReturnRows(sqlmock.NewRows([]string{"user_id", "content", "post_id", "section_id", "type"}).AddRow(userID, "Original comment", postID, sectionID, "general"))
+	mock.ExpectQuery("SELECT c.user_id, c.content, c.contains_spoiler, c.post_id, p.section_id, s.type").WithArgs(commentID).
+		WillReturnRows(sqlmock.NewRows([]string{"user_id", "content", "contains_spoiler", "post_id", "section_id", "type"}).AddRow(userID, "Original comment", false, postID, sectionID, "general"))
 	mock.ExpectBegin()
-	mock.ExpectExec("UPDATE comments").WithArgs("Updated comment", commentID).
+	mock.ExpectExec("UPDATE comments").WithArgs("Updated comment", true, commentID).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectExec("INSERT INTO audit_logs").WithArgs(userID, "update_comment", userID, userID, sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
 	rows := mock.NewRows([]string{
-		"id", "user_id", "post_id", "section_id", "parent_comment_id", "image_id", "timestamp_seconds", "content",
+		"id", "user_id", "post_id", "section_id", "parent_comment_id", "image_id", "timestamp_seconds", "content", "contains_spoiler",
 		"created_at", "updated_at", "deleted_at", "deleted_by_user_id",
 		"id", "username", "email", "profile_picture_url", "bio", "is_admin", "created_at",
 	}).AddRow(
-		commentID, userID, postID, sectionID, nil, nil, nil, "Updated comment",
+		commentID, userID, postID, sectionID, nil, nil, nil, "Updated comment", true,
 		now, updatedAt, nil, nil,
 		userID, "testuser", "test@example.com", nil, nil, false, now,
 	)
@@ -519,6 +519,9 @@ func TestUpdateCommentSuccess(t *testing.T) {
 
 	if response.Comment.UpdatedAt == nil {
 		t.Fatal("expected updated_at to be set")
+	}
+	if !response.Comment.ContainsSpoiler {
+		t.Fatal("expected contains_spoiler to be true")
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -575,9 +578,9 @@ func TestUpdateCommentForbidden(t *testing.T) {
 		t.Fatalf("failed to marshal body: %v", err)
 	}
 
-	mock.ExpectQuery("SELECT c.user_id, c.content, c.post_id, p.section_id, s.type").
+	mock.ExpectQuery("SELECT c.user_id, c.content, c.contains_spoiler, c.post_id, p.section_id, s.type").
 		WithArgs(commentID).
-		WillReturnRows(sqlmock.NewRows([]string{"user_id", "content", "post_id", "section_id", "type"}).AddRow(uuid.New(), "Original comment", uuid.New(), uuid.New(), "general"))
+		WillReturnRows(sqlmock.NewRows([]string{"user_id", "content", "contains_spoiler", "post_id", "section_id", "type"}).AddRow(uuid.New(), "Original comment", false, uuid.New(), uuid.New(), "general"))
 
 	req, err := http.NewRequest(http.MethodPatch, "/api/v1/comments/"+commentID.String(), bytes.NewReader(body))
 	if err != nil {
@@ -638,5 +641,9 @@ func TestDeleteCommentHandlerInvalidID(t *testing.T) {
 }
 
 func stringPtr(value string) *string {
+	return &value
+}
+
+func boolPtr(value bool) *bool {
 	return &value
 }

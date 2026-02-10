@@ -136,6 +136,7 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		"user_id", userID.String(),
 		"post_id", comment.PostID.String(),
 		"section_id", sectionID,
+		"contains_spoiler", strconv.FormatBool(comment.ContainsSpoiler),
 	)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -242,6 +243,7 @@ func (h *CommentHandler) UpdateComment(w http.ResponseWriter, r *http.Request) {
 		"user_id", userID.String(),
 		"post_id", comment.PostID.String(),
 		"section_id", sectionID,
+		"contains_spoiler", strconv.FormatBool(comment.ContainsSpoiler),
 	)
 
 	w.Header().Set("Content-Type", "application/json")
