@@ -194,13 +194,17 @@
     {
       "issue_number": 1007,
       "title": "[Music] Fix tracks/sets filter affecting main feed instead of Recent Music Links component",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "bug",
         "frontend"
       ],
-      "priority": 8
+      "priority": 8,
+      "assigned_to": "agent-1770739046-78547",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770739046-78547",
+      "branch": "fix/issue-1007-music-fix-trackssets-filter-affecting-ma",
+      "claimed_at": "2026-02-10T15:57:26Z"
     },
     {
       "issue_number": 842,
