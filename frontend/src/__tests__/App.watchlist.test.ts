@@ -84,7 +84,7 @@ afterEach(() => {
 });
 
 describe('App watchlist routing', () => {
-  it('maps legacy /watchlist route into Movies section watchlist view for authenticated users', async () => {
+  it('maps legacy /watchlist route into Movies section feed with inline watchlist for authenticated users', async () => {
     stores.authStore.setUser(defaultUser);
     window.history.replaceState(null, '', '/watchlist');
     expect(window.location.pathname).toBe('/watchlist');
@@ -96,33 +96,45 @@ describe('App watchlist routing', () => {
       expect(screen.getByTestId('watchlist')).toBeInTheDocument();
     });
     expect(screen.getByRole('heading', { name: 'Movies' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Watchlist' })).toHaveAttribute('aria-selected', 'true');
-    expect(window.location.pathname).toMatch(/^\/watchlist$|^\/sections\/movies\/watchlist$/);
-    expect(document.title).toBe('Movies Watchlist - Clubhouse');
+    expect(screen.queryByTestId('section-tab-watchlist')).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Share something in Movies/i)).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/sections/movies');
+    expect(document.title).toBe('Clubhouse');
   });
 
-  it('toggles between feed and watchlist tabs in Movies section', async () => {
+  it('renders watchlist and feed together in Movies section without a section-level watchlist toggle', async () => {
     stores.authStore.setUser(defaultUser);
     window.history.replaceState(null, '', '/sections/movies');
 
     render(App);
 
-    const watchlistTab = await screen.findByTestId('section-tab-watchlist');
-    const feedTab = screen.getByTestId('section-tab-feed');
-    expect(feedTab).toHaveAttribute('aria-selected', 'true');
-
-    await fireEvent.click(watchlistTab);
     await waitFor(() => {
       expect(screen.getByTestId('watchlist')).toBeInTheDocument();
     });
-    expect(window.location.pathname).toBe('/sections/movies/watchlist');
-
-    await fireEvent.click(feedTab);
-    await waitFor(() => {
-      expect(screen.queryByTestId('watchlist')).not.toBeInTheDocument();
-    });
+    expect(screen.getByPlaceholderText(/Share something in Movies/i)).toBeInTheDocument();
     expect(window.location.pathname).toBe('/sections/movies');
-    expect(feedTab).toHaveAttribute('aria-selected', 'true');
+    expect(screen.queryByTestId('section-tab-watchlist')).not.toBeInTheDocument();
+    expect(screen.getByTestId('watchlist-collapse')).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('renders watchlist and feed together in Series section without a section-level watchlist toggle', async () => {
+    stores.authStore.setUser(defaultUser);
+    stores.sectionStore.setActiveSection({
+      id: 'section-series',
+      name: 'Series',
+      type: 'series',
+      icon: '📺',
+      slug: 'series',
+    });
+    window.history.replaceState(null, '', '/sections/series');
+
+    render(App);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('watchlist')).toBeInTheDocument();
+    });
+    expect(screen.getByPlaceholderText(/Share something in Series/i)).toBeInTheDocument();
+    expect(screen.queryByTestId('section-tab-watchlist')).not.toBeInTheDocument();
   });
 
   it('renders login for unauthenticated users on watchlist route', async () => {
