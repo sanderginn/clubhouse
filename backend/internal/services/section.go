@@ -300,14 +300,24 @@ func (s *SectionService) GetRecentPodcasts(ctx context.Context, sectionID uuid.U
 			continue
 		}
 		podcast, err := extractPodcastFromMetadata(metadata)
-		if err != nil || podcast == nil || strings.TrimSpace(podcast.Kind) == "" {
+		if err != nil || podcast == nil {
 			continue
 		}
+		if strings.TrimSpace(podcast.Kind) == "" {
+			if detectedKind, ok := detectPodcastKind(linkURL, models.JSONMap(metadata)); ok {
+				podcast.Kind = detectedKind
+			}
+		}
+		if strings.TrimSpace(podcast.Kind) == "" {
+			continue
+		}
+		title := extractRecentPodcastTitle(metadata, podcast)
 
 		items = append(items, models.RecentPodcastItem{
 			PostID:        postID,
 			LinkID:        linkID,
 			URL:           linkURL,
+			Title:         title,
 			Podcast:       *podcast,
 			UserID:        userID,
 			Username:      username,
@@ -340,6 +350,31 @@ func (s *SectionService) GetRecentPodcasts(ctx context.Context, sectionID uuid.U
 		HasMore:    hasMore,
 		NextCursor: nextCursor,
 	}, nil
+}
+
+func extractRecentPodcastTitle(metadata map[string]interface{}, podcast *models.PodcastMetadata) string {
+	if podcast != nil && len(podcast.HighlightEpisodes) > 0 {
+		if title := strings.TrimSpace(podcast.HighlightEpisodes[0].Title); title != "" {
+			return title
+		}
+	}
+
+	if title := metadataStringField(metadata, "title"); title != "" {
+		return title
+	}
+	if title := metadataStringField(metadata, "name"); title != "" {
+		return title
+	}
+
+	embed := metadataMapField(metadata, "embed")
+	if title := metadataStringField(embed, "title"); title != "" {
+		return title
+	}
+	if title := metadataStringField(embed, "name"); title != "" {
+		return title
+	}
+
+	return ""
 }
 
 func buildRecentPodcastCursor(createdAt time.Time, linkID uuid.UUID) string {

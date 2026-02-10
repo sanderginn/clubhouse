@@ -499,6 +499,7 @@ describe('api client', () => {
             post_id: 'post-1',
             link_id: 'link-1',
             url: 'https://example.com/show',
+            title: 'Show Title',
             podcast: {
               kind: 'SHOW',
               highlight_episodes: [
@@ -533,6 +534,7 @@ describe('api client', () => {
       postId: 'post-1',
       linkId: 'link-1',
       url: 'https://example.com/show',
+      title: 'Show Title',
       podcast: {
         kind: 'show',
         highlightEpisodes: [

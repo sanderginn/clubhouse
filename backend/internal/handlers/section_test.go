@@ -299,6 +299,9 @@ func TestGetRecentPodcastsSuccess(t *testing.T) {
 	if response.Items[0].Podcast.Kind != "show" {
 		t.Fatalf("expected podcast kind show, got %q", response.Items[0].Podcast.Kind)
 	}
+	if response.Items[0].Title != "Start Here" {
+		t.Fatalf("expected recent podcast title Start Here, got %q", response.Items[0].Title)
+	}
 	if len(response.Items[0].Podcast.HighlightEpisodes) != 1 {
 		t.Fatalf("expected one highlight episode")
 	}

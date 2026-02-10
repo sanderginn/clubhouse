@@ -144,6 +144,7 @@ interface ApiRecentPodcastItem {
   post_id: string;
   link_id: string;
   url: string;
+  title?: string;
   podcast?: ApiPodcastMetadataResponse;
   user_id: string;
   username: string;
@@ -430,10 +431,12 @@ function mapApiPodcastMetadata(podcast?: ApiPodcastMetadataResponse): PodcastMet
 }
 
 function mapApiRecentPodcastItem(item: ApiRecentPodcastItem): RecentPodcastItem {
+  const title = typeof item.title === 'string' ? item.title.trim() : '';
   return {
     postId: item.post_id,
     linkId: item.link_id,
     url: item.url,
+    ...(title ? { title } : {}),
     podcast: mapApiPodcastMetadata(item.podcast),
     userId: item.user_id,
     username: item.username,
@@ -674,6 +677,7 @@ export interface RecentPodcastItem {
   postId: string;
   linkId: string;
   url: string;
+  title?: string;
   podcast: PodcastMetadata;
   userId: string;
   username: string;
