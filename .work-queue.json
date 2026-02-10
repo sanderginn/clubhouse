@@ -70,7 +70,8 @@
     949,
     950,
     951,
-    975
+    975,
+    977
   ],
   "issues": [
     {
@@ -1467,7 +1468,7 @@
     {
       "issue_number": 977,
       "title": "[Movies/Series] Fix Rotten Tomatoes scores still not displaying",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -1479,7 +1480,9 @@
       "assigned_to": "agent-1770725414-85442",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770725414-85442",
       "branch": "fix/issue-977-moviesseries-fix-rotten-tomatoes-scores-",
-      "claimed_at": "2026-02-10T12:10:14Z"
+      "claimed_at": "2026-02-10T12:10:14Z",
+      "pr_number": 987,
+      "completed_at": "2026-02-10T12:26:41Z"
     },
     {
       "issue_number": 978,
