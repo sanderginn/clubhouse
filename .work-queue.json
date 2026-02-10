@@ -65,6 +65,7 @@
     899,
     900,
     901,
+    902,
     948,
     949,
     950,
@@ -1285,7 +1286,7 @@
     {
       "issue_number": 902,
       "title": "[Podcasts] Add integration and E2E coverage for podcast workflows",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         897,
         900,
@@ -1302,7 +1303,9 @@
       "assigned_to": "agent-1770718442-87346",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770718442-87346",
       "branch": "feat/issue-902-podcasts-add-integration-and-e2e-coverag",
-      "claimed_at": "2026-02-10T10:14:02Z"
+      "claimed_at": "2026-02-10T10:14:02Z",
+      "pr_number": 971,
+      "completed_at": "2026-02-10T10:33:41Z"
     },
     {
       "issue_number": 948,
