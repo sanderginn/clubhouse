@@ -241,6 +241,78 @@ func TestParseBookMetadataAmazonGPProductURL(t *testing.T) {
 	}
 }
 
+func TestParseBookMetadataAmazonDP13DigitISBNURL(t *testing.T) {
+	originalFetchTitle := fetchBookPageTitleFunc
+	fetchBookPageTitleFunc = func(ctx context.Context, rawURL string) (string, error) {
+		t.Fatalf("unexpected title fetch for URL: %s", rawURL)
+		return "", nil
+	}
+	defer func() {
+		fetchBookPageTitleFunc = originalFetchTitle
+	}()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/isbn/9780441569595.json" {
+			t.Fatalf("path = %q, want /isbn/9780441569595.json", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"key":"/books/OL24226054M",
+			"title":"Neuromancer",
+			"isbn_13":["9780441569595"]
+		}`))
+	}))
+	defer server.Close()
+
+	client := newTestOpenLibraryClient(t, server.URL)
+	metadata, err := ParseBookMetadata(context.Background(), "https://www.amazon.com/dp/9780441569595", client)
+	if err != nil {
+		t.Fatalf("ParseBookMetadata error: %v", err)
+	}
+	if metadata == nil {
+		t.Fatal("expected metadata")
+	}
+	if metadata.Title != "Neuromancer" {
+		t.Fatalf("Title = %q, want Neuromancer", metadata.Title)
+	}
+}
+
+func TestParseBookMetadataAmazonGPProduct13DigitISBNURL(t *testing.T) {
+	originalFetchTitle := fetchBookPageTitleFunc
+	fetchBookPageTitleFunc = func(ctx context.Context, rawURL string) (string, error) {
+		t.Fatalf("unexpected title fetch for URL: %s", rawURL)
+		return "", nil
+	}
+	defer func() {
+		fetchBookPageTitleFunc = originalFetchTitle
+	}()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/isbn/9780441569595.json" {
+			t.Fatalf("path = %q, want /isbn/9780441569595.json", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"key":"/books/OL24226054M",
+			"title":"Neuromancer",
+			"isbn_13":["9780441569595"]
+		}`))
+	}))
+	defer server.Close()
+
+	client := newTestOpenLibraryClient(t, server.URL)
+	metadata, err := ParseBookMetadata(context.Background(), "https://www.amazon.com/gp/product/9780441569595", client)
+	if err != nil {
+		t.Fatalf("ParseBookMetadata error: %v", err)
+	}
+	if metadata == nil {
+		t.Fatal("expected metadata")
+	}
+	if metadata.Title != "Neuromancer" {
+		t.Fatalf("Title = %q, want Neuromancer", metadata.Title)
+	}
+}
+
 func TestParseBookMetadataAmazonRegionalHostURL(t *testing.T) {
 	originalFetchTitle := fetchBookPageTitleFunc
 	fetchBookPageTitleFunc = func(ctx context.Context, rawURL string) (string, error) {

@@ -578,6 +578,16 @@ func TestShouldExtractBookMetadata(t *testing.T) {
 			want: true,
 		},
 		{
+			name: "amazon dp 13-digit isbn url",
+			url:  "https://www.amazon.com/dp/9780441569595",
+			want: true,
+		},
+		{
+			name: "amazon gp product 13-digit isbn url",
+			url:  "https://www.amazon.com/gp/product/9780441569595",
+			want: true,
+		},
+		{
 			name: "amazon regional host url",
 			url:  "https://www.amazon.co.uk/dp/0441569595",
 			want: true,

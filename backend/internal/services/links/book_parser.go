@@ -429,18 +429,23 @@ func parseAmazonIdentifierSegment(segments []string, idx int) (string, bool) {
 	identifier = strings.TrimSuffix(identifier, ".html")
 	identifier = strings.TrimSuffix(identifier, "/")
 	identifier = strings.TrimSpace(identifier)
-	if len(identifier) != 10 {
-		return "", false
-	}
-
-	for _, r := range identifier {
-		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
-			continue
+	switch len(identifier) {
+	case 10:
+		for _, r := range identifier {
+			if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+				continue
+			}
+			return "", false
 		}
+		return strings.ToUpper(identifier), true
+	case 13:
+		if !isValidISBN13(identifier) {
+			return "", false
+		}
+		return identifier, true
+	default:
 		return "", false
 	}
-
-	return strings.ToUpper(identifier), true
 }
 
 func parseOpenLibraryWorkKey(segments []string) (string, bool) {
