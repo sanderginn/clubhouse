@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent, screen, cleanup } from '@testing-library/svelte';
-import { postStore, sectionStore } from '../../stores';
+import { postStore, sectionStore, musicLengthFilter } from '../../stores';
 import { afterEach } from 'vitest';
 import { tick } from 'svelte';
 
@@ -18,6 +18,7 @@ beforeEach(() => {
   loadFeed.mockReset();
   loadMorePosts.mockReset();
   postStore.reset();
+  musicLengthFilter.set('all');
   sectionStore.setActiveSection(null);
 });
 
@@ -108,6 +109,33 @@ describe('SectionFeed', () => {
     await fireEvent.click(button);
 
     expect(loadMorePosts).toHaveBeenCalled();
+  });
+
+  it('does not filter main feed posts by music link length filter state', async () => {
+    sectionStore.setActiveSection({
+      id: 'section-1',
+      name: 'Music',
+      type: 'music',
+      icon: '🎵',
+      slug: 'music',
+    });
+
+    musicLengthFilter.set('tracks');
+    render(SectionFeed);
+
+    postStore.setPosts(
+      [
+        { id: 'post-1', userId: 'user-1', sectionId: 'section-1', content: 'track post', createdAt: 'now' },
+        { id: 'post-2', userId: 'user-2', sectionId: 'section-1', content: 'set post', createdAt: 'now' },
+      ],
+      null,
+      false
+    );
+    await tick();
+
+    expect(screen.getByText('track post')).toBeInTheDocument();
+    expect(screen.getByText('set post')).toBeInTheDocument();
+    expect(screen.queryByText(/Try switching the length filter/i)).not.toBeInTheDocument();
   });
 
   it('cleanup resets posts on destroy', () => {

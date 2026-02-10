@@ -1,9 +1,8 @@
 import { render, screen, fireEvent, cleanup } from '@testing-library/svelte';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { get } from 'svelte/store';
 import { sectionStore } from '../../stores/sectionStore';
 import { sectionLinksStore, type SectionLink } from '../../stores/sectionLinksStore';
-import { musicLengthFilter } from '../../stores/musicFilterStore';
+import { TRACK_MAX_DURATION_SECONDS } from '../../stores/musicFilterStore';
 
 const loadSectionLinks = vi.hoisted(() => vi.fn());
 const loadMoreSectionLinks = vi.hoisted(() => vi.fn());
@@ -29,6 +28,19 @@ const baseLink: SectionLink = {
   createdAt: '2026-01-29T08:00:00Z',
 };
 
+function createLink(id: string, title: string, duration: number): SectionLink {
+  return {
+    ...baseLink,
+    id,
+    url: `https://example.com/${id}`,
+    metadata: {
+      ...baseLink.metadata,
+      title,
+      duration,
+    },
+  };
+}
+
 function setActiveSection(type: 'music' | 'general') {
   sectionStore.setActiveSection({
     id: 'section-1',
@@ -43,7 +55,6 @@ beforeEach(() => {
   loadSectionLinks.mockReset();
   loadMoreSectionLinks.mockReset();
   window.sessionStorage?.clear();
-  musicLengthFilter.set('all');
   sectionLinksStore.reset();
   sectionStore.setActiveSection(null);
 });
@@ -63,7 +74,12 @@ describe('MusicLinksContainer', () => {
 
   it('shows music links with a count badge', () => {
     setActiveSection('music');
-    sectionLinksStore.setLinks([baseLink, { ...baseLink, id: 'link-2', url: 'https://song.two' }], null, false, 'section-1');
+    sectionLinksStore.setLinks(
+      [baseLink, { ...baseLink, id: 'link-2', url: 'https://song.two' }],
+      null,
+      false,
+      'section-1'
+    );
 
     render(MusicLinksContainer);
 
@@ -97,14 +113,36 @@ describe('MusicLinksContainer', () => {
     expect(loadMoreSectionLinks).toHaveBeenCalledTimes(1);
   });
 
-  it('updates the length filter selection', async () => {
+  it('filters recent links locally by tracks and sets/mixes', async () => {
     setActiveSection('music');
+    sectionLinksStore.setLinks(
+      [
+        createLink('track-1', 'Track Link', 120),
+        createLink('set-1', 'Set Link', TRACK_MAX_DURATION_SECONDS),
+      ],
+      null,
+      false,
+      'section-1'
+    );
+
     render(MusicLinksContainer);
 
     const tracksButton = screen.getByRole('button', { name: 'Tracks' });
     await fireEvent.click(tracksButton);
 
-    expect(get(musicLengthFilter)).toBe('tracks');
+    expect(screen.getByText('Track Link')).toBeInTheDocument();
+    expect(screen.queryByText('Set Link')).not.toBeInTheDocument();
     expect(tracksButton).toHaveAttribute('aria-pressed', 'true');
+
+    await fireEvent.click(tracksButton);
+    expect(tracksButton).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByText('Track Link')).toBeInTheDocument();
+    expect(screen.getByText('Set Link')).toBeInTheDocument();
+
+    const setsButton = screen.getByRole('button', { name: 'Sets/Mixes' });
+    await fireEvent.click(setsButton);
+    expect(setsButton).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByText('Track Link')).not.toBeInTheDocument();
+    expect(screen.getByText('Set Link')).toBeInTheDocument();
   });
 });
