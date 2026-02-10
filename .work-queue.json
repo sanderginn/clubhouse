@@ -49,7 +49,8 @@
     889,
     890,
     891,
-    895
+    895,
+    951
   ],
   "issues": [
     {
@@ -1238,7 +1239,7 @@
     {
       "issue_number": 951,
       "title": "[Movies] Make Watchlist fixed at top and collapsible like Cookbook",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -1249,7 +1250,9 @@
       "assigned_to": "agent-1770710298-59833",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770710298-59833",
       "branch": "feat/issue-951-movies-make-watchlist-fixed-at-top-and-c",
-      "claimed_at": "2026-02-10T07:58:18Z"
+      "claimed_at": "2026-02-10T07:58:18Z",
+      "pr_number": 952,
+      "completed_at": "2026-02-10T08:45:22Z"
     }
   ]
 }
