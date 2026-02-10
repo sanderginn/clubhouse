@@ -36,6 +36,7 @@
     878,
     883,
     884,
+    885,
     887,
     891
   ],
@@ -844,7 +845,7 @@
     {
       "issue_number": 885,
       "title": "[Books] Create SpoilerToggle and SpoilerWrapper components",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         884
       ],
@@ -857,7 +858,9 @@
       "assigned_to": "agent-1770699079-48633",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770699079-48633",
       "branch": "feat/issue-885-books-create-spoilertoggle-and-spoilerwr",
-      "claimed_at": "2026-02-10T04:51:19Z"
+      "claimed_at": "2026-02-10T04:51:19Z",
+      "pr_number": 935,
+      "completed_at": "2026-02-10T07:03:34Z"
     },
     {
       "issue_number": 886,
