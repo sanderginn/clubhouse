@@ -69,7 +69,8 @@
     948,
     949,
     950,
-    951
+    951,
+    975
   ],
   "issues": [
     {
@@ -1432,7 +1433,7 @@
     {
       "issue_number": 975,
       "title": "[Books] Show rating prompt when marking a book as read",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -1443,7 +1444,9 @@
       "assigned_to": "agent-1770725381-84880",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770725381-84880",
       "branch": "fix/issue-975-books-show-rating-prompt-when-marking-a-",
-      "claimed_at": "2026-02-10T12:09:41Z"
+      "claimed_at": "2026-02-10T12:09:41Z",
+      "pr_number": 986,
+      "completed_at": "2026-02-10T12:16:45Z"
     },
     {
       "issue_number": 976,
