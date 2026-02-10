@@ -660,6 +660,7 @@ describe('PostCard', () => {
     expect(screen.getByText('Pilot Episode')).toBeInTheDocument();
     expect(screen.getByText('Best place to start')).toBeInTheDocument();
     expect(screen.getAllByTestId('podcast-highlight-episode')).toHaveLength(2);
+    expect(screen.getByTestId('podcast-save-button')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Pilot Episode' })).toHaveAttribute(
       'href',
       'https://example.com/episodes/pilot'
@@ -745,6 +746,7 @@ describe('PostCard', () => {
 
     expect(screen.queryByTestId('podcast-metadata-block')).not.toBeInTheDocument();
     expect(screen.queryByTestId('podcast-kind-badge')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('podcast-save-button')).not.toBeInTheDocument();
   });
 
   it('keeps recipe section rendering intact', () => {
