@@ -366,15 +366,21 @@ func (s *PostService) UpdatePost(ctx context.Context, postID uuid.UUID, userID u
 		var detectionMetadata []models.JSONMap
 		if shouldDetectPodcastKinds(resolvedLinks) {
 			detectionHints := buildPodcastKindDetectionHints(resolvedLinks, existingLinks)
-			resolvedLinks, err = resolvePodcastKinds(sectionType, resolvedLinks, detectionHints)
-			if err != nil && errors.Is(err, errPodcastKindSelectionRequired) {
+			resolvedCandidate, resolveErr := resolvePodcastKinds(sectionType, resolvedLinks, detectionHints)
+			if resolveErr == nil {
+				resolvedLinks = resolvedCandidate
+			}
+			if resolveErr != nil && errors.Is(resolveErr, errPodcastKindSelectionRequired) {
 				detectionMetadata = fetchLinkMetadata(ctx, resolvedLinks, sectionType)
 				detectionHints = mergePodcastKindDetectionHints(detectionHints, detectionMetadata)
-				resolvedLinks, err = resolvePodcastKinds(sectionType, resolvedLinks, detectionHints)
+				resolvedCandidate, resolveErr = resolvePodcastKinds(sectionType, resolvedLinks, detectionHints)
+				if resolveErr == nil {
+					resolvedLinks = resolvedCandidate
+				}
 			}
-			if err != nil {
-				recordSpanError(span, err)
-				return nil, err
+			if resolveErr != nil {
+				recordSpanError(span, resolveErr)
+				return nil, resolveErr
 			}
 		}
 
