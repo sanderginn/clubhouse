@@ -175,6 +175,7 @@ describe('bookStore', () => {
     let grouped = get(myBookshelf);
     expect(grouped.get('Favorites')).toHaveLength(1);
     let post = get(postStore).posts[0];
+    expect(post.bookStats?.bookshelfCount).toBe(1);
     expect(post.bookStats?.viewerOnBookshelf).toBe(true);
 
     addDeferred.resolve(undefined);
@@ -187,6 +188,7 @@ describe('bookStore', () => {
     grouped = get(myBookshelf);
     expect(grouped.get('Favorites')).toBeUndefined();
     post = get(postStore).posts[0];
+    expect(post.bookStats?.bookshelfCount).toBe(0);
     expect(post.bookStats?.viewerOnBookshelf).toBe(false);
 
     removeDeferred.resolve(undefined);
@@ -225,6 +227,8 @@ describe('bookStore', () => {
     expect(logs).toHaveLength(1);
     expect(logs[0].postId).toBe('post-1');
     let post = get(postStore).posts[0];
+    expect(post.bookStats?.readCount).toBe(1);
+    expect(post.bookStats?.averageRating).toBe(5);
     expect(post.bookStats?.viewerRead).toBe(true);
     expect(post.bookStats?.viewerRating).toBe(5);
 
@@ -246,6 +250,8 @@ describe('bookStore', () => {
     logs = get(readHistory);
     expect(logs).toHaveLength(0);
     post = get(postStore).posts[0];
+    expect(post.bookStats?.readCount).toBe(0);
+    expect(post.bookStats?.averageRating).toBeNull();
     expect(post.bookStats?.viewerRead).toBe(false);
     expect(post.bookStats?.viewerRating).toBeNull();
 
@@ -330,6 +336,63 @@ describe('bookStore', () => {
     expect(post.bookStats?.viewerRead).toBe(true);
     expect(post.bookStats?.readCount).toBe(1);
     expect(get(bookStoreMeta).error).toBe('remove failed');
+  });
+
+  it('optimistically updates average rating when changing an existing read rating', async () => {
+    readHistory.set([
+      {
+        id: 'read-1',
+        userId: 'user-1',
+        postId: 'post-1',
+        rating: 3,
+        createdAt: '2026-01-01T00:00:00Z',
+      },
+    ]);
+    postStore.setPosts(
+      [
+        {
+          id: 'post-1',
+          userId: 'user-1',
+          sectionId: 'section-books',
+          content: 'Book 1',
+          createdAt: '2026-01-01T00:00:00Z',
+          bookStats: {
+            bookshelfCount: 0,
+            readCount: 2,
+            averageRating: 3.5,
+            viewerOnBookshelf: false,
+            viewerCategories: [],
+            viewerRead: true,
+            viewerRating: 3,
+          },
+        },
+      ],
+      null,
+      false
+    );
+
+    const updateDeferred = createDeferred<{
+      readLog: { id: string; userId: string; postId: string; rating: number; createdAt: string };
+    }>();
+    apiUpdateReadRating.mockReturnValueOnce(updateDeferred.promise);
+    const updatePromise = bookStore.updateRating('post-1', 5);
+
+    const optimisticPost = get(postStore).posts[0];
+    expect(optimisticPost.bookStats?.readCount).toBe(2);
+    expect(optimisticPost.bookStats?.averageRating).toBeCloseTo(4.5, 3);
+    expect(optimisticPost.bookStats?.viewerRead).toBe(true);
+    expect(optimisticPost.bookStats?.viewerRating).toBe(5);
+
+    updateDeferred.resolve({
+      readLog: {
+        id: 'read-1',
+        userId: 'user-1',
+        postId: 'post-1',
+        rating: 5,
+        createdAt: '2026-01-01T00:00:00Z',
+      },
+    });
+    await updatePromise;
   });
 
   it('loads paginated bookshelf and read history data', async () => {

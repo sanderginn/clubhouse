@@ -623,27 +623,32 @@ function createPostStore() {
           }
 
           const currentStats = getBookStats(post);
+          const previousReadCount = clampBookCount(currentStats.readCount);
+          const previousViewerRating = normalizeBookRating(currentStats.viewerRating ?? null);
           const nextViewerRating = viewerRead ? normalizeBookRating(viewerRating) : null;
 
-          let nextReadCount = currentStats.readCount;
-          if (!currentStats.viewerRead && viewerRead) {
-            nextReadCount = clampBookCount(nextReadCount + 1);
-          } else if (currentStats.viewerRead && !viewerRead) {
-            nextReadCount = clampBookCount(nextReadCount - 1);
-          }
+          let nextReadCount = previousReadCount;
+          let ratingTotal =
+            previousReadCount > 0 && currentStats.averageRating !== null
+              ? currentStats.averageRating * previousReadCount
+              : 0;
 
-          // Read logs can be unrated; keep average stable unless no reads remain.
-          let nextAverageRating = currentStats.averageRating;
-          if (nextReadCount === 0) {
-            nextAverageRating = null;
+          if (!currentStats.viewerRead && viewerRead) {
+            nextReadCount = clampBookCount(previousReadCount + 1);
+            ratingTotal += nextViewerRating ?? 0;
+          } else if (currentStats.viewerRead && !viewerRead) {
+            nextReadCount = clampBookCount(previousReadCount - 1);
+            ratingTotal -= previousViewerRating ?? 0;
           } else if (
-            currentStats.averageRating === null &&
-            !currentStats.viewerRead &&
+            currentStats.viewerRead &&
             viewerRead &&
+            previousViewerRating !== null &&
             nextViewerRating !== null
           ) {
-            nextAverageRating = nextViewerRating;
+            ratingTotal += nextViewerRating - previousViewerRating;
           }
+
+          const nextAverageRating = nextReadCount <= 0 ? null : ratingTotal / nextReadCount;
 
           const nextStats: BookStats = {
             ...currentStats,
