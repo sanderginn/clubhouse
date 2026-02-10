@@ -635,16 +635,12 @@ function createPostStore() {
           const currentStats = getBookStats(post);
           const previousReadCount = clampBookCount(currentStats.readCount);
           const previousViewerRating = normalizeBookRating(currentStats.viewerRating ?? null);
-          const inferredRatedCount =
-            currentStats.averageRating === null || previousReadCount === 0
-              ? 0
-              : currentStats.viewerRead
-                ? Math.max(1, previousReadCount - 1)
-                : previousReadCount;
           const currentRatedCount =
             typeof currentStats.ratedCount === 'number'
               ? clampBookCount(currentStats.ratedCount)
-              : inferredRatedCount;
+              : currentStats.averageRating === null || previousReadCount === 0
+                ? 0
+                : previousReadCount;
           const nextViewerRating = viewerRead ? normalizeBookRating(viewerRating) : null;
           const previouslyRatedByViewer = currentStats.viewerRead && previousViewerRating !== null;
           const nextRatedByViewer = viewerRead && nextViewerRating !== null;

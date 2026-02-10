@@ -224,6 +224,7 @@ interface ApiReadLogReader {
 
 interface ApiPostReadLogsResponse {
   read_count: number;
+  rated_count?: number;
   average_rating: number;
   viewer_read: boolean;
   viewer_rating?: number | null;
@@ -759,6 +760,7 @@ export interface ReadLogReader {
 
 export interface PostReadLogsResponse {
   readCount: number;
+  ratedCount: number;
   averageRating: number;
   viewerRead: boolean;
   viewerRating?: number;
@@ -1810,6 +1812,7 @@ class ApiClient {
     const response = await this.get<ApiPostReadLogsResponse>(`/posts/${postId}/read`);
     return {
       readCount: response.read_count ?? 0,
+      ratedCount: response.rated_count ?? 0,
       averageRating: response.average_rating ?? 0,
       viewerRead: response.viewer_read ?? false,
       viewerRating: response.viewer_rating ?? undefined,

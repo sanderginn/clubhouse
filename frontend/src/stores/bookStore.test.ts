@@ -113,6 +113,7 @@ beforeEach(() => {
   apiGetReadHistory.mockResolvedValue({ readLogs: [], nextCursor: undefined });
   apiGetPostReadLogs.mockResolvedValue({
     readCount: 1,
+    ratedCount: 1,
     averageRating: 4,
     viewerRead: true,
     viewerRating: 4,

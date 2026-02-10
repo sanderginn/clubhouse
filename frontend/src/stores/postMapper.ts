@@ -93,6 +93,7 @@ export interface ApiMovieStats {
 export interface ApiBookStats {
   bookshelf_count?: number | null;
   read_count?: number | null;
+  rated_count?: number | null;
   avg_rating?: number | null;
   average_rating?: number | null;
   viewer_on_bookshelf?: boolean | null;
@@ -101,6 +102,7 @@ export interface ApiBookStats {
   viewer_rating?: number | null;
   bookshelfCount?: number | null;
   readCount?: number | null;
+  ratedCount?: number | null;
   avgRating?: number | null;
   averageRating?: number | null;
   viewerOnBookshelf?: boolean | null;
@@ -600,6 +602,7 @@ function normalizeBookStats(rawStats: unknown): BookStats | undefined {
   const record = rawStats as Record<string, unknown>;
   const bookshelfCount = normalizeNumber(record.bookshelf_count ?? record.bookshelfCount) ?? 0;
   const readCount = normalizeNumber(record.read_count ?? record.readCount) ?? 0;
+  const ratedCount = normalizeNumber(record.rated_count ?? record.ratedCount);
   const averageRating =
     normalizeNumber(
       record.avg_rating ??
@@ -627,6 +630,7 @@ function normalizeBookStats(rawStats: unknown): BookStats | undefined {
   return {
     bookshelfCount,
     readCount,
+    ...(typeof ratedCount === 'number' ? { ratedCount } : {}),
     averageRating,
     ...(typeof viewerOnBookshelf === 'boolean' ? { viewerOnBookshelf } : {}),
     ...(viewerCategories ? { viewerCategories } : {}),

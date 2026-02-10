@@ -1395,6 +1395,7 @@ func (s *PostService) getBookStatsForPosts(ctx context.Context, postIDs []uuid.U
 
 		if readLogStat, ok := readLogStatsByPost[postID]; ok {
 			stat.ReadCount = readLogStat.ReadCount
+			stat.RatedCount = readLogStat.RatedCount
 			stat.AverageRating = readLogStat.AverageRating
 			stat.ViewerRead = readLogStat.ViewerRead
 			if readLogStat.ViewerRating != nil {

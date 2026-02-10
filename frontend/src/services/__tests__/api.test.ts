@@ -990,6 +990,7 @@ describe('api client', () => {
         status: 200,
         json: vi.fn().mockResolvedValue({
           read_count: 2,
+          rated_count: 2,
           average_rating: 4,
           viewer_read: true,
           viewer_rating: 5,
@@ -1026,6 +1027,7 @@ describe('api client', () => {
 
     expect(postLogs).toEqual({
       readCount: 2,
+      ratedCount: 2,
       averageRating: 4,
       viewerRead: true,
       viewerRating: 5,

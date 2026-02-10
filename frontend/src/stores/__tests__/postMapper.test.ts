@@ -149,6 +149,7 @@ describe('mapApiPost', () => {
       book_stats: {
         bookshelf_count: 8,
         read_count: 5,
+        rated_count: 4,
         average_rating: 4.4,
         viewer_on_bookshelf: true,
         viewer_categories: ['Favorites'],
@@ -159,6 +160,7 @@ describe('mapApiPost', () => {
 
     expect(post.bookStats?.bookshelfCount).toBe(8);
     expect(post.bookStats?.readCount).toBe(5);
+    expect(post.bookStats?.ratedCount).toBe(4);
     expect(post.bookStats?.averageRating).toBe(4.4);
     expect(post.bookStats?.viewerOnBookshelf).toBe(true);
     expect(post.bookStats?.viewerCategories).toEqual(['Favorites']);

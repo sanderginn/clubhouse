@@ -1114,6 +1114,9 @@ func TestGetPostByIDIncludesBookStats(t *testing.T) {
 	if post.BookStats.ReadCount != 2 {
 		t.Fatalf("expected read count 2, got %d", post.BookStats.ReadCount)
 	}
+	if post.BookStats.RatedCount != 2 {
+		t.Fatalf("expected rated count 2, got %d", post.BookStats.RatedCount)
+	}
 	if post.BookStats.AverageRating != 4.5 {
 		t.Fatalf("expected average rating 4.5, got %f", post.BookStats.AverageRating)
 	}
@@ -1220,6 +1223,9 @@ func TestGetFeedIncludesBookStatsForBookSection(t *testing.T) {
 	if bookWithStats.BookStats.ReadCount != 2 {
 		t.Fatalf("expected read count 2, got %d", bookWithStats.BookStats.ReadCount)
 	}
+	if bookWithStats.BookStats.RatedCount != 2 {
+		t.Fatalf("expected rated count 2, got %d", bookWithStats.BookStats.RatedCount)
+	}
 	if bookWithStats.BookStats.AverageRating != 4 {
 		t.Fatalf("expected average rating 4, got %f", bookWithStats.BookStats.AverageRating)
 	}
@@ -1242,6 +1248,9 @@ func TestGetFeedIncludesBookStatsForBookSection(t *testing.T) {
 	}
 	if bookNoStats.BookStats.BookshelfCount != 0 || bookNoStats.BookStats.ReadCount != 0 {
 		t.Fatalf("expected zero stats for post without stats, got %+v", bookNoStats.BookStats)
+	}
+	if bookNoStats.BookStats.RatedCount != 0 {
+		t.Fatalf("expected rated count 0 for post without stats, got %d", bookNoStats.BookStats.RatedCount)
 	}
 	if bookNoStats.BookStats.AverageRating != 0 {
 		t.Fatalf("expected average rating 0 for post without stats, got %f", bookNoStats.BookStats.AverageRating)
@@ -1329,6 +1338,9 @@ func TestGetPostsByUserIDIncludesBookStatsForBookPosts(t *testing.T) {
 	}
 	if bookPost.BookStats.ReadCount != 2 {
 		t.Fatalf("expected read count 2, got %d", bookPost.BookStats.ReadCount)
+	}
+	if bookPost.BookStats.RatedCount != 2 {
+		t.Fatalf("expected rated count 2, got %d", bookPost.BookStats.RatedCount)
 	}
 	if bookPost.BookStats.AverageRating != 3 {
 		t.Fatalf("expected average rating 3, got %f", bookPost.BookStats.AverageRating)

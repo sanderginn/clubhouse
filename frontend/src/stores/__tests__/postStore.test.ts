@@ -407,7 +407,7 @@ describe('postStore', () => {
     expect(state.posts[0].bookStats?.averageRating).toBeCloseTo(2, 3);
   });
 
-  it('setBookReadState infers rated count when payload omits ratedCount', () => {
+  it('setBookReadState falls back to readCount when payload omits ratedCount', () => {
     postStore.setPosts(
       [
         {
@@ -430,15 +430,15 @@ describe('postStore', () => {
     postStore.setBookReadState('post-1', true, 5);
     let state = get(postStore);
     expect(state.posts[0].bookStats?.readCount).toBe(3);
-    expect(state.posts[0].bookStats?.ratedCount).toBe(2);
-    expect(state.posts[0].bookStats?.averageRating).toBeCloseTo(3.5, 3);
+    expect(state.posts[0].bookStats?.ratedCount).toBe(3);
+    expect(state.posts[0].bookStats?.averageRating).toBeCloseTo(3.333, 3);
     expect(state.posts[0].bookStats?.viewerRating).toBe(5);
 
     postStore.setBookReadState('post-1', false, null);
     state = get(postStore);
     expect(state.posts[0].bookStats?.readCount).toBe(2);
-    expect(state.posts[0].bookStats?.ratedCount).toBe(1);
-    expect(state.posts[0].bookStats?.averageRating).toBeCloseTo(2, 3);
+    expect(state.posts[0].bookStats?.ratedCount).toBe(2);
+    expect(state.posts[0].bookStats?.averageRating).toBeCloseTo(2.5, 3);
     expect(state.posts[0].bookStats?.viewerRating).toBeNull();
   });
 
