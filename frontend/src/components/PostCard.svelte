@@ -28,6 +28,7 @@
   import QuoteList from './books/QuoteList.svelte';
   import MovieCard from './movies/MovieCard.svelte';
   import MovieStatsBar from './movies/MovieStatsBar.svelte';
+  import PodcastSaveButton from './podcasts/PodcastSaveButton.svelte';
   import BandcampEmbed from '../lib/components/embeds/BandcampEmbed.svelte';
   import SoundCloudEmbed from '../lib/components/embeds/SoundCloudEmbed.svelte';
   import SpotifyEmbed from '../lib/components/embeds/SpotifyEmbed.svelte';
@@ -2243,6 +2244,12 @@
               </ul>
             </div>
           {/if}
+        </div>
+      {/if}
+
+      {#if isPodcastSection}
+        <div class="mt-3">
+          <PodcastSaveButton postId={post.id} />
         </div>
       {/if}
 
