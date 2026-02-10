@@ -1189,7 +1189,7 @@
     {
       "issue_number": 898,
       "title": "[Podcasts] Render podcast metadata in PostCard",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         896
       ],
@@ -1198,7 +1198,11 @@
         "frontend",
         "podcasts"
       ],
-      "priority": 106
+      "priority": 106,
+      "assigned_to": "agent-1770715920-41138",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770715920-41138",
+      "branch": "feat/issue-898-podcasts-render-podcast-metadata-in-post",
+      "claimed_at": "2026-02-10T09:32:00Z"
     },
     {
       "issue_number": 899,
