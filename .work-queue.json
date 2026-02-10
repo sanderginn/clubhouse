@@ -881,7 +881,7 @@
     {
       "issue_number": 888,
       "title": "[Podcasts] Add podcast metadata model and validation for post links",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         887
       ],
@@ -890,7 +890,11 @@
         "backend",
         "podcasts"
       ],
-      "priority": 96
+      "priority": 96,
+      "assigned_to": "agent-1770699255-53579",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770699255-53579",
+      "branch": "feat/issue-888-podcasts-add-podcast-metadata-model-and-",
+      "claimed_at": "2026-02-10T04:54:15Z"
     },
     {
       "issue_number": 889,
