@@ -21,7 +21,8 @@
     855,
     856,
     857,
-    859
+    859,
+    876
   ],
   "issues": [
     {
@@ -621,7 +622,7 @@
     {
       "issue_number": 876,
       "title": "[Books] Create book_quotes table migration",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -633,7 +634,9 @@
       "assigned_to": "agent-1770695583-76658",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770695583-76658",
       "branch": "feat/issue-876-books-create-bookquotes-table-migration",
-      "claimed_at": "2026-02-10T03:53:03Z"
+      "claimed_at": "2026-02-10T03:53:03Z",
+      "pr_number": 920,
+      "completed_at": "2026-02-10T04:01:55Z"
     },
     {
       "issue_number": 877,
