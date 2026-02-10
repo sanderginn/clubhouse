@@ -148,27 +148,27 @@ const categories: WatchlistCategory[] = [
 ];
 
 const watchlistMap = new Map<string, WatchlistItem[]>([
+  [
+    'Favorites',
     [
-      'Favorites',
-      [
-        {
-          id: 'watch-1',
+      {
+        id: 'watch-1',
         userId: 'user-1',
         postId: 'post-1',
         category: 'Favorites',
-          createdAt: '2026-01-05T00:00:00Z',
-          post: postOne,
-        },
-        {
-          id: 'watch-3',
-          userId: 'user-1',
-          postId: 'post-3',
-          category: 'Favorites',
-          createdAt: '2026-01-07T00:00:00Z',
-          post: postThree,
-        },
-      ],
+        createdAt: '2026-01-05T00:00:00Z',
+        post: postOne,
+      },
+      {
+        id: 'watch-3',
+        userId: 'user-1',
+        postId: 'post-3',
+        category: 'Favorites',
+        createdAt: '2026-01-07T00:00:00Z',
+        post: postThree,
+      },
     ],
+  ],
   [
     'Horror',
     [
@@ -243,6 +243,43 @@ afterEach(() => {
 });
 
 describe('Watchlist', () => {
+  it('toggles collapsed and expanded states from the header button', async () => {
+    render(Watchlist);
+
+    const toggle = screen.getByTestId('watchlist-collapse');
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(toggle).toHaveTextContent('Collapse');
+    expect(screen.getByTestId('watchlist-category-panel')).toBeInTheDocument();
+
+    await fireEvent.click(toggle);
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(toggle).toHaveTextContent('Expand');
+    expect(screen.queryByTestId('watchlist-category-panel')).not.toBeInTheDocument();
+    expect(screen.getByTestId('watchlist-tab-my')).toBeInTheDocument();
+
+    await fireEvent.click(toggle);
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(toggle).toHaveTextContent('Collapse');
+    expect(screen.getByTestId('watchlist-category-panel')).toBeInTheDocument();
+  });
+
+  it('supports collapse behavior in series mode', async () => {
+    render(Watchlist, { sectionType: 'series' });
+
+    const toggle = screen.getByTestId('watchlist-collapse');
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('tab', { name: 'All Series' })).toBeInTheDocument();
+    expect(screen.getByTestId('watchlist-category-panel')).toBeInTheDocument();
+
+    await fireEvent.click(toggle);
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByTestId('watchlist-category-panel')).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'All Series' })).toBeInTheDocument();
+  });
+
   it('renders My List tab by default with saved movies', () => {
     render(Watchlist);
 
