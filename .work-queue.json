@@ -512,7 +512,7 @@
     {
       "issue_number": 868,
       "title": "[Books] Create BookCard component",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         858
       ],
@@ -521,7 +521,11 @@
         "frontend",
         "books"
       ],
-      "priority": 76
+      "priority": 76,
+      "assigned_to": "agent-1770696578-98387",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770696578-98387",
+      "branch": "feat/issue-868-books-create-bookcard-component",
+      "claimed_at": "2026-02-10T04:09:38Z"
     },
     {
       "issue_number": 869,
