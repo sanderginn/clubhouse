@@ -334,7 +334,7 @@
     {
       "issue_number": 858,
       "title": "[Books] Register book parser in metadata pipeline",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         857
       ],
@@ -343,7 +343,11 @@
         "backend",
         "books"
       ],
-      "priority": 66
+      "priority": 66,
+      "assigned_to": "agent-1770695801-83044",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770695801-83044",
+      "branch": "feat/issue-858-books-register-book-parser-in-metadata-p",
+      "claimed_at": "2026-02-10T03:56:41Z"
     },
     {
       "issue_number": 859,
