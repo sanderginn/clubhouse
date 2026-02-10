@@ -198,7 +198,7 @@
     {
       "issue_number": 1006,
       "title": "[Podcasts] Fix deleted post not removed from Saved tab until page refresh",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         1005
       ],
@@ -207,7 +207,11 @@
         "frontend",
         "podcasts"
       ],
-      "priority": 7
+      "priority": 7,
+      "assigned_to": "agent-1770740342-5697",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770740342-5697",
+      "branch": "fix/issue-1006-podcasts-fix-deleted-post-not-removed-fr",
+      "claimed_at": "2026-02-10T16:19:02Z"
     },
     {
       "issue_number": 1007,
