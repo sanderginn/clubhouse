@@ -83,15 +83,16 @@ beforeEach(() => {
         'Favorites',
         [createBookshelfItem('my-1', 'user-1', 'post-1', 'cat-1', '2026-01-02T00:00:00Z')],
       ],
-      ['Classics', [createBookshelfItem('my-2', 'user-1', 'post-2', 'cat-2', '2026-01-03T00:00:00Z')]],
+      [
+        'Classics',
+        [createBookshelfItem('my-2', 'user-1', 'post-2', 'cat-2', '2026-01-03T00:00:00Z')],
+      ],
       ['Uncategorized', [createBookshelfItem('my-3', 'user-1', 'post-4', undefined)]],
     ])
   );
 
   allBookshelf.set(
-    new Map([
-      ['Favorites', [createBookshelfItem('all-1', 'user-2', 'post-3', 'cat-1')]],
-    ])
+    new Map([['Favorites', [createBookshelfItem('all-1', 'user-2', 'post-3', 'cat-1')]]])
   );
 
   postStore.setPosts(
@@ -137,6 +138,28 @@ afterEach(() => {
 });
 
 describe('Bookshelf', () => {
+  it('toggles collapsed and expanded states from the header button', async () => {
+    render(Bookshelf);
+
+    const toggle = screen.getByTestId('bookshelf-collapse');
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(toggle).toHaveTextContent('Collapse');
+    expect(screen.getByTestId('bookshelf-category-panel')).toBeInTheDocument();
+
+    await fireEvent.click(toggle);
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(toggle).toHaveTextContent('Expand');
+    expect(screen.queryByTestId('bookshelf-category-panel')).not.toBeInTheDocument();
+    expect(screen.getByTestId('bookshelf-tab-my')).toBeInTheDocument();
+
+    await fireEvent.click(toggle);
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(toggle).toHaveTextContent('Collapse');
+    expect(screen.getByTestId('bookshelf-category-panel')).toBeInTheDocument();
+  });
+
   it('switches between My Books and All Books tabs', async () => {
     render(Bookshelf);
 
@@ -176,38 +199,41 @@ describe('Bookshelf', () => {
       false
     );
 
-    const loadAllSpy = vi.spyOn(bookStore, 'loadAllBookshelf').mockImplementation(async (_category, cursor) => {
-      if (!cursor) {
-        allBookshelf.set(
-          new Map([
-            ['Favorites', [createBookshelfItem('all-10', 'user-2', 'post-10', 'cat-1')]],
-          ])
-        );
+    const loadAllSpy = vi
+      .spyOn(bookStore, 'loadAllBookshelf')
+      .mockImplementation(async (_category, cursor) => {
+        if (!cursor) {
+          allBookshelf.set(
+            new Map([['Favorites', [createBookshelfItem('all-10', 'user-2', 'post-10', 'cat-1')]]])
+          );
+          bookStoreMeta.update((state) => ({
+            ...state,
+            cursors: {
+              ...state.cursors,
+              allBookshelf: 'cursor-2',
+            },
+          }));
+          return 'cursor-2';
+        }
+
+        allBookshelf.update((current) => {
+          const next = new Map(current);
+          const existing = next.get('Favorites') ?? [];
+          next.set('Favorites', [
+            ...existing,
+            createBookshelfItem('all-11', 'user-3', 'post-11', 'cat-1'),
+          ]);
+          return next;
+        });
         bookStoreMeta.update((state) => ({
           ...state,
           cursors: {
             ...state.cursors,
-            allBookshelf: 'cursor-2',
+            allBookshelf: null,
           },
         }));
-        return 'cursor-2';
-      }
-
-      allBookshelf.update((current) => {
-        const next = new Map(current);
-        const existing = next.get('Favorites') ?? [];
-        next.set('Favorites', [...existing, createBookshelfItem('all-11', 'user-3', 'post-11', 'cat-1')]);
-        return next;
+        return undefined;
       });
-      bookStoreMeta.update((state) => ({
-        ...state,
-        cursors: {
-          ...state.cursors,
-          allBookshelf: null,
-        },
-      }));
-      return undefined;
-    });
 
     render(Bookshelf);
 
@@ -238,9 +264,7 @@ describe('Bookshelf', () => {
       { id: 'cat-2', name: 'Classics', position: 2 },
     ]);
     myBookshelf.set(
-      new Map([
-        ['Favorites', [createBookshelfItem('my-1', 'user-1', 'post-1', 'cat-1')]],
-      ])
+      new Map([['Favorites', [createBookshelfItem('my-1', 'user-1', 'post-1', 'cat-1')]]])
     );
 
     render(Bookshelf);
@@ -256,17 +280,17 @@ describe('Bookshelf', () => {
       { id: 'cat-2', name: 'Classics', position: 2 },
     ]);
     myBookshelf.set(
-      new Map([
-        ['Favorites', [createBookshelfItem('my-1', 'user-1', 'post-1', 'cat-1')]],
-      ])
+      new Map([['Favorites', [createBookshelfItem('my-1', 'user-1', 'post-1', 'cat-1')]]])
     );
 
-    const loadMySpy = vi.spyOn(bookStore, 'loadMyBookshelf').mockImplementation(async (category) => {
-      if (category) {
-        myBookshelf.set(new Map());
-      }
-      return undefined;
-    });
+    const loadMySpy = vi
+      .spyOn(bookStore, 'loadMyBookshelf')
+      .mockImplementation(async (category) => {
+        if (category) {
+          myBookshelf.set(new Map());
+        }
+        return undefined;
+      });
 
     render(Bookshelf);
     const categoryPanel = screen.getByTestId('bookshelf-category-panel');
