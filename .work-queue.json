@@ -71,6 +71,7 @@
     950,
     951,
     972,
+    973,
     975,
     976,
     977,
@@ -1416,7 +1417,7 @@
     {
       "issue_number": 973,
       "title": "[Books] Show link URL as fallback when book metadata is unavailable",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         972
       ],
@@ -1429,7 +1430,9 @@
       "assigned_to": "agent-1770731660-92922",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770731660-92922",
       "branch": "fix/issue-973-books-show-link-url-as-fallback-when-boo",
-      "claimed_at": "2026-02-10T13:54:20Z"
+      "claimed_at": "2026-02-10T13:54:20Z",
+      "pr_number": 999,
+      "completed_at": "2026-02-10T14:02:19Z"
     },
     {
       "issue_number": 974,
