@@ -116,3 +116,24 @@ type PostReadLogsResponse struct {
 type LogReadRequest struct {
 	Rating *int `json:"rating,omitempty"`
 }
+
+// UpdateReadLogRequest represents the request body for updating a read rating.
+type UpdateReadLogRequest struct {
+	Rating *int `json:"rating"`
+}
+
+// CreateReadLogResponse represents the response for creating a read log.
+type CreateReadLogResponse struct {
+	ReadLog ReadLog `json:"read_log"`
+}
+
+// UpdateReadLogResponse represents the response for updating a read log.
+type UpdateReadLogResponse struct {
+	ReadLog ReadLog `json:"read_log"`
+}
+
+// ListReadHistoryResponse represents paginated read history for a viewer.
+type ListReadHistoryResponse struct {
+	ReadLogs   []ReadLog `json:"read_logs"`
+	NextCursor *string   `json:"next_cursor,omitempty"`
+}

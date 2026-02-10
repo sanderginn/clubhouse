@@ -32,6 +32,10 @@ type postRouteDeps struct {
 	updateWatchLog          http.HandlerFunc
 	removeWatchLog          http.HandlerFunc
 	getWatchLogs            http.HandlerFunc
+	logRead                 http.HandlerFunc
+	updateReadLog           http.HandlerFunc
+	removeReadLog           http.HandlerFunc
+	getReadLogs             http.HandlerFunc
 	getPost                 http.HandlerFunc
 	updatePost              http.HandlerFunc
 	deletePost              http.HandlerFunc
@@ -119,6 +123,11 @@ func newPostRouteHandler(requireAuth authMiddleware, requireAuthCSRF authMiddlew
 			requireAuth(http.HandlerFunc(deps.getWatchLogs)).ServeHTTP(w, r)
 			return
 		}
+		if r.Method == http.MethodGet && strings.HasSuffix(strings.TrimSuffix(r.URL.Path, "/"), "/read") {
+			// GET /api/v1/posts/{id}/read
+			requireAuth(http.HandlerFunc(deps.getReadLogs)).ServeHTTP(w, r)
+			return
+		}
 		if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/cook-log") {
 			// POST /api/v1/posts/{id}/cook-log
 			requireAuthCSRF(http.HandlerFunc(deps.logCook)).ServeHTTP(w, r)
@@ -127,6 +136,11 @@ func newPostRouteHandler(requireAuth authMiddleware, requireAuthCSRF authMiddlew
 		if r.Method == http.MethodPost && strings.HasSuffix(strings.TrimSuffix(r.URL.Path, "/"), "/watch-log") {
 			// POST /api/v1/posts/{id}/watch-log
 			requireAuthCSRF(http.HandlerFunc(deps.logWatch)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodPost && strings.HasSuffix(strings.TrimSuffix(r.URL.Path, "/"), "/read") {
+			// POST /api/v1/posts/{id}/read
+			requireAuthCSRF(http.HandlerFunc(deps.logRead)).ServeHTTP(w, r)
 			return
 		}
 		if r.Method == http.MethodPut && strings.Contains(r.URL.Path, "/cook-log") {
@@ -139,6 +153,11 @@ func newPostRouteHandler(requireAuth authMiddleware, requireAuthCSRF authMiddlew
 			requireAuthCSRF(http.HandlerFunc(deps.updateWatchLog)).ServeHTTP(w, r)
 			return
 		}
+		if r.Method == http.MethodPut && strings.HasSuffix(strings.TrimSuffix(r.URL.Path, "/"), "/read") {
+			// PUT /api/v1/posts/{id}/read
+			requireAuthCSRF(http.HandlerFunc(deps.updateReadLog)).ServeHTTP(w, r)
+			return
+		}
 		if r.Method == http.MethodDelete && strings.Contains(r.URL.Path, "/cook-log") {
 			// DELETE /api/v1/posts/{id}/cook-log
 			requireAuthCSRF(http.HandlerFunc(deps.removeCookLog)).ServeHTTP(w, r)
@@ -147,6 +166,11 @@ func newPostRouteHandler(requireAuth authMiddleware, requireAuthCSRF authMiddlew
 		if r.Method == http.MethodDelete && strings.HasSuffix(strings.TrimSuffix(r.URL.Path, "/"), "/watch-log") {
 			// DELETE /api/v1/posts/{id}/watch-log
 			requireAuthCSRF(http.HandlerFunc(deps.removeWatchLog)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodDelete && strings.HasSuffix(strings.TrimSuffix(r.URL.Path, "/"), "/read") {
+			// DELETE /api/v1/posts/{id}/read
+			requireAuthCSRF(http.HandlerFunc(deps.removeReadLog)).ServeHTTP(w, r)
 			return
 		}
 		if r.Method == http.MethodPatch && isPostIDPath(r.URL.Path) {
