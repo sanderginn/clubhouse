@@ -732,7 +732,7 @@
     {
       "issue_number": 883,
       "title": "[Books] Add spoiler flag to comments migration",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "enhancement",
@@ -740,7 +740,11 @@
         "books",
         "database"
       ],
-      "priority": 91
+      "priority": 91,
+      "assigned_to": "agent-1770696156-91398",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770696156-91398",
+      "branch": "feat/issue-883-books-add-spoiler-flag-to-comments-migra",
+      "claimed_at": "2026-02-10T04:02:36Z"
     },
     {
       "issue_number": 884,
