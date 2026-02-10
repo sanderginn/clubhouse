@@ -140,6 +140,7 @@ export interface BookStats {
   bookshelfCount: number;
   readCount: number;
   averageRating: number | null;
+  ratedCount?: number;
   viewerOnBookshelf?: boolean;
   viewerCategories?: string[];
   viewerRead?: boolean;
@@ -225,10 +226,16 @@ function normalizeBookRating(value: number | null | undefined): number | null {
 
 function getBookStats(post: Post): BookStats {
   const current = post.bookStats ?? post.book_stats;
+  const rawRatedCount = current?.ratedCount;
+  const ratedCount =
+    typeof rawRatedCount === 'number' && Number.isFinite(rawRatedCount)
+      ? clampBookCount(rawRatedCount)
+      : undefined;
   return {
     bookshelfCount: clampBookCount(current?.bookshelfCount ?? 0),
     readCount: clampBookCount(current?.readCount ?? 0),
     averageRating: normalizeBookRating(current?.averageRating ?? null),
+    ...(ratedCount !== undefined ? { ratedCount } : {}),
     viewerOnBookshelf: Boolean(current?.viewerOnBookshelf),
     viewerCategories: current?.viewerCategories ?? [],
     viewerRead: Boolean(current?.viewerRead),
@@ -551,6 +558,9 @@ function createPostStore() {
           if ('averageRating' in stats) {
             nextStats.averageRating = normalizeBookRating(stats.averageRating ?? null);
           }
+          if ('ratedCount' in stats) {
+            nextStats.ratedCount = clampBookCount(stats.ratedCount ?? 0);
+          }
           if ('viewerOnBookshelf' in stats) {
             nextStats.viewerOnBookshelf = Boolean(stats.viewerOnBookshelf);
           }
@@ -623,37 +633,57 @@ function createPostStore() {
           }
 
           const currentStats = getBookStats(post);
+          const currentRatedCount =
+            typeof currentStats.ratedCount === 'number'
+              ? clampBookCount(currentStats.ratedCount)
+              : currentStats.averageRating === null
+                ? 0
+                : null;
           const previousReadCount = clampBookCount(currentStats.readCount);
           const previousViewerRating = normalizeBookRating(currentStats.viewerRating ?? null);
           const nextViewerRating = viewerRead ? normalizeBookRating(viewerRating) : null;
+          const previouslyRatedByViewer = currentStats.viewerRead && previousViewerRating !== null;
+          const nextRatedByViewer = viewerRead && nextViewerRating !== null;
 
           let nextReadCount = previousReadCount;
+          let nextRatedCount = currentRatedCount;
           let ratingTotal =
-            previousReadCount > 0 && currentStats.averageRating !== null
-              ? currentStats.averageRating * previousReadCount
+            currentRatedCount !== null && currentStats.averageRating !== null
+              ? currentStats.averageRating * currentRatedCount
               : 0;
 
           if (!currentStats.viewerRead && viewerRead) {
             nextReadCount = clampBookCount(previousReadCount + 1);
-            ratingTotal += nextViewerRating ?? 0;
           } else if (currentStats.viewerRead && !viewerRead) {
             nextReadCount = clampBookCount(previousReadCount - 1);
-            ratingTotal -= previousViewerRating ?? 0;
-          } else if (
-            currentStats.viewerRead &&
-            viewerRead &&
-            previousViewerRating !== null &&
-            nextViewerRating !== null
-          ) {
-            ratingTotal += nextViewerRating - previousViewerRating;
           }
 
-          const nextAverageRating = nextReadCount <= 0 ? null : ratingTotal / nextReadCount;
+          if (currentRatedCount !== null) {
+            if (!previouslyRatedByViewer && nextRatedByViewer) {
+              nextRatedCount = clampBookCount(currentRatedCount + 1);
+              ratingTotal += nextViewerRating ?? 0;
+            } else if (previouslyRatedByViewer && !nextRatedByViewer) {
+              nextRatedCount = clampBookCount(currentRatedCount - 1);
+              ratingTotal -= previousViewerRating ?? 0;
+            } else if (previouslyRatedByViewer && nextRatedByViewer) {
+              nextRatedCount = currentRatedCount;
+              ratingTotal += (nextViewerRating ?? 0) - (previousViewerRating ?? 0);
+            }
+          }
+
+          let nextAverageRating = currentStats.averageRating;
+          if (nextReadCount === 0) {
+            nextAverageRating = null;
+            nextRatedCount = 0;
+          } else if (nextRatedCount !== null) {
+            nextAverageRating = nextRatedCount <= 0 ? null : ratingTotal / nextRatedCount;
+          }
 
           const nextStats: BookStats = {
             ...currentStats,
             readCount: nextReadCount,
             averageRating: nextAverageRating,
+            ...(nextRatedCount !== null ? { ratedCount: nextRatedCount } : {}),
             viewerRead,
             viewerRating: nextViewerRating,
           };

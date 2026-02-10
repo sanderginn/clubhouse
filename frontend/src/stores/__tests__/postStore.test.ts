@@ -323,6 +323,7 @@ describe('postStore', () => {
             bookshelfCount: 1,
             readCount: 1,
             averageRating: 3,
+            ratedCount: 1,
             viewerOnBookshelf: true,
             viewerCategories: ['Favorites'],
             viewerRead: false,
@@ -357,6 +358,7 @@ describe('postStore', () => {
 
     postStore.setBookStats('post-1', {
       readCount: 7,
+      ratedCount: 6,
       averageRating: 4.3,
       viewerRead: true,
       viewerRating: 5,
@@ -364,10 +366,45 @@ describe('postStore', () => {
     state = get(postStore);
     expect(state.posts[0].bookStats).toMatchObject({
       readCount: 7,
+      ratedCount: 6,
       averageRating: 4.3,
       viewerRead: true,
       viewerRating: 5,
     });
+  });
+
+  it('setBookReadState uses rated count for average updates with unrated reads present', () => {
+    postStore.setPosts(
+      [
+        {
+          ...basePost,
+          bookStats: {
+            bookshelfCount: 1,
+            readCount: 3,
+            ratedCount: 2,
+            averageRating: 3,
+            viewerOnBookshelf: true,
+            viewerCategories: ['Favorites'],
+            viewerRead: true,
+            viewerRating: 4,
+          },
+        },
+      ],
+      null,
+      true
+    );
+
+    postStore.setBookReadState('post-1', true, 5);
+    let state = get(postStore);
+    expect(state.posts[0].bookStats?.readCount).toBe(3);
+    expect(state.posts[0].bookStats?.ratedCount).toBe(2);
+    expect(state.posts[0].bookStats?.averageRating).toBeCloseTo(3.5, 3);
+
+    postStore.setBookReadState('post-1', false, null);
+    state = get(postStore);
+    expect(state.posts[0].bookStats?.readCount).toBe(2);
+    expect(state.posts[0].bookStats?.ratedCount).toBe(1);
+    expect(state.posts[0].bookStats?.averageRating).toBeCloseTo(2, 3);
   });
 
   it('reset restores defaults', () => {

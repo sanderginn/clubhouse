@@ -338,13 +338,13 @@ describe('bookStore', () => {
     expect(get(bookStoreMeta).error).toBe('remove failed');
   });
 
-  it('optimistically updates average rating when changing an existing read rating', async () => {
+  it('optimistically updates average rating with mixed rated and unrated reads', async () => {
     readHistory.set([
       {
         id: 'read-1',
         userId: 'user-1',
         postId: 'post-1',
-        rating: 3,
+        rating: 4,
         createdAt: '2026-01-01T00:00:00Z',
       },
     ]);
@@ -358,12 +358,13 @@ describe('bookStore', () => {
           createdAt: '2026-01-01T00:00:00Z',
           bookStats: {
             bookshelfCount: 0,
-            readCount: 2,
-            averageRating: 3.5,
+            readCount: 3,
+            ratedCount: 2,
+            averageRating: 3,
             viewerOnBookshelf: false,
             viewerCategories: [],
             viewerRead: true,
-            viewerRating: 3,
+            viewerRating: 4,
           },
         },
       ],
@@ -378,8 +379,9 @@ describe('bookStore', () => {
     const updatePromise = bookStore.updateRating('post-1', 5);
 
     const optimisticPost = get(postStore).posts[0];
-    expect(optimisticPost.bookStats?.readCount).toBe(2);
-    expect(optimisticPost.bookStats?.averageRating).toBeCloseTo(4.5, 3);
+    expect(optimisticPost.bookStats?.readCount).toBe(3);
+    expect(optimisticPost.bookStats?.ratedCount).toBe(2);
+    expect(optimisticPost.bookStats?.averageRating).toBeCloseTo(3.5, 3);
     expect(optimisticPost.bookStats?.viewerRead).toBe(true);
     expect(optimisticPost.bookStats?.viewerRating).toBe(5);
 
