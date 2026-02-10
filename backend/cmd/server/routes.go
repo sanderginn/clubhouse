@@ -211,6 +211,16 @@ type sectionRouteDeps struct {
 	getLinks     http.HandlerFunc
 }
 
+type bookshelfRouteDeps struct {
+	getMyBookshelf    http.HandlerFunc
+	getAllBookshelf   http.HandlerFunc
+	listCategories    http.HandlerFunc
+	createCategory    http.HandlerFunc
+	reorderCategories http.HandlerFunc
+	updateCategory    http.HandlerFunc
+	deleteCategory    http.HandlerFunc
+}
+
 func newSectionRouteHandler(requireAuth authMiddleware, deps sectionRouteDeps) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.URL.Path, "/links") {
@@ -229,6 +239,49 @@ func newSectionRouteHandler(requireAuth authMiddleware, deps sectionRouteDeps) h
 
 		requireAuth(http.HandlerFunc(deps.getSection)).ServeHTTP(w, r)
 	})
+}
+
+func registerBookshelfRoutes(
+	mux *http.ServeMux,
+	requireAuth authMiddleware,
+	requireAuthCSRF authMiddleware,
+	deps bookshelfRouteDeps,
+) {
+	mux.Handle("/api/v1/bookshelf", requireAuth(http.HandlerFunc(deps.getMyBookshelf)))
+	mux.Handle("/api/v1/bookshelf/all", requireAuth(http.HandlerFunc(deps.getAllBookshelf)))
+	mux.Handle("/api/v1/bookshelf/categories", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			requireAuth(http.HandlerFunc(deps.listCategories)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodPost {
+			requireAuthCSRF(http.HandlerFunc(deps.createCategory)).ServeHTTP(w, r)
+			return
+		}
+		writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+	}))
+	mux.Handle("/api/v1/bookshelf/categories/reorder", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			requireAuthCSRF(http.HandlerFunc(deps.reorderCategories)).ServeHTTP(w, r)
+			return
+		}
+		writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+	}))
+	mux.Handle("/api/v1/bookshelf/categories/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPut {
+			requireAuthCSRF(http.HandlerFunc(deps.updateCategory)).ServeHTTP(w, r)
+			return
+		}
+		if r.Method == http.MethodDelete {
+			requireAuthCSRF(http.HandlerFunc(deps.deleteCategory)).ServeHTTP(w, r)
+			return
+		}
+		writeJSONBytes(r.Context(), w, http.StatusMethodNotAllowed, []byte(`{"error":"Method not allowed","code":"METHOD_NOT_ALLOWED"}`))
+	}))
+}
+
+func registerReadHistoryRoute(mux *http.ServeMux, requireAuth authMiddleware, getReadHistory http.HandlerFunc) {
+	mux.Handle("/api/v1/read-history", requireAuth(http.HandlerFunc(getReadHistory)))
 }
 
 func isPostIDPath(path string) bool {
