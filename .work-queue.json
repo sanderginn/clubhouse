@@ -688,7 +688,7 @@
     {
       "issue_number": 874,
       "title": "[Books] Add Bookshelf route and navigation",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         872
       ],
@@ -697,7 +697,11 @@
         "frontend",
         "books"
       ],
-      "priority": 82
+      "priority": 82,
+      "assigned_to": "agent-1770713159-84210",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770713159-84210",
+      "branch": "feat/issue-874-books-add-bookshelf-route-and-navigation",
+      "claimed_at": "2026-02-10T08:45:59Z"
     },
     {
       "issue_number": 875,
