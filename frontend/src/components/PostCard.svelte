@@ -2,7 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { fade } from 'svelte/transition';
   import type { Link, LinkMetadata, Post } from '../stores/postStore';
-  import { postStore, currentUser, isAdmin, activeView } from '../stores';
+  import { postStore, currentUser, isAdmin, activeView, activeSection } from '../stores';
   import { api } from '../services/api';
   import CommentThread from './comments/CommentThread.svelte';
   import EditedBadge from './EditedBadge.svelte';
@@ -199,8 +199,12 @@
     return normalized || null;
   }
 
+  $: activeSectionTypeForPost =
+    $activeSection?.id === post.sectionId ? ($activeSection.type ?? null) : null;
   $: sectionType = normalizeSectionType(
-    sectionInfo?.type ?? ((post as PostWithSectionType).section?.type ?? null)
+    sectionInfo?.type ??
+      ((post as PostWithSectionType).section?.type ?? null) ??
+      activeSectionTypeForPost
   );
   $: recipeStats = post.recipeStats ?? post.recipe_stats ?? null;
   $: bookStats = post.bookStats ?? post.book_stats ?? null;
