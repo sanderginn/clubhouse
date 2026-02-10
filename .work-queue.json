@@ -1207,7 +1207,7 @@
     {
       "issue_number": 899,
       "title": "[Podcasts] Add podcast save API client and podcastStore",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         893
       ],
@@ -1216,7 +1216,11 @@
         "frontend",
         "podcasts"
       ],
-      "priority": 107
+      "priority": 107,
+      "assigned_to": "agent-1770715945-42422",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770715945-42422",
+      "branch": "feat/issue-899-podcasts-add-podcast-save-api-client-and",
+      "claimed_at": "2026-02-10T09:32:25Z"
     },
     {
       "issue_number": 900,
