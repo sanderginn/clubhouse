@@ -70,6 +70,7 @@
     949,
     950,
     951,
+    972,
     975,
     976,
     977,
@@ -1397,7 +1398,7 @@
     {
       "issue_number": 972,
       "title": "[Books] Fix link metadata not loading for book posts",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -1408,7 +1409,9 @@
       "assigned_to": "agent-1770729063-49570",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770729063-49570",
       "branch": "fix/issue-972-books-fix-link-metadata-not-loading-for-",
-      "claimed_at": "2026-02-10T13:11:03Z"
+      "claimed_at": "2026-02-10T13:11:03Z",
+      "pr_number": 998,
+      "completed_at": "2026-02-10T13:53:38Z"
     },
     {
       "issue_number": 973,
