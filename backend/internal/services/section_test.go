@@ -123,6 +123,42 @@ func TestPodcastSectionMigrationIsIdempotent(t *testing.T) {
 	}
 }
 
+func TestPodcastSectionDownMigrationIsSafeWithDependentRows(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	userID := testutil.CreateTestUser(t, db, "podcastsubuser", "podcastsubuser@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Podcasts", "podcast")
+
+	_, err := db.Exec(
+		`INSERT INTO section_subscriptions (user_id, section_id, opted_out_at) VALUES ($1, $2, now())`,
+		userID,
+		sectionID,
+	)
+	if err != nil {
+		t.Fatalf("failed to create dependent section subscription: %v", err)
+	}
+
+	downMigrationSQL, err := readMigrationFile("../../migrations/042_seed_podcast_section.down.sql")
+	if err != nil {
+		t.Fatalf("failed to read down migration file: %v", err)
+	}
+
+	_, err = db.Exec(downMigrationSQL)
+	if err != nil {
+		t.Fatalf("expected down migration to be safe with dependent rows, got error: %v", err)
+	}
+
+	var count int
+	err = db.QueryRow(`SELECT COUNT(*) FROM sections WHERE id = $1`, sectionID).Scan(&count)
+	if err != nil {
+		t.Fatalf("failed verifying podcast section existence after down migration: %v", err)
+	}
+	if count != 1 {
+		t.Fatalf("expected existing podcast section to remain after down migration, got count=%d", count)
+	}
+}
+
 func TestSectionServiceGetSectionLinksPagination(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
