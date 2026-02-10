@@ -110,6 +110,7 @@ func (w *OLWork) UnmarshalJSON(data []byte) error {
 
 // OLEdition contains edition metadata.
 type OLEdition struct {
+	Key           string   `json:"key"`
 	Title         string   `json:"title"`
 	Publishers    []string `json:"publishers"`
 	PublishDate   string   `json:"publish_date"`
