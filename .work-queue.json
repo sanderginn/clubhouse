@@ -385,7 +385,7 @@
     {
       "issue_number": 861,
       "title": "[Books] Create read log service",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         856,
         859
@@ -395,7 +395,11 @@
         "backend",
         "books"
       ],
-      "priority": 69
+      "priority": 69,
+      "assigned_to": "agent-1770695581-76469",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770695581-76469",
+      "branch": "feat/issue-861-books-create-read-log-service",
+      "claimed_at": "2026-02-10T03:53:01Z"
     },
     {
       "issue_number": 862,
