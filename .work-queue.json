@@ -85,6 +85,7 @@
     984,
     985,
     1000,
+    1001,
     1002,
     1003,
     1005,
@@ -113,7 +114,7 @@
     {
       "issue_number": 1001,
       "title": "[Books] Fix BookCard UI component not rendering for book links",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [
         1000
       ],
@@ -126,7 +127,9 @@
       "assigned_to": "agent-1770740338-5551",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770740338-5551",
       "branch": "fix/issue-1001-books-fix-bookcard-ui-component-not-rend",
-      "claimed_at": "2026-02-10T16:18:58Z"
+      "claimed_at": "2026-02-10T16:18:58Z",
+      "pr_number": 1014,
+      "completed_at": "2026-02-10T16:32:30Z"
     },
     {
       "issue_number": 1002,
