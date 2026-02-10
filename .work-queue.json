@@ -71,6 +71,7 @@
     950,
     951,
     975,
+    976,
     977,
     981
   ],
@@ -1453,7 +1454,7 @@
     {
       "issue_number": 976,
       "title": "[Movies/Series] Fix Watchlist still using feed/watchlist toggle instead of collapsible component",
-      "status": "in_progress",
+      "status": "completed",
       "dependencies": [],
       "labels": [
         "bug",
@@ -1464,7 +1465,9 @@
       "assigned_to": "agent-1770725411-85352",
       "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770725411-85352",
       "branch": "fix/issue-976-moviesseries-fix-watchlist-still-using-f",
-      "claimed_at": "2026-02-10T12:10:11Z"
+      "claimed_at": "2026-02-10T12:10:11Z",
+      "pr_number": 988,
+      "completed_at": "2026-02-10T12:32:18Z"
     },
     {
       "issue_number": 977,
