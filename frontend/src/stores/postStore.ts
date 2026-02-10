@@ -633,14 +633,18 @@ function createPostStore() {
           }
 
           const currentStats = getBookStats(post);
+          const previousReadCount = clampBookCount(currentStats.readCount);
+          const previousViewerRating = normalizeBookRating(currentStats.viewerRating ?? null);
+          const inferredRatedCount =
+            currentStats.averageRating === null || previousReadCount === 0
+              ? 0
+              : currentStats.viewerRead
+                ? Math.max(1, previousReadCount - 1)
+                : previousReadCount;
           const currentRatedCount =
             typeof currentStats.ratedCount === 'number'
               ? clampBookCount(currentStats.ratedCount)
-              : currentStats.averageRating === null
-                ? 0
-                : null;
-          const previousReadCount = clampBookCount(currentStats.readCount);
-          const previousViewerRating = normalizeBookRating(currentStats.viewerRating ?? null);
+              : inferredRatedCount;
           const nextViewerRating = viewerRead ? normalizeBookRating(viewerRating) : null;
           const previouslyRatedByViewer = currentStats.viewerRead && previousViewerRating !== null;
           const nextRatedByViewer = viewerRead && nextViewerRating !== null;
@@ -648,7 +652,7 @@ function createPostStore() {
           let nextReadCount = previousReadCount;
           let nextRatedCount = currentRatedCount;
           let ratingTotal =
-            currentRatedCount !== null && currentStats.averageRating !== null
+            currentStats.averageRating !== null
               ? currentStats.averageRating * currentRatedCount
               : 0;
 
@@ -658,24 +662,22 @@ function createPostStore() {
             nextReadCount = clampBookCount(previousReadCount - 1);
           }
 
-          if (currentRatedCount !== null) {
-            if (!previouslyRatedByViewer && nextRatedByViewer) {
-              nextRatedCount = clampBookCount(currentRatedCount + 1);
-              ratingTotal += nextViewerRating ?? 0;
-            } else if (previouslyRatedByViewer && !nextRatedByViewer) {
-              nextRatedCount = clampBookCount(currentRatedCount - 1);
-              ratingTotal -= previousViewerRating ?? 0;
-            } else if (previouslyRatedByViewer && nextRatedByViewer) {
-              nextRatedCount = currentRatedCount;
-              ratingTotal += (nextViewerRating ?? 0) - (previousViewerRating ?? 0);
-            }
+          if (!previouslyRatedByViewer && nextRatedByViewer) {
+            nextRatedCount = clampBookCount(currentRatedCount + 1);
+            ratingTotal += nextViewerRating ?? 0;
+          } else if (previouslyRatedByViewer && !nextRatedByViewer) {
+            nextRatedCount = clampBookCount(currentRatedCount - 1);
+            ratingTotal -= previousViewerRating ?? 0;
+          } else if (previouslyRatedByViewer && nextRatedByViewer) {
+            nextRatedCount = currentRatedCount;
+            ratingTotal += (nextViewerRating ?? 0) - (previousViewerRating ?? 0);
           }
 
           let nextAverageRating = currentStats.averageRating;
           if (nextReadCount === 0) {
             nextAverageRating = null;
             nextRatedCount = 0;
-          } else if (nextRatedCount !== null) {
+          } else {
             nextAverageRating = nextRatedCount <= 0 ? null : ratingTotal / nextRatedCount;
           }
 
@@ -683,7 +685,7 @@ function createPostStore() {
             ...currentStats,
             readCount: nextReadCount,
             averageRating: nextAverageRating,
-            ...(nextRatedCount !== null ? { ratedCount: nextRatedCount } : {}),
+            ratedCount: nextRatedCount,
             viewerRead,
             viewerRating: nextViewerRating,
           };
