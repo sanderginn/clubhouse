@@ -143,6 +143,24 @@ interface ApiPostReadLogsResponse {
   readers: ApiReadLogReader[];
 }
 
+interface ApiBookQuote {
+  id: string;
+  post_id: string;
+  user_id: string;
+  quote_text: string;
+  page_number?: number | null;
+  chapter?: string | null;
+  note?: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string | null;
+}
+
+interface ApiBookQuoteWithUser extends ApiBookQuote {
+  username: string;
+  display_name: string;
+}
+
 interface SectionLinksResponse {
   links: SectionLink[];
   hasMore: boolean;
@@ -260,6 +278,29 @@ function mapApiReadLogReader(reader: ApiReadLogReader): ReadLogReader {
     displayName: reader.username,
     avatar: reader.profile_picture_url ?? undefined,
     rating: reader.rating ?? undefined,
+  };
+}
+
+function mapApiBookQuote(quote: ApiBookQuote): BookQuote {
+  return {
+    id: quote.id,
+    postId: quote.post_id,
+    userId: quote.user_id,
+    quoteText: quote.quote_text,
+    pageNumber: quote.page_number ?? undefined,
+    chapter: quote.chapter ?? undefined,
+    note: quote.note ?? undefined,
+    createdAt: quote.created_at,
+    updatedAt: quote.updated_at,
+    deletedAt: quote.deleted_at ?? undefined,
+  };
+}
+
+function mapApiBookQuoteWithUser(quote: ApiBookQuoteWithUser): BookQuoteWithUser {
+  return {
+    ...mapApiBookQuote(quote),
+    username: quote.username,
+    displayName: quote.display_name,
   };
 }
 
@@ -460,6 +501,48 @@ export interface PostReadLogsResponse {
 export interface ReadHistoryResponse {
   readLogs: ReadLog[];
   nextCursor?: string;
+}
+
+export interface BookQuote {
+  id: string;
+  postId: string;
+  userId: string;
+  quoteText: string;
+  pageNumber?: number;
+  chapter?: string;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+}
+
+export interface BookQuoteWithUser extends BookQuote {
+  username: string;
+  displayName: string;
+}
+
+export interface CreateBookQuoteRequest {
+  quoteText: string;
+  pageNumber?: number;
+  chapter?: string;
+  note?: string;
+}
+
+export interface UpdateBookQuoteRequest {
+  quoteText?: string;
+  pageNumber?: number;
+  chapter?: string;
+  note?: string;
+}
+
+export interface BookQuoteResponse {
+  quote: BookQuoteWithUser;
+}
+
+export interface BookQuotesListResponse {
+  quotes: BookQuoteWithUser[];
+  nextCursor?: string;
+  hasMore: boolean;
 }
 
 class ApiClient {
@@ -1231,6 +1314,72 @@ class ApiClient {
     return {
       watchLogs: (response.watch_logs ?? []).map(mapApiWatchLogWithPost),
       nextCursor: response.next_cursor ?? undefined,
+    };
+  }
+
+  async createBookQuote(postId: string, req: CreateBookQuoteRequest): Promise<BookQuoteResponse> {
+    const response = await this.post<{ quote: ApiBookQuoteWithUser }>(`/posts/${postId}/quotes`, {
+      quote_text: req.quoteText,
+      page_number: req.pageNumber,
+      chapter: req.chapter,
+      note: req.note,
+    });
+    return { quote: mapApiBookQuoteWithUser(response.quote) };
+  }
+
+  async updateBookQuote(quoteId: string, req: UpdateBookQuoteRequest): Promise<BookQuoteResponse> {
+    const response = await this.put<{ quote: ApiBookQuoteWithUser }>(`/quotes/${quoteId}`, {
+      quote_text: req.quoteText,
+      page_number: req.pageNumber,
+      chapter: req.chapter,
+      note: req.note,
+    });
+    return { quote: mapApiBookQuoteWithUser(response.quote) };
+  }
+
+  async deleteBookQuote(quoteId: string): Promise<void> {
+    return this.delete(`/quotes/${quoteId}`);
+  }
+
+  async getPostQuotes(postId: string, cursor?: string, limit?: number): Promise<BookQuotesListResponse> {
+    const params = new URLSearchParams();
+    if (cursor) {
+      params.set('cursor', cursor);
+    }
+    if (limit !== undefined) {
+      params.set('limit', String(limit));
+    }
+    const query = params.toString();
+    const response = await this.get<{
+      quotes: ApiBookQuoteWithUser[];
+      next_cursor?: string | null;
+      has_more?: boolean;
+    }>(`/posts/${postId}/quotes${query ? `?${query}` : ''}`);
+    return {
+      quotes: (response.quotes ?? []).map(mapApiBookQuoteWithUser),
+      nextCursor: response.next_cursor ?? undefined,
+      hasMore: response.has_more ?? false,
+    };
+  }
+
+  async getUserQuotes(userId: string, cursor?: string, limit?: number): Promise<BookQuotesListResponse> {
+    const params = new URLSearchParams();
+    if (cursor) {
+      params.set('cursor', cursor);
+    }
+    if (limit !== undefined) {
+      params.set('limit', String(limit));
+    }
+    const query = params.toString();
+    const response = await this.get<{
+      quotes: ApiBookQuoteWithUser[];
+      next_cursor?: string | null;
+      has_more?: boolean;
+    }>(`/users/${userId}/quotes${query ? `?${query}` : ''}`);
+    return {
+      quotes: (response.quotes ?? []).map(mapApiBookQuoteWithUser),
+      nextCursor: response.next_cursor ?? undefined,
+      hasMore: response.has_more ?? false,
     };
   }
 
