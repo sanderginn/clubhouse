@@ -1592,7 +1592,7 @@
     {
       "issue_number": 984,
       "title": "[Podcasts] Fix PodcastsTopContainer not showing Episode entries",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         981
       ],
@@ -1601,7 +1601,11 @@
         "frontend",
         "podcasts"
       ],
-      "priority": 13
+      "priority": 13,
+      "assigned_to": "agent-1770727504-18172",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770727504-18172",
+      "branch": "fix/issue-984-podcasts-fix-podcaststopcontainer-not-sh",
+      "claimed_at": "2026-02-10T12:45:04Z"
     },
     {
       "issue_number": 985,
