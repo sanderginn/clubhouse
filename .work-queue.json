@@ -493,7 +493,7 @@
     {
       "issue_number": 865,
       "title": "[Books] Register bookshelf and read log routes",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [
         862,
         863
@@ -503,7 +503,11 @@
         "backend",
         "books"
       ],
-      "priority": 73
+      "priority": 73,
+      "assigned_to": "agent-1770699072-48271",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770699072-48271",
+      "branch": "feat/issue-865-books-register-bookshelf-and-read-log-ro",
+      "claimed_at": "2026-02-10T04:51:12Z"
     },
     {
       "issue_number": 866,
