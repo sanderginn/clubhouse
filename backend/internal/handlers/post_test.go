@@ -101,6 +101,96 @@ func TestGetPostSuccess(t *testing.T) {
 	}
 }
 
+func TestGetPostSuccessIncludesPodcastMetadata(t *testing.T) {
+	db, mock, err := setupMockDB(t)
+	if err != nil {
+		t.Fatalf("failed to setup mock db: %v", err)
+	}
+	defer db.Close()
+
+	handler := NewPostHandler(db, nil, nil)
+	postID := uuid.New()
+	userID := uuid.New()
+	sectionID := uuid.New()
+	linkID := uuid.New()
+	now := time.Now()
+
+	rows := mock.NewRows([]string{
+		"id", "user_id", "section_id", "content",
+		"created_at", "updated_at", "deleted_at", "deleted_by_user_id",
+		"id", "username", "email", "profile_picture_url", "bio", "is_admin", "created_at",
+		"comment_count", "type",
+	}).AddRow(
+		postID, userID, sectionID, "Podcast post content",
+		now, nil, nil, nil,
+		userID, "podcastuser", "podcast@example.com", nil, nil, false, now,
+		1, "podcast",
+	)
+	mock.ExpectQuery("SELECT").WithArgs(postID).WillReturnRows(rows)
+
+	linkMetadata := `{"podcast":{"kind":"show","highlight_episodes":[{"title":"Episode 1","url":"https://example.com/show/1","note":"Start here"}]},"title":"Example Show"}`
+	linksRows := mock.NewRows([]string{"id", "url", "metadata", "created_at"}).AddRow(
+		linkID,
+		"https://example.com/show",
+		linkMetadata,
+		now,
+	)
+	mock.ExpectQuery("SELECT id, url, metadata, created_at").WithArgs(postID).WillReturnRows(linksRows)
+
+	imageRows := mock.NewRows([]string{"id", "image_url", "position", "caption", "alt_text", "created_at"})
+	mock.ExpectQuery("SELECT id, image_url, position, caption, alt_text, created_at").WithArgs(postID).WillReturnRows(imageRows)
+
+	reactionRows := mock.NewRows([]string{"emoji", "count"})
+	mock.ExpectQuery("SELECT emoji, COUNT").WithArgs(postID).WillReturnRows(reactionRows)
+
+	req, err := http.NewRequest("GET", "/api/v1/posts/"+postID.String(), nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	rr := httptest.NewRecorder()
+	handler.GetPost(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Fatalf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	var response models.GetPostResponse
+	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if response.Post == nil {
+		t.Fatalf("expected post in response")
+	}
+	if len(response.Post.Links) != 1 {
+		t.Fatalf("expected one link, got %d", len(response.Post.Links))
+	}
+
+	link := response.Post.Links[0]
+	if link.Podcast == nil {
+		t.Fatalf("expected podcast metadata in response link")
+	}
+	if link.Podcast.Kind != "show" {
+		t.Fatalf("expected podcast kind show, got %q", link.Podcast.Kind)
+	}
+	if len(link.Podcast.HighlightEpisodes) != 1 {
+		t.Fatalf("expected one highlight episode, got %d", len(link.Podcast.HighlightEpisodes))
+	}
+	if link.Podcast.HighlightEpisodes[0].Note == nil || *link.Podcast.HighlightEpisodes[0].Note != "Start here" {
+		t.Fatalf("expected highlight episode note to round-trip")
+	}
+	if link.Metadata == nil || link.Metadata["title"] != "Example Show" {
+		t.Fatalf("expected non-podcast metadata to be preserved")
+	}
+	if _, exists := link.Metadata["podcast"]; exists {
+		t.Fatalf("expected podcast key to be stripped from generic metadata")
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unfulfilled expectations: %v", err)
+	}
+}
+
 // TestGetPostNotFound tests retrieving a non-existent post
 func TestGetPostNotFound(t *testing.T) {
 	db, mock, err := setupMockDB(t)

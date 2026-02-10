@@ -2117,6 +2117,135 @@ func TestUpdatePostRejectsPodcastKindWhenDetectionIsUncertain(t *testing.T) {
 	}
 }
 
+func TestUpdatePostWithPodcastMetadataStoresPodcastPayloadAndReturnsFeedShape(t *testing.T) {
+	db := testutil.RequireTestDB(t)
+	t.Cleanup(func() { testutil.CleanupTables(t, db) })
+
+	disableLinkMetadata(t)
+
+	userID := testutil.CreateTestUser(t, db, "updatepodcaststore", "updatepodcaststore@test.com", false, true)
+	sectionID := testutil.CreateTestSection(t, db, "Update Podcast Section", "podcast")
+	service := NewPostService(db)
+
+	createReq := &models.CreatePostRequest{
+		SectionID: sectionID,
+		Content:   "Podcast post",
+		Links: []models.LinkRequest{
+			{
+				URL: "https://example.com/show",
+				Podcast: &models.PodcastMetadata{
+					Kind: "show",
+				},
+			},
+		},
+	}
+
+	post, err := service.CreatePost(context.Background(), createReq, uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("CreatePost failed: %v", err)
+	}
+
+	updateReq := &models.UpdatePostRequest{
+		Content: "Podcast post updated",
+		Links: &[]models.LinkRequest{
+			{
+				URL: "https://example.com/show",
+				Podcast: &models.PodcastMetadata{
+					Kind: "show",
+					HighlightEpisodes: []models.PodcastHighlightEpisode{
+						{
+							Title: "Episode 1",
+							URL:   "https://example.com/show/episodes/1",
+							Note:  stringPtr("Updated note"),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	updated, err := service.UpdatePost(context.Background(), post.ID, uuid.MustParse(userID), updateReq)
+	if err != nil {
+		t.Fatalf("UpdatePost failed: %v", err)
+	}
+	if len(updated.Links) != 1 || updated.Links[0].Podcast == nil {
+		t.Fatalf("expected one updated link with podcast metadata")
+	}
+	if updated.Links[0].Podcast.Kind != "show" {
+		t.Fatalf("expected podcast kind show, got %q", updated.Links[0].Podcast.Kind)
+	}
+	if len(updated.Links[0].Podcast.HighlightEpisodes) != 1 {
+		t.Fatalf("expected one highlight episode, got %d", len(updated.Links[0].Podcast.HighlightEpisodes))
+	}
+
+	var metadataBytes []byte
+	if err := db.QueryRow(`SELECT metadata FROM links WHERE post_id = $1`, post.ID).Scan(&metadataBytes); err != nil {
+		t.Fatalf("failed to query link metadata: %v", err)
+	}
+
+	var metadata map[string]interface{}
+	if err := json.Unmarshal(metadataBytes, &metadata); err != nil {
+		t.Fatalf("failed to unmarshal link metadata: %v", err)
+	}
+
+	rawPodcast, ok := metadata["podcast"]
+	if !ok {
+		t.Fatalf("expected podcast metadata in stored metadata")
+	}
+	encoded, err := json.Marshal(rawPodcast)
+	if err != nil {
+		t.Fatalf("failed to marshal podcast metadata: %v", err)
+	}
+	var storedPodcast models.PodcastMetadata
+	if err := json.Unmarshal(encoded, &storedPodcast); err != nil {
+		t.Fatalf("failed to unmarshal podcast metadata: %v", err)
+	}
+	if storedPodcast.Kind != "show" {
+		t.Fatalf("expected stored kind show, got %q", storedPodcast.Kind)
+	}
+	if len(storedPodcast.HighlightEpisodes) != 1 {
+		t.Fatalf("expected one stored highlight episode, got %d", len(storedPodcast.HighlightEpisodes))
+	}
+	if storedPodcast.HighlightEpisodes[0].Note == nil || *storedPodcast.HighlightEpisodes[0].Note != "Updated note" {
+		t.Fatalf("expected stored episode note to be preserved")
+	}
+
+	loaded, err := service.GetPostByID(context.Background(), post.ID, uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("GetPostByID failed: %v", err)
+	}
+	if len(loaded.Links) != 1 || loaded.Links[0].Podcast == nil {
+		t.Fatalf("expected podcast metadata in GetPostByID response")
+	}
+	if loaded.Links[0].Metadata != nil {
+		if _, exists := loaded.Links[0].Metadata["podcast"]; exists {
+			t.Fatalf("expected podcast key to be stripped from generic metadata in GetPostByID response")
+		}
+	}
+
+	feed, err := service.GetFeed(context.Background(), uuid.MustParse(sectionID), nil, 10, uuid.MustParse(userID))
+	if err != nil {
+		t.Fatalf("GetFeed failed: %v", err)
+	}
+	if len(feed.Posts) != 1 {
+		t.Fatalf("expected 1 post in feed, got %d", len(feed.Posts))
+	}
+	if len(feed.Posts[0].Links) != 1 || feed.Posts[0].Links[0].Podcast == nil {
+		t.Fatalf("expected podcast metadata in feed response")
+	}
+	if feed.Posts[0].Links[0].Podcast.Kind != "show" {
+		t.Fatalf("expected feed podcast kind show, got %q", feed.Posts[0].Links[0].Podcast.Kind)
+	}
+	if len(feed.Posts[0].Links[0].Podcast.HighlightEpisodes) != 1 {
+		t.Fatalf("expected one podcast highlight episode in feed, got %d", len(feed.Posts[0].Links[0].Podcast.HighlightEpisodes))
+	}
+	if feed.Posts[0].Links[0].Metadata != nil {
+		if _, exists := feed.Posts[0].Links[0].Metadata["podcast"]; exists {
+			t.Fatalf("expected podcast key to be stripped from generic metadata in feed response")
+		}
+	}
+}
+
 func TestDeletePostOwner(t *testing.T) {
 	db := testutil.RequireTestDB(t)
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
