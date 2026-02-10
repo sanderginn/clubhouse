@@ -89,14 +89,18 @@
     {
       "issue_number": 1000,
       "title": "[Books] Fix link metadata still not loading for book posts (regression)",
-      "status": "available",
+      "status": "in_progress",
       "dependencies": [],
       "labels": [
         "bug",
         "backend",
         "books"
       ],
-      "priority": 1
+      "priority": 1,
+      "assigned_to": "agent-1770739032-77970",
+      "worktree": "/Users/sanderginn/repos/github/sanderginn/clubhouse/.worktrees/agent-1770739032-77970",
+      "branch": "fix/issue-1000-books-fix-link-metadata-still-not-loadin",
+      "claimed_at": "2026-02-10T15:57:12Z"
     },
     {
       "issue_number": 1001,
