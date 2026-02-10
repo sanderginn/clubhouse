@@ -231,6 +231,51 @@ describe('api client', () => {
     ]);
   });
 
+  it('createPost keeps explicit empty podcast metadata for backend auto-detection', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/auth/csrf')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: vi.fn().mockResolvedValue({ token: 'csrf-token' }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue({
+          post: {
+            id: 'post-podcast',
+            user_id: 'user-1',
+            section_id: 'section-podcast',
+            content: 'Podcast',
+            created_at: '2025-01-01T00:00:00Z',
+          },
+        }),
+      });
+    });
+
+    await api.createPost({
+      sectionId: 'section-podcast',
+      content: 'Podcast',
+      links: [
+        {
+          url: 'https://podcasts.apple.com/us/podcast/example/id123456789',
+          podcast: {},
+        },
+      ],
+    });
+
+    const postCall = findCall('/posts');
+    const body = JSON.parse(postCall?.[1]?.body as string);
+    expect(body.links).toEqual([
+      {
+        url: 'https://podcasts.apple.com/us/podcast/example/id123456789',
+        podcast: {},
+      },
+    ]);
+  });
+
   it('getPost maps fields', async () => {
     fetchMock.mockResolvedValue({
       ok: true,

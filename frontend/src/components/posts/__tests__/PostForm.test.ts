@@ -35,13 +35,20 @@ function setAuthenticated() {
   });
 }
 
-function setActiveSection(type: 'music' | 'general' | 'recipe' = 'music') {
+function setActiveSection(type: 'music' | 'general' | 'recipe' | 'podcast' = 'music') {
+  const byType = {
+    music: { name: 'Music', icon: '🎵', slug: 'music' },
+    recipe: { name: 'Recipes', icon: '🍲', slug: 'recipes' },
+    podcast: { name: 'Podcasts', icon: '🎙️', slug: 'podcasts' },
+    general: { name: 'General', icon: '💬', slug: 'general' },
+  };
+  const active = byType[type];
   sectionStore.setActiveSection({
     id: 'section-1',
-    name: type === 'music' ? 'Music' : type === 'recipe' ? 'Recipes' : 'General',
+    name: active.name,
     type,
-    icon: type === 'music' ? '🎵' : type === 'recipe' ? '🍲' : '💬',
-    slug: type === 'music' ? 'music' : type === 'recipe' ? 'recipes' : 'general',
+    icon: active.icon,
+    slug: active.slug,
   });
 }
 
@@ -382,6 +389,223 @@ describe('PostForm', () => {
     await tick();
 
     expect(screen.getByText('00:30')).toBeInTheDocument();
+  });
+
+  it('shows podcast kind controls and only shows highlighted episodes editor for show posts', async () => {
+    setAuthenticated();
+    setActiveSection('podcast');
+    previewLink.mockResolvedValue({
+      metadata: {
+        url: 'https://example.com/podcast',
+        title: 'Example Podcast',
+      },
+    });
+
+    render(PostForm);
+
+    const addLinkButton = screen.getByLabelText('Add link');
+    await fireEvent.click(addLinkButton);
+
+    const linkInput = screen.getByLabelText('Link URL');
+    await fireEvent.input(linkInput, { target: { value: 'example.com/podcast' } });
+    await fireEvent.keyDown(linkInput, { key: 'Enter' });
+    await tick();
+
+    const kindSelect = screen.getByLabelText('Podcast kind');
+    expect(kindSelect).toBeInTheDocument();
+    expect(screen.queryByLabelText('Highlight episode title')).not.toBeInTheDocument();
+
+    await fireEvent.change(kindSelect, { target: { value: 'show' } });
+    await tick();
+    expect(screen.getByLabelText('Highlight episode title')).toBeInTheDocument();
+
+    await fireEvent.change(kindSelect, { target: { value: 'episode' } });
+    await tick();
+    expect(screen.queryByLabelText('Highlight episode title')).not.toBeInTheDocument();
+  });
+
+  it('adds and removes highlighted episodes for podcast show posts', async () => {
+    setAuthenticated();
+    setActiveSection('podcast');
+    previewLink.mockResolvedValue({
+      metadata: {
+        url: 'https://example.com/podcast',
+        title: 'Example Podcast',
+      },
+    });
+
+    render(PostForm);
+
+    const addLinkButton = screen.getByLabelText('Add link');
+    await fireEvent.click(addLinkButton);
+
+    const linkInput = screen.getByLabelText('Link URL');
+    await fireEvent.input(linkInput, { target: { value: 'example.com/podcast' } });
+    await fireEvent.keyDown(linkInput, { key: 'Enter' });
+    await tick();
+
+    const kindSelect = screen.getByLabelText('Podcast kind');
+    await fireEvent.change(kindSelect, { target: { value: 'show' } });
+    await tick();
+
+    await fireEvent.input(screen.getByLabelText('Highlight episode title'), {
+      target: { value: 'Episode 1' },
+    });
+    await fireEvent.input(screen.getByLabelText('Highlight episode url'), {
+      target: { value: 'example.com/episode-1' },
+    });
+    await fireEvent.input(screen.getByLabelText('Highlight episode note'), {
+      target: { value: 'Start here' },
+    });
+    await fireEvent.click(screen.getByRole('button', { name: 'Add highlighted episode' }));
+
+    expect(screen.getByText('Episode 1')).toBeInTheDocument();
+    expect(screen.getByText('https://example.com/episode-1')).toBeInTheDocument();
+    expect(screen.getByText('Start here')).toBeInTheDocument();
+
+    await fireEvent.click(screen.getByLabelText('Remove highlighted episode 1'));
+    expect(screen.queryByText('Episode 1')).not.toBeInTheDocument();
+  });
+
+  it('blocks uncertain podcast kind submissions until user selects a kind', async () => {
+    setAuthenticated();
+    setActiveSection('podcast');
+    previewLink.mockResolvedValue({
+      metadata: {
+        url: 'https://example.com/podcast',
+        title: 'Example Podcast',
+      },
+    });
+    const uncertainError = Object.assign(
+      new Error(
+        'Could not determine whether this podcast link is a show or an episode. Please select one and try again.'
+      ),
+      { podcastKindSelectionRequired: true }
+    );
+    createPost
+      .mockRejectedValueOnce(uncertainError)
+      .mockResolvedValueOnce({
+        post: {
+          id: 'post-1',
+          userId: 'user-1',
+          sectionId: 'section-1',
+          content: '',
+          createdAt: 'now',
+        },
+      });
+
+    const { container } = render(PostForm);
+
+    const addLinkButton = screen.getByLabelText('Add link');
+    await fireEvent.click(addLinkButton);
+
+    const linkInput = screen.getByLabelText('Link URL');
+    await fireEvent.input(linkInput, { target: { value: 'example.com/podcast' } });
+    await fireEvent.keyDown(linkInput, { key: 'Enter' });
+    await tick();
+
+    const form = container.querySelector('form');
+    if (!form) throw new Error('form not found');
+    await fireEvent.submit(form);
+    await tick();
+
+    expect(createPost).toHaveBeenCalledTimes(1);
+    expect(createPost).toHaveBeenNthCalledWith(1, {
+      sectionId: 'section-1',
+      content: '',
+      links: [{ url: 'https://example.com/podcast', podcast: {} }],
+      mentionUsernames: [],
+    });
+
+    const postButton = screen.getByRole('button', { name: 'Post' });
+    expect(postButton).toBeDisabled();
+    expect(
+      screen.getAllByText(
+        'Could not determine whether this podcast link is a show or an episode. Please select one and try again.'
+      ).length
+    ).toBeGreaterThan(0);
+
+    await fireEvent.submit(form);
+    await tick();
+    expect(createPost).toHaveBeenCalledTimes(1);
+
+    await fireEvent.change(screen.getByLabelText('Podcast kind'), { target: { value: 'show' } });
+    await tick();
+    expect(postButton).not.toBeDisabled();
+
+    await fireEvent.submit(form);
+    await tick();
+
+    expect(createPost).toHaveBeenCalledTimes(2);
+    expect(createPost).toHaveBeenNthCalledWith(2, {
+      sectionId: 'section-1',
+      content: '',
+      links: [{ url: 'https://example.com/podcast', podcast: { kind: 'show' } }],
+      mentionUsernames: [],
+    });
+  });
+
+  it('serializes highlighted podcast episodes into create payload for show posts', async () => {
+    setAuthenticated();
+    setActiveSection('podcast');
+    previewLink.mockResolvedValue({
+      metadata: {
+        url: 'https://example.com/podcast',
+        title: 'Example Podcast',
+      },
+    });
+    createPost.mockResolvedValue({
+      post: { id: 'post-1', userId: 'user-1', sectionId: 'section-1', content: '', createdAt: 'now' },
+    });
+
+    const { container } = render(PostForm);
+    const addLinkButton = screen.getByLabelText('Add link');
+    await fireEvent.click(addLinkButton);
+
+    const linkInput = screen.getByLabelText('Link URL');
+    await fireEvent.input(linkInput, { target: { value: 'example.com/podcast' } });
+    await fireEvent.keyDown(linkInput, { key: 'Enter' });
+    await tick();
+
+    await fireEvent.change(screen.getByLabelText('Podcast kind'), { target: { value: 'show' } });
+    await tick();
+
+    await fireEvent.input(screen.getByLabelText('Highlight episode title'), {
+      target: { value: ' Episode 1 ' },
+    });
+    await fireEvent.input(screen.getByLabelText('Highlight episode url'), {
+      target: { value: ' example.com/episode-1 ' },
+    });
+    await fireEvent.input(screen.getByLabelText('Highlight episode note'), {
+      target: { value: ' Start here ' },
+    });
+    await fireEvent.click(screen.getByRole('button', { name: 'Add highlighted episode' }));
+
+    const form = container.querySelector('form');
+    if (!form) throw new Error('form not found');
+    await fireEvent.submit(form);
+    await tick();
+
+    expect(createPost).toHaveBeenCalledWith({
+      sectionId: 'section-1',
+      content: '',
+      links: [
+        {
+          url: 'https://example.com/podcast',
+          podcast: {
+            kind: 'show',
+            highlightEpisodes: [
+              {
+                title: 'Episode 1',
+                url: 'https://example.com/episode-1',
+                note: 'Start here',
+              },
+            ],
+          },
+        },
+      ],
+      mentionUsernames: [],
+    });
   });
 
   it('handles file attachments', async () => {
