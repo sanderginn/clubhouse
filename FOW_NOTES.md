@@ -114,3 +114,17 @@ Practical implication:
 
 Workaround applied:
 - Switched jq extraction to `.file` and `.function` for reliable per-hit targeting.
+
+## 2026-02-26: Zero Violations Does Not Imply All Flows Are Complete
+
+Observed behavior:
+- `fow analyze --fail-on warning -f json` and `--fail-on never -s info` can both return zero violations while many flow entries still have `status: "partial"` and `effective_coverage < 1`.
+
+What was counter-intuitive:
+- The top-level `stats.broken_flows` can be `0` even when the `flows` array contains non-complete entries.
+
+Practical implication:
+- A pipeline that gates only on violation counts can report "green" while flow completeness remains below 100%.
+
+Workaround applied:
+- Explicitly inspect flow statuses from JSON (`.flows[].status`) in addition to violation counts when validating "golden state" claims.
