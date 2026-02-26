@@ -24,12 +24,6 @@ analyzers:
           provides: log
         - function: handlers.writeErrorWithMFARequired
           provides: log
-        - function: services.AuditService.LogAudit
-          provides: audit
-        - function: services.AuditService.LogAuditWithMetadata
-          provides: audit
-        - function: services.AuditService.LogModerationAudit
-          provides: audit
         - function: services.fetchLinkMetadata
           provides: metric_error
         - function: services.NotificationService.sendPush*
@@ -51,6 +45,16 @@ analyzers:
         - function: services.ReactionService.logReactionAudit
           provides: audit
         - function: services.HighlightReactionService.logHighlightReactionAudit
+          provides: audit
+        - function: services.BookshelfService.logBookshelfAudit
+          provides: audit
+        - function: services.PodcastSaveService.logPodcastSaveAudit
+          provides: audit
+        - function: services.ReadLogService.logReadAudit
+          provides: audit
+        - function: services.WatchLogService.logWatchAudit
+          provides: audit
+        - function: services.WatchlistService.logWatchlistAudit
           provides: audit
 
       io_sink_functions:
