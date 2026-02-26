@@ -58,7 +58,7 @@ Practical implication:
 Workaround applied:
 - Added `exclude_unexported: true` for `state-change-audit` to keep coverage focused on exported service operations.
 
-## 2026-02-26: Audit Signal Detection Needed Explicit Method Patterns
+## 2026-02-26: Audit Signal Detection Needed Explicit Method Patterns (Superseded)
 
 Observed behavior:
 - Many exported service methods that already call `LogAuditWithMetadata` were still reported by `state-change-audit`.
@@ -71,6 +71,10 @@ Practical implication:
 
 Workaround applied:
 - Added explicit go-analyzer `signals.audit` method patterns for `LogAuditWithMetadata`, `LogAudit`, and `LogModerationAudit`.
+
+Current status after FOW 3o5 fixes:
+- This workaround is no longer needed in Clubhouse config.
+- Explicit `signals.audit` overrides were removed from `.fow.yml`; coverage now comes from built-in `go-otel` audit method defaults.
 
 ## 2026-02-26: `recordSpanError` Needed Explicit Metric Error Credit
 
@@ -101,7 +105,7 @@ Practical implication:
 Workaround applied:
 - Added service-local audit writes for remaining exported mutating service methods and updated affected SQL-mock handler tests where transaction/audit calls were newly introduced.
 
-## 2026-02-26: JSON Violation Shape Differs From Plan Snippet
+## 2026-02-26: JSON Violation Shape Differs From Plan Snippet (Superseded)
 
 Observed behavior:
 - Current FOW JSON violations expose `file` and `function` fields directly; `location.path` / `location.symbol` were empty in this run.
@@ -114,6 +118,10 @@ Practical implication:
 
 Workaround applied:
 - Switched jq extraction to `.file` and `.function` for reliable per-hit targeting.
+
+Current status after FOW 3o5 fixes:
+- FOW now emits both `location.*` and backward-compatible top-level aliases (`file`, `function`, `line`) for function-scoped violations.
+- Clubhouse automation now uses location-first extraction with alias fallback via `docs/scripts/clubhouse-remediation-targets.jq`.
 
 ## 2026-02-26: Zero Violations Does Not Imply All Flows Are Complete
 
@@ -128,3 +136,7 @@ Practical implication:
 
 Workaround applied:
 - Explicitly inspect flow statuses from JSON (`.flows[].status`) in addition to violation counts when validating "golden state" claims.
+
+Current status after FOW 3o5 fixes:
+- Preferred gate is now an explicit combined violation+flow threshold check using `docs/scripts/clubhouse-golden-state-gate.sh`.
+- The script gates on `violations`, `non_complete_flows`, and a minimum expected flow count (`MIN_FLOW_COUNT`) to fail closed if flow extraction regresses.
