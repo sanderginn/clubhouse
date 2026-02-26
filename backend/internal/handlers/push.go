@@ -32,7 +32,7 @@ func (h *PushHandler) GetVAPIDKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	publicKey, err := h.pushService.PublicKey()
+	publicKey, err := h.pushService.PublicKey(r.Context())
 	if err != nil {
 		writeError(r.Context(), w, http.StatusInternalServerError, "VAPID_KEY_UNAVAILABLE", "VAPID public key is not configured")
 		return

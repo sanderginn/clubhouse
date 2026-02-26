@@ -132,8 +132,8 @@ func NewPushService(db *sql.DB) *PushService {
 }
 
 // PublicKey returns the configured VAPID public key.
-func (s *PushService) PublicKey() (string, error) {
-	_, span := otel.Tracer("clubhouse.push").Start(context.Background(), "PushService.PublicKey")
+func (s *PushService) PublicKey(ctx context.Context) (string, error) {
+	_, span := otel.Tracer("clubhouse.push").Start(ctx, "PushService.PublicKey")
 	defer span.End()
 
 	if strings.TrimSpace(pushConfigData.publicKey) == "" {
