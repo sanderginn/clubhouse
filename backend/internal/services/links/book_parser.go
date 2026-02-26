@@ -11,8 +11,12 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sanderginn/clubhouse/internal/models"
+	"github.com/sanderginn/clubhouse/internal/observability"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 var (
@@ -609,8 +613,15 @@ func isValidISBN13(isbn string) bool {
 }
 
 func fetchBookPageTitle(ctx context.Context, rawURL string) (string, error) {
+	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.fetchBookPageTitle")
+	start := time.Now()
+	defer span.End()
+	span.SetAttributes(attribute.String("url.raw", rawURL))
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 		return "", fmt.Errorf("create request: %w", err)
 	}
 	req.Header.Set("User-Agent", defaultUserAgent)
@@ -619,21 +630,29 @@ func fetchBookPageTitle(ctx context.Context, rawURL string) (string, error) {
 	client := &http.Client{Timeout: fetchTimeout}
 	resp, err := client.Do(req)
 	if err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 		return "", fmt.Errorf("request page: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		return "", fmt.Errorf("unexpected status: %s", resp.Status)
+		err := fmt.Errorf("unexpected status: %s", resp.Status)
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
+		return "", err
 	}
 
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBodyBytes))
 	if err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 		return "", fmt.Errorf("read response body: %w", err)
 	}
 
 	metaTags, title := extractHTMLMeta(body)
 	title = firstNonEmpty(metaTags["og:title"], metaTags["twitter:title"], title)
+	observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 	return normalizeBookPageTitle(title), nil
 }
 
