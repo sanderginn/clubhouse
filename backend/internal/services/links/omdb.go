@@ -15,6 +15,8 @@ import (
 	"time"
 
 	"github.com/sanderginn/clubhouse/internal/observability"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const (
@@ -123,17 +125,30 @@ func (c *OMDBClient) GetRatingsByIMDBID(ctx context.Context, imdbID string) (*OM
 	if ctx == nil {
 		return nil, errors.New("context is required")
 	}
+	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.OMDBClient.GetRatingsByIMDBID")
+	opStart := time.Now()
+	defer span.End()
+
 	if c == nil {
-		return nil, errors.New("omdb client is required")
+		err := errors.New("omdb client is required")
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
+		return nil, err
 	}
 
 	imdbID = strings.ToLower(strings.TrimSpace(imdbID))
 	if !imdbIDPattern.MatchString(imdbID) {
-		return nil, errors.New("valid imdb id is required")
+		err := errors.New("valid imdb id is required")
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
+		return nil, err
 	}
+	span.SetAttributes(attribute.String("imdb.id", imdbID))
 
 	if c.limiter != nil && !c.limiter.Allow() {
 		observability.LogWarn(ctx, "omdb daily quota reached", "imdb_id", imdbID)
+		span.RecordError(ErrOMDBRateLimited)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 		return nil, ErrOMDBRateLimited
 	}
 
@@ -146,15 +161,19 @@ func (c *OMDBClient) GetRatingsByIMDBID(ctx context.Context, imdbID string) (*OM
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL, nil)
 	if err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 		return nil, fmt.Errorf("build omdb request: %w", err)
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", omdbUserAgent)
 
-	start := time.Now()
+	requestStart := time.Now()
 	resp, err := c.httpClient.Do(req)
-	duration := time.Since(start)
+	duration := time.Since(requestStart)
 	if err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 		observability.LogWarn(ctx, "omdb request failed", "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "error", err.Error())
 		return nil, fmt.Errorf("omdb request failed: %w", err)
 	}
@@ -162,12 +181,16 @@ func (c *OMDBClient) GetRatingsByIMDBID(ctx context.Context, imdbID string) (*OM
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
 		apiErr := parseOMDBAPIError(resp)
+		span.RecordError(apiErr)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 		observability.LogWarn(ctx, "omdb request failed", "status_code", strconv.Itoa(resp.StatusCode), "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "error", apiErr.Error())
 		return nil, apiErr
 	}
 
 	var payload omdbTitleResponse
 	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 		observability.LogWarn(ctx, "omdb response decode failed", "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "error", err.Error())
 		return nil, fmt.Errorf("decode omdb response: %w", err)
 	}
@@ -177,14 +200,19 @@ func (c *OMDBClient) GetRatingsByIMDBID(ctx context.Context, imdbID string) (*OM
 		if message == "" {
 			message = "unknown omdb error"
 		}
-		return nil, &OMDBAPIError{StatusCode: http.StatusBadGateway, Message: message}
+		err := &OMDBAPIError{StatusCode: http.StatusBadGateway, Message: message}
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
+		return nil, err
 	}
 
 	ratings := extractOMDBRatings(payload)
 	if ratings.RottenTomatoesScore == nil && ratings.MetacriticScore == nil {
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 		return nil, nil
 	}
 
+	observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 	observability.LogDebug(ctx, "omdb request completed", "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "status_code", strconv.Itoa(resp.StatusCode))
 
 	return &ratings, nil
