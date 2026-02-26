@@ -284,7 +284,7 @@ func (h *WebSocketHandler) writeLoop(ctx context.Context, wsConn *wsConnection) 
 			}
 		}
 		if !json.Valid(payload) {
-			payload = h.wrapPayload(msg.Payload)
+			payload = h.wrapPayload(ctx, msg.Payload)
 			messageType = "message"
 		}
 
@@ -314,7 +314,7 @@ func (h *WebSocketHandler) pingLoop(ctx context.Context, wsConn *wsConnection) {
 	}
 }
 
-func (h *WebSocketHandler) wrapPayload(payload string) []byte {
+func (h *WebSocketHandler) wrapPayload(ctx context.Context, payload string) []byte {
 	event := wsEvent{
 		Type:      "message",
 		Data:      map[string]string{"payload": payload},
@@ -322,7 +322,7 @@ func (h *WebSocketHandler) wrapPayload(payload string) []byte {
 	}
 	bytes, err := json.Marshal(event)
 	if err != nil {
-		observability.LogError(context.Background(), observability.ErrorLog{
+		observability.LogError(ctx, observability.ErrorLog{
 			Message:    "failed to marshal websocket payload wrapper",
 			Code:       "WS_PAYLOAD_WRAP_FAILED",
 			StatusCode: http.StatusInternalServerError,
