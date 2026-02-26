@@ -155,6 +155,16 @@ func (h *WebSocketHandler) registerConnection(ctx context.Context, userID uuid.U
 }
 
 func (h *WebSocketHandler) unregisterConnection(ctx context.Context, userID uuid.UUID, wsConn *wsConnection) {
+	if wsConn == nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "cannot unregister nil websocket connection",
+			Code:       "WS_CONNECTION_NIL",
+			StatusCode: http.StatusInternalServerError,
+			UserID:     userID.String(),
+		})
+		return
+	}
+
 	h.mu.Lock()
 	if existing := h.connections[userID]; existing == wsConn {
 		delete(h.connections, userID)
