@@ -118,7 +118,9 @@ func WithMetadataSectionType(ctx context.Context, sectionType string) context.Co
 // Fetch retrieves metadata for the provided URL.
 func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interface{}, error) {
 	if ctx == nil {
-		return nil, errors.New("context is required")
+		err := errors.New("context is required")
+		observability.RecordServiceError("link_metadata_fetch")
+		return nil, err
 	}
 	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.Fetcher.Fetch")
 	defer span.End()
@@ -129,9 +131,11 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 
 	u, err := url.Parse(rawURL)
 	if err != nil {
+		observability.RecordServiceError("link_metadata_fetch")
 		return nil, fmt.Errorf("parse url: %w", err)
 	}
 	if err := f.validateURL(fetchCtx, u); err != nil {
+		observability.RecordServiceError("link_metadata_fetch")
 		return nil, err
 	}
 
@@ -175,6 +179,7 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 		if fallback := fallbackMetadataForMovieURL(ctx, u, getMovieMetadata()); fallback != nil {
 			return fallback, nil
 		}
+		observability.RecordServiceError("link_metadata_fetch")
 		return nil, fmt.Errorf("fetch url: %w", err)
 	}
 	defer resp.Body.Close()
@@ -186,6 +191,7 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 		if fallback := fallbackMetadataForMovieURL(ctx, u, getMovieMetadata()); fallback != nil {
 			return fallback, nil
 		}
+		observability.RecordServiceError("link_metadata_fetch")
 		return nil, fmt.Errorf("unexpected status: %s", resp.Status)
 	}
 
@@ -197,6 +203,7 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 		if fallback := fallbackMetadataForMovieURL(ctx, u, getMovieMetadata()); fallback != nil {
 			return fallback, nil
 		}
+		observability.RecordServiceError("link_metadata_fetch")
 		return nil, fmt.Errorf("read response: %w", err)
 	}
 

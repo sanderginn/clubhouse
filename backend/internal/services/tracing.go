@@ -1,6 +1,9 @@
 package services
 
-import "go.opentelemetry.io/otel/trace"
+import (
+	"github.com/sanderginn/clubhouse/internal/observability"
+	"go.opentelemetry.io/otel/trace"
+)
 
 func recordSpanError(span trace.Span, err error) {
 	if err == nil {
@@ -8,4 +11,5 @@ func recordSpanError(span trace.Span, err error) {
 	}
 
 	span.RecordError(err)
+	observability.RecordServiceError("service_operation")
 }

@@ -30,6 +30,12 @@ analyzers:
           provides: audit
         - function: services.AuditService.LogModerationAudit
           provides: audit
+        - function: AuditService.LogAudit
+          provides: audit
+        - function: AuditService.LogAuditWithMetadata
+          provides: audit
+        - function: AuditService.LogModerationAudit
+          provides: audit
         - function: services.fetchLinkMetadata
           provides: metric_error
         - function: services.NotificationService.sendPush*
@@ -40,6 +46,10 @@ analyzers:
           provides: metric_latency
         - function: services.WatchLogService.logWatch
           provides: trace
+        - function: services.recordSpanError
+          provides: metric_error
+        - function: observability.RecordServiceError
+          provides: metric_error
 
       io_sink_functions:
         - links.Fetcher.doRequestWithRetry   # add your wrapper sink methods here
@@ -53,6 +63,14 @@ analyzers:
         - "**/services/tracing*"
       middleware_provides:
         - trace                   # credit handler coverage from middleware
+    signals:
+      audit:
+        - pattern: call_method
+          method: LogAuditWithMetadata
+        - pattern: call_method
+          method: LogAudit
+        - pattern: call_method
+          method: LogModerationAudit
 
   - profile: typescript-otel
     paths:

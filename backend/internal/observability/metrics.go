@@ -1196,6 +1196,14 @@ func RecordDBQueryError(ctx context.Context, queryType, errorType string) {
 	m.dbQueryErrors.Add(ctx, 1, metric.WithAttributes(attrs...))
 }
 
+// RecordServiceError increments the generic service error counter.
+func RecordServiceError(errorType string) {
+	if strings.TrimSpace(errorType) == "" {
+		errorType = "unknown"
+	}
+	RecordDBQueryError(context.Background(), "service", errorType)
+}
+
 // RecordDBTransaction increments the database transaction counter.
 func RecordDBTransaction(ctx context.Context, status string) {
 	m := getMetrics()

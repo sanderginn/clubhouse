@@ -57,3 +57,32 @@ Practical implication:
 
 Workaround applied:
 - Added `exclude_unexported: true` for `state-change-audit` to keep coverage focused on exported service operations.
+
+## 2026-02-26: Audit Signal Detection Needed Explicit Method Patterns
+
+Observed behavior:
+- Many exported service methods that already call `LogAuditWithMetadata` were still reported by `state-change-audit`.
+
+What was counter-intuitive:
+- Existing transitive-credit entries for `AuditService.LogAudit*` were not sufficient to recognize audit coverage across real callsites.
+
+Practical implication:
+- FOW reported missing audits despite explicit audit method invocations in service code.
+
+Workaround applied:
+- Added explicit go-analyzer `signals.audit` method patterns for `LogAuditWithMetadata`, `LogAudit`, and `LogModerationAudit`.
+
+## 2026-02-26: `recordSpanError` Needed Explicit Metric Error Credit
+
+Observed behavior:
+- Many mutation methods recorded span errors consistently but still failed `error-rate-counter` / `state-change-metric`.
+
+What was counter-intuitive:
+- Span error recording alone was not treated as metric error coverage, and generic error metric calls needed explicit transitive credit.
+
+Practical implication:
+- Large numbers of false-positive mutation error/metric violations remained even with consistent error handling.
+
+Workaround applied:
+- Added `observability.RecordServiceError` and invoked it from `recordSpanError`.
+- Added transitive credit for `services.recordSpanError` and `observability.RecordServiceError` as `metric_error`.
