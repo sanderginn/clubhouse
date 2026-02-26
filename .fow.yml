@@ -69,6 +69,8 @@ analyzers:
           provides: trace
         - function: api.ApiClient.request
           provides: metric_latency
+        - function: api.ApiClient.uploadWithRetry
+          provides: trace
     signals:
       trace:
         - pattern: call_method
