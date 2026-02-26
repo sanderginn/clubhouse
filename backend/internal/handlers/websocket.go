@@ -291,7 +291,7 @@ func (h *WebSocketHandler) writeLoop(ctx context.Context, wsConn *wsConnection) 
 		spanCtx, span := h.startMessageSpan(ctx, wsConn, wsSpanMessageSend, messageType)
 		span.SetAttributes(attribute.String("channel", msg.Channel))
 		observability.RecordWebsocketMessageSent(spanCtx, messageType)
-		h.sendMessage(wsConn, payload)
+		h.sendMessage(spanCtx, wsConn, payload)
 		span.End()
 	}
 }
@@ -333,9 +333,9 @@ func (h *WebSocketHandler) wrapPayload(ctx context.Context, payload string) []by
 	return bytes
 }
 
-func (h *WebSocketHandler) sendMessage(wsConn *wsConnection, payload []byte) {
+func (h *WebSocketHandler) sendMessage(ctx context.Context, wsConn *wsConnection, payload []byte) {
 	if wsConn == nil {
-		observability.LogError(context.Background(), observability.ErrorLog{
+		observability.LogError(ctx, observability.ErrorLog{
 			Message:    "cannot send websocket message on nil connection",
 			Code:       "WS_CONNECTION_NIL",
 			StatusCode: http.StatusInternalServerError,
@@ -346,7 +346,7 @@ func (h *WebSocketHandler) sendMessage(wsConn *wsConnection, payload []byte) {
 	wsConn.writeMu.Lock()
 	defer wsConn.writeMu.Unlock()
 	if err := wsConn.conn.SetWriteDeadline(time.Now().Add(wsWriteWait)); err != nil {
-		observability.LogError(context.Background(), observability.ErrorLog{
+		observability.LogError(ctx, observability.ErrorLog{
 			Message:    "failed to set websocket write deadline",
 			Code:       "WS_WRITE_DEADLINE_FAILED",
 			StatusCode: http.StatusInternalServerError,
@@ -355,7 +355,7 @@ func (h *WebSocketHandler) sendMessage(wsConn *wsConnection, payload []byte) {
 		})
 	}
 	if err := wsConn.conn.WriteMessage(websocket.TextMessage, payload); err != nil {
-		observability.LogError(context.Background(), observability.ErrorLog{
+		observability.LogError(ctx, observability.ErrorLog{
 			Message:    "failed to send websocket message",
 			Code:       "WS_WRITE_FAILED",
 			StatusCode: http.StatusInternalServerError,
