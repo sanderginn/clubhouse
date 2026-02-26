@@ -99,6 +99,13 @@ func (t *AuthFailureTracker) IsLocked(ctx context.Context, ip string, identifier
 
 // RegisterFailure increments the failure count and applies a lockout when needed.
 func (t *AuthFailureTracker) RegisterFailure(ctx context.Context, ip string, identifiers []string) (bool, time.Duration, error) {
+	ctx, span := otel.Tracer("clubhouse.auth_failure").Start(ctx, "AuthFailureTracker.RegisterFailure")
+	span.SetAttributes(
+		attribute.String("ip", normalizeIP(ip)),
+		attribute.Int("identifier_count", len(identifiers)),
+	)
+	defer span.End()
+
 	if t == nil || t.redis == nil {
 		return false, 0, nil
 	}
@@ -119,11 +126,13 @@ func (t *AuthFailureTracker) RegisterFailure(ctx context.Context, ip string, ide
 
 		count, err := t.redis.Incr(ctx, countKey).Result()
 		if err != nil {
+			recordSpanError(span, err)
 			return false, 0, err
 		}
 
 		if t.config.Window > 0 {
 			if err := t.redis.Expire(ctx, countKey, t.config.Window).Err(); err != nil {
+				recordSpanError(span, err)
 				return false, 0, err
 			}
 		}
@@ -138,6 +147,7 @@ func (t *AuthFailureTracker) RegisterFailure(ctx context.Context, ip string, ide
 		}
 
 		if err := t.redis.Set(ctx, lockoutKey, t.now().Unix(), lockoutDuration).Err(); err != nil {
+			recordSpanError(span, err)
 			return false, 0, err
 		}
 
