@@ -74,7 +74,7 @@ func (s *ConfigService) UpdateConfig(ctx context.Context, linkMetadataEnabled *b
 
 	if s.db != nil {
 		if ctx == nil {
-			ctx = context.Background()
+			return s.config, errors.New("context is required")
 		}
 		if err := s.persistConfig(ctx, updated); err != nil {
 			return s.config, err
