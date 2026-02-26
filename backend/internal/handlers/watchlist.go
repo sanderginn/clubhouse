@@ -478,6 +478,13 @@ func (h *WatchlistHandler) DeleteWatchlistCategory(w http.ResponseWriter, r *htt
 func (h *WatchlistHandler) fetchUserWatchlistCategory(ctx context.Context, userID, categoryID uuid.UUID) (*models.WatchlistCategory, error) {
 	categories, err := h.watchlistService.GetUserWatchlistCategories(ctx, userID)
 	if err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to fetch watchlist categories",
+			Code:       "FETCH_WATCHLIST_CATEGORIES_FAILED",
+			StatusCode: http.StatusInternalServerError,
+			UserID:     userID.String(),
+			Err:        err,
+		})
 		return nil, err
 	}
 	for _, category := range categories {
