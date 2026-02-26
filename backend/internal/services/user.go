@@ -197,8 +197,17 @@ func (s *UserService) BootstrapAdmin(ctx context.Context, username, email, passw
 		RETURNING id, username, COALESCE(email, '') as email, is_admin, created_at
 	`
 
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		recordSpanError(span, err)
+		return nil, false, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
 	var user models.User
-	err = s.db.QueryRowContext(ctx, query, userID, username, emailField, string(passwordHash)).
+	err = tx.QueryRowContext(ctx, query, userID, username, emailField, string(passwordHash)).
 		Scan(&user.ID, &user.Username, &user.Email, &user.IsAdmin, &user.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -218,6 +227,23 @@ func (s *UserService) BootstrapAdmin(ctx context.Context, username, email, passw
 		}
 		recordSpanError(span, err)
 		return nil, false, fmt.Errorf("failed to create bootstrap admin: %w", err)
+	}
+
+	auditService := NewAuditService(tx)
+	metadata := map[string]interface{}{
+		"username":       user.Username,
+		"email":          user.Email,
+		"is_admin":       true,
+		"bootstrap_flow": true,
+	}
+	if err := auditService.LogAuditWithMetadata(ctx, "bootstrap_admin", uuid.Nil, user.ID, metadata); err != nil {
+		recordSpanError(span, err)
+		return nil, false, fmt.Errorf("failed to create audit log: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
+		return nil, false, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return &user, true, nil
