@@ -131,6 +131,16 @@ func (h *WebSocketHandler) HandleWS(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *WebSocketHandler) registerConnection(ctx context.Context, userID uuid.UUID, wsConn *wsConnection) {
+	if wsConn == nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "cannot register nil websocket connection",
+			Code:       "WS_CONNECTION_NIL",
+			StatusCode: http.StatusInternalServerError,
+			UserID:     userID.String(),
+		})
+		return
+	}
+
 	h.mu.Lock()
 	if existing := h.connections[userID]; existing != nil {
 		// One active connection per user; latest connection wins.
