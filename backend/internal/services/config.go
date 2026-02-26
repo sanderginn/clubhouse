@@ -104,6 +104,9 @@ func (s *ConfigService) UpdateConfig(ctx context.Context, linkMetadataEnabled *b
 
 // IsLinkMetadataEnabled returns whether link metadata fetching is enabled
 func (s *ConfigService) IsLinkMetadataEnabled() bool {
+	_, span := otel.Tracer("clubhouse.config").Start(context.TODO(), "ConfigService.IsLinkMetadataEnabled")
+	defer span.End()
+
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.config.LinkMetadataEnabled
