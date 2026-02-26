@@ -145,7 +145,7 @@ func (h *WebSocketHandler) registerConnection(ctx context.Context, userID uuid.U
 	if existing := h.connections[userID]; existing != nil {
 		// One active connection per user; latest connection wins.
 		observability.LogInfo(ctx, "WebSocket replaced existing connection", "user_id", userID.String())
-		h.closeConnection(existing, wsCloseReplacedCode, wsCloseReplacedReason)
+		h.closeConnection(ctx, existing, wsCloseReplacedCode, wsCloseReplacedReason)
 	}
 	h.connections[userID] = wsConn
 	h.mu.Unlock()
@@ -171,14 +171,14 @@ func (h *WebSocketHandler) unregisterConnection(ctx context.Context, userID uuid
 	}
 	h.mu.Unlock()
 
-	h.closeConnection(wsConn, websocket.CloseNormalClosure, "")
+	h.closeConnection(ctx, wsConn, websocket.CloseNormalClosure, "")
 	h.addEvent(ctx, userID, "websocket_disconnected")
 	observability.RecordWebsocketDisconnect(ctx)
 }
 
-func (h *WebSocketHandler) closeConnection(wsConn *wsConnection, code int, reason string) {
+func (h *WebSocketHandler) closeConnection(ctx context.Context, wsConn *wsConnection, code int, reason string) {
 	if wsConn == nil {
-		observability.LogError(context.Background(), observability.ErrorLog{
+		observability.LogError(ctx, observability.ErrorLog{
 			Message:    "cannot close nil websocket connection",
 			Code:       "WS_CONNECTION_NIL",
 			StatusCode: http.StatusInternalServerError,
