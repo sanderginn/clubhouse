@@ -29,3 +29,17 @@ Practical implication:
 
 Workaround applied:
 - Added `exclude_unexported: true` for `service-trace-span` to keep enforcement focused on service API methods.
+
+## 2026-02-26: Wrapper Methods Need Explicit Transitive Trace Credit
+
+Observed behavior:
+- Thin exported wrapper methods that delegate to an already traced helper (for example `WatchLogService.LogWatch` -> `WatchLogService.logWatch`) were still reported by `service-trace-span`.
+
+What was counter-intuitive:
+- Trace signal did not automatically propagate across service method delegation without a transitive-credit mapping.
+
+Practical implication:
+- Legitimate wrapper APIs get flagged even when delegated execution is fully traced.
+
+Workaround applied:
+- Added explicit transitive trace credit for `services.WatchLogService.logWatch`.

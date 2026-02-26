@@ -38,6 +38,8 @@ analyzers:
           provides: metric_error
         - function: observability.RecordLinkMetadataFetchDuration
           provides: metric_latency
+        - function: services.WatchLogService.logWatch
+          provides: trace
 
       io_sink_functions:
         - links.Fetcher.doRequestWithRetry   # add your wrapper sink methods here
