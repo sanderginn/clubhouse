@@ -629,7 +629,21 @@ func (h *AuthHandler) registerLoginFailure(ctx context.Context, clientIP string,
 		return false, 0, nil
 	}
 
-	return h.failureTracker.RegisterFailure(ctx, clientIP, identifiers)
+	locked, retryAfter, err := h.failureTracker.RegisterFailure(ctx, clientIP, identifiers)
+	if err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to register login failure",
+			Code:       "LOGIN_FAILURE_TRACK_FAILED",
+			StatusCode: http.StatusInternalServerError,
+			Err:        err,
+		})
+		return false, 0, err
+	}
+	if locked {
+		observability.LogWarn(ctx, "login locked after failed attempts", "client_ip", clientIP)
+	}
+
+	return locked, retryAfter, nil
 }
 
 func (h *AuthHandler) clearLoginFailures(ctx context.Context, clientIP string, identifiers []string) error {
