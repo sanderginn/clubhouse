@@ -1632,7 +1632,16 @@ func (s *UserService) ResetPassword(ctx context.Context, userID uuid.UUID, newPa
 		WHERE id = $2 AND deleted_at IS NULL
 	`
 
-	result, err := s.db.ExecContext(ctx, query, string(passwordHash), userID)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		recordSpanError(span, err)
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	result, err := tx.ExecContext(ctx, query, string(passwordHash), userID)
 	if err != nil {
 		recordSpanError(span, err)
 		return fmt.Errorf("failed to reset password: %w", err)
@@ -1648,6 +1657,20 @@ func (s *UserService) ResetPassword(ctx context.Context, userID uuid.UUID, newPa
 		notFoundErr := fmt.Errorf("user not found")
 		recordSpanError(span, notFoundErr)
 		return notFoundErr
+	}
+
+	metadata := map[string]interface{}{
+		"user_id":                userID.String(),
+		"password_reset_applied": true,
+	}
+	if err := NewAuditService(tx).LogAuditWithMetadata(ctx, "reset_password", userID, userID, metadata); err != nil {
+		recordSpanError(span, err)
+		return fmt.Errorf("failed to create audit log: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return nil
