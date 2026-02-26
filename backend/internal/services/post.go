@@ -256,6 +256,23 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 		}
 	}
 
+	auditService := NewAuditService(tx)
+	metadata := map[string]interface{}{
+		"post_id":            post.ID.String(),
+		"section_id":         post.SectionID.String(),
+		"content_excerpt":    truncateAuditExcerpt(post.Content),
+		"link_count":         len(post.Links),
+		"image_count":        len(post.Images),
+		"metadata_jobs":      len(jobs),
+		"section_name":       sectionName,
+		"section_type":       sectionType,
+		"created_by_user_id": userID.String(),
+	}
+	if err := auditService.LogAuditWithMetadata(ctx, "create_post", userID, userID, metadata); err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("failed to create audit log: %w", err)
+	}
+
 	// Commit transaction
 	if err := tx.Commit(); err != nil {
 		recordSpanError(span, err)
