@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"net/url"
 	"sync"
+	"time"
 
 	"github.com/Noooste/azuretls-client"
+	"github.com/sanderginn/clubhouse/internal/observability"
+	"go.opentelemetry.io/otel"
 )
 
 var (
@@ -17,11 +20,16 @@ var (
 
 // getBandcampSession returns a shared azuretls session for Bandcamp requests.
 // The session mimics Chrome's TLS fingerprint to bypass Bandcamp's WAF.
-func getBandcampSession() *azuretls.Session {
+func getBandcampSession(ctx context.Context) *azuretls.Session {
+	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.getBandcampSession")
+	start := time.Now()
+
 	bandcampSessionOnce.Do(func() {
 		bandcampSession = azuretls.NewSession()
 		bandcampSession.SetTimeout(fetchTimeout)
 	})
+	observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
+	span.End()
 	return bandcampSession
 }
 
@@ -40,7 +48,7 @@ func fetchBandcampHTML(ctx context.Context, rawURL string) ([]byte, error) {
 		return nil, errors.New("not a bandcamp url")
 	}
 
-	session := getBandcampSession()
+	session := getBandcampSession(ctx)
 
 	// Create a channel to handle context cancellation
 	type result struct {

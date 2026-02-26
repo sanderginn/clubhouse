@@ -36,6 +36,8 @@ analyzers:
           provides: metric_error
         - function: services.MetadataWorker.publishLinkMetadataUpdated
           provides: metric_error
+        - function: observability.RecordLinkMetadataFetchDuration
+          provides: metric_latency
 
       io_sink_functions:
         - links.Fetcher.doRequestWithRetry   # add your wrapper sink methods here
