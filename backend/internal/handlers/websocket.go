@@ -322,6 +322,12 @@ func (h *WebSocketHandler) wrapPayload(payload string) []byte {
 	}
 	bytes, err := json.Marshal(event)
 	if err != nil {
+		observability.LogError(context.Background(), observability.ErrorLog{
+			Message:    "failed to marshal websocket payload wrapper",
+			Code:       "WS_PAYLOAD_WRAP_FAILED",
+			StatusCode: http.StatusInternalServerError,
+			Err:        err,
+		})
 		return []byte(`{"type":"message","data":{"payload":"invalid"},"timestamp":"0001-01-01T00:00:00Z"}`)
 	}
 	return bytes
