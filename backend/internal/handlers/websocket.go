@@ -431,6 +431,15 @@ func (h *WebSocketHandler) subscribeChannels(ctx context.Context, wsConn *wsConn
 }
 
 func (h *WebSocketHandler) addSubscriptions(ctx context.Context, wsConn *wsConnection, sectionIDs []string, messageType string) {
+	if wsConn == nil || wsConn.pubsub == nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "cannot add websocket subscriptions without an active pubsub connection",
+			Code:       "WS_SUBSCRIBE_UNAVAILABLE",
+			StatusCode: http.StatusInternalServerError,
+		})
+		return
+	}
+
 	channels := sectionChannels(sectionIDs)
 	if len(channels) == 0 {
 		return
@@ -446,7 +455,16 @@ func (h *WebSocketHandler) addSubscriptions(ctx context.Context, wsConn *wsConne
 		return
 	}
 
-	_ = wsConn.pubsub.Subscribe(ctx, toSubscribe...)
+	if err := wsConn.pubsub.Subscribe(ctx, toSubscribe...); err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to add websocket subscriptions",
+			Code:       "WS_SUBSCRIBE_FAILED",
+			StatusCode: http.StatusInternalServerError,
+			UserID:     wsConn.userID.String(),
+			Err:        err,
+		})
+		return
+	}
 	for _, ch := range toSubscribe {
 		wsConn.subscriptions[ch] = struct{}{}
 	}
