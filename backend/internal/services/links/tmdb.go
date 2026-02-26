@@ -297,8 +297,19 @@ func (c *TMDBClient) SearchTV(ctx context.Context, query string) ([]TVSearchResu
 
 // GetMovieDetails fetches movie metadata, credits, and videos.
 func (c *TMDBClient) GetMovieDetails(ctx context.Context, tmdbID int) (*MovieDetails, error) {
+	if ctx == nil {
+		return nil, errors.New("context is required")
+	}
+	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.TMDBClient.GetMovieDetails")
+	start := time.Now()
+	defer span.End()
+	span.SetAttributes(attribute.Int("tmdb.id", tmdbID))
+
 	if tmdbID <= 0 {
-		return nil, errors.New("tmdb movie id must be positive")
+		err := errors.New("tmdb movie id must be positive")
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
+		return nil, err
 	}
 
 	values := url.Values{}
@@ -306,11 +317,14 @@ func (c *TMDBClient) GetMovieDetails(ctx context.Context, tmdbID int) (*MovieDet
 
 	var details MovieDetails
 	if err := c.get(ctx, fmt.Sprintf("/movie/%d", tmdbID), values, &details); err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 		return nil, err
 	}
 
 	details.Director = extractDirector(details.Credits.Crew)
 
+	observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 	return &details, nil
 }
 
