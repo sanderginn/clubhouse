@@ -4,8 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"sync"
 
+	"github.com/google/uuid"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -95,6 +97,19 @@ func (s *ConfigService) UpdateConfig(ctx context.Context, linkMetadataEnabled *b
 		if err := s.persistConfig(ctx, updated); err != nil {
 			recordSpanError(span, err)
 			return s.config, err
+		}
+		metadata := map[string]interface{}{
+			"link_metadata_enabled_before": s.config.LinkMetadataEnabled,
+			"link_metadata_enabled_after":  updated.LinkMetadataEnabled,
+			"mfa_required_before":          s.config.MFARequired,
+			"mfa_required_after":           updated.MFARequired,
+			"display_timezone_before":      s.config.DisplayTimezone,
+			"display_timezone_after":       updated.DisplayTimezone,
+			"updated_by_system":            true,
+		}
+		if err := NewAuditService(s.db).LogAuditWithMetadata(ctx, "update_config", uuid.Nil, uuid.Nil, metadata); err != nil {
+			recordSpanError(span, err)
+			return s.config, fmt.Errorf("failed to create audit log: %w", err)
 		}
 	}
 
