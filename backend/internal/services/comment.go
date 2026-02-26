@@ -1180,12 +1180,21 @@ func (s *CommentService) RestoreComment(ctx context.Context, commentID uuid.UUID
 		RETURNING id, user_id, post_id, parent_comment_id, image_id, content, contains_spoiler, created_at, updated_at, deleted_at, deleted_by_user_id
 	`
 
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
 	var restoredComment models.Comment
 	var restoredParentID sql.NullString
 	var restoredImageID sql.NullString
 	var restoredUpdatedAt sql.NullTime
 
-	err = s.db.QueryRowContext(ctx, updateQuery, commentID).Scan(
+	err = tx.QueryRowContext(ctx, updateQuery, commentID).Scan(
 		&restoredComment.ID, &restoredComment.UserID, &restoredComment.PostID, &restoredParentID, &restoredImageID, &restoredComment.Content, &restoredComment.ContainsSpoiler,
 		&restoredComment.CreatedAt, &restoredUpdatedAt, &restoredComment.DeletedAt, &restoredComment.DeletedByUserID,
 	)
@@ -1205,6 +1214,28 @@ func (s *CommentService) RestoreComment(ctx context.Context, commentID uuid.UUID
 	}
 	if restoredUpdatedAt.Valid {
 		restoredComment.UpdatedAt = &restoredUpdatedAt.Time
+	}
+
+	isSelfRestore := restoredComment.UserID == userID
+	auditService := NewAuditService(tx)
+	metadata := map[string]interface{}{
+		"comment_id":            restoredComment.ID.String(),
+		"post_id":               restoredComment.PostID.String(),
+		"restored_by_user_id":   userID.String(),
+		"is_self_restore":       isSelfRestore,
+		"comment_owner_user_id": restoredComment.UserID.String(),
+	}
+	if isAdmin {
+		metadata["restored_by_admin"] = true
+	}
+	if err := auditService.LogAuditWithMetadata(ctx, "restore_comment", userID, restoredComment.UserID, metadata); err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("failed to create audit log: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	restoredComment.User = &user
