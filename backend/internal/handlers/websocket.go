@@ -207,6 +207,13 @@ func (h *WebSocketHandler) readLoop(ctx context.Context, wsConn *wsConnection) {
 		if err := json.Unmarshal(payload, &msg); err != nil {
 			spanCtx, span := h.startMessageSpan(ctx, wsConn, wsSpanMessageReceive, "invalid")
 			span.RecordError(err)
+			observability.LogError(spanCtx, observability.ErrorLog{
+				Message:    "failed to decode websocket message",
+				Code:       "WS_MESSAGE_DECODE_FAILED",
+				StatusCode: http.StatusBadRequest,
+				UserID:     wsConn.userID.String(),
+				Err:        err,
+			})
 			span.End()
 			observability.RecordWebsocketMessageReceived(spanCtx, "invalid")
 			observability.RecordWebsocketError(spanCtx, "invalid_message", "invalid")
