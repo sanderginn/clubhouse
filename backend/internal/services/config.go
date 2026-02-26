@@ -121,7 +121,7 @@ func (s *ConfigService) loadFromDB(ctx context.Context) error {
 		return nil
 	}
 	if ctx == nil {
-		ctx = context.Background()
+		return errors.New("context is required")
 	}
 
 	var config Config
