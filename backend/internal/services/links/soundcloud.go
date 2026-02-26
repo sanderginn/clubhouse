@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/sanderginn/clubhouse/internal/observability"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/net/html"
 )
 
@@ -56,6 +58,10 @@ func (e *SoundCloudExtractor) Extract(ctx context.Context, rawURL string) (*Embe
 	if ctx == nil {
 		return nil, errors.New("context is required")
 	}
+	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.SoundCloudExtractor.Extract")
+	opStart := time.Now()
+	defer span.End()
+	span.SetAttributes(attribute.String("url.raw", rawURL))
 
 	ctx, cancel := context.WithTimeout(ctx, soundCloudTimeout)
 	defer cancel()
@@ -63,6 +69,8 @@ func (e *SoundCloudExtractor) Extract(ctx context.Context, rawURL string) (*Embe
 	oembedURL := fmt.Sprintf("%s?format=json&url=%s", e.oEmbedURL, url.QueryEscape(rawURL))
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, oembedURL, nil)
 	if err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 		return nil, fmt.Errorf("build oembed request: %w", err)
 	}
 	req.Header.Set("User-Agent", "ClubhouseSoundCloudEmbed/1.0")
@@ -76,28 +84,40 @@ func (e *SoundCloudExtractor) Extract(ctx context.Context, rawURL string) (*Embe
 	resp, err := client.Do(req)
 	duration := time.Since(start)
 	if err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 		observability.LogWarn(ctx, "soundcloud oembed request failed", "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "error", err.Error())
 		return nil, fmt.Errorf("soundcloud oembed request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		err := fmt.Errorf("soundcloud oembed status: %s", resp.Status)
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 		observability.LogWarn(ctx, "soundcloud oembed request returned non-200", "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "status", resp.Status)
-		return nil, fmt.Errorf("soundcloud oembed status: %s", resp.Status)
+		return nil, err
 	}
 
 	var payload soundCloudOEmbedResponse
 	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 		observability.LogWarn(ctx, "soundcloud oembed decode failed", "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "error", err.Error())
 		return nil, fmt.Errorf("decode soundcloud oembed: %w", err)
 	}
 
 	embedURL := extractIFrameSrc(payload.HTML)
 	if embedURL == "" {
+		err := errors.New("soundcloud oembed missing iframe src")
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 		observability.LogWarn(ctx, "soundcloud oembed missing iframe src", "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10))
-		return nil, errors.New("soundcloud oembed missing iframe src")
+		return nil, err
 	}
 	if err := validateEmbedURL(embedURL); err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 		observability.LogWarn(ctx, "soundcloud oembed invalid iframe src", "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "error", err.Error())
 		return nil, err
 	}
@@ -111,6 +131,7 @@ func (e *SoundCloudExtractor) Extract(ctx context.Context, rawURL string) (*Embe
 		observability.LogWarn(ctx, "soundcloud oembed height parse failed", "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "error", err.Error())
 	}
 
+	observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 	observability.LogDebug(ctx, "soundcloud oembed fetched", "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "status", strconv.Itoa(resp.StatusCode))
 
 	return &EmbedData{
