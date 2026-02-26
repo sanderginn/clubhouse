@@ -120,6 +120,9 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (map[string]interfac
 	if ctx == nil {
 		return nil, errors.New("context is required")
 	}
+	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.Fetcher.Fetch")
+	defer span.End()
+	span.SetAttributes(attribute.String("url.raw", rawURL))
 
 	fetchCtx, cancel := context.WithTimeout(ctx, fetchTimeout)
 	defer cancel()
