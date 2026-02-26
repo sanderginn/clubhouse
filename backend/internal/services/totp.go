@@ -420,6 +420,18 @@ func (s *TOTPService) EnableUserWithBackupCodes(ctx context.Context, userID uuid
 		return err
 	}
 
+	metadata := map[string]interface{}{
+		"method":             "totp",
+		"user_id":            userID.String(),
+		"has_backup_codes":   true,
+		"backup_code_count":  len(backupCodes),
+		"totp_enabled_after": true,
+	}
+	if err := NewAuditService(tx).LogAuditWithMetadata(ctx, "enable_mfa", userID, userID, metadata); err != nil {
+		recordSpanError(span, err)
+		return fmt.Errorf("failed to create audit log: %w", err)
+	}
+
 	if err := tx.Commit(); err != nil {
 		recordSpanError(span, err)
 		return fmt.Errorf("failed to commit totp transaction: %w", err)
