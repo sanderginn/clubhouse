@@ -30,12 +30,6 @@ analyzers:
           provides: audit
         - function: services.AuditService.LogModerationAudit
           provides: audit
-        - function: AuditService.LogAudit
-          provides: audit
-        - function: AuditService.LogAuditWithMetadata
-          provides: audit
-        - function: AuditService.LogModerationAudit
-          provides: audit
         - function: services.fetchLinkMetadata
           provides: metric_error
         - function: services.NotificationService.sendPush*
