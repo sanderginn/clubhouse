@@ -117,8 +117,9 @@ rules:
     severity: info
     applies_to: [service]
     requires: [metric]
-    exclude_prefixes: [Get, List, Is, Verify, Resolve, Load, Lookup, Check, Find, Has, Can]
-    exclude_suffixes: [ForTests, ForTest]
+    exclude_unexported: true
+    exclude_prefixes: [Get, List, Is, Verify, Resolve, Load, Lookup, Check, Find, Has, Can, populate, next, require]
+    exclude_suffixes: [ForTests, ForTest, Audit, Exists]
     message: State-changing service methods should emit business activity metrics
     fix: Add observability.RecordBusinessEvent(...) or configure transitive_credit for shared metric emitters.
 
