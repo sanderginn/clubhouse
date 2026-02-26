@@ -534,6 +534,17 @@ func (s *TOTPService) DisableUser(ctx context.Context, userID uuid.UUID, code st
 		return fmt.Errorf("failed to clear backup codes: %w", err)
 	}
 
+	metadata := map[string]interface{}{
+		"method":               "totp",
+		"user_id":              userID.String(),
+		"totp_enabled_after":   false,
+		"backup_codes_cleared": true,
+	}
+	if err := NewAuditService(tx).LogAuditWithMetadata(ctx, "disable_mfa", userID, userID, metadata); err != nil {
+		recordSpanError(span, err)
+		return fmt.Errorf("failed to create audit log: %w", err)
+	}
+
 	if err := tx.Commit(); err != nil {
 		recordSpanError(span, err)
 		return fmt.Errorf("failed to commit totp transaction: %w", err)
