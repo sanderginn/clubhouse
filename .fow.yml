@@ -65,14 +65,6 @@ analyzers:
         - "**/services/tracing*"
       middleware_provides:
         - trace                   # credit handler coverage from middleware
-    signals:
-      audit:
-        - pattern: call_method
-          method: LogAuditWithMetadata
-        - pattern: call_method
-          method: LogAudit
-        - pattern: call_method
-          method: LogModerationAudit
 
   - profile: typescript-otel
     paths:
