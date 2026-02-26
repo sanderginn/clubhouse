@@ -11,6 +11,7 @@ import (
 	"github.com/Noooste/azuretls-client"
 	"github.com/sanderginn/clubhouse/internal/observability"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 var (
@@ -39,13 +40,19 @@ func fetchBandcampHTML(ctx context.Context, rawURL string) ([]byte, error) {
 	if ctx == nil {
 		return nil, errors.New("context is required")
 	}
+	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.fetchBandcampHTML")
+	defer span.End()
 
 	parsed, err := url.Parse(rawURL)
 	if err != nil {
+		span.RecordError(err)
 		return nil, fmt.Errorf("parse url: %w", err)
 	}
+	span.SetAttributes(attribute.String("url.host", parsed.Hostname()))
 	if !isBandcampHost(parsed.Hostname()) {
-		return nil, errors.New("not a bandcamp url")
+		err := errors.New("not a bandcamp url")
+		span.RecordError(err)
+		return nil, err
 	}
 
 	session := getBandcampSession(ctx)
@@ -76,8 +83,13 @@ func fetchBandcampHTML(ctx context.Context, rawURL string) ([]byte, error) {
 
 	select {
 	case <-ctx.Done():
-		return nil, ctx.Err()
+		err := ctx.Err()
+		span.RecordError(err)
+		return nil, err
 	case r := <-resultCh:
+		if r.err != nil {
+			span.RecordError(r.err)
+		}
 		return r.body, r.err
 	}
 }
