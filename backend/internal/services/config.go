@@ -114,6 +114,9 @@ func (s *ConfigService) IsLinkMetadataEnabled() bool {
 
 // IsMFARequired returns whether MFA enrollment is required for all users.
 func (s *ConfigService) IsMFARequired() bool {
+	_, span := otel.Tracer("clubhouse.config").Start(context.TODO(), "ConfigService.IsMFARequired")
+	defer span.End()
+
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.config.MFARequired
