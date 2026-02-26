@@ -162,6 +162,13 @@ func (t *AuthFailureTracker) RegisterFailure(ctx context.Context, ip string, ide
 
 // Reset clears failure counts and lockouts for the identifier/IP pair.
 func (t *AuthFailureTracker) Reset(ctx context.Context, ip string, identifiers []string) error {
+	ctx, span := otel.Tracer("clubhouse.auth_failure").Start(ctx, "AuthFailureTracker.Reset")
+	span.SetAttributes(
+		attribute.String("ip", normalizeIP(ip)),
+		attribute.Int("identifier_count", len(identifiers)),
+	)
+	defer span.End()
+
 	if t == nil || t.redis == nil {
 		return nil
 	}
@@ -185,7 +192,12 @@ func (t *AuthFailureTracker) Reset(ctx context.Context, ip string, identifiers [
 		return nil
 	}
 
-	return t.redis.Del(ctx, keys...).Err()
+	if err := t.redis.Del(ctx, keys...).Err(); err != nil {
+		recordSpanError(span, err)
+		return err
+	}
+
+	return nil
 }
 
 func (t *AuthFailureTracker) countKey(identifier, ip string) string {
