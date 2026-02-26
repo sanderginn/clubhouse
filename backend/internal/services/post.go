@@ -267,7 +267,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 	}
 
 	for _, job := range jobs {
-		enqueueCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		enqueueCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		if err := EnqueueMetadataJob(enqueueCtx, s.redis, job); err != nil {
 			observability.LogWarn(ctx, "failed to enqueue metadata job",
 				"post_id", job.PostID.String(),
