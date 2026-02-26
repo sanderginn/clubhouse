@@ -288,11 +288,22 @@ func (c *OpenLibraryClient) get(ctx context.Context, path string, query url.Valu
 	if ctx == nil {
 		return errors.New("context is required")
 	}
+	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.OpenLibraryClient.get")
+	opStart := time.Now()
+	defer span.End()
+	span.SetAttributes(attribute.String("openlibrary.path", path))
+
 	if c == nil {
-		return errors.New("open library client is required")
+		err := errors.New("open library client is required")
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
+		return err
 	}
 	if c.httpClient == nil {
-		return errors.New("http client is required")
+		err := errors.New("http client is required")
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
+		return err
 	}
 
 	base := strings.TrimSuffix(c.baseURL, "/")
@@ -303,15 +314,19 @@ func (c *OpenLibraryClient) get(ctx context.Context, path string, query url.Valu
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL, nil)
 	if err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 		return fmt.Errorf("build open library request: %w", err)
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", openLibraryUserAgent)
 
-	start := time.Now()
+	requestStart := time.Now()
 	resp, err := c.httpClient.Do(req)
-	duration := time.Since(start)
+	duration := time.Since(requestStart)
 	if err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 		observability.LogWarn(ctx, "open library request failed", "path", path, "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "error", err.Error())
 		return fmt.Errorf("open library request failed: %w", err)
 	}
@@ -319,15 +334,20 @@ func (c *OpenLibraryClient) get(ctx context.Context, path string, query url.Valu
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
 		apiErr := parseOpenLibraryAPIError(resp)
+		span.RecordError(apiErr)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 		observability.LogWarn(ctx, "open library request failed", "path", path, "status_code", strconv.Itoa(resp.StatusCode), "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "error", apiErr.Error())
 		return apiErr
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 		observability.LogWarn(ctx, "open library response decode failed", "path", path, "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "error", err.Error())
 		return fmt.Errorf("decode open library response: %w", err)
 	}
 
+	observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 	observability.LogDebug(ctx, "open library request completed", "path", path, "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "status_code", strconv.Itoa(resp.StatusCode))
 
 	return nil
