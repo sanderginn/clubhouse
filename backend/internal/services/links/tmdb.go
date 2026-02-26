@@ -366,19 +366,33 @@ func (c *TMDBClient) GetTVDetails(ctx context.Context, tmdbID int) (*TVDetails, 
 
 // FindByIMDBID resolves an IMDB ID to TMDB entities.
 func (c *TMDBClient) FindByIMDBID(ctx context.Context, imdbID string) (*FindResult, error) {
+	if ctx == nil {
+		return nil, errors.New("context is required")
+	}
+	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.TMDBClient.FindByIMDBID")
+	start := time.Now()
+	defer span.End()
+
 	imdbID = strings.TrimSpace(imdbID)
 	if imdbID == "" {
-		return nil, errors.New("imdb id is required")
+		err := errors.New("imdb id is required")
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
+		return nil, err
 	}
+	span.SetAttributes(attribute.String("imdb.id", imdbID))
 
 	values := url.Values{}
 	values.Set("external_source", "imdb_id")
 
 	var result FindResult
 	if err := c.get(ctx, "/find/"+url.PathEscape(imdbID), values, &result); err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 		return nil, err
 	}
 
+	observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 	return &result, nil
 }
 
