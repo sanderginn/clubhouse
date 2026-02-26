@@ -2078,7 +2078,16 @@ func (s *PostService) RestorePost(ctx context.Context, postID uuid.UUID, userID 
 		RETURNING id, user_id, section_id, content, created_at, updated_at, deleted_at, deleted_by_user_id
 	`
 
-	err = s.db.QueryRowContext(ctx, updateQuery, postID).Scan(
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	err = tx.QueryRowContext(ctx, updateQuery, postID).Scan(
 		&post.ID, &post.UserID, &post.SectionID, &post.Content,
 		&post.CreatedAt, &post.UpdatedAt, &post.DeletedAt, &post.DeletedByUserID,
 	)
@@ -2086,6 +2095,28 @@ func (s *PostService) RestorePost(ctx context.Context, postID uuid.UUID, userID 
 	if err != nil {
 		recordSpanError(span, err)
 		return nil, fmt.Errorf("failed to restore post: %w", err)
+	}
+
+	isSelfRestore := post.UserID == userID
+	auditService := NewAuditService(tx)
+	metadata := map[string]interface{}{
+		"post_id":             post.ID.String(),
+		"section_id":          post.SectionID.String(),
+		"restored_by_user_id": userID.String(),
+		"is_self_restore":     isSelfRestore,
+		"post_owner_user_id":  post.UserID.String(),
+	}
+	if isAdmin {
+		metadata["restored_by_admin"] = true
+	}
+	if err := auditService.LogAuditWithMetadata(ctx, "restore_post", userID, post.UserID, metadata); err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("failed to create audit log: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	post.User = &user

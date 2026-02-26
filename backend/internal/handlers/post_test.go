@@ -714,6 +714,8 @@ func TestRestorePostSuccess(t *testing.T) {
 
 	mock.ExpectQuery("SELECT").WithArgs(postID).WillReturnRows(rows)
 
+	mock.ExpectBegin()
+
 	// Mock the restore update query
 	updateRows := mock.NewRows([]string{
 		"id", "user_id", "section_id", "content",
@@ -724,6 +726,12 @@ func TestRestorePostSuccess(t *testing.T) {
 	)
 
 	mock.ExpectQuery("UPDATE posts").WithArgs(postID).WillReturnRows(updateRows)
+
+	mock.ExpectExec("INSERT INTO audit_logs").
+		WithArgs(userID, "restore_post", userID, userID, sqlmock.AnyArg()).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	mock.ExpectCommit()
 
 	// Mock the links query
 
@@ -806,6 +814,8 @@ func TestRestorePostByAdmin(t *testing.T) {
 
 	mock.ExpectQuery("SELECT").WithArgs(postID).WillReturnRows(rows)
 
+	mock.ExpectBegin()
+
 	// Mock the restore update query
 	updateRows := mock.NewRows([]string{
 		"id", "user_id", "section_id", "content",
@@ -816,6 +826,12 @@ func TestRestorePostByAdmin(t *testing.T) {
 	)
 
 	mock.ExpectQuery("UPDATE posts").WithArgs(postID).WillReturnRows(updateRows)
+
+	mock.ExpectExec("INSERT INTO audit_logs").
+		WithArgs(adminID, "restore_post", ownerID, ownerID, sqlmock.AnyArg()).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	mock.ExpectCommit()
 
 	// Mock the links query
 
