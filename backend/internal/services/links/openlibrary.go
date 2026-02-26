@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/sanderginn/clubhouse/internal/observability"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const (
@@ -148,10 +150,21 @@ func NewOpenLibraryClientWithHTTPClient(httpClient *http.Client) *OpenLibraryCli
 
 // SearchBooks searches Open Library by title or author query.
 func (c *OpenLibraryClient) SearchBooks(ctx context.Context, query string) ([]OLSearchResult, error) {
+	if ctx == nil {
+		return nil, errors.New("context is required")
+	}
+	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.OpenLibraryClient.SearchBooks")
+	start := time.Now()
+	defer span.End()
+
 	query = strings.TrimSpace(query)
 	if query == "" {
-		return nil, errors.New("search query is required")
+		err := errors.New("search query is required")
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
+		return nil, err
 	}
+	span.SetAttributes(attribute.String("openlibrary.query", query))
 
 	values := url.Values{}
 	values.Set("q", query)
@@ -160,9 +173,12 @@ func (c *OpenLibraryClient) SearchBooks(ctx context.Context, query string) ([]OL
 		Docs []OLSearchResult `json:"docs"`
 	}
 	if err := c.get(ctx, "/search.json", values, &payload); err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 		return nil, err
 	}
 
+	observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 	return payload.Docs, nil
 }
 
