@@ -178,6 +178,11 @@ func (h *WebSocketHandler) unregisterConnection(ctx context.Context, userID uuid
 
 func (h *WebSocketHandler) closeConnection(wsConn *wsConnection, code int, reason string) {
 	if wsConn == nil {
+		observability.LogError(context.Background(), observability.ErrorLog{
+			Message:    "cannot close nil websocket connection",
+			Code:       "WS_CONNECTION_NIL",
+			StatusCode: http.StatusInternalServerError,
+		})
 		return
 	}
 	wsConn.cancel()
