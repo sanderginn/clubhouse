@@ -651,7 +651,17 @@ func (h *AuthHandler) clearLoginFailures(ctx context.Context, clientIP string, i
 		return nil
 	}
 
-	return h.failureTracker.Reset(ctx, clientIP, identifiers)
+	if err := h.failureTracker.Reset(ctx, clientIP, identifiers); err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to clear login failures",
+			Code:       "LOGIN_FAILURE_RESET_FAILED",
+			StatusCode: http.StatusInternalServerError,
+			Err:        err,
+		})
+		return err
+	}
+
+	return nil
 }
 
 func writeLockoutResponse(ctx context.Context, w http.ResponseWriter, retryAfter time.Duration) {
