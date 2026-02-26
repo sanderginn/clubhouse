@@ -212,16 +212,29 @@ func (c *OpenLibraryClient) GetWork(ctx context.Context, workKey string) (*OLWor
 
 // GetEdition fetches edition metadata by key.
 func (c *OpenLibraryClient) GetEdition(ctx context.Context, editionKey string) (*OLEdition, error) {
+	if ctx == nil {
+		return nil, errors.New("context is required")
+	}
+	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.OpenLibraryClient.GetEdition")
+	start := time.Now()
+	defer span.End()
+	span.SetAttributes(attribute.String("openlibrary.edition_key", strings.TrimSpace(editionKey)))
+
 	path, err := normalizeOpenLibraryPath(editionKey, "books")
 	if err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 		return nil, err
 	}
 
 	var edition OLEdition
 	if err := c.get(ctx, path, nil, &edition); err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 		return nil, err
 	}
 
+	observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 	return &edition, nil
 }
 
