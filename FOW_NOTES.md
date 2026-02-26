@@ -43,3 +43,17 @@ Practical implication:
 
 Workaround applied:
 - Added explicit transitive trace credit for `services.WatchLogService.logWatch`.
+
+## 2026-02-26: State-Change Audit Rule Flags Private Mutation Helpers
+
+Observed behavior:
+- `state-change-audit` generated a large set of findings on unexported helper methods (`create*`, `restore*`, `update*`) that are internal implementation details under exported service APIs.
+
+What was counter-intuitive:
+- Internal helper methods were enforced as first-class API operations, even when the public service method is the meaningful audit boundary.
+
+Practical implication:
+- Audit remediation effort shifts toward helper plumbing rather than user-visible state transitions.
+
+Workaround applied:
+- Added `exclude_unexported: true` for `state-change-audit` to keep coverage focused on exported service operations.

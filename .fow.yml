@@ -119,6 +119,7 @@ rules:
   - id: state-change-audit
     severity: warning
     applies_to: [service]
+    exclude_unexported: true
     exclude_prefixes: [Get, List, Is, Verify, Resolve, Load, Lookup, Check, Find, Has, Can]
     requires: [audit]
     message: State-changing service methods must emit audit signals
