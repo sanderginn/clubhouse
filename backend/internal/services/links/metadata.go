@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/sanderginn/clubhouse/internal/observability"
+	"go.opentelemetry.io/otel"
 	"golang.org/x/net/html"
 )
 
@@ -294,10 +295,18 @@ func buildBookMetadataOnlyResponse(u *url.URL, provider string, bookData *BookDa
 	return metadata
 }
 
-func getOMDBClientFromEnv() (*OMDBClient, error) {
+func getOMDBClientFromEnv(ctx context.Context) (*OMDBClient, error) {
+	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.getOMDBClientFromEnv")
+	start := time.Now()
+	defer span.End()
+
 	omdbClientFromEnvOnce.Do(func() {
 		omdbClientFromEnv, omdbClientFromEnvErr = newOMDBClientFromEnvFunc()
 	})
+	observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
+	if omdbClientFromEnvErr != nil {
+		span.RecordError(omdbClientFromEnvErr)
+	}
 	return omdbClientFromEnv, omdbClientFromEnvErr
 }
 
@@ -327,7 +336,7 @@ func fetchMovieMetadata(ctx context.Context, rawURL string) *MovieData {
 	}
 
 	var omdbClient *OMDBClient
-	if omdb, omdbErr := getOMDBClientFromEnv(); omdbErr == nil {
+	if omdb, omdbErr := getOMDBClientFromEnv(ctx); omdbErr == nil {
 		omdbClient = omdb
 	}
 
