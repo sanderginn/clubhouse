@@ -472,6 +472,15 @@ func (h *WebSocketHandler) addSubscriptions(ctx context.Context, wsConn *wsConne
 }
 
 func (h *WebSocketHandler) removeSubscriptions(ctx context.Context, wsConn *wsConnection, sectionIDs []string, messageType string) {
+	if wsConn == nil || wsConn.pubsub == nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "cannot remove websocket subscriptions without an active pubsub connection",
+			Code:       "WS_UNSUBSCRIBE_UNAVAILABLE",
+			StatusCode: http.StatusInternalServerError,
+		})
+		return
+	}
+
 	channels := sectionChannels(sectionIDs)
 	if len(channels) == 0 {
 		return
@@ -489,7 +498,16 @@ func (h *WebSocketHandler) removeSubscriptions(ctx context.Context, wsConn *wsCo
 		return
 	}
 
-	_ = wsConn.pubsub.Unsubscribe(ctx, toUnsubscribe...)
+	if err := wsConn.pubsub.Unsubscribe(ctx, toUnsubscribe...); err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to remove websocket subscriptions",
+			Code:       "WS_UNSUBSCRIBE_FAILED",
+			StatusCode: http.StatusInternalServerError,
+			UserID:     wsConn.userID.String(),
+			Err:        err,
+		})
+		return
+	}
 	for _, ch := range toUnsubscribe {
 		delete(wsConn.subscriptions, ch)
 	}
