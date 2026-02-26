@@ -262,10 +262,21 @@ func (c *TMDBClient) SearchMovie(ctx context.Context, query string) ([]MovieSear
 
 // SearchTV searches TMDB TV shows by title.
 func (c *TMDBClient) SearchTV(ctx context.Context, query string) ([]TVSearchResult, error) {
+	if ctx == nil {
+		return nil, errors.New("context is required")
+	}
+	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.TMDBClient.SearchTV")
+	start := time.Now()
+	defer span.End()
+
 	query = strings.TrimSpace(query)
 	if query == "" {
-		return nil, errors.New("tv query is required")
+		err := errors.New("tv query is required")
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
+		return nil, err
 	}
+	span.SetAttributes(attribute.String("tmdb.query", query))
 
 	values := url.Values{}
 	values.Set("query", query)
@@ -275,9 +286,12 @@ func (c *TMDBClient) SearchTV(ctx context.Context, query string) ([]TVSearchResu
 	}
 
 	if err := c.get(ctx, "/search/tv", values, &payload); err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 		return nil, err
 	}
 
+	observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 	return payload.Results, nil
 }
 
