@@ -9,10 +9,13 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/sanderginn/clubhouse/internal/models"
 	"github.com/sanderginn/clubhouse/internal/observability"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const (
@@ -296,6 +299,17 @@ func parseRottenTomatoesMovieMetadata(ctx context.Context, client *TMDBClient, o
 }
 
 func resolveTMDBIMDBID(ctx context.Context, client *TMDBClient, mediaType string, tmdbID int, verify bool, candidates ...string) string {
+	if ctx == nil {
+		return ""
+	}
+	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.resolveTMDBIMDBID")
+	start := time.Now()
+	defer span.End()
+	span.SetAttributes(
+		attribute.String("media_type", mediaType),
+		attribute.Int("tmdb.id", tmdbID),
+	)
+
 	seen := make(map[string]struct{}, len(candidates))
 	for _, candidate := range candidates {
 		normalized := strings.ToLower(strings.TrimSpace(candidate))
@@ -308,14 +322,17 @@ func resolveTMDBIMDBID(ctx context.Context, client *TMDBClient, mediaType string
 		seen[normalized] = struct{}{}
 
 		if !verify {
+			observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 			return normalized
 		}
 
 		if imdbIDMatchesTMDBEntity(ctx, client, mediaType, tmdbID, normalized) {
+			observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 			return normalized
 		}
 	}
 
+	observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 	return ""
 }
 
