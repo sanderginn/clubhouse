@@ -184,16 +184,29 @@ func (c *OpenLibraryClient) SearchBooks(ctx context.Context, query string) ([]OL
 
 // GetWork fetches work metadata by key (for example /works/OL45883W).
 func (c *OpenLibraryClient) GetWork(ctx context.Context, workKey string) (*OLWork, error) {
+	if ctx == nil {
+		return nil, errors.New("context is required")
+	}
+	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.OpenLibraryClient.GetWork")
+	start := time.Now()
+	defer span.End()
+	span.SetAttributes(attribute.String("openlibrary.work_key", strings.TrimSpace(workKey)))
+
 	path, err := normalizeOpenLibraryPath(workKey, "works")
 	if err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 		return nil, err
 	}
 
 	var work OLWork
 	if err := c.get(ctx, path, nil, &work); err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 		return nil, err
 	}
 
+	observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 	return &work, nil
 }
 
