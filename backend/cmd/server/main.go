@@ -19,6 +19,8 @@ import (
 	"github.com/sanderginn/clubhouse/internal/middleware"
 	"github.com/sanderginn/clubhouse/internal/observability"
 	"github.com/sanderginn/clubhouse/internal/services"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func getEnvInt(key string, defaultVal int) int {
@@ -44,6 +46,42 @@ func writeJSONBytes(ctx context.Context, w http.ResponseWriter, statusCode int, 
 			Err:        err,
 		})
 	}
+}
+
+func recoveryMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			recovered := recover()
+			if recovered == nil {
+				return
+			}
+
+			panicErr, ok := recovered.(error)
+			if !ok {
+				panicErr = fmt.Errorf("%v", recovered)
+			}
+
+			span := trace.SpanFromContext(r.Context())
+			span.RecordError(panicErr)
+			span.SetStatus(codes.Error, "panic recovered")
+
+			observability.LogError(r.Context(), observability.ErrorLog{
+				Message:    "panic recovered in HTTP handler",
+				Code:       "PANIC_RECOVERED",
+				StatusCode: http.StatusInternalServerError,
+				Err:        panicErr,
+			})
+
+			writeJSONBytes(
+				r.Context(),
+				w,
+				http.StatusInternalServerError,
+				[]byte(`{"error":"Internal server error","code":"INTERNAL_ERROR"}`),
+			)
+		}()
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func main() {
@@ -541,11 +579,16 @@ func main() {
 	// WebSocket route (protected)
 	mux.Handle("/api/v1/ws", requireAuth(http.HandlerFunc(wsHandler.HandleWS)))
 
+	rootMux := http.NewServeMux()
+	rootMux.Handle("/", recoveryMiddleware(mux))
+
 	// Apply middleware
-	handler := middleware.ChainMiddleware(mux,
-		middleware.RequestID,
-		middleware.CSPMiddleware,
-		middleware.Observability,
+	handler := middleware.RequestID(
+		middleware.CSPMiddleware(
+			middleware.Observability(
+				rootMux,
+			),
+		),
 	)
 
 	// HTTP server config
