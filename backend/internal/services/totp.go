@@ -230,6 +230,18 @@ func (s *TOTPService) EnrollUser(ctx context.Context, userID uuid.UUID, username
 		return nil, fmt.Errorf("failed to store totp secret: %w", err)
 	}
 
+	metadata := map[string]interface{}{
+		"method":             "totp",
+		"enrollment_scope":   "user",
+		"user_id":            userID.String(),
+		"has_totp_secret":    true,
+		"totp_enabled_after": false,
+	}
+	if err := NewAuditService(s.db).LogAuditWithMetadata(ctx, "enroll_mfa", userID, userID, metadata); err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("failed to create audit log: %w", err)
+	}
+
 	return &TOTPEnrollment{
 		Secret: key.Secret(),
 		URL:    key.URL(),
