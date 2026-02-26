@@ -240,17 +240,31 @@ func (c *OpenLibraryClient) GetEdition(ctx context.Context, editionKey string) (
 
 // GetByISBN fetches an edition by ISBN.
 func (c *OpenLibraryClient) GetByISBN(ctx context.Context, isbn string) (*OLEdition, error) {
+	if ctx == nil {
+		return nil, errors.New("context is required")
+	}
+	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.OpenLibraryClient.GetByISBN")
+	start := time.Now()
+	defer span.End()
+
 	isbn = strings.TrimSpace(isbn)
 	if isbn == "" {
-		return nil, errors.New("isbn is required")
+		err := errors.New("isbn is required")
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
+		return nil, err
 	}
+	span.SetAttributes(attribute.String("openlibrary.isbn", isbn))
 
 	var edition OLEdition
 	path := "/isbn/" + url.PathEscape(isbn) + ".json"
 	if err := c.get(ctx, path, nil, &edition); err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 		return nil, err
 	}
 
+	observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 	return &edition, nil
 }
 
