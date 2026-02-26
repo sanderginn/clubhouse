@@ -515,6 +515,16 @@ func (h *WebSocketHandler) removeSubscriptions(ctx context.Context, wsConn *wsCo
 }
 
 func (h *WebSocketHandler) addEvent(ctx context.Context, userID uuid.UUID, event string) {
+	if strings.TrimSpace(event) == "" {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "websocket event name is empty",
+			Code:       "WS_EVENT_EMPTY",
+			StatusCode: http.StatusInternalServerError,
+			UserID:     userID.String(),
+		})
+		return
+	}
+
 	tracer := otel.Tracer("clubhouse.websocket")
 	_, span := tracer.Start(ctx, event)
 	span.SetAttributes(attribute.String("user_id", userID.String()))
