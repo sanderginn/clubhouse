@@ -401,10 +401,30 @@ func (h *WebSocketHandler) sendPing(ctx context.Context, wsConn *wsConnection) {
 }
 
 func (h *WebSocketHandler) subscribeChannels(ctx context.Context, wsConn *wsConnection, channels []string) {
+	if wsConn == nil || wsConn.pubsub == nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "cannot subscribe channels without an active websocket pubsub connection",
+			Code:       "WS_SUBSCRIBE_UNAVAILABLE",
+			StatusCode: http.StatusInternalServerError,
+		})
+		return
+	}
+
 	if len(channels) == 0 {
 		return
 	}
-	_ = wsConn.pubsub.Subscribe(ctx, channels...)
+
+	if err := wsConn.pubsub.Subscribe(ctx, channels...); err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to subscribe websocket channels",
+			Code:       "WS_SUBSCRIBE_FAILED",
+			StatusCode: http.StatusInternalServerError,
+			UserID:     wsConn.userID.String(),
+			Err:        err,
+		})
+		return
+	}
+
 	for _, ch := range channels {
 		wsConn.subscriptions[ch] = struct{}{}
 	}
