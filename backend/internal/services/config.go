@@ -54,6 +54,9 @@ func InitConfigService(ctx context.Context, db *sql.DB) error {
 
 // GetConfig returns a copy of the current configuration
 func (s *ConfigService) GetConfig() Config {
+	_, span := otel.Tracer("clubhouse.config").Start(context.TODO(), "ConfigService.GetConfig")
+	defer span.End()
+
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.config
