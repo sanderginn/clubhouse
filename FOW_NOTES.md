@@ -14,3 +14,18 @@ Practical implication:
 
 Workaround applied:
 - Added a top-level `recoveryMiddleware` and registered it via `rootMux.Handle("/", recoveryMiddleware(mux))`, then applied the remaining middleware stack around `rootMux`.
+
+## 2026-02-26: Service Trace Rule Over-Targets Private Helper Methods
+
+Observed behavior:
+- `service-trace-span` flagged large numbers of private helper methods that are not service entrypoints (for example key builders, internal lookup helpers, and write helpers).
+
+What was counter-intuitive:
+- The rule is configured at `service` role level and, without `exclude_unexported`, it treats every private helper as requiring first-class span lifecycle instrumentation.
+- This creates heavy noise and pushes instrumentation into low-value internals rather than service boundaries.
+
+Practical implication:
+- Teams spend effort adding spans to private plumbing code just to satisfy FOW, while exported service methods remain the meaningful observability boundary.
+
+Workaround applied:
+- Added `exclude_unexported: true` for `service-trace-span` to keep enforcement focused on service API methods.

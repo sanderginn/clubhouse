@@ -91,6 +91,7 @@ rules:
   - id: service-trace-span
     severity: error
     applies_to: [service]
+    exclude_unexported: true
     requires: [trace]
     message: Service methods must create trace spans
     fix: Add otel.Tracer(...).Start(ctx, ...), then defer span.End().
