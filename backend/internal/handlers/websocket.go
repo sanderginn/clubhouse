@@ -533,6 +533,17 @@ func (h *WebSocketHandler) addEvent(ctx context.Context, userID uuid.UUID, event
 
 func (h *WebSocketHandler) startMessageSpan(ctx context.Context, wsConn *wsConnection, spanName, messageType string) (context.Context, trace.Span) {
 	tracer := otel.Tracer("clubhouse.websocket")
+	if wsConn == nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "cannot start websocket message span for nil connection",
+			Code:       "WS_CONNECTION_NIL",
+			StatusCode: http.StatusInternalServerError,
+		})
+		spanCtx, span := tracer.Start(ctx, spanName)
+		span.SetAttributes(attribute.String("message_type", messageType))
+		return spanCtx, span
+	}
+
 	spanCtx, span := tracer.Start(ctx, spanName)
 	span.SetAttributes(
 		attribute.String("user_id", wsConn.userID.String()),
