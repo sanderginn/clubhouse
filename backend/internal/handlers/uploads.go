@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -67,6 +68,13 @@ func NewUploadHandler() *UploadHandler {
 
 // UploadDir returns the configured upload directory.
 func (h *UploadHandler) UploadDir() string {
+	if strings.TrimSpace(h.uploadDir) == "" {
+		observability.LogError(context.Background(), observability.ErrorLog{
+			Message:    "upload directory is not configured",
+			Code:       "UPLOAD_DIR_NOT_CONFIGURED",
+			StatusCode: http.StatusInternalServerError,
+		})
+	}
 	return h.uploadDir
 }
 
