@@ -366,13 +366,38 @@ func (h *WebSocketHandler) sendMessage(wsConn *wsConnection, payload []byte) {
 }
 
 func (h *WebSocketHandler) sendPing(ctx context.Context, wsConn *wsConnection) {
+	if wsConn == nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "cannot send websocket ping on nil connection",
+			Code:       "WS_CONNECTION_NIL",
+			StatusCode: http.StatusInternalServerError,
+		})
+		return
+	}
+
 	_, span := h.startMessageSpan(ctx, wsConn, wsSpanMessageSend, wsPing)
 	defer span.End()
 
 	wsConn.writeMu.Lock()
 	defer wsConn.writeMu.Unlock()
-	_ = wsConn.conn.SetWriteDeadline(time.Now().Add(wsWriteWait))
-	_ = wsConn.conn.WriteMessage(websocket.PingMessage, nil)
+	if err := wsConn.conn.SetWriteDeadline(time.Now().Add(wsWriteWait)); err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to set websocket ping write deadline",
+			Code:       "WS_PING_DEADLINE_FAILED",
+			StatusCode: http.StatusInternalServerError,
+			UserID:     wsConn.userID.String(),
+			Err:        err,
+		})
+	}
+	if err := wsConn.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to send websocket ping",
+			Code:       "WS_PING_FAILED",
+			StatusCode: http.StatusInternalServerError,
+			UserID:     wsConn.userID.String(),
+			Err:        err,
+		})
+	}
 }
 
 func (h *WebSocketHandler) subscribeChannels(ctx context.Context, wsConn *wsConnection, channels []string) {
