@@ -52,9 +52,9 @@ func InitConfigService(ctx context.Context, db *sql.DB) error {
 	return service.loadFromDB(ctx)
 }
 
-// GetConfig returns a copy of the current configuration
-func (s *ConfigService) GetConfig() Config {
-	_, span := otel.Tracer("clubhouse.config").Start(context.TODO(), "ConfigService.GetConfig")
+// GetConfig returns a copy of the current configuration.
+func (s *ConfigService) GetConfig(ctx context.Context) Config {
+	_, span := otel.Tracer("clubhouse.config").Start(ctx, "ConfigService.GetConfig")
 	defer span.End()
 
 	s.mu.RLock()
@@ -102,9 +102,9 @@ func (s *ConfigService) UpdateConfig(ctx context.Context, linkMetadataEnabled *b
 	return s.config, nil
 }
 
-// IsLinkMetadataEnabled returns whether link metadata fetching is enabled
-func (s *ConfigService) IsLinkMetadataEnabled() bool {
-	_, span := otel.Tracer("clubhouse.config").Start(context.TODO(), "ConfigService.IsLinkMetadataEnabled")
+// IsLinkMetadataEnabled returns whether link metadata fetching is enabled.
+func (s *ConfigService) IsLinkMetadataEnabled(ctx context.Context) bool {
+	_, span := otel.Tracer("clubhouse.config").Start(ctx, "ConfigService.IsLinkMetadataEnabled")
 	defer span.End()
 
 	s.mu.RLock()
@@ -113,8 +113,8 @@ func (s *ConfigService) IsLinkMetadataEnabled() bool {
 }
 
 // IsMFARequired returns whether MFA enrollment is required for all users.
-func (s *ConfigService) IsMFARequired() bool {
-	_, span := otel.Tracer("clubhouse.config").Start(context.TODO(), "ConfigService.IsMFARequired")
+func (s *ConfigService) IsMFARequired(ctx context.Context) bool {
+	_, span := otel.Tracer("clubhouse.config").Start(ctx, "ConfigService.IsMFARequired")
 	defer span.End()
 
 	s.mu.RLock()

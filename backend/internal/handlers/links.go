@@ -27,7 +27,7 @@ func (h *LinkHandler) PreviewLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !services.GetConfigService().IsLinkMetadataEnabled() {
+	if !services.GetConfigService().IsLinkMetadataEnabled(r.Context()) {
 		writeError(r.Context(), w, http.StatusForbidden, "LINK_METADATA_DISABLED", "Link previews are disabled")
 		return
 	}
@@ -101,7 +101,7 @@ func (h *LinkHandler) ParseRecipe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !services.GetConfigService().IsLinkMetadataEnabled() {
+	if !services.GetConfigService().IsLinkMetadataEnabled(r.Context()) {
 		writeError(r.Context(), w, http.StatusForbidden, "LINK_METADATA_DISABLED", "Link previews are disabled")
 		return
 	}

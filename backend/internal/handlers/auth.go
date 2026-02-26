@@ -267,7 +267,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	config := services.GetConfigService().GetConfig()
+	config := services.GetConfigService().GetConfig(ctx)
 	if config.MFARequired && !user.TotpEnabled {
 		if err := h.clearLoginFailures(r.Context(), clientIP, identifiers); err != nil {
 			observability.LogError(r.Context(), observability.ErrorLog{

@@ -1182,7 +1182,7 @@ func TestUpdateConfigAuditLog(t *testing.T) {
 	handler := NewAdminHandler(db, nil)
 
 	configService := services.GetConfigService()
-	current := configService.GetConfig().LinkMetadataEnabled
+	current := configService.GetConfig(context.Background()).LinkMetadataEnabled
 	t.Cleanup(func() {
 		restore := current
 		if _, err := configService.UpdateConfig(context.Background(), &restore, nil, nil); err != nil {
@@ -1243,7 +1243,7 @@ func TestUpdateConfigAuditLogMFARequired(t *testing.T) {
 	handler := NewAdminHandler(db, nil)
 
 	configService := services.GetConfigService()
-	current := configService.GetConfig().MFARequired
+	current := configService.GetConfig(context.Background()).MFARequired
 	t.Cleanup(func() {
 		restore := current
 		if _, err := configService.UpdateConfig(context.Background(), nil, &restore, nil); err != nil {
@@ -1304,7 +1304,7 @@ func TestUpdateConfigAuditLogDisplayTimezone(t *testing.T) {
 	handler := NewAdminHandler(db, nil)
 
 	configService := services.GetConfigService()
-	current := configService.GetConfig().DisplayTimezone
+	current := configService.GetConfig(context.Background()).DisplayTimezone
 	t.Cleanup(func() {
 		restore := current
 		if _, err := configService.UpdateConfig(context.Background(), nil, nil, &restore); err != nil {

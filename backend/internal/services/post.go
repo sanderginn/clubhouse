@@ -130,7 +130,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *models.CreatePostRequ
 	// Create post ID
 	postID := uuid.New()
 	trimmedContent := strings.TrimSpace(req.Content)
-	shouldEnqueueMetadataJobs := s.redis != nil && GetConfigService().IsLinkMetadataEnabled()
+	shouldEnqueueMetadataJobs := s.redis != nil && GetConfigService().IsLinkMetadataEnabled(ctx)
 	jobs := make([]MetadataJob, 0, len(resolvedLinks))
 
 	// Begin transaction

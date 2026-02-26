@@ -33,7 +33,7 @@ func (h *ConfigHandler) GetPublicConfig(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	config := services.GetConfigService().GetConfig()
+	config := services.GetConfigService().GetConfig(r.Context())
 	response := PublicConfigResponse{
 		Config: PublicConfig{
 			DisplayTimezone: config.DisplayTimezone,

@@ -15,7 +15,7 @@ func fetchLinkMetadata(ctx context.Context, links []models.LinkRequest, sectionT
 	}
 
 	// Check if link metadata fetching is enabled
-	if !GetConfigService().IsLinkMetadataEnabled() {
+	if !GetConfigService().IsLinkMetadataEnabled(ctx) {
 		return nil
 	}
 

@@ -799,7 +799,7 @@ func (h *AdminHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	configService := services.GetConfigService()
-	config := configService.GetConfig()
+	config := configService.GetConfig(r.Context())
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -831,7 +831,7 @@ func (h *AdminHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	configService := services.GetConfigService()
-	previousConfig := configService.GetConfig()
+	previousConfig := configService.GetConfig(r.Context())
 	mfaRequired := req.MFARequired
 	if mfaRequired == nil {
 		mfaRequired = req.MFARequiredAlt

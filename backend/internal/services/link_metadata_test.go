@@ -10,7 +10,7 @@ import (
 
 func TestFetchLinkMetadataIncludesSpotifyEmbed(t *testing.T) {
 	config := GetConfigService()
-	current := config.GetConfig().LinkMetadataEnabled
+	current := config.GetConfig(context.Background()).LinkMetadataEnabled
 	enabled := true
 	if _, err := config.UpdateConfig(context.Background(), &enabled, nil, nil); err != nil {
 		t.Fatalf("failed to enable link metadata: %v", err)

@@ -135,7 +135,7 @@ func TestCreatePost_EnqueuesMetadataJob(t *testing.T) {
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	config := GetConfigService()
-	current := config.GetConfig().LinkMetadataEnabled
+	current := config.GetConfig(context.Background()).LinkMetadataEnabled
 	enabled := true
 	if _, err := config.UpdateConfig(context.Background(), &enabled, nil, nil); err != nil {
 		t.Fatalf("failed to enable link metadata: %v", err)
@@ -207,7 +207,7 @@ func TestCreatePost_MultipleLinks_EnqueuesAllJobs(t *testing.T) {
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	config := GetConfigService()
-	current := config.GetConfig().LinkMetadataEnabled
+	current := config.GetConfig(context.Background()).LinkMetadataEnabled
 	enabled := true
 	if _, err := config.UpdateConfig(context.Background(), &enabled, nil, nil); err != nil {
 		t.Fatalf("failed to enable link metadata: %v", err)
@@ -2641,7 +2641,7 @@ func TestLinkRequestsMatchExistingLinks_PodcastNotesUseValueComparison(t *testin
 func disableLinkMetadata(t *testing.T) {
 	t.Helper()
 	config := GetConfigService()
-	current := config.GetConfig().LinkMetadataEnabled
+	current := config.GetConfig(context.Background()).LinkMetadataEnabled
 	disabled := false
 	if _, err := config.UpdateConfig(context.Background(), &disabled, nil, nil); err != nil {
 		t.Fatalf("failed to disable link metadata: %v", err)
@@ -2668,7 +2668,7 @@ func TestCreatePost_QueueFailure_DoesNotFailPost(t *testing.T) {
 	t.Cleanup(func() { testutil.CleanupTables(t, db) })
 
 	config := GetConfigService()
-	current := config.GetConfig().LinkMetadataEnabled
+	current := config.GetConfig(context.Background()).LinkMetadataEnabled
 	enabled := true
 	if _, err := config.UpdateConfig(context.Background(), &enabled, nil, nil); err != nil {
 		t.Fatalf("failed to enable link metadata: %v", err)

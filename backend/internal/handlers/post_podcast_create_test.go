@@ -215,7 +215,7 @@ func disableLinkMetadataForCreatePostPodcastTests(t *testing.T) {
 	t.Helper()
 
 	config := services.GetConfigService()
-	current := config.GetConfig().LinkMetadataEnabled
+	current := config.GetConfig(context.Background()).LinkMetadataEnabled
 	disabled := false
 	if _, err := config.UpdateConfig(context.Background(), &disabled, nil, nil); err != nil {
 		t.Fatalf("failed to disable link metadata: %v", err)
