@@ -268,6 +268,10 @@ function mapApiSectionLink(link: ApiSectionLink): SectionLink {
   };
 }
 
+function recordCsrfPrefetchTiming(status: number, durationMs: number): void {
+  recordApiTiming(CSRF_ENDPOINT, 'GET', status, durationMs);
+}
+
 function toApiClientError(errorData: ApiError | null, fallbackMessage: string): ApiClientError {
   const code = errorData?.code ?? 'UNKNOWN_ERROR';
   const podcastKindSelectionRequired = code === PODCAST_KIND_SELECTION_REQUIRED_CODE;
@@ -896,29 +900,27 @@ class ApiClient {
         'http.target': CSRF_ENDPOINT,
       },
     });
+    let status = 0;
 
     try {
-      await context.with(trace.setSpan(context.active(), span), async () => {
-        const token = await this.ensureCsrfToken();
-        if (startTime !== null) {
-          recordApiTiming(CSRF_ENDPOINT, 'GET', token ? 200 : 0, performance.now() - startTime);
-        }
-        if (!token) {
-          span.setStatus({ code: SpanStatusCode.ERROR });
-        }
+      const token = await context.with(trace.setSpan(context.active(), span), async () => {
+        return this.ensureCsrfToken();
       });
-    } catch (error) {
-      if (startTime !== null) {
-        recordApiTiming(CSRF_ENDPOINT, 'GET', 0, performance.now() - startTime);
+      status = token ? 200 : 0;
+      if (!token) {
+        span.setStatus({ code: SpanStatusCode.ERROR });
       }
+    } catch (error) {
       span.recordException(error as Error);
       span.setStatus({ code: SpanStatusCode.ERROR });
       throw error;
     } finally {
+      if (startTime !== null) {
+        recordCsrfPrefetchTiming(status, performance.now() - startTime);
+      }
       span.end();
     }
   }
-
   private async request<T>(
     endpoint: string,
     options: RequestInit = {},

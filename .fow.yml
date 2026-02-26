@@ -73,6 +73,8 @@ analyzers:
           provides: trace
         - function: api.ApiClient.uploadWithRetry
           provides: metric_latency
+        - function: api.recordCsrfPrefetchTiming
+          provides: metric_latency
     signals:
       trace:
         - pattern: call_method
