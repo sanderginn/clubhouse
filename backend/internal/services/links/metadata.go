@@ -451,6 +451,13 @@ func shouldExtractBookMetadata(rawURL string) bool {
 }
 
 func (f *Fetcher) doRequestWithRetry(ctx context.Context, client *http.Client, u *url.URL) (*http.Response, error) {
+	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.Fetcher.doRequestWithRetry")
+	start := time.Now()
+	if u != nil {
+		span.SetAttributes(attribute.String("url.raw", u.String()))
+	}
+	defer span.End()
+
 	if client == nil {
 		client = &http.Client{Timeout: fetchTimeout}
 	}
@@ -459,16 +466,24 @@ func (f *Fetcher) doRequestWithRetry(ctx context.Context, client *http.Client, u
 	for attempt := 0; attempt <= maxFetchRetries; attempt++ {
 		req, reqErr := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 		if reqErr != nil {
+			span.RecordError(reqErr)
+			observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 			return nil, fmt.Errorf("build request: %w", reqErr)
 		}
 		applyRequestHeaders(req, u)
 
 		resp, err = client.Do(req)
 		if !shouldRetryFetch(ctx, err, resp) || attempt == maxFetchRetries {
+			if err != nil {
+				span.RecordError(err)
+			}
+			observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 			return resp, err
 		}
 		if resp != nil && resp.Body != nil {
 			if _, copyErr := io.Copy(io.Discard, resp.Body); copyErr != nil {
+				span.RecordError(copyErr)
+				observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 				return nil, copyErr
 			}
 			resp.Body.Close()
@@ -478,10 +493,14 @@ func (f *Fetcher) doRequestWithRetry(ctx context.Context, client *http.Client, u
 		select {
 		case <-ctx.Done():
 			timer.Stop()
-			return nil, ctx.Err()
+			err := ctx.Err()
+			span.RecordError(err)
+			observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
+			return nil, err
 		case <-timer.C:
 		}
 	}
+	observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 	return resp, err
 }
 
