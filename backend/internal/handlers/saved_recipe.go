@@ -83,7 +83,7 @@ func (h *SavedRecipeHandler) SaveRecipe(w http.ResponseWriter, r *http.Request) 
 	}
 
 	categories := uniqueRecipeCategories(savedRecipes)
-	publishCtx, cancel := publishContext()
+	publishCtx, cancel := publishContext(r.Context())
 	username := ""
 	if user, err := h.userService.GetUserByID(publishCtx, userID); err == nil {
 		username = user.Username
@@ -167,7 +167,7 @@ func (h *SavedRecipeHandler) UnsaveRecipe(w http.ResponseWriter, r *http.Request
 		"post_id", postID.String(),
 	)
 
-	publishCtx, cancel := publishContext()
+	publishCtx, cancel := publishContext(r.Context())
 	eventData := recipeUnsavedEventData{
 		PostID: postID,
 		UserID: userID,

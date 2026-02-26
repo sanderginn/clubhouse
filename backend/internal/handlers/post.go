@@ -110,7 +110,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		Post: *post,
 	}
 
-	publishCtx, cancel := publishContext()
+	publishCtx, cancel := publishContext(r.Context())
 	_ = h.notify.CreateNotificationsForNewPost(publishCtx, post.ID, post.SectionID, userID)
 	mentionedUserIDs, _ := resolveMentionedUserIDs(publishCtx, h.userService, req.MentionUsernames, post.Content, userID)
 	_ = h.notify.CreateMentionNotifications(publishCtx, mentionedUserIDs, userID, post.SectionID, post.ID, nil)
@@ -208,7 +208,7 @@ func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 		Post: *post,
 	}
 
-	publishCtx, cancel := publishContext()
+	publishCtx, cancel := publishContext(r.Context())
 	mentionedUserIDs, _ := resolveMentionedUserIDs(publishCtx, h.userService, req.MentionUsernames, post.Content, userID)
 	_ = h.notify.CreateMentionNotifications(publishCtx, mentionedUserIDs, userID, post.SectionID, post.ID, nil)
 	mentioningUser := userSummaryFromUser(post.User)

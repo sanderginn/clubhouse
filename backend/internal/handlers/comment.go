@@ -116,7 +116,7 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	mentioningUser := userSummaryFromUser(comment.User)
 	contentExcerpt := truncateMentionExcerpt(comment.Content)
 
-	publishCtx, cancel := publishContext()
+	publishCtx, cancel := publishContext(r.Context())
 	_ = h.notify.CreateNotificationForPostComment(publishCtx, comment.PostID, comment.ID, userID)
 	mentionedUserIDs, _ := resolveMentionedUserIDs(publishCtx, h.userService, req.MentionUsernames, comment.Content, userID)
 	_ = publishEvent(publishCtx, h.redis, formatChannel(postPrefix, comment.PostID), "new_comment", commentEventData{Comment: comment})
@@ -217,7 +217,7 @@ func (h *CommentHandler) UpdateComment(w http.ResponseWriter, r *http.Request) {
 		Comment: *comment,
 	}
 
-	publishCtx, cancel := publishContext()
+	publishCtx, cancel := publishContext(r.Context())
 	mentionedUserIDs, _ := resolveMentionedUserIDs(publishCtx, h.userService, req.MentionUsernames, comment.Content, userID)
 	if comment.SectionID != nil {
 		_ = h.notify.CreateMentionNotifications(publishCtx, mentionedUserIDs, userID, *comment.SectionID, comment.PostID, &comment.ID)

@@ -85,7 +85,7 @@ func (h *WatchLogHandler) LogWatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	publishCtx, cancel := publishContext()
+	publishCtx, cancel := publishContext(r.Context())
 	username := ""
 	if user, err := h.userService.GetUserByID(publishCtx, userID); err == nil {
 		username = user.Username
@@ -229,7 +229,7 @@ func (h *WatchLogHandler) RemoveWatchLog(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	publishCtx, cancel := publishContext()
+	publishCtx, cancel := publishContext(r.Context())
 	eventData := movieWatchRemovedEventData{PostID: postID, UserID: userID}
 	_ = publishEvent(publishCtx, h.redis, formatChannel(postPrefix, postID), "movie_watch_removed", eventData)
 	if sectionID, err := h.postService.GetSectionIDByPostID(publishCtx, postID); err == nil {

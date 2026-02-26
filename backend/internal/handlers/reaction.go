@@ -84,7 +84,7 @@ func (h *ReactionHandler) AddReactionToPost(w http.ResponseWriter, r *http.Reque
 		Reaction: *reaction,
 	}
 
-	publishCtx, cancel := publishContext()
+	publishCtx, cancel := publishContext(r.Context())
 	_ = h.notify.CreateNotificationForPostReaction(publishCtx, postID, reaction.UserID)
 	_ = publishEvent(publishCtx, h.redis, formatChannel(postPrefix, postID), "reaction_added", reactionEventData{
 		PostID: &postID,
@@ -207,7 +207,7 @@ func (h *ReactionHandler) RemoveReactionFromPost(w http.ResponseWriter, r *http.
 		return
 	}
 
-	publishCtx, cancel := publishContext()
+	publishCtx, cancel := publishContext(r.Context())
 	_ = publishEvent(publishCtx, h.redis, formatChannel(postPrefix, postID), "reaction_removed", reactionEventData{
 		PostID: &postID,
 		UserID: userID,
@@ -280,7 +280,7 @@ func (h *ReactionHandler) AddReactionToComment(w http.ResponseWriter, r *http.Re
 		Reaction: *reaction,
 	}
 
-	publishCtx, cancel := publishContext()
+	publishCtx, cancel := publishContext(r.Context())
 	_ = h.notify.CreateNotificationForCommentReaction(publishCtx, commentID, reaction.UserID)
 	_ = publishEvent(publishCtx, h.redis, formatChannel(commentPrefix, commentID), "reaction_added", reactionEventData{
 		CommentID: &commentID,
@@ -404,7 +404,7 @@ func (h *ReactionHandler) RemoveReactionFromComment(w http.ResponseWriter, r *ht
 		return
 	}
 
-	publishCtx, cancel := publishContext()
+	publishCtx, cancel := publishContext(r.Context())
 	_ = publishEvent(publishCtx, h.redis, formatChannel(commentPrefix, commentID), "reaction_removed", reactionEventData{
 		CommentID: &commentID,
 		UserID:    userID,

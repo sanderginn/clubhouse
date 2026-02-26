@@ -142,8 +142,8 @@ func publishWithRetry(ctx context.Context, redisClient *redis.Client, channel st
 	return err
 }
 
-func publishContext() (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), 2*time.Second)
+func publishContext(parent context.Context) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(parent, 2*time.Second)
 }
 
 func extractMentionedUsernames(content string) []string {

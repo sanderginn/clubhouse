@@ -75,7 +75,7 @@ func (h *CookLogHandler) LogCook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	publishCtx, cancel := publishContext()
+	publishCtx, cancel := publishContext(r.Context())
 	username := ""
 	if user, err := h.userService.GetUserByID(publishCtx, userID); err == nil {
 		username = user.Username
@@ -230,7 +230,7 @@ func (h *CookLogHandler) RemoveCookLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	publishCtx, cancel := publishContext()
+	publishCtx, cancel := publishContext(r.Context())
 	eventData := recipeCookRemovedEventData{
 		PostID: postID,
 		UserID: userID,

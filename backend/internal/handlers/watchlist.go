@@ -80,7 +80,7 @@ func (h *WatchlistHandler) AddToWatchlist(w http.ResponseWriter, r *http.Request
 	}
 
 	categories := uniqueWatchlistCategories(items)
-	publishCtx, cancel := publishContext()
+	publishCtx, cancel := publishContext(r.Context())
 	username := ""
 	if user, err := h.userService.GetUserByID(publishCtx, userID); err == nil {
 		username = user.Username
@@ -165,7 +165,7 @@ func (h *WatchlistHandler) RemoveFromWatchlist(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	publishCtx, cancel := publishContext()
+	publishCtx, cancel := publishContext(r.Context())
 	eventData := movieUnwatchlistedEventData{
 		PostID: postID,
 		UserID: userID,

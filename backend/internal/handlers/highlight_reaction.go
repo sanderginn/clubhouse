@@ -62,7 +62,7 @@ func (h *HighlightReactionHandler) AddHighlightReaction(w http.ResponseWriter, r
 	}
 
 	if created {
-		publishCtx, cancel := publishContext()
+		publishCtx, cancel := publishContext(r.Context())
 		linkID, _, decodeErr := models.DecodeHighlightID(highlightID)
 		if decodeErr == nil {
 			_ = publishEvent(publishCtx, h.redis, formatChannel(postPrefix, postID), "highlight_reaction_added", highlightReactionEventData{
@@ -181,7 +181,7 @@ func (h *HighlightReactionHandler) RemoveHighlightReaction(w http.ResponseWriter
 		}
 	}
 
-	publishCtx, cancel := publishContext()
+	publishCtx, cancel := publishContext(r.Context())
 	linkID, _, decodeErr := models.DecodeHighlightID(highlightID)
 	if decodeErr == nil {
 		_ = publishEvent(publishCtx, h.redis, formatChannel(postPrefix, postID), "highlight_reaction_removed", highlightReactionEventData{
