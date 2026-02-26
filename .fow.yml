@@ -14,6 +14,7 @@ analyzers:
         directories:
           - backend/internal/services/
         type_suffix: Service
+        type_names: [AuthFailureTracker]
       external_call:
         directories:
           - backend/internal/services/links/
@@ -29,8 +30,25 @@ analyzers:
           provides: audit
         - function: services.AuditService.LogModerationAudit
           provides: audit
+        - function: services.fetchLinkMetadata
+          provides: metric_error
+        - function: services.NotificationService.sendPush*
+          provides: metric_error
+        - function: services.MetadataWorker.publishLinkMetadataUpdated
+          provides: metric_error
+
+      io_sink_functions:
+        - links.Fetcher.doRequestWithRetry   # add your wrapper sink methods here
       entry_points:
-        route_file: backend/cmd/server/main.go
+        route_files:
+          - backend/cmd/server/main.go
+          - backend/cmd/server/routes.go
+    flows:
+      exclude_paths:
+        - "**/observability/**"   # exclude infra from flow gaps
+        - "**/services/tracing*"
+      middleware_provides:
+        - trace                   # credit handler coverage from middleware
 
   - profile: typescript-otel
     paths:
@@ -43,6 +61,12 @@ analyzers:
       utility:
         directories:
           - frontend/src/
+    call_graph:
+      transitive_credit:
+        - function: api.ApiClient.request
+          provides: trace
+        - function: api.ApiClient.request
+          provides: metric_latency
     signals:
       trace:
         - pattern: call_method
@@ -66,13 +90,64 @@ rules:
   - id: external-call-trace-span
     severity: warning
     applies_to: [external_call]
+    exclude_prefixes: [parse, normalize, validate, is, should, clear]
+    exclude_suffixes: [ForTests, ForTest]
     requires: [trace]
     message: External calls should be wrapped in a trace span
     fix: Start a span in this method before the outbound request.
 
+  - id: external-call-latency-histogram
+    severity: warning
+    applies_to: [external_call]
+    exclude_prefixes: [parse, normalize, validate, is, should, clear]
+    exclude_suffixes: [ForTests, ForTest]
+    requires: [metric_latency]
+    message: External calls should emit latency histogram metrics
+    fix: Add direct latency metric recording or register transitive metric credit for auto-instrumented clients.
+
   - id: state-change-audit
     severity: warning
     applies_to: [service]
+    exclude_prefixes: [Get, List, Is, Verify, Resolve, Load, Lookup, Check, Find, Has, Can]
     requires: [audit]
     message: State-changing service methods must emit audit signals
     fix: Add an audit log write for this state transition.
+
+  - id: state-change-metric
+    severity: info
+    applies_to: [service]
+    requires: [metric]
+    exclude_prefixes: [Get, List, Is, Verify, Resolve, Load, Lookup, Check, Find, Has, Can]
+    exclude_suffixes: [ForTests, ForTest]
+    message: State-changing service methods should emit business activity metrics
+    fix: Add observability.RecordBusinessEvent(...) or configure transitive_credit for shared metric emitters.
+
+  - id: error-rate-counter
+    severity: warning
+    applies_to: [service, external_call]
+    requires: [metric_error]
+    exclude_prefixes: [Get, List, Is, Has, Can, Validate, Parse, Normalize, Build, New, scan, log, verify, resolve, load, persist, init, next]
+    exclude_suffixes: [ForTests, ForTest]
+    condition:
+      name_matches: "^(Create|Update|Delete|Remove|Restore|Publish|Process|Deliver|Send|Fetch|Lookup|Sync|Log|Register|Reset|Refresh)"
+      returns_error: true
+    message: Service and external-call error paths should be countable via metric_error
+    fix: Add metric_error instrumentation on each error return/branch, or route failures through a helper with transitive metric_error credit.
+
+  - id: unstructured-logging
+    severity: warning
+    exclude_paths:                           # new: rule-level path exclusion
+      - "**/observability/**"
+      - "**/lib/observability/**"
+    message: Unstructured logging call detected.
+
+  - id: resource-saturation-gauge
+    severity: warning
+    exclude_paths:
+      - "**/internal/testutil/**"
+    message: Add instrumentation to measure resource saturation.
+
+output:
+  flow_error_max_depth: 0
+  flow_warning_max_depth: 1
+  flow_include_info: false
