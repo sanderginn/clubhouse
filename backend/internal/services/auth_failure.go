@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const (
@@ -52,6 +54,13 @@ func NewAuthFailureTracker(redis *redis.Client) *AuthFailureTracker {
 
 // IsLocked reports whether the identifier/IP pair is currently locked out.
 func (t *AuthFailureTracker) IsLocked(ctx context.Context, ip string, identifiers []string) (bool, time.Duration, error) {
+	ctx, span := otel.Tracer("clubhouse.auth_failure").Start(ctx, "AuthFailureTracker.IsLocked")
+	span.SetAttributes(
+		attribute.String("ip", normalizeIP(ip)),
+		attribute.Int("identifier_count", len(identifiers)),
+	)
+	defer span.End()
+
 	if t == nil || t.redis == nil {
 		return false, 0, nil
 	}
@@ -70,6 +79,7 @@ func (t *AuthFailureTracker) IsLocked(ctx context.Context, ip string, identifier
 		}
 		ttl, err := t.redis.PTTL(ctx, key).Result()
 		if err != nil {
+			recordSpanError(span, err)
 			return false, 0, err
 		}
 		if ttl == time.Duration(-1) {
