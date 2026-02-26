@@ -400,11 +400,20 @@ func (c *TMDBClient) get(ctx context.Context, path string, query url.Values, out
 	if ctx == nil {
 		return errors.New("context is required")
 	}
+	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.TMDBClient.get")
+	opStart := time.Now()
+	defer span.End()
+	span.SetAttributes(attribute.String("tmdb.path", path))
 	if c == nil {
-		return errors.New("tmdb client is required")
+		err := errors.New("tmdb client is required")
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
+		return err
 	}
 
 	if err := c.limiter.Wait(ctx); err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 		return fmt.Errorf("tmdb rate limiter wait: %w", err)
 	}
 
@@ -421,16 +430,20 @@ func (c *TMDBClient) get(ctx context.Context, path string, query url.Values, out
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL, nil)
 	if err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 		return fmt.Errorf("build tmdb request: %w", err)
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", tmdbUserAgent)
 	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 
-	start := time.Now()
+	requestStart := time.Now()
 	resp, err := c.httpClient.Do(req)
-	duration := time.Since(start)
+	duration := time.Since(requestStart)
 	if err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 		observability.LogWarn(ctx, "tmdb request failed", "path", path, "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "error", err.Error())
 		return fmt.Errorf("tmdb request failed: %w", err)
 	}
@@ -438,15 +451,20 @@ func (c *TMDBClient) get(ctx context.Context, path string, query url.Values, out
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
 		apiErr := parseTMDBAPIError(resp)
+		span.RecordError(apiErr)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 		observability.LogWarn(ctx, "tmdb request failed", "path", path, "status_code", strconv.Itoa(resp.StatusCode), "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "error", apiErr.Error())
 		return apiErr
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 		observability.LogWarn(ctx, "tmdb response decode failed", "path", path, "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "error", err.Error())
 		return fmt.Errorf("decode tmdb response: %w", err)
 	}
 
+	observability.RecordLinkMetadataFetchDuration(ctx, time.Since(opStart))
 	observability.LogDebug(ctx, "tmdb request completed", "path", path, "duration_ms", strconv.FormatInt(duration.Milliseconds(), 10), "status_code", strconv.Itoa(resp.StatusCode))
 
 	return nil
