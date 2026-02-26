@@ -107,7 +107,7 @@ func SetFetchMetadataFuncForTests(fn func(context.Context, string) (map[string]i
 // WithMetadataSectionType stores section type metadata used by extractor-specific logic.
 func WithMetadataSectionType(ctx context.Context, sectionType string) context.Context {
 	if ctx == nil {
-		ctx = context.Background()
+		return nil
 	}
 	sectionType = strings.ToLower(strings.TrimSpace(sectionType))
 	return context.WithValue(ctx, metadataSectionTypeContextKey, sectionType)
