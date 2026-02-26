@@ -5,6 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"sync"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // Config holds application configuration that can be toggled at runtime
@@ -58,6 +61,14 @@ func (s *ConfigService) GetConfig() Config {
 
 // UpdateConfig updates the configuration with the provided values
 func (s *ConfigService) UpdateConfig(ctx context.Context, linkMetadataEnabled *bool, mfaRequired *bool, displayTimezone *string) (Config, error) {
+	ctx, span := otel.Tracer("clubhouse.config").Start(ctx, "ConfigService.UpdateConfig")
+	span.SetAttributes(
+		attribute.Bool("set_link_metadata_enabled", linkMetadataEnabled != nil),
+		attribute.Bool("set_mfa_required", mfaRequired != nil),
+		attribute.Bool("set_display_timezone", displayTimezone != nil),
+	)
+	defer span.End()
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -74,9 +85,12 @@ func (s *ConfigService) UpdateConfig(ctx context.Context, linkMetadataEnabled *b
 
 	if s.db != nil {
 		if ctx == nil {
-			return s.config, errors.New("context is required")
+			err := errors.New("context is required")
+			recordSpanError(span, err)
+			return s.config, err
 		}
 		if err := s.persistConfig(ctx, updated); err != nil {
+			recordSpanError(span, err)
 			return s.config, err
 		}
 	}
