@@ -17,6 +17,7 @@ import (
 
 	"github.com/sanderginn/clubhouse/internal/observability"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/net/html"
 )
 
@@ -326,6 +327,13 @@ func shouldExtractMovieMetadata(ctx context.Context) bool {
 }
 
 func fetchMovieMetadata(ctx context.Context, rawURL string) *MovieData {
+	if ctx == nil {
+		return nil
+	}
+	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.fetchMovieMetadata")
+	defer span.End()
+	span.SetAttributes(attribute.String("url.raw", rawURL))
+
 	if !shouldExtractMovieMetadata(ctx) {
 		return nil
 	}
