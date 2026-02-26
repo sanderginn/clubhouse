@@ -888,7 +888,35 @@ class ApiClient {
   }
 
   async prefetchCsrfToken(): Promise<void> {
-    await this.ensureCsrfToken();
+    const startTime = typeof performance !== 'undefined' ? performance.now() : null;
+    const span = this.tracer.startSpan('api GET /auth/csrf', {
+      attributes: {
+        'http.method': 'GET',
+        'http.url': `${API_BASE}${CSRF_ENDPOINT}`,
+        'http.target': CSRF_ENDPOINT,
+      },
+    });
+
+    try {
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        const token = await this.ensureCsrfToken();
+        if (startTime !== null) {
+          recordApiTiming(CSRF_ENDPOINT, 'GET', token ? 200 : 0, performance.now() - startTime);
+        }
+        if (!token) {
+          span.setStatus({ code: SpanStatusCode.ERROR });
+        }
+      });
+    } catch (error) {
+      if (startTime !== null) {
+        recordApiTiming(CSRF_ENDPOINT, 'GET', 0, performance.now() - startTime);
+      }
+      span.recordException(error as Error);
+      span.setStatus({ code: SpanStatusCode.ERROR });
+      throw error;
+    } finally {
+      span.end();
+    }
   }
 
   private async request<T>(
