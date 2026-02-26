@@ -340,9 +340,19 @@ func imdbIDMatchesTMDBEntity(ctx context.Context, client *TMDBClient, mediaType 
 	if ctx == nil || client == nil || tmdbID <= 0 {
 		return false
 	}
+	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.imdbIDMatchesTMDBEntity")
+	start := time.Now()
+	defer span.End()
+	span.SetAttributes(
+		attribute.String("media_type", mediaType),
+		attribute.String("imdb.id", imdbID),
+		attribute.Int("tmdb.id", tmdbID),
+	)
 
 	result, err := client.FindByIMDBID(ctx, imdbID)
 	if err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 		observability.LogWarn(
 			ctx,
 			"tmdb imdb verification request failed",
@@ -362,12 +372,14 @@ func imdbIDMatchesTMDBEntity(ctx context.Context, client *TMDBClient, mediaType 
 	case "movie":
 		for _, movie := range result.MovieResults {
 			if movie.ID == tmdbID {
+				observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 				return true
 			}
 		}
 	case "tv":
 		for _, tv := range result.TVResults {
 			if tv.ID == tmdbID {
+				observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 				return true
 			}
 		}
@@ -384,6 +396,7 @@ func imdbIDMatchesTMDBEntity(ctx context.Context, client *TMDBClient, mediaType 
 		mediaType,
 	)
 
+	observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 	return false
 }
 
