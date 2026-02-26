@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -81,6 +82,9 @@ type metrics struct {
 	dbConnectionsIdle         metric.Int64UpDownCounter
 	dbConnectionWaitCount     metric.Int64Counter
 	dbConnectionWaitDuration  metric.Float64Counter
+	redisPoolConnectionsTotal metric.Int64UpDownCounter
+	redisPoolConnectionsIdle  metric.Int64UpDownCounter
+	redisPoolConnectionsStale metric.Int64UpDownCounter
 	dbQueryErrors             metric.Int64Counter
 	dbTransactions            metric.Int64Counter
 }
@@ -91,6 +95,8 @@ var (
 	metricsInstance *metrics
 	dbStatsMu       sync.Mutex
 	dbStatsSnapshot dbStatsState
+	redisStatsMu    sync.Mutex
+	redisStatsSnap  redisPoolStatsState
 )
 
 type dbStatsState struct {
@@ -100,6 +106,13 @@ type dbStatsState struct {
 	idle        int64
 	waitCount   int64
 	waitSeconds float64
+}
+
+type redisPoolStatsState struct {
+	initialized bool
+	total       int64
+	idle        int64
+	stale       int64
 }
 
 func initMetrics() error {
@@ -729,6 +742,33 @@ func initMetrics() error {
 			return
 		}
 
+		redisPoolConnectionsTotal, err := meter.Int64UpDownCounter(
+			"clubhouse_redis_pool_connections_total",
+			metric.WithDescription("Total number of Redis pool connections"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		redisPoolConnectionsIdle, err := meter.Int64UpDownCounter(
+			"clubhouse_redis_pool_connections_idle",
+			metric.WithDescription("Number of idle Redis pool connections"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
+		redisPoolConnectionsStale, err := meter.Int64UpDownCounter(
+			"clubhouse_redis_pool_connections_stale",
+			metric.WithDescription("Number of stale Redis pool connections"),
+		)
+		if err != nil {
+			metricsInitErr = err
+			return
+		}
+
 		dbQueryErrors, err := meter.Int64Counter(
 			"clubhouse_db_query_errors_total",
 			metric.WithDescription("Total number of database query errors"),
@@ -815,6 +855,9 @@ func initMetrics() error {
 			dbConnectionsIdle:         dbConnectionsIdle,
 			dbConnectionWaitCount:     dbConnectionWaitCount,
 			dbConnectionWaitDuration:  dbConnectionWaitDuration,
+			redisPoolConnectionsTotal: redisPoolConnectionsTotal,
+			redisPoolConnectionsIdle:  redisPoolConnectionsIdle,
+			redisPoolConnectionsStale: redisPoolConnectionsStale,
 			dbQueryErrors:             dbQueryErrors,
 			dbTransactions:            dbTransactions,
 		}
@@ -833,6 +876,8 @@ func ResetMetricsForTest() {
 	metricsOnce = sync.Once{}
 	metricsInitErr = nil
 	metricsInstance = nil
+	dbStatsSnapshot = dbStatsState{}
+	redisStatsSnap = redisPoolStatsState{}
 }
 
 func getMetrics() *metrics {
@@ -1062,6 +1107,70 @@ func StartDBStatsReporter(ctx context.Context, db *sql.DB, interval time.Duratio
 			return
 		case <-ticker.C:
 			UpdateDBStats(ctx, db)
+		}
+	}
+}
+
+type redisPoolStatsProvider interface {
+	PoolStats() *redis.PoolStats
+}
+
+// RecordRedisPoolSaturation records Redis connection pool saturation metrics.
+func RecordRedisPoolSaturation(ctx context.Context, stats *redis.PoolStats) {
+	m := getMetrics()
+	if m == nil || stats == nil {
+		return
+	}
+
+	redisStatsMu.Lock()
+	defer redisStatsMu.Unlock()
+
+	total := int64(stats.TotalConns)
+	idle := int64(stats.IdleConns)
+	stale := int64(stats.StaleConns)
+
+	if !redisStatsSnap.initialized {
+		m.redisPoolConnectionsTotal.Add(ctx, total)
+		m.redisPoolConnectionsIdle.Add(ctx, idle)
+		m.redisPoolConnectionsStale.Add(ctx, stale)
+		redisStatsSnap = redisPoolStatsState{
+			initialized: true,
+			total:       total,
+			idle:        idle,
+			stale:       stale,
+		}
+		return
+	}
+
+	m.redisPoolConnectionsTotal.Add(ctx, total-redisStatsSnap.total)
+	m.redisPoolConnectionsIdle.Add(ctx, idle-redisStatsSnap.idle)
+	m.redisPoolConnectionsStale.Add(ctx, stale-redisStatsSnap.stale)
+
+	redisStatsSnap.total = total
+	redisStatsSnap.idle = idle
+	redisStatsSnap.stale = stale
+}
+
+// StartRedisPoolStatsReporter periodically updates Redis pool saturation metrics.
+func StartRedisPoolStatsReporter(ctx context.Context, client redisPoolStatsProvider, interval time.Duration) {
+	if client == nil {
+		return
+	}
+	if interval <= 0 {
+		interval = 15 * time.Second
+	}
+
+	RecordRedisPoolSaturation(ctx, client.PoolStats())
+
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			RecordRedisPoolSaturation(ctx, client.PoolStats())
 		}
 	}
 }

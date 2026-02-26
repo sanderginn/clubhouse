@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	// go-redis v9 ships OpenTelemetry hooks under redisotel.
 	"github.com/redis/go-redis/extra/redisotel/v9"
 	"github.com/redis/go-redis/v9"
+	"github.com/sanderginn/clubhouse/internal/observability"
 )
 
 // Init initializes and returns a Redis client
@@ -38,6 +40,9 @@ func Init(ctx context.Context) (*redis.Client, error) {
 	if err := client.Ping(ctx).Err(); err != nil {
 		return nil, fmt.Errorf("failed to connect to Redis: %w", err)
 	}
+
+	observability.RecordRedisPoolSaturation(ctx, client.PoolStats())
+	go observability.StartRedisPoolStatsReporter(ctx, client, 15*time.Second)
 
 	return client, nil
 }
