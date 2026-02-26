@@ -224,6 +224,10 @@ func (h *WebSocketHandler) readLoop(ctx context.Context, wsConn *wsConnection) {
 }
 
 func (h *WebSocketHandler) writeLoop(ctx context.Context, wsConn *wsConnection) {
+	ctx, span := otel.Tracer("clubhouse.websocket").Start(ctx, "WebSocketHandler.writeLoop")
+	span.SetAttributes(attribute.String("user_id", wsConn.userID.String()))
+	defer span.End()
+
 	go h.pingLoop(ctx, wsConn)
 
 	for {
@@ -261,13 +265,17 @@ func (h *WebSocketHandler) writeLoop(ctx context.Context, wsConn *wsConnection) 
 }
 
 func (h *WebSocketHandler) pingLoop(ctx context.Context, wsConn *wsConnection) {
+	ctx, span := otel.Tracer("clubhouse.websocket").Start(ctx, "WebSocketHandler.pingLoop")
+	span.SetAttributes(attribute.String("user_id", wsConn.userID.String()))
+	defer span.End()
+
 	pingTicker := time.NewTicker(wsPingPeriod)
 	defer pingTicker.Stop()
 
 	for {
 		select {
 		case <-pingTicker.C:
-			h.sendPing(wsConn)
+			h.sendPing(ctx, wsConn)
 		case <-ctx.Done():
 			return
 		}
@@ -294,7 +302,10 @@ func (h *WebSocketHandler) sendMessage(wsConn *wsConnection, payload []byte) {
 	_ = wsConn.conn.WriteMessage(websocket.TextMessage, payload)
 }
 
-func (h *WebSocketHandler) sendPing(wsConn *wsConnection) {
+func (h *WebSocketHandler) sendPing(ctx context.Context, wsConn *wsConnection) {
+	_, span := h.startMessageSpan(ctx, wsConn, wsSpanMessageSend, wsPing)
+	defer span.End()
+
 	wsConn.writeMu.Lock()
 	defer wsConn.writeMu.Unlock()
 	_ = wsConn.conn.SetWriteDeadline(time.Now().Add(wsWriteWait))
