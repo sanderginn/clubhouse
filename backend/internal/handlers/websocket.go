@@ -334,10 +334,35 @@ func (h *WebSocketHandler) wrapPayload(payload string) []byte {
 }
 
 func (h *WebSocketHandler) sendMessage(wsConn *wsConnection, payload []byte) {
+	if wsConn == nil {
+		observability.LogError(context.Background(), observability.ErrorLog{
+			Message:    "cannot send websocket message on nil connection",
+			Code:       "WS_CONNECTION_NIL",
+			StatusCode: http.StatusInternalServerError,
+		})
+		return
+	}
+
 	wsConn.writeMu.Lock()
 	defer wsConn.writeMu.Unlock()
-	_ = wsConn.conn.SetWriteDeadline(time.Now().Add(wsWriteWait))
-	_ = wsConn.conn.WriteMessage(websocket.TextMessage, payload)
+	if err := wsConn.conn.SetWriteDeadline(time.Now().Add(wsWriteWait)); err != nil {
+		observability.LogError(context.Background(), observability.ErrorLog{
+			Message:    "failed to set websocket write deadline",
+			Code:       "WS_WRITE_DEADLINE_FAILED",
+			StatusCode: http.StatusInternalServerError,
+			UserID:     wsConn.userID.String(),
+			Err:        err,
+		})
+	}
+	if err := wsConn.conn.WriteMessage(websocket.TextMessage, payload); err != nil {
+		observability.LogError(context.Background(), observability.ErrorLog{
+			Message:    "failed to send websocket message",
+			Code:       "WS_WRITE_FAILED",
+			StatusCode: http.StatusInternalServerError,
+			UserID:     wsConn.userID.String(),
+			Err:        err,
+		})
+	}
 }
 
 func (h *WebSocketHandler) sendPing(ctx context.Context, wsConn *wsConnection) {
