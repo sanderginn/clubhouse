@@ -86,3 +86,31 @@ Practical implication:
 Workaround applied:
 - Added `observability.RecordServiceError` and invoked it from `recordSpanError`.
 - Added transitive credit for `services.recordSpanError` and `observability.RecordServiceError` as `metric_error`.
+
+## 2026-02-26: State-Change Audit Is Service-Local And Ignores Existing Handler Audits
+
+Observed behavior:
+- `state-change-audit` continued to flag service methods even when the associated HTTP handler already emitted an audit event for the same user action.
+
+What was counter-intuitive:
+- Existing handler-level audit coverage was not considered for service-level rule satisfaction, so the only way to satisfy the rule was to add audit writes directly inside services.
+
+Practical implication:
+- Teams may need to duplicate audit events (handler + service) or refactor audit ownership to services, and tests using SQL mocks often need extra transaction/audit expectations.
+
+Workaround applied:
+- Added service-local audit writes for remaining exported mutating service methods and updated affected SQL-mock handler tests where transaction/audit calls were newly introduced.
+
+## 2026-02-26: JSON Violation Shape Differs From Plan Snippet
+
+Observed behavior:
+- Current FOW JSON violations expose `file` and `function` fields directly; `location.path` / `location.symbol` were empty in this run.
+
+What was counter-intuitive:
+- The plan snippet uses a `location.*` extraction pattern, which silently returns blanks with the current analyzer output shape.
+
+Practical implication:
+- Automation based on `location.path` can fail to identify targets, even though violation data is present.
+
+Workaround applied:
+- Switched jq extraction to `.file` and `.function` for reliable per-hit targeting.
