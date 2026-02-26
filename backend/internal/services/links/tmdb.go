@@ -15,6 +15,8 @@ import (
 	"time"
 
 	"github.com/sanderginn/clubhouse/internal/observability"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const (
@@ -225,10 +227,21 @@ func NewTMDBClient(apiKey string, httpClient *http.Client) (*TMDBClient, error) 
 
 // SearchMovie searches TMDB movies by title.
 func (c *TMDBClient) SearchMovie(ctx context.Context, query string) ([]MovieSearchResult, error) {
+	if ctx == nil {
+		return nil, errors.New("context is required")
+	}
+	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.TMDBClient.SearchMovie")
+	start := time.Now()
+	defer span.End()
+
 	query = strings.TrimSpace(query)
 	if query == "" {
-		return nil, errors.New("movie query is required")
+		err := errors.New("movie query is required")
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
+		return nil, err
 	}
+	span.SetAttributes(attribute.String("tmdb.query", query))
 
 	values := url.Values{}
 	values.Set("query", query)
@@ -238,9 +251,12 @@ func (c *TMDBClient) SearchMovie(ctx context.Context, query string) ([]MovieSear
 	}
 
 	if err := c.get(ctx, "/search/movie", values, &payload); err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 		return nil, err
 	}
 
+	observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 	return payload.Results, nil
 }
 
