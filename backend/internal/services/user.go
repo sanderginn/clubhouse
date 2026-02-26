@@ -1548,6 +1548,20 @@ func (s *UserService) UpdateSectionSubscription(ctx context.Context, userID uuid
 		return nil, notFoundErr
 	}
 
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	response := &models.UpdateSectionSubscriptionResponse{
+		SectionID: sectionID,
+		OptedOut:  optedOut,
+	}
+
 	if optedOut {
 		var optedOutAt time.Time
 		query := `
@@ -1557,28 +1571,35 @@ func (s *UserService) UpdateSectionSubscription(ctx context.Context, userID uuid
 			DO UPDATE SET opted_out_at = now()
 			RETURNING opted_out_at
 		`
-		if err := s.db.QueryRowContext(ctx, query, userID, sectionID).Scan(&optedOutAt); err != nil {
+		if err := tx.QueryRowContext(ctx, query, userID, sectionID).Scan(&optedOutAt); err != nil {
 			recordSpanError(span, err)
 			return nil, fmt.Errorf("failed to opt out of section: %w", err)
 		}
-
-		return &models.UpdateSectionSubscriptionResponse{
-			SectionID:  sectionID,
-			OptedOut:   true,
-			OptedOutAt: &optedOutAt,
-		}, nil
+		response.OptedOutAt = &optedOutAt
+	}
+	if !optedOut {
+		if _, err := tx.ExecContext(ctx, `DELETE FROM section_subscriptions WHERE user_id = $1 AND section_id = $2`, userID, sectionID); err != nil {
+			recordSpanError(span, err)
+			return nil, fmt.Errorf("failed to opt in to section: %w", err)
+		}
 	}
 
-	_, err := s.db.ExecContext(ctx, `DELETE FROM section_subscriptions WHERE user_id = $1 AND section_id = $2`, userID, sectionID)
-	if err != nil {
+	metadata := map[string]interface{}{
+		"user_id":    userID.String(),
+		"section_id": sectionID.String(),
+		"opted_out":  optedOut,
+	}
+	if err := NewAuditService(tx).LogAuditWithMetadata(ctx, "update_section_subscription", userID, userID, metadata); err != nil {
 		recordSpanError(span, err)
-		return nil, fmt.Errorf("failed to opt in to section: %w", err)
+		return nil, fmt.Errorf("failed to create audit log: %w", err)
 	}
 
-	return &models.UpdateSectionSubscriptionResponse{
-		SectionID: sectionID,
-		OptedOut:  false,
-	}, nil
+	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return response, nil
 }
 
 // ResetPassword resets a user's password (called after token verification)
