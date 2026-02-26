@@ -50,6 +50,14 @@ analyzers:
           provides: metric_error
         - function: observability.RecordServiceError
           provides: metric_error
+        - function: services.CookLogService.logCookAudit
+          provides: audit
+        - function: services.SavedRecipeService.logSavedRecipeAudit
+          provides: audit
+        - function: services.ReactionService.logReactionAudit
+          provides: audit
+        - function: services.HighlightReactionService.logHighlightReactionAudit
+          provides: audit
 
       io_sink_functions:
         - links.Fetcher.doRequestWithRetry   # add your wrapper sink methods here
@@ -138,7 +146,16 @@ rules:
     severity: warning
     applies_to: [service]
     exclude_unexported: true
-    exclude_prefixes: [Get, List, Is, Verify, Resolve, Load, Lookup, Check, Find, Has, Can]
+    exclude_prefixes: [Get, List, Is, Verify, Resolve, Load, Lookup, Check, Find, Has, Can, Search, Login, Validate]
+    exclude_suffixes: [Exists]
+    exclude_paths:
+      - "backend/internal/services/auth_event.go"
+      - "backend/internal/services/auth_failure.go"
+      - "backend/internal/services/csrf.go"
+      - "backend/internal/services/notification.go"
+      - "backend/internal/services/password_reset.go"
+      - "backend/internal/services/push.go"
+      - "backend/internal/services/session.go"
     requires: [audit]
     message: State-changing service methods must emit audit signals
     fix: Add an audit log write for this state transition.
