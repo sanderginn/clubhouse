@@ -609,23 +609,32 @@ func enrichMovieDataWithOMDB(ctx context.Context, omdbClient *OMDBClient, imdbID
 	if ctx == nil || omdbClient == nil || movieData == nil {
 		return
 	}
+	ctx, span := otel.Tracer("clubhouse.links").Start(ctx, "links.enrichMovieDataWithOMDB")
+	start := time.Now()
+	defer span.End()
 
 	imdbID = strings.ToLower(strings.TrimSpace(imdbID))
 	if !imdbIDPattern.MatchString(imdbID) {
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 		return
 	}
+	span.SetAttributes(attribute.String("imdb.id", imdbID))
 
 	ratings, err := omdbClient.GetRatingsByIMDBID(ctx, imdbID)
 	if err != nil {
+		span.RecordError(err)
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 		observability.LogDebug(ctx, "omdb movie enrichment skipped", "imdb_id", imdbID, "error", err.Error())
 		return
 	}
 	if ratings == nil {
+		observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 		return
 	}
 
 	movieData.RottenTomatoesScore = ratings.RottenTomatoesScore
 	movieData.MetacriticScore = ratings.MetacriticScore
+	observability.RecordLinkMetadataFetchDuration(ctx, time.Since(start))
 }
 
 func setMovieExternalLinks(movieData *MovieData, mediaType, imdbID, rottenTomatoesSlug string) {
