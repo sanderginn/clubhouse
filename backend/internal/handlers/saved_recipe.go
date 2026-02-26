@@ -488,6 +488,13 @@ func (h *SavedRecipeHandler) DeleteRecipeCategory(w http.ResponseWriter, r *http
 func (h *SavedRecipeHandler) fetchUserCategory(ctx context.Context, userID, categoryID uuid.UUID) (*models.RecipeCategory, error) {
 	categories, err := h.savedRecipeService.GetUserCategories(ctx, userID)
 	if err != nil {
+		observability.LogError(ctx, observability.ErrorLog{
+			Message:    "failed to fetch recipe categories",
+			Code:       "FETCH_RECIPE_CATEGORIES_FAILED",
+			StatusCode: http.StatusInternalServerError,
+			UserID:     userID.String(),
+			Err:        err,
+		})
 		return nil, err
 	}
 	for _, category := range categories {
