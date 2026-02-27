@@ -114,6 +114,11 @@ rules:
     message: Service methods must create trace spans
     fix: Add otel.Tracer(...).Start(ctx, ...), then defer span.End().
 
+  - id: flow-trace-continuity
+    severity: error
+    exclude_unexported: true
+    message: Flow step is missing trace span
+
   - id: external-call-trace-span
     severity: warning
     applies_to: [external_call]
